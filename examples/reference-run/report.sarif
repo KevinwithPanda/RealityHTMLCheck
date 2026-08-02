@@ -1,0 +1,357 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "reference-demo-v0.3.0"
+      },
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "[data-testid=customer-name]"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4173/"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Long customer names are clipped without access to the full value: The customer name exceeds its fixed width and is hidden with ellipsis after deterministic long-text injection."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "fb7751933e1dae1692cc806f39622186159c5007c87abbe0320050ee6c23d572"
+          },
+          "properties": {
+            "classification": "new",
+            "confidence": "high",
+            "findingId": "RC-FB7751933E",
+            "scenarioId": "long-text",
+            "severity": "major"
+          },
+          "ruleId": "element-text-clipping"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "[data-testid=checkout]"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4173/"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Checkout review is outside the mobile viewport: The fixed 1040px application shell places the primary checkout action beyond the 375px viewport."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "920864929a9614a5de5d92b964db6d1ed6a07ac7ccbfe092a558884e75ac3170"
+          },
+          "properties": {
+            "classification": "new",
+            "confidence": "high",
+            "findingId": "RC-920864929A",
+            "scenarioId": "mobile-375",
+            "severity": "major"
+          },
+          "ruleId": "offscreen-critical-control"
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4173/"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "The page logs an initialization error: A console error is emitted during the baseline load before any stress scenario runs."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "7aeac80e106f68fc401a23305947ffa0751bfafb0a4020a59cfe79f6d9f08af7"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-7AEAC80E10",
+            "scenarioId": "baseline",
+            "severity": "minor"
+          },
+          "ruleId": "console-error"
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": ".customer img"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4173/"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "The customer avatar has no text alternative: When the image fails, no alternative text identifies whether the image is decorative or meaningful."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "831a358f94229cb373fe4ba69cd7c49f2eb6572d703bfc916c7ff61328a9572e"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-831A358F94",
+            "scenarioId": "image-failure",
+            "severity": "minor"
+          },
+          "ruleId": "image-alt"
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": ".status"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4173/"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Status alignment remains pinned to the physical right side: The status chip uses margin-left instead of a logical property and does not mirror with document direction."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "02b9df270a7ab58db15af335bfcc3292ac41e099604da53ffa54af73bf9baa98"
+          },
+          "properties": {
+            "classification": "new",
+            "confidence": "high",
+            "findingId": "RC-02B9DF270A",
+            "scenarioId": "rtl-arabic",
+            "severity": "minor"
+          },
+          "ruleId": "rtl-physical-spacing"
+        },
+        {
+          "level": "note",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "button.primary"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4173/"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Interactive elements may not expose a visible focus indicator: Computed focus styles remove both outline and box shadow, but pixel-difference evidence was not captured in this reference fixture."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "3e80d0b7409a7389cebefb4da36ff78d5ef5e64d912cd713fb72037acda7d7d9"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "low",
+            "findingId": "RC-3E80D0B740",
+            "scenarioId": "keyboard-tab",
+            "severity": "minor"
+          },
+          "ruleId": "keyboard-focus-visibility"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "RealityCheck",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "fullDescription": {
+                "text": "A console error is emitted during the baseline load before any stress scenario runs."
+              },
+              "help": {
+                "markdown": "Handle optional analytics initialization without emitting a production console error.\n\n- Use a recoverable warning or feature-state result for an optional integration.",
+                "text": "Handle optional analytics initialization without emitting a production console error.\n\n- Use a recoverable warning or feature-state result for an optional integration."
+              },
+              "id": "console-error",
+              "name": "console_error",
+              "properties": {
+                "severity": "minor",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "The page logs an initialization error"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The customer name exceeds its fixed width and is hidden with ellipsis after deterministic long-text injection."
+              },
+              "help": {
+                "markdown": "Expose the full customer name while preserving the card layout.\n\n- Allow wrapping or add an accessible expansion/tooltip mechanism.",
+                "text": "Expose the full customer name while preserving the card layout.\n\n- Allow wrapping or add an accessible expansion/tooltip mechanism."
+              },
+              "id": "element-text-clipping",
+              "name": "element_text_clipping",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "long-text"
+                ]
+              },
+              "shortDescription": {
+                "text": "Long customer names are clipped without access to the full value"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "fullDescription": {
+                "text": "When the image fails, no alternative text identifies whether the image is decorative or meaningful."
+              },
+              "help": {
+                "markdown": "Declare the avatar decorative or provide a concise alternative.\n\n- Use alt=\"\" when the adjacent customer name already conveys the same information.",
+                "text": "Declare the avatar decorative or provide a concise alternative.\n\n- Use alt=\"\" when the adjacent customer name already conveys the same information."
+              },
+              "id": "image-alt",
+              "name": "image_alt",
+              "properties": {
+                "severity": "minor",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "image-failure"
+                ]
+              },
+              "shortDescription": {
+                "text": "The customer avatar has no text alternative"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "fullDescription": {
+                "text": "Computed focus styles remove both outline and box shadow, but pixel-difference evidence was not captured in this reference fixture."
+              },
+              "help": {
+                "markdown": "Restore a high-contrast focus-visible style.\n\n- Use :focus-visible with a two-pixel outline and offset.",
+                "text": "Restore a high-contrast focus-visible style.\n\n- Use :focus-visible with a two-pixel outline and offset."
+              },
+              "id": "keyboard-focus-visibility",
+              "name": "keyboard_focus_visibility",
+              "properties": {
+                "severity": "minor",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "keyboard-tab"
+                ]
+              },
+              "shortDescription": {
+                "text": "Interactive elements may not expose a visible focus indicator"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The fixed 1040px application shell places the primary checkout action beyond the 375px viewport."
+              },
+              "help": {
+                "markdown": "Remove the fixed minimum shell width and stack the hero actions at the mobile breakpoint.\n\n- Replace min-width: 1040px with responsive grid constraints.\n- Allow the primary action to wrap below the heading on narrow screens.",
+                "text": "Remove the fixed minimum shell width and stack the hero actions at the mobile breakpoint.\n\n- Replace min-width: 1040px with responsive grid constraints.\n- Allow the primary action to wrap below the heading on narrow screens."
+              },
+              "id": "offscreen-critical-control",
+              "name": "offscreen_critical_control",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "mobile-375"
+                ]
+              },
+              "shortDescription": {
+                "text": "Checkout review is outside the mobile viewport"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "fullDescription": {
+                "text": "The status chip uses margin-left instead of a logical property and does not mirror with document direction."
+              },
+              "help": {
+                "markdown": "Use logical spacing so status alignment follows writing direction.\n\n- Replace margin-left: auto with margin-inline-start: auto.",
+                "text": "Use logical spacing so status alignment follows writing direction.\n\n- Replace margin-left: auto with margin-inline-start: auto."
+              },
+              "id": "rtl-physical-spacing",
+              "name": "rtl_physical_spacing",
+              "properties": {
+                "severity": "minor",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "rtl-arabic"
+                ]
+              },
+              "shortDescription": {
+                "text": "Status alignment remains pinned to the physical right side"
+              }
+            }
+          ],
+          "semanticVersion": "0.3.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

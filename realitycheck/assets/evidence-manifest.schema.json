@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/evidence-manifest-v1.json",
+  "title": "RealityCheck Evidence Integrity Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "generatedAt", "source", "algorithm", "summary", "files"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "kind": { "const": "evidence-manifest" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifactKind", "runId", "target"],
+      "properties": {
+        "artifactKind": { "enum": ["page-audit", "site-audit"] },
+        "runId": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "format": "uri" }
+      }
+    },
+    "algorithm": { "const": "sha256" },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files", "bytes"],
+      "properties": {
+        "files": { "type": "integer", "minimum": 1 },
+        "bytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "bytes", "sha256", "mediaType"],
+        "properties": {
+          "path": { "$ref": "#/$defs/portablePath" },
+          "bytes": { "type": "integer", "minimum": 0 },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "mediaType": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "portablePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    }
+  }
+}

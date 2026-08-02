@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/site-verification-v1.json",
+  "title": "RealityCheck Site Verification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "before", "after", "scoreDelta", "counts", "resolved", "remaining", "worsened", "new", "unverified", "failedPages", "newPages", "removedPages", "threshold"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "kind": { "const": "site-verification" },
+    "before": { "$ref": "#/$defs/siteScore" },
+    "after": { "$ref": "#/$defs/siteScore" },
+    "scoreDelta": { "type": "integer", "minimum": -100, "maximum": 100 },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolved", "remaining", "worsened", "new", "unverified", "failedPages", "newPages", "removedPages"],
+      "properties": {
+        "resolved": { "$ref": "#/$defs/count" },
+        "remaining": { "$ref": "#/$defs/count" },
+        "worsened": { "$ref": "#/$defs/count" },
+        "new": { "$ref": "#/$defs/count" },
+        "unverified": { "$ref": "#/$defs/count" },
+        "failedPages": { "$ref": "#/$defs/count" },
+        "newPages": { "$ref": "#/$defs/count" },
+        "removedPages": { "$ref": "#/$defs/count" }
+      }
+    },
+    "resolved": { "$ref": "#/$defs/findings" },
+    "remaining": { "$ref": "#/$defs/findings" },
+    "worsened": { "$ref": "#/$defs/findings" },
+    "new": { "$ref": "#/$defs/findings" },
+    "unverified": { "$ref": "#/$defs/findings" },
+    "failedPages": { "type": "array", "items": { "$ref": "#/$defs/failedPage" } },
+    "newPages": { "type": "array", "items": { "$ref": "#/$defs/newPage" } },
+    "removedPages": { "type": "array", "items": { "$ref": "#/$defs/removedPage" } },
+    "policyViolations": { "type": "array", "items": { "$ref": "#/$defs/policyViolation" } },
+    "threshold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["failOn", "scope", "met"],
+      "properties": {
+        "failOn": { "enum": ["critical", "major", "minor", "never"] },
+        "scope": { "enum": ["regressions-only", "all-active-findings"] },
+        "met": { "type": "boolean" },
+        "baselineAgeDays": { "type": "number", "minimum": 0 },
+        "maximumBaselineAgeDays": { "type": "integer", "minimum": 1, "maximum": 3650 },
+        "beforePolicyFingerprint": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" },
+        "afterPolicyFingerprint": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    }
+  },
+  "$defs": {
+    "count": { "type": "integer", "minimum": 0 },
+    "policyViolation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["page", "code", "actual", "expected"],
+      "properties": {
+        "page": { "type": "string", "format": "uri" },
+        "code": { "enum": ["minimum-score", "minimum-coverage", "max-waived-findings", "baseline-age", "policy-drift"] },
+        "actual": { "type": "number", "minimum": 0 },
+        "expected": { "type": "number", "minimum": 0 }
+      }
+    },
+    "siteScore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "averageScore", "minimumScore"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "averageScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "minimumScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "finishedAt": { "type": "string", "format": "date-time" },
+        "mode": { "enum": ["quick", "deep"] },
+        "toolVersion": { "type": "string", "minLength": 1 },
+        "policyFingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["page", "pageTitle", "id", "fingerprint", "ruleId", "scenarioId", "severity", "confidence", "title"],
+      "properties": {
+        "page": { "type": "string", "format": "uri" },
+        "pageTitle": { "type": "string" },
+        "id": { "type": "string", "minLength": 1 },
+        "fingerprint": { "type": "string", "minLength": 1 },
+        "ruleId": { "type": "string", "minLength": 1 },
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["critical", "major", "minor", "info"] },
+        "confidence": { "enum": ["high", "medium", "low"] },
+        "title": { "type": "string", "minLength": 1 },
+        "waiver": { "$ref": "#/$defs/waiver" },
+        "ownership": { "$ref": "#/$defs/ownership" },
+        "previousSeverity": { "enum": ["critical", "major", "minor", "info"] },
+        "previousConfidence": { "enum": ["high", "medium", "low"] },
+        "translations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["zh-CN"],
+          "properties": {
+            "zh-CN": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["title"],
+              "properties": { "title": { "type": "string", "minLength": 1 } }
+            }
+          }
+        }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 }
+      }
+    },
+    "waiver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reason", "expires"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "owner": { "type": "string", "minLength": 1 },
+        "expires": { "type": "string", "format": "date" }
+      }
+    },
+    "failedPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "error"],
+      "properties": { "url": { "type": "string", "format": "uri" }, "error": { "type": "string", "minLength": 1 } }
+    },
+    "newPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "title", "status"],
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "title": { "type": "string" },
+        "status": { "enum": ["completed", "failed"] }
+      }
+    },
+    "removedPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "title"],
+      "properties": { "url": { "type": "string", "format": "uri" }, "title": { "type": "string" } }
+    }
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.dev/schemas/config-v1.json",
+  "title": "RealityCheck project configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "baseUrl": { "type": "string", "format": "uri", "pattern": "^https?://" },
+    "mode": { "enum": ["quick", "deep"] },
+    "failOn": { "enum": ["critical", "major", "minor", "never"] },
+    "qualityGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "minimumScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "minimumCoveragePercent": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "maxWaivedFindings": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "baselinePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "maxAgeDays": { "type": "integer", "minimum": 1, "maximum": 3650 },
+        "requireSamePolicy": { "type": "boolean" }
+      },
+      "anyOf": [
+        { "required": ["maxAgeDays"], "properties": { "maxAgeDays": true } },
+        { "required": ["requireSamePolicy"], "properties": { "requireSamePolicy": { "const": true } } }
+      ]
+    },
+    "output": { "type": "string", "minLength": 1 },
+    "routes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "owners": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "ruleIds": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+          "include": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+          "exclude": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+        }
+      }
+    },
+    "waivers": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "ruleId", "reason", "expires"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" },
+          "ruleId": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "selector": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "owner": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "expires": { "type": "string", "format": "date" },
+          "include": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+          "exclude": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "selector", "assertion"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" },
+          "selector": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "assertion": { "enum": ["exists", "visible", "enabled", "accessible-name", "attribute", "count", "no-horizontal-overflow", "minimum-size"] },
+          "severity": { "enum": ["critical", "major", "minor", "info"] },
+          "title": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "titleZh": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "remediation": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "remediationZh": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "include": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+          "exclude": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+          "options": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "min": { "type": "integer", "minimum": 0, "maximum": 100000 },
+              "max": { "type": "integer", "minimum": 0, "maximum": 100000 },
+              "attribute": { "type": "string", "minLength": 1, "maxLength": 500 },
+              "equals": { "type": "string", "minLength": 1, "maxLength": 500 },
+              "contains": { "type": "string", "minLength": 1, "maxLength": 500 },
+              "minWidth": { "type": "integer", "minimum": 0, "maximum": 100000 },
+              "minHeight": { "type": "integer", "minimum": 0, "maximum": 100000 }
+            }
+          }
+        }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "severity": { "enum": ["critical", "major", "minor"] },
+        "navigationMs": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "domContentLoadedMs": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "requests": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "transferKb": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "domNodes": { "type": "integer", "minimum": 0, "maximum": 10000000 }
+      },
+      "anyOf": [
+        { "required": ["navigationMs"], "properties": { "navigationMs": true } },
+        { "required": ["domContentLoadedMs"], "properties": { "domContentLoadedMs": true } },
+        { "required": ["requests"], "properties": { "requests": true } },
+        { "required": ["transferKb"], "properties": { "transferKb": true } },
+        { "required": ["domNodes"], "properties": { "domNodes": true } }
+      ]
+    },
+    "crawl": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "maxPages": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "maxDepth": { "type": "integer", "minimum": 0, "maximum": 8 },
+        "include": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "exclude": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

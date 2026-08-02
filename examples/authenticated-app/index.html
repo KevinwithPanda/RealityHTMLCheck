@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>Atlas Admin · Authenticated Fixture</title>
+    <style>
+      :root{color-scheme:light;--ink:#17202a;--muted:#68717c;--line:#dfe3e8;--paper:#fff;--canvas:#f4f6f8;--accent:#e74f2b;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}*{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--canvas)}a{color:inherit}.topbar{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:0 max(20px,calc((100vw - 1040px)/2));color:#fff;background:#161a20}.brand{font-weight:850;text-decoration:none}.session{color:#bfc6cf;font-size:12px}main{width:min(1040px,calc(100% - 32px));margin:auto;padding:58px 0 80px}.eyebrow{margin:0 0 9px;color:var(--accent);font-size:12px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}h1{max-width:720px;margin:0;font-size:clamp(40px,7vw,70px);line-height:.97;letter-spacing:-.06em}.lede{max-width:700px;color:var(--muted);line-height:1.65}.login-wall,.admin-panel{margin-top:36px;border:1px solid var(--line);border-radius:20px;padding:27px;background:var(--paper);box-shadow:0 18px 50px rgb(24 32 42 / 6%)}[hidden]{display:none!important}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}.metric{padding:20px;border:1px solid var(--line);border-radius:14px}.metric span{display:block;color:var(--muted);font-size:12px}.metric b{display:block;margin-top:8px;font-size:29px}.activity{margin-top:14px;padding:18px;border-radius:13px;background:#f5f6f8}.activity strong,.activity span{display:block}.activity span{margin-top:5px;color:var(--muted);font-size:13px}a:focus-visible{outline:3px solid #ff9b82;outline-offset:4px}@media(max-width:600px){.topbar{padding:0 16px}.metrics{grid-template-columns:1fr}}
+    </style>
+  </head>
+  <body>
+    <header class="topbar"><a class="brand" href="index.html">Atlas Admin</a><span id="session-label" class="session">Anonymous session</span></header>
+    <main>
+      <p class="eyebrow">Authenticated audit fixture</p>
+      <h1>Verify protected product surfaces without leaking credentials.</h1>
+      <p class="lede">This local fixture reads one synthetic localStorage value. It never sends credentials, submits forms, or connects to a remote service.</p>
+      <section id="login-wall" class="login-wall" aria-labelledby="login-heading">
+        <h2 id="login-heading">Sign-in is required</h2>
+        <p>The protected administration panel is unavailable to anonymous sessions.</p>
+      </section>
+      <section id="admin-panel" class="admin-panel" aria-labelledby="admin-heading" hidden>
+        <h2 id="admin-heading">Administration overview</h2>
+        <div class="metrics"><div class="metric"><span>Healthy services</span><b>18</b></div><div class="metric"><span>Open approvals</span><b>4</b></div><div class="metric"><span>Policy coverage</span><b>96%</b></div></div>
+        <div class="activity"><strong>Most recent review</strong><span>Access policy confirmed in the synthetic test workspace.</span></div>
+      </section>
+    </main>
+    <script>
+      if (localStorage.getItem("rc_demo_session") === "fixture-authenticated") {
+        document.querySelector("#login-wall").hidden = true;
+        document.querySelector("#admin-panel").hidden = false;
+        document.querySelector("#session-label").textContent = "Synthetic admin session";
+      }
+    </script>
+  </body>
+</html>

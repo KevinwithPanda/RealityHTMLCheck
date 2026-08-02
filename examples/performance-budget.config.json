@@ -1,0 +1,14 @@
+{
+  "$schema": "../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4175/examples/demo-fixed/",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../.realitycheck/performance-budget-runs",
+  "budgets": {
+    "severity": "major",
+    "navigationMs": 2000,
+    "requests": 20,
+    "transferKb": 250,
+    "domNodes": 10
+  }
+}

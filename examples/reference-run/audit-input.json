@@ -1,0 +1,383 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.3.0",
+  "run": {
+    "id": "reference-demo-v0.3.0",
+    "mode": "quick",
+    "startedAt": "2026-08-01T04:00:00.000Z",
+    "finishedAt": "2026-08-01T04:00:42.000Z",
+    "durationMs": 42000
+  },
+  "target": {
+    "requestedUrl": "http://127.0.0.1:4173/",
+    "finalUrl": "http://127.0.0.1:4173/",
+    "title": "Northstar Console - RealityCheck Demo",
+    "translations": {
+      "zh-CN": {
+        "title": "Northstar 控制台 · RealityCheck 演示"
+      }
+    }
+  },
+  "adapter": {
+    "name": "project-playwright",
+    "isolation": "fresh-context",
+    "capabilities": ["console", "dom", "screenshots", "viewport"]
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major"
+  },
+  "scenarios": [
+    {
+      "id": "baseline",
+      "status": "completed-with-findings",
+      "durationMs": 4100,
+      "notes": ["One intentional console error was observed."],
+      "translations": {
+        "zh-CN": {
+          "notes": ["观察到一个故意设置的控制台错误。"]
+        }
+      }
+    },
+    {
+      "id": "mobile-375",
+      "status": "completed-with-findings",
+      "durationMs": 6200,
+      "notes": [],
+      "translations": {
+        "zh-CN": {
+          "notes": []
+        }
+      }
+    },
+    {
+      "id": "long-text",
+      "status": "completed-with-findings",
+      "durationMs": 6700,
+      "notes": ["12 deterministic text mutations were applied."],
+      "translations": {
+        "zh-CN": {
+          "notes": ["已执行 12 次确定性的文本替换。"]
+        }
+      }
+    },
+    {
+      "id": "rtl-arabic",
+      "status": "completed-with-findings",
+      "durationMs": 5900,
+      "notes": ["Directionality stress test only; translation quality was not assessed."],
+      "translations": {
+        "zh-CN": {
+          "notes": ["仅进行书写方向压力测试；未评估翻译质量。"]
+        }
+      }
+    },
+    {
+      "id": "image-failure",
+      "status": "completed-with-findings",
+      "durationMs": 5500,
+      "notes": ["Expected image request aborts were excluded from failed-request findings."],
+      "translations": {
+        "zh-CN": {
+          "notes": ["预期的图片请求中止未计入普通请求失败问题。"]
+        }
+      }
+    },
+    {
+      "id": "keyboard-tab",
+      "status": "completed-with-findings",
+      "durationMs": 7100,
+      "notes": ["No controls were activated or submitted."],
+      "translations": {
+        "zh-CN": {
+          "notes": ["未激活或提交任何控件。"]
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "console-error",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The page logs an initialization error",
+      "summary": "A console error is emitted during the baseline load before any stress scenario runs.",
+      "url": "http://127.0.0.1:4173/",
+      "measurements": {
+        "occurrences": 1
+      },
+      "evidence": [
+        {
+          "type": "console",
+          "level": "error",
+          "text": "RealityCheck demo: simulated analytics initialization failure"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the demo in a clean desktop browser context.",
+        "Observe the first console error emitted after navigation."
+      ],
+      "remediation": {
+        "summary": "Handle optional analytics initialization without emitting a production console error.",
+        "technicalHints": ["Use a recoverable warning or feature-state result for an optional integration."]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "页面在初始化时输出错误",
+          "summary": "在运行任何压力场景之前，基线加载过程就产生了一条控制台错误。",
+          "reproductionSteps": [
+            "在干净的桌面浏览器上下文中打开演示页。",
+            "观察页面导航后的第一条控制台错误。"
+          ],
+          "remediation": {
+            "summary": "处理可选分析服务的初始化失败，不要在生产控制台中输出错误。",
+            "technicalHints": ["对于可选集成，使用可恢复的警告或明确的功能状态结果。"]
+          }
+        }
+      }
+    },
+    {
+      "ruleId": "offscreen-critical-control",
+      "scenarioId": "mobile-375",
+      "classification": "new",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Checkout review is outside the mobile viewport",
+      "summary": "The fixed 1040px application shell places the primary checkout action beyond the 375px viewport.",
+      "url": "http://127.0.0.1:4173/",
+      "selector": "[data-testid=checkout]",
+      "measurements": {
+        "viewportWidth": 375,
+        "documentScrollWidth": 1040,
+        "overflowPixels": 665
+      },
+      "evidence": [
+        {
+          "type": "dom",
+          "selector": "[data-testid=checkout]",
+          "boundingBox": { "x": 842, "y": 116, "width": 166, "height": 42 }
+        }
+      ],
+      "reproductionSteps": [
+        "Open the demo at a 375x812 viewport.",
+        "Observe that the Start checkout review button is outside the initial viewport."
+      ],
+      "remediation": {
+        "summary": "Remove the fixed minimum shell width and stack the hero actions at the mobile breakpoint.",
+        "technicalHints": [
+          "Replace min-width: 1040px with responsive grid constraints.",
+          "Allow the primary action to wrap below the heading on narrow screens."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "移动端视口内无法看到结账审核按钮",
+          "summary": "应用外壳固定为 1040px 宽，使主要结账审核按钮落在 375px 手机视口之外。",
+          "reproductionSteps": [
+            "使用 375×812 的视口打开演示页。",
+            "确认“开始结账审核”按钮不在初始视口内。"
+          ],
+          "remediation": {
+            "summary": "移除应用外壳的固定最小宽度，并在手机断点把主操作排列到标题下方。",
+            "technicalHints": [
+              "用响应式网格约束替换 min-width: 1040px。",
+              "在窄屏上允许主要操作换行到标题下方。"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "ruleId": "element-text-clipping",
+      "scenarioId": "long-text",
+      "classification": "new",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Long customer names are clipped without access to the full value",
+      "summary": "The customer name exceeds its fixed width and is hidden with ellipsis after deterministic long-text injection.",
+      "url": "http://127.0.0.1:4173/",
+      "selector": "[data-testid=customer-name]",
+      "measurements": {
+        "clientWidth": 185,
+        "scrollWidth": 432,
+        "clippedPixels": 247
+      },
+      "evidence": [
+        {
+          "type": "dom",
+          "selector": "[data-testid=customer-name]",
+          "text": "超长客户名称：上海现实检查与可靠性工程联合实验室"
+        }
+      ],
+      "reproductionSteps": [
+        "Run the long-text scenario with seed 42.",
+        "Inspect the priority customer name in the Review required panel."
+      ],
+      "remediation": {
+        "summary": "Expose the full customer name while preserving the card layout.",
+        "technicalHints": ["Allow wrapping or add an accessible expansion/tooltip mechanism."]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "超长客户名称被截断，用户无法访问完整内容",
+          "summary": "注入确定性的长文本后，客户名称超过固定宽度，并被省略号隐藏。",
+          "reproductionSteps": [
+            "使用种子 42 运行长文本场景。",
+            "检查“需要审核”面板中的重点客户名称。"
+          ],
+          "remediation": {
+            "summary": "在保持卡片布局的同时，让用户能够访问完整客户名称。",
+            "technicalHints": ["允许名称换行，或增加支持键盘和读屏器的展开/提示机制。"]
+          }
+        }
+      }
+    },
+    {
+      "ruleId": "rtl-physical-spacing",
+      "scenarioId": "rtl-arabic",
+      "classification": "new",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "Status alignment remains pinned to the physical right side",
+      "summary": "The status chip uses margin-left instead of a logical property and does not mirror with document direction.",
+      "url": "http://127.0.0.1:4173/",
+      "selector": ".status",
+      "measurements": {
+        "direction": "rtl",
+        "marginLeft": "auto",
+        "marginInlineStart": "0px"
+      },
+      "evidence": [
+        {
+          "type": "dom",
+          "selector": ".status",
+          "computedStyle": { "margin-left": "auto", "margin-right": "0px" }
+        }
+      ],
+      "reproductionSteps": [
+        "Set html dir=rtl and lang=ar in a fresh context.",
+        "Inspect the alignment of status chips in panel headers."
+      ],
+      "remediation": {
+        "summary": "Use logical spacing so status alignment follows writing direction.",
+        "technicalHints": ["Replace margin-left: auto with margin-inline-start: auto."]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "状态标签仍固定在物理右侧",
+          "summary": "状态标签使用 margin-left 而不是逻辑属性，因此页面切换书写方向后没有正确镜像。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中设置 html dir=rtl 和 lang=ar。",
+            "检查面板标题中状态标签的对齐方式。"
+          ],
+          "remediation": {
+            "summary": "使用逻辑方向的间距属性，使状态标签跟随书写方向对齐。",
+            "technicalHints": ["将 margin-left: auto 替换为 margin-inline-start: auto。"]
+          }
+        }
+      }
+    },
+    {
+      "ruleId": "image-alt",
+      "scenarioId": "image-failure",
+      "classification": "existing",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The customer avatar has no text alternative",
+      "summary": "When the image fails, no alternative text identifies whether the image is decorative or meaningful.",
+      "url": "http://127.0.0.1:4173/",
+      "selector": ".customer img",
+      "measurements": {
+        "altPresent": false,
+        "renderedWidth": 56,
+        "renderedHeight": 56
+      },
+      "evidence": [
+        {
+          "type": "dom",
+          "selector": ".customer img",
+          "outerHtml": "<img src=\"avatar.svg\" width=\"56\" height=\"56\">"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the demo and inspect the priority customer avatar.",
+        "Abort image requests and confirm that no alt text is available."
+      ],
+      "remediation": {
+        "summary": "Declare the avatar decorative or provide a concise alternative.",
+        "technicalHints": ["Use alt=\"\" when the adjacent customer name already conveys the same information."]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "客户头像没有文本替代内容",
+          "summary": "图片加载失败时，没有替代文本说明该图片是装饰性的还是具有实际含义。",
+          "reproductionSteps": [
+            "打开演示页并检查重点客户头像。",
+            "中止图片请求并确认该图片没有可用的 alt 文本。"
+          ],
+          "remediation": {
+            "summary": "明确头像属于装饰性图片，或者提供简洁的替代文本。",
+            "technicalHints": ["如果旁边的客户名称已经表达了相同信息，请使用 alt=\"\"。"]
+          }
+        }
+      }
+    },
+    {
+      "ruleId": "keyboard-focus-visibility",
+      "scenarioId": "keyboard-tab",
+      "classification": "existing",
+      "severity": "minor",
+      "confidence": "low",
+      "title": "Interactive elements may not expose a visible focus indicator",
+      "summary": "Computed focus styles remove both outline and box shadow, but pixel-difference evidence was not captured in this reference fixture.",
+      "url": "http://127.0.0.1:4173/",
+      "selector": "button.primary",
+      "measurements": {
+        "outlineStyle": "none",
+        "boxShadow": "none"
+      },
+      "evidence": [
+        {
+          "type": "focus-sequence",
+          "entries": [
+            { "selector": "button.primary", "outlineStyle": "none", "boxShadow": "none" }
+          ]
+        }
+      ],
+      "reproductionSteps": [
+        "Navigate to the demo using only Tab.",
+        "Observe focus on the Start checkout review button."
+      ],
+      "remediation": {
+        "summary": "Restore a high-contrast focus-visible style.",
+        "technicalHints": ["Use :focus-visible with a two-pixel outline and offset."]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "交互控件可能没有可见的键盘焦点指示",
+          "summary": "计算样式同时移除了轮廓与阴影，但这个参考夹具没有记录像素差异证据。",
+          "reproductionSteps": [
+            "只使用 Tab 键在演示页中导航。",
+            "观察“开始结账审核”按钮获得焦点时的显示效果。"
+          ],
+          "remediation": {
+            "summary": "恢复高对比度的 focus-visible 样式。",
+            "technicalHints": ["使用 :focus-visible，并设置两像素轮廓和适当的 outline-offset。"]
+          }
+        }
+      }
+    }
+  ],
+  "warnings": [
+    "This committed reference run exercises the deterministic renderer and CI contract. Replace it with a fresh browser run before using its measurements as application evidence."
+  ],
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "这份已提交的参考运行用于验证确定性报告生成器和 CI 合同。在将其中的测量值作为其他应用的证据前，请先执行一次新的浏览器核查。"
+      ]
+    }
+  }
+}

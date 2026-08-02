@@ -1,0 +1,178 @@
+import assert from "node:assert/strict";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import test from "node:test";
+
+import {
+  ConfigError,
+  applyFindingWaivers,
+  applyFindingOwnership,
+  discoverConfig,
+  globToRegExp,
+  loadProjectConfig,
+  mergeProjectOptions,
+  resolveRoute,
+  routeAllowed,
+  validateProjectConfig,
+} from "../realitycheck/scripts/config.mjs";
+
+test("configuration rejects unknown and unsafe values", () => {
+  assert.throws(() => validateProjectConfig({ surprise: true }), ConfigError);
+  assert.throws(() => validateProjectConfig({ mode: "huge" }), /quick or deep/);
+  assert.throws(() => validateProjectConfig({ crawl: { maxPages: 101 } }), /1 to 100/);
+  assert.throws(() => validateProjectConfig({ routes: [""] }), /non-empty strings/);
+  assert.throws(() => validateProjectConfig({ checks: [{ id: "X", selector: "button", assertion: "visible" }] }), /must match/);
+  assert.throws(() => validateProjectConfig({ checks: [{ id: "cta", selector: "button", assertion: "javascript" }] }), /not supported/);
+  assert.throws(() => validateProjectConfig({ checks: [{ id: "cta", selector: "button", assertion: "attribute" }] }), /attribute is required/);
+  assert.throws(() => validateProjectConfig({ budgets: { severity: "major" } }), /at least one/);
+  assert.throws(() => validateProjectConfig({ budgets: { requests: -1 } }), /0 to/);
+  assert.throws(() => validateProjectConfig({ qualityGate: {} }), /at least one/);
+  assert.throws(() => validateProjectConfig({ qualityGate: { minimumCoveragePercent: 101 } }), /0 to 100/);
+});
+
+test("release policy gates are explicit, bounded, and preserved", () => {
+  const qualityGate = { minimumScore: 90, minimumCoveragePercent: 85, maxWaivedFindings: 2 };
+  const config = validateProjectConfig({ qualityGate });
+  assert.deepEqual(config.qualityGate, qualityGate);
+  const merged = mergeProjectOptions(
+    { target: "http://127.0.0.1:3000", mode: null, output: null, failOn: null, routes: [], crawl: undefined },
+    { path: null, directory: process.cwd(), cwd: process.cwd(), config },
+  );
+  assert.deepEqual(merged.qualityGate, qualityGate);
+});
+
+test("regression baselines can have an explicit bounded freshness policy", () => {
+  assert.throws(() => validateProjectConfig({ baselinePolicy: {} }), /at least one/);
+  assert.throws(() => validateProjectConfig({ baselinePolicy: { maxAgeDays: 0 } }), /1 to 3650/);
+  assert.throws(() => validateProjectConfig({ baselinePolicy: { requireSamePolicy: false } }), /must set/);
+  const baselinePolicy = { maxAgeDays: 30, requireSamePolicy: true };
+  assert.deepEqual(validateProjectConfig({ baselinePolicy }).baselinePolicy, baselinePolicy);
+  const merged = mergeProjectOptions({ routes: [] }, { config: { baselinePolicy }, directory: process.cwd(), cwd: process.cwd(), path: null });
+  assert.deepEqual(merged.baselinePolicy, baselinePolicy);
+});
+
+test("route and rule ownership assigns one accountable team and rejects ambiguity", () => {
+  assert.throws(() => validateProjectConfig({ owners: [{ id: "Team A", name: "A" }] }), /must match/);
+  const config = validateProjectConfig({
+    owners: [
+      { id: "web-platform", name: "Web Platform", ruleIds: ["overflow"], include: ["/app/**"] },
+      { id: "checkout", name: "Checkout", ruleIds: ["payment-control"], include: ["/checkout/**"] },
+    ],
+  });
+  const findings = [{ ruleId: "overflow" }, { ruleId: "contrast" }];
+  const assigned = applyFindingOwnership(findings, "http://127.0.0.1:3000/app/home", config.owners);
+  assert.deepEqual(assigned, { appliedCount: 1, ambiguousCount: 0 });
+  assert.deepEqual(findings[0].ownership, { id: "web-platform", name: "Web Platform" });
+  assert.equal(findings[1].ownership, undefined);
+
+  const ambiguousFinding = [{ ruleId: "overflow" }];
+  const ambiguous = applyFindingOwnership(ambiguousFinding, "http://127.0.0.1:3000/app/home", [
+    ...config.owners,
+    { id: "all-app", name: "Application", ruleIds: [], include: ["/app/**"], exclude: [] },
+  ]);
+  assert.equal(ambiguous.ambiguousCount, 1);
+  assert.equal(ambiguousFinding[0].ownership, undefined);
+});
+
+test("performance budgets are bounded and carry an explicit severity", () => {
+  const config = validateProjectConfig({ budgets: { navigationMs: 1500, requests: 40, transferKb: 500, severity: "minor" } });
+  assert.deepEqual(config.budgets, { severity: "minor", navigationMs: 1500, requests: 40, transferKb: 500 });
+});
+
+test("governed waivers require ownership context and expire automatically", () => {
+  assert.throws(() => validateProjectConfig({ waivers: [{ id: "known-risk", ruleId: "overflow", reason: "Migration", expires: "soon" }] }), /valid YYYY-MM-DD/);
+  assert.throws(() => validateProjectConfig({ waivers: [{ id: "known-risk", ruleId: "overflow", expires: "2027-01-01" }] }), /reason/);
+  const config = validateProjectConfig({
+    waivers: [
+      { id: "known-risk", ruleId: "overflow", selector: "#legacy", reason: "Removal is tracked in WEB-42", owner: "Web Platform", expires: "2027-01-31", include: ["/legacy/**"] },
+      { id: "expired-risk", ruleId: "contrast", reason: "Old exception", expires: "2025-01-01" },
+    ],
+  });
+  const findings = [
+    { ruleId: "overflow", selector: "#legacy" },
+    { ruleId: "contrast", selector: "main" },
+  ];
+  const result = applyFindingWaivers(findings, "http://127.0.0.1:3000/legacy/page", config.waivers, new Date("2026-08-01T00:00:00Z"));
+  assert.equal(result.appliedCount, 1);
+  assert.deepEqual(result.expiredIds, ["expired-risk"]);
+  assert.deepEqual(findings[0].waiver, { id: "known-risk", reason: "Removal is tracked in WEB-42", owner: "Web Platform", expires: "2027-01-31" });
+  assert.equal(findings[1].waiver, undefined);
+});
+
+test("declarative checks are normalized without accepting executable code", () => {
+  const config = validateProjectConfig({
+    checks: [
+      {
+        id: "checkout-visible",
+        selector: "[data-testid=checkout]",
+        assertion: "visible",
+        severity: "critical",
+        title: "Checkout must remain visible",
+      },
+      {
+        id: "touch-target",
+        selector: ".icon-button",
+        assertion: "minimum-size",
+        options: { minWidth: 44, minHeight: 44 },
+      },
+    ],
+  });
+  assert.equal(config.checks.length, 2);
+  assert.deepEqual(config.checks[0].include, ["/**"]);
+  assert.deepEqual(config.checks[1].options, { minWidth: 44, minHeight: 44 });
+  assert.equal(JSON.stringify(config).includes("function"), false);
+});
+
+test("CLI values override project values and paths resolve beside the config", () => {
+  const merged = mergeProjectOptions(
+    { target: null, mode: "deep", output: null, failOn: null, routes: [], crawl: undefined },
+    {
+      path: "C:/project/realitycheck.config.json",
+      directory: "C:/project",
+      config: { baseUrl: "http://127.0.0.1:4000", mode: "quick", failOn: "minor", output: "artifacts", routes: ["/", "/settings"] },
+    },
+  );
+  assert.equal(merged.target, "http://127.0.0.1:4000");
+  assert.equal(merged.mode, "deep");
+  assert.equal(merged.failOn, "minor");
+  assert.equal(merged.output, resolve("C:/project", "artifacts"));
+  assert.deepEqual(merged.routes, ["/", "/settings"]);
+  assert.equal(merged.crawl.exclude.includes("/logout/**"), true);
+});
+
+test("route filters support globbing and deny sensitive navigation", () => {
+  const crawl = {
+    include: ["/**"],
+    exclude: ["/logout/**", "/checkout/**", "/admin/private"],
+  };
+  assert.equal(routeAllowed("/dashboard", crawl), true);
+  assert.equal(routeAllowed("/logout", crawl), false);
+  assert.equal(routeAllowed("/logout/all", crawl), false);
+  assert.equal(routeAllowed("/checkout/pay", crawl), false);
+  assert.equal(routeAllowed("/admin/private", crawl), false);
+  assert.equal(routeAllowed("/Logout", crawl), false);
+  assert.equal(routeAllowed("/app/%63heckout/pay", { include: ["/**"], exclude: [] }), false);
+  assert.equal(routeAllowed("/app/oauth/callback", { include: ["/**"], exclude: [] }), false);
+  assert.equal(globToRegExp("/docs/*").test("/docs/start"), true);
+  assert.equal(globToRegExp("/docs/*").test("/docs/a/b"), false);
+});
+
+test("configured routes cannot leave the target origin", () => {
+  assert.equal(resolveRoute("http://127.0.0.1:3000/app", "/settings"), "http://127.0.0.1:3000/settings");
+  assert.throws(() => resolveRoute("http://127.0.0.1:3000", "https://example.com"), /must stay/);
+});
+
+test("configuration is discovered from nested project directories", () => {
+  const root = mkdtempSync(join(tmpdir(), "realitycheck-config-"));
+  try {
+    const nested = join(root, "packages", "web");
+    mkdirSync(nested, { recursive: true });
+    const configPath = join(root, "realitycheck.config.json");
+    writeFileSync(configPath, JSON.stringify({ baseUrl: "http://localhost:3000" }), "utf8");
+    assert.equal(discoverConfig(nested), configPath);
+    assert.equal(loadProjectConfig(null, nested).config.baseUrl, "http://localhost:3000");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

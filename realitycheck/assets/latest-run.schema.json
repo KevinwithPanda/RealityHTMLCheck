@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/latest-run-v1.json",
+  "title": "RealityCheck Latest Run Pointer",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "updatedAt", "artifactKind", "runId", "target", "state", "score", "artifacts"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "kind": { "const": "latest-run" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "artifactKind": { "enum": ["page-audit", "site-audit"] },
+    "runId": { "type": "string", "minLength": 1 },
+    "target": { "type": "string", "format": "uri" },
+    "state": { "enum": ["passed", "failed"] },
+    "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "pages": { "type": "integer", "minimum": 1 },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["html", "json"],
+      "properties": {
+        "html": { "$ref": "#/$defs/portablePath" },
+        "json": { "$ref": "#/$defs/portablePath" },
+        "repairPlanJson": { "$ref": "#/$defs/portablePath" },
+        "repairPlanMarkdown": { "$ref": "#/$defs/portablePath" },
+        "integrityManifest": { "$ref": "#/$defs/portablePath" },
+        "verificationHtml": { "$ref": "#/$defs/portablePath" },
+        "verificationJson": { "$ref": "#/$defs/portablePath" },
+        "attestationHtml": { "$ref": "#/$defs/portablePath" },
+        "attestationJson": { "$ref": "#/$defs/portablePath" },
+        "trustReportHtml": { "$ref": "#/$defs/portablePath" },
+        "trustReportJson": { "$ref": "#/$defs/portablePath" }
+      }
+    }
+  },
+  "$defs": {
+    "portablePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    }
+  }
+}

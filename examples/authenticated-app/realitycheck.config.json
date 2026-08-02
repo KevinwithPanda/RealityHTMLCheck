@@ -1,0 +1,19 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4175/examples/authenticated-app/index.html",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/authenticated-runs",
+  "checks": [
+    {
+      "id": "admin-panel-visible",
+      "selector": "#admin-panel",
+      "assertion": "visible",
+      "severity": "major",
+      "title": "The authenticated administration panel must be visible",
+      "titleZh": "登录后的管理面板必须可见",
+      "remediation": "Verify the least-privileged test session and restore the protected administration surface.",
+      "remediationZh": "核对最小权限测试会话，并恢复受保护的管理界面。"
+    }
+  ]
+}

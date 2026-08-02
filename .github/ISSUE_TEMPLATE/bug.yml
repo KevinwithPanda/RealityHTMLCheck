@@ -1,0 +1,51 @@
+name: Bug report
+description: Report incorrect skill, report-engine, demo, or documentation behavior.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include private screenshots, tokens, cookies, storage state, or production data.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Skill workflow
+        - Browser adapter
+        - Test protocol or detector
+        - Report renderer or schema
+        - Demo or documentation
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v0.1.0 or commit SHA
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal safe reproduction
+      description: Prefer the bundled demo or a public fixture with no private data.
+    validations:
+      required: true
+  - type: textarea
+    id: checks
+    attributes:
+      label: Commands and results
+      render: shell

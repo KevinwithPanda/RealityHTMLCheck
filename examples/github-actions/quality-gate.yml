@@ -1,0 +1,49 @@
+name: RealityCheck report gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install and build the application
+        run: npm ci && npm run build
+
+      - name: Start preview server
+        run: npm run preview -- --host 127.0.0.1 > /tmp/app-preview.log 2>&1 &
+
+      - name: Wait for the application
+        run: |
+          for attempt in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:4173 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/app-preview.log
+          exit 1
+
+      - name: Audit, gate, and upload evidence
+        uses: ./
+        with:
+          url: http://127.0.0.1:4173
+          mode: deep
+          fail-on: major
+          output: .realitycheck/pull-request
+          artifact-name: realitycheck-${{ github.event.pull_request.number || github.run_number }}
+          # Optional: signs every completed manifest without committing the key.
+          # attestation-private-key: ${{ secrets.REALITYCHECK_ED25519_PRIVATE_KEY }}
+          # attestation-trusted-key-id: ${{ vars.REALITYCHECK_ED25519_KEY_ID }}
+          # trust-policy: evidence-trust.json
+          # Optional portfolio debt gates (evidence is still uploaded before failure).
+          # max-open-risk-age-days: 30
+          # max-open-risks: 20
+          # max-recurring-risks: 10
+
+# In another repository, replace `uses: ./` with the published RealityCheck
+# repository and release tag, for example `owner/realitycheck@v0.3.0`.

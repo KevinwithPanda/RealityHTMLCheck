@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/evidence-trust-report-v1.json",
+  "title": "RealityCheck Evidence Trust Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "generatedAt", "state", "manifest", "policy", "signer", "checks", "errors"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "kind": { "const": "evidence-trust-report" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "state": { "enum": ["trusted", "rejected"] },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "artifactKind", "runId", "sha256"],
+      "properties": {
+        "path": { "const": "evidence-manifest.json" },
+        "artifactKind": { "enum": ["page-audit", "site-audit"] },
+        "runId": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "requireAttestation", "activeKeys"],
+      "properties": {
+        "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "requireAttestation": { "type": "boolean" },
+        "activeKeys": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "signer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["keyId", "name", "status"],
+      "properties": {
+        "keyId": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" },
+        "name": { "type": ["string", "null"], "minLength": 1 },
+        "status": { "enum": ["trusted", "revoked", "expired", "not-yet-valid", "unknown", "missing"] }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["integrity", "signature", "authorization"],
+      "properties": {
+        "integrity": { "type": "boolean" },
+        "signature": { "type": "boolean" },
+        "authorization": { "type": "boolean" }
+      }
+    },
+    "errors": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+  }
+}

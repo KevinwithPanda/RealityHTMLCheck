@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/verification-v1.json",
+  "title": "RealityCheck Page Verification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "before", "after", "scoreDelta", "counts", "resolved", "remaining", "new", "unverified", "threshold"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "before": { "$ref": "#/$defs/runScore" },
+    "after": { "$ref": "#/$defs/runScore" },
+    "scoreDelta": { "type": "integer", "minimum": -100, "maximum": 100 },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolved", "remaining", "new", "unverified"],
+      "properties": {
+        "resolved": { "$ref": "#/$defs/count" },
+        "remaining": { "$ref": "#/$defs/count" },
+        "worsened": { "$ref": "#/$defs/count" },
+        "new": { "$ref": "#/$defs/count" },
+        "unverified": { "$ref": "#/$defs/count" }
+      }
+    },
+    "resolved": { "$ref": "#/$defs/findings" },
+    "remaining": { "$ref": "#/$defs/findings" },
+    "worsened": { "$ref": "#/$defs/findings" },
+    "new": { "$ref": "#/$defs/findings" },
+    "unverified": { "$ref": "#/$defs/findings" },
+    "threshold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["failOn", "met"],
+      "properties": {
+        "failOn": { "enum": ["critical", "major", "minor", "never"] },
+        "scope": { "enum": ["regressions-only", "all-active-findings"] },
+        "met": { "type": "boolean" },
+        "coveragePercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "violations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "actual", "expected"],
+            "properties": {
+              "code": { "enum": ["severity-threshold", "minimum-score", "minimum-coverage", "max-waived-findings", "baseline-age", "policy-drift"] },
+              "actual": { "type": "number", "minimum": 0 },
+              "expected": { "type": "number", "minimum": 0 }
+            }
+          }
+        },
+        "baselineAgeDays": { "type": "number", "minimum": 0 },
+        "maximumBaselineAgeDays": { "type": "integer", "minimum": 1, "maximum": 3650 },
+        "beforePolicyFingerprint": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" },
+        "afterPolicyFingerprint": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    }
+  },
+  "$defs": {
+    "count": { "type": "integer", "minimum": 0 },
+    "runScore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runId", "score"],
+      "properties": {
+        "runId": { "type": "string", "minLength": 1 },
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "finishedAt": { "type": ["string", "null"], "format": "date-time" },
+        "mode": { "enum": ["quick", "deep"] },
+        "toolVersion": { "type": "string", "minLength": 1 },
+        "policyFingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "fingerprint", "ruleId", "scenarioId", "severity", "confidence", "title"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "fingerprint": { "type": "string", "minLength": 1 },
+        "ruleId": { "type": "string", "minLength": 1 },
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["critical", "major", "minor", "info"] },
+        "confidence": { "enum": ["high", "medium", "low"] },
+        "title": { "type": "string", "minLength": 1 },
+        "waiver": { "$ref": "#/$defs/waiver" },
+        "ownership": { "$ref": "#/$defs/ownership" },
+        "previousSeverity": { "enum": ["critical", "major", "minor", "info"] },
+        "previousConfidence": { "enum": ["high", "medium", "low"] },
+        "translations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["zh-CN"],
+          "properties": {
+            "zh-CN": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["title"],
+              "properties": { "title": { "type": "string", "minLength": 1 } }
+            }
+          }
+        }
+      }
+    },
+    "waiver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reason", "expires"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "owner": { "type": "string", "minLength": 1 },
+        "expires": { "type": "string", "format": "date" }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

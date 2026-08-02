@@ -1,0 +1,39 @@
+name: Scenario or detector proposal
+description: Propose a bounded, deterministic browser stress test or evidence rule.
+title: "[Scenario]: "
+labels: ["scenario", "proposal"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: What real failure does this expose that current scenarios miss?
+    validations:
+      required: true
+  - type: textarea
+    id: condition
+    attributes:
+      label: Deterministic condition
+      description: Exact mutation, emulation, interaction, or checkpoint sequence.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and detector
+      description: Which measurements prove a defect rather than a visual opinion?
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety and capability boundary
+      description: Required browser capabilities, exclusions, limits, cleanup, and unsupported behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: fixtures
+    attributes:
+      label: Positive and negative fixtures
+    validations:
+      required: true

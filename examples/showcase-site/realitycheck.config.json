@@ -1,0 +1,45 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4175/examples/showcase-site/index.html",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/showcase-runs",
+  "routes": [],
+  "checks": [
+    {
+      "id": "primary-navigation-named",
+      "selector": "nav",
+      "assertion": "accessible-name",
+      "severity": "major",
+      "title": "Primary navigation must have an accessible name",
+      "titleZh": "主导航必须具有可访问名称",
+      "remediation": "Add an aria-label or an associated heading to the primary navigation landmark.",
+      "remediationZh": "为主导航地标添加 aria-label 或关联标题。"
+    },
+    {
+      "id": "workspace-avatar-named",
+      "selector": ".profile img",
+      "assertion": "accessible-name",
+      "severity": "major",
+      "title": "The administrator avatar must be named",
+      "titleZh": "管理员头像必须具有替代名称",
+      "include": ["/examples/showcase-site/settings.html"]
+    },
+    {
+      "id": "customer-export-visible",
+      "selector": "[data-testid=customer-export]",
+      "assertion": "visible",
+      "severity": "critical",
+      "title": "Customer export must remain available",
+      "titleZh": "客户导出功能必须保持可用",
+      "include": ["/examples/showcase-site/customers.html"]
+    }
+  ],
+  "crawl": {
+    "enabled": true,
+    "maxPages": 8,
+    "maxDepth": 2,
+    "include": ["/examples/showcase-site/**"],
+    "exclude": ["/logout/**", "/signout/**", "/delete/**", "/remove/**", "/unsubscribe/**", "/purchase/**", "/checkout/**", "/oauth/**"]
+  }
+}

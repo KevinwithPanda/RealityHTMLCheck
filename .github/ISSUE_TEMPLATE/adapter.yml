@@ -1,0 +1,36 @@
+name: Browser adapter proposal
+description: Propose or improve an adapter that satisfies the RealityCheck protocol.
+title: "[Adapter]: "
+labels: ["adapter", "proposal"]
+body:
+  - type: input
+    id: runtime
+    attributes:
+      label: Browser runtime and version
+    validations:
+      required: true
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Supported capabilities
+      description: Context isolation, viewport, screenshots, console, network routing, CDP, and axe support.
+    validations:
+      required: true
+  - type: textarea
+    id: installation
+    attributes:
+      label: Explicit installation and update policy
+    validations:
+      required: true
+  - type: textarea
+    id: limitations
+    attributes:
+      label: Unsupported behavior and platform limitations
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: End-to-end fixture evidence
+    validations:
+      required: true

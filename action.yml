@@ -1,0 +1,305 @@
+name: RealityCheck browser quality gate
+description: Audit a running web application, upload evidence, and fail on verified browser regressions.
+author: RealityCheck contributors
+
+branding:
+  icon: activity
+  color: orange
+
+inputs:
+  url:
+    description: Target URL. May be omitted when baseUrl exists in the project config.
+    required: false
+    default: ""
+  config:
+    description: Path to realitycheck.config.json, relative to working-directory.
+    required: false
+    default: ""
+  mode:
+    description: quick or deep.
+    required: false
+    default: quick
+  fail-on:
+    description: critical, major, minor, or never.
+    required: false
+    default: major
+  baseline:
+    description: Optional report.json used as a regression-only baseline.
+    required: false
+    default: ""
+  output:
+    description: Artifact directory, relative to working-directory.
+    required: false
+    default: .realitycheck/runs
+  working-directory:
+    description: Directory containing the target project.
+    required: false
+    default: .
+  browser:
+    description: Optional Chrome, Edge, or Chromium executable path.
+    required: false
+    default: ""
+  allow-remote:
+    description: Confirm authorization to test a public target.
+    required: false
+    default: "false"
+  upload-artifact:
+    description: Upload the complete local evidence directory even when the gate fails.
+    required: false
+    default: "true"
+  artifact-name:
+    description: GitHub Actions artifact name.
+    required: false
+    default: realitycheck-report
+  attestation-private-key:
+    description: Optional Ed25519 private key PEM supplied from a GitHub Secret; signs each completed evidence manifest.
+    required: false
+    default: ""
+  attestation-trusted-key-id:
+    description: Optional expected sha256 key ID; signing fails if the Secret resolves to another public key.
+    required: false
+    default: ""
+  max-open-risk-age-days:
+    description: Optional portfolio gate for the oldest open risk age in days.
+    required: false
+    default: ""
+  max-open-risks:
+    description: Optional portfolio gate for the total number of open risks.
+    required: false
+    default: ""
+  max-recurring-risks:
+    description: Optional portfolio gate for the total number of recurring risks.
+    required: false
+    default: ""
+  trust-policy:
+    description: Optional evidence-trust.json path, relative to working-directory, used to evaluate every manifest.
+    required: false
+    default: ""
+
+outputs:
+  exit-code:
+    description: RealityCheck exit code (0 passed, 1 quality gate, 2 operational error).
+    value: ${{ steps.audit.outputs.exit-code }}
+  report-root:
+    description: Configured report root relative to the workspace.
+    value: ${{ steps.audit.outputs.report-root }}
+  catalog-path:
+    description: Portable HTML entry point for all evidence produced in the report root.
+    value: ${{ steps.catalog.outputs.catalog-path }}
+  risk-register-path:
+    description: Portable HTML view of deduplicated risks across reports found in the report root.
+    value: ${{ steps.risks.outputs.risk-register-path }}
+  attestation-count:
+    description: Number of evidence manifests signed with the configured Ed25519 key.
+    value: ${{ steps.attest.outputs.attestation-count }}
+  risk-exit-code:
+    description: Longitudinal risk policy exit code (0 passed, 1 policy gate, 2 operational error).
+    value: ${{ steps.risks.outputs.risk-exit-code }}
+  trust-report-count:
+    description: Number of evidence trust decision reports generated.
+    value: ${{ steps.trust.outputs.trust-report-count }}
+  trust-exit-code:
+    description: Evidence trust decision exit code (0 trusted/not configured, 1 rejected, 2 operational error).
+    value: ${{ steps.trust.outputs.trust-exit-code }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: "22"
+
+    - name: Set up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+
+    - name: Install the pinned RealityCheck adapter
+      shell: bash
+      run: npm ci --omit=dev --ignore-scripts --prefix "$GITHUB_ACTION_PATH"
+
+    - name: Run browser audit
+      id: audit
+      shell: bash
+      env:
+        RC_URL: ${{ inputs.url }}
+        RC_CONFIG: ${{ inputs.config }}
+        RC_MODE: ${{ inputs.mode }}
+        RC_FAIL_ON: ${{ inputs.fail-on }}
+        RC_BASELINE: ${{ inputs.baseline }}
+        RC_OUTPUT: ${{ inputs.output }}
+        RC_WORKDIR: ${{ inputs.working-directory }}
+        RC_BROWSER: ${{ inputs.browser }}
+        RC_ALLOW_REMOTE: ${{ inputs.allow-remote }}
+      run: |
+        cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
+        args=(audit)
+        if [ -n "$RC_URL" ]; then args+=("$RC_URL"); fi
+        if [ -n "$RC_CONFIG" ]; then args+=(--config "$RC_CONFIG"); fi
+        args+=(--mode "$RC_MODE" --fail-on "$RC_FAIL_ON" --output "$RC_OUTPUT")
+        if [ -n "$RC_BASELINE" ]; then args+=(--baseline "$RC_BASELINE"); fi
+        if [ -n "$RC_BROWSER" ]; then args+=(--browser "$RC_BROWSER"); fi
+        if [ "$RC_ALLOW_REMOTE" = "true" ]; then args+=(--allow-remote); fi
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" "${args[@]}"
+        status=$?
+        set -e
+        echo "exit-code=$status" >> "$GITHUB_OUTPUT"
+        echo "report-root=$RC_WORKDIR/$RC_OUTPUT" >> "$GITHUB_OUTPUT"
+
+    - name: Sign completed evidence manifests
+      id: attest
+      if: always()
+      shell: bash
+      env:
+        RC_ATTESTATION_PRIVATE_KEY: ${{ inputs.attestation-private-key }}
+        RC_ATTESTATION_TRUSTED_KEY_ID: ${{ inputs.attestation-trusted-key-id }}
+        RC_OUTPUT: ${{ inputs.output }}
+        RC_WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        if [ -z "$RC_ATTESTATION_PRIVATE_KEY" ]; then
+          echo "attestation-count=0" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
+        key_file="$RUNNER_TEMP/realitycheck-attestation-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.pem"
+        umask 077
+        printf '%s' "$RC_ATTESTATION_PRIVATE_KEY" > "$key_file"
+        trap 'rm -f -- "$key_file"' EXIT
+        count=0
+        status=0
+        while IFS= read -r -d '' manifest; do
+          args=(attest "$manifest" --private-key "$key_file")
+          if [ -n "$RC_ATTESTATION_TRUSTED_KEY_ID" ]; then args+=(--trusted-key "$RC_ATTESTATION_TRUSTED_KEY_ID"); fi
+          if node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" "${args[@]}"; then
+            count=$((count + 1))
+          else
+            status=2
+          fi
+        done < <(find "$RC_OUTPUT" -type f -name evidence-manifest.json -print0)
+        echo "attestation-count=$count" >> "$GITHUB_OUTPUT"
+        exit "$status"
+
+    - name: Evaluate evidence trust
+      id: trust
+      if: always()
+      shell: bash
+      env:
+        RC_TRUST_POLICY: ${{ inputs.trust-policy }}
+        RC_OUTPUT: ${{ inputs.output }}
+        RC_WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        if [ -z "$RC_TRUST_POLICY" ]; then
+          echo "trust-report-count=0" >> "$GITHUB_OUTPUT"
+          echo "trust-exit-code=0" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
+        count=0
+        status=0
+        while IFS= read -r -d '' manifest; do
+          set +e
+          node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" trust-report "$manifest" --trust-policy "$RC_TRUST_POLICY"
+          decision_status=$?
+          set -e
+          if [ "$decision_status" -le 1 ]; then count=$((count + 1)); fi
+          if [ "$decision_status" -gt "$status" ]; then status=$decision_status; fi
+        done < <(find "$RC_OUTPUT" -type f -name evidence-manifest.json -print0)
+        echo "trust-report-count=$count" >> "$GITHUB_OUTPUT"
+        echo "trust-exit-code=$status" >> "$GITHUB_OUTPUT"
+
+    - name: Build the evidence catalog
+      id: catalog
+      if: always()
+      shell: bash
+      env:
+        RC_OUTPUT: ${{ inputs.output }}
+        RC_WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
+        catalog_dir="$RC_OUTPUT/catalog"
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" catalog "$RC_OUTPUT" --output "$catalog_dir"
+        catalog_status=$?
+        set -e
+        if [ "$catalog_status" -eq 0 ]; then
+          echo "catalog-path=$RC_WORKDIR/$catalog_dir/catalog.html" >> "$GITHUB_OUTPUT"
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            printf '\n## RealityCheck evidence catalog\n\n' >> "$GITHUB_STEP_SUMMARY"
+            cat "$catalog_dir/catalog.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+        else
+          echo "No valid RealityCheck evidence was available for a catalog." >&2
+        fi
+
+    - name: Build the longitudinal risk register
+      id: risks
+      if: always()
+      shell: bash
+      env:
+        RC_OUTPUT: ${{ inputs.output }}
+        RC_WORKDIR: ${{ inputs.working-directory }}
+        RC_MAX_OPEN_RISK_AGE_DAYS: ${{ inputs.max-open-risk-age-days }}
+        RC_MAX_OPEN_RISKS: ${{ inputs.max-open-risks }}
+        RC_MAX_RECURRING_RISKS: ${{ inputs.max-recurring-risks }}
+      run: |
+        cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
+        risk_dir="$RC_OUTPUT/risk-register"
+        args=(risk-register "$RC_OUTPUT" --output "$risk_dir")
+        if [ -n "$RC_MAX_OPEN_RISK_AGE_DAYS" ]; then args+=(--max-open-age-days "$RC_MAX_OPEN_RISK_AGE_DAYS"); fi
+        if [ -n "$RC_MAX_OPEN_RISKS" ]; then args+=(--max-open-risks "$RC_MAX_OPEN_RISKS"); fi
+        if [ -n "$RC_MAX_RECURRING_RISKS" ]; then args+=(--max-recurring-risks "$RC_MAX_RECURRING_RISKS"); fi
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" "${args[@]}"
+        risk_status=$?
+        set -e
+        echo "risk-exit-code=$risk_status" >> "$GITHUB_OUTPUT"
+        if [ "$risk_status" -le 1 ]; then
+          echo "risk-register-path=$RC_WORKDIR/$risk_dir/risk-register.html" >> "$GITHUB_OUTPUT"
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            printf '\n## RealityCheck longitudinal risk register\n\n' >> "$GITHUB_STEP_SUMMARY"
+            cat "$risk_dir/risk-register.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ "$risk_status" -eq 1 ]; then echo "RealityCheck longitudinal risk policy failed; evidence was preserved."; fi
+        else
+          echo "No valid RealityCheck page reports were available for a risk register." >&2
+        fi
+
+    - name: Upload RealityCheck evidence
+      if: always() && inputs.upload-artifact == 'true'
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ github.workspace }}/${{ inputs.working-directory }}/${{ inputs.output }}
+        if-no-files-found: warn
+
+    - name: Enforce the RealityCheck result
+      if: always()
+      shell: bash
+      env:
+        RC_EXIT_CODE: ${{ steps.audit.outputs.exit-code }}
+        RC_ATTESTATION_OUTCOME: ${{ steps.attest.outcome }}
+        RC_RISK_EXIT_CODE: ${{ steps.risks.outputs.risk-exit-code }}
+        RC_TRUST_EXIT_CODE: ${{ steps.trust.outputs.trust-exit-code }}
+      run: |
+        if [ "$RC_ATTESTATION_OUTCOME" = "failure" ]; then
+          echo "RealityCheck evidence signing failed. Check that the configured Secret is a valid Ed25519 private key."
+          exit 2
+        fi
+        if [ "$RC_RISK_EXIT_CODE" = "2" ]; then
+          echo "RealityCheck could not build the longitudinal risk register."
+          exit 2
+        fi
+        if [ "$RC_TRUST_EXIT_CODE" = "2" ]; then
+          echo "RealityCheck could not evaluate the configured evidence trust policy."
+          exit 2
+        fi
+        if [ "$RC_EXIT_CODE" -eq 1 ]; then
+          echo "RealityCheck quality gate failed. Download the uploaded evidence report for exact findings."
+        elif [ "$RC_EXIT_CODE" -eq 2 ]; then
+          echo "RealityCheck could not complete. Review the audit log and environment doctor output."
+        fi
+        if [ "$RC_TRUST_EXIT_CODE" = "1" ]; then echo "RealityCheck evidence trust policy rejected one or more bundles."; fi
+        if [ "$RC_EXIT_CODE" -eq 1 ] || [ "$RC_RISK_EXIT_CODE" = "1" ] || [ "$RC_TRUST_EXIT_CODE" = "1" ]; then exit 1; fi
+        exit "$RC_EXIT_CODE"

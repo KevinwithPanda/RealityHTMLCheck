@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" role="img" aria-labelledby="title desc">
+  <title id="title">RealityCheck</title>
+  <desc id="desc">RealityCheck wordmark with a check and diagnostic pulse symbol.</desc>
+  <defs>
+    <linearGradient id="accent" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFB000"/>
+      <stop offset="1" stop-color="#FF5C35"/>
+    </linearGradient>
+  </defs>
+  <rect x="22" y="22" width="256" height="256" rx="62" fill="#11131A"/>
+  <path d="M53 158h45l15-41 25 88 20-59h86" fill="none" stroke="#4A5265" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m83 154 38 39 82-92" fill="none" stroke="url(#accent)" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="326" y="184" fill="#11131A" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="112" font-weight="760" letter-spacing="-5">Reality</text>
+  <text x="702" y="184" fill="#FF5C35" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="112" font-weight="760" letter-spacing="-5">Check</text>
+  <text x="333" y="234" fill="#636A7A" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="25" letter-spacing="2">BREAK THE UI BEFORE YOUR USERS DO</text>
+</svg>

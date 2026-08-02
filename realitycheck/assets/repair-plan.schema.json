@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/repair-plan-v1.json",
+  "title": "RealityCheck Repair Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "source", "summary", "items"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "kind": { "const": "repair-plan" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runId", "target", "reportPath"],
+      "properties": {
+        "runId": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "format": "uri" },
+        "reportPath": { "const": "report.json" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "critical", "major", "minor", "waived", "reviewRequired"],
+      "properties": {
+        "items": { "type": "integer", "minimum": 0 },
+        "critical": { "type": "integer", "minimum": 0 },
+        "major": { "type": "integer", "minimum": 0 },
+        "minor": { "type": "integer", "minimum": 0 },
+        "waived": { "type": "integer", "minimum": 0 },
+        "reviewRequired": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "items": { "type": "array", "items": { "$ref": "#/$defs/item" } }
+  },
+  "$defs": {
+    "remediation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "technicalHints"],
+      "properties": {
+        "summary": { "type": "string", "minLength": 1 },
+        "technicalHints": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "waiver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reason", "expires"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "owner": { "type": "string", "minLength": 1 },
+        "expires": { "type": "string", "format": "date" }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiredScenarios", "requireFingerprintAbsent", "requireHealthyBaseline", "forbidSameLevelRegression"],
+      "properties": {
+        "requiredScenarios": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "requireFingerprintAbsent": { "const": true },
+        "requireHealthyBaseline": { "const": true },
+        "forbidSameLevelRegression": { "const": true }
+      }
+    },
+    "translation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["zh-CN"],
+      "properties": {
+        "zh-CN": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["title", "remediation"],
+          "properties": {
+            "title": { "type": "string", "minLength": 1 },
+            "remediation": { "$ref": "#/$defs/remediation" }
+          }
+        }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findingId", "fingerprint", "ruleId", "scenarioId", "severity", "confidence", "title", "reportAnchor", "remediation", "verification"],
+      "properties": {
+        "findingId": { "type": "string", "minLength": 1 },
+        "fingerprint": { "type": "string", "minLength": 1 },
+        "ruleId": { "type": "string", "minLength": 1 },
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["critical", "major", "minor", "info"] },
+        "confidence": { "enum": ["high", "medium", "low"] },
+        "title": { "type": "string", "minLength": 1 },
+        "reportAnchor": { "type": "string", "pattern": "^report\\.html#[A-Za-z0-9_-]+$" },
+        "remediation": { "$ref": "#/$defs/remediation" },
+        "verification": { "$ref": "#/$defs/verification" },
+        "waiver": { "$ref": "#/$defs/waiver" },
+        "ownership": { "$ref": "#/$defs/ownership" },
+        "translations": { "$ref": "#/$defs/translation" }
+      }
+    }
+  }
+}

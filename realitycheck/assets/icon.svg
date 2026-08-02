@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-labelledby="title desc">
+  <title id="title">RealityCheck icon</title>
+  <desc id="desc">A check mark crossing a diagnostic pulse inside a dark rounded square.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#171923"/>
+      <stop offset="1" stop-color="#090A0F"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFB000"/>
+      <stop offset="1" stop-color="#FF5C35"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="92" fill="url(#bg)"/>
+  <path d="M58 213h71l22-62 38 132 30-89h123" fill="none" stroke="#485064" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="200" cy="200" r="124" fill="none" stroke="#2A2F3C" stroke-width="12"/>
+  <path d="m121 207 52 52 112-124" fill="none" stroke="url(#accent)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

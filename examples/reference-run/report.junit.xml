@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="RealityCheck Northstar Console - RealityCheck Demo" tests="6" time="42.000" timestamp="2026-08-01T04:00:00.000Z" failures="2" errors="0" skipped="0">
+  <properties>
+    <property name="realitycheck.runId" value="reference-demo-v0.3.0" />
+    <property name="realitycheck.score" value="78" />
+    <property name="realitycheck.failOn" value="major" />
+    <property name="realitycheck.target" value="http://127.0.0.1:4173/" />
+  </properties>
+  <testcase classname="RealityCheck.browser" name="baseline" time="4.100">
+    <system-out>RC-7AEAC80E10 [minor/high] The page logs an initialization error</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="mobile-375" time="6.200">
+    <failure message="1 finding(s) met the major threshold" type="RealityCheckQualityGate">RC-920864929A [major] Checkout review is outside the mobile viewport</failure>
+    <system-out>RC-920864929A [major/high] Checkout review is outside the mobile viewport</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="long-text" time="6.700">
+    <failure message="1 finding(s) met the major threshold" type="RealityCheckQualityGate">RC-FB7751933E [major] Long customer names are clipped without access to the full value</failure>
+    <system-out>RC-FB7751933E [major/high] Long customer names are clipped without access to the full value</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="rtl-arabic" time="5.900">
+    <system-out>RC-02B9DF270A [minor/high] Status alignment remains pinned to the physical right side</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="image-failure" time="5.500">
+    <system-out>RC-831A358F94 [minor/high] The customer avatar has no text alternative</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="keyboard-tab" time="7.100">
+    <system-out>RC-3E80D0B740 [minor/low] Interactive elements may not expose a visible focus indicator</system-out>
+  </testcase>
+</testsuite>

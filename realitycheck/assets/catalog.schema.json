@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/catalog-v1.json",
+  "title": "RealityCheck Artifact Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "generatedAt", "summary", "entries", "warnings"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "kind": { "const": "artifact-catalog" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifacts", "audits", "verifications", "trends", "attestations", "trustReports", "passing", "failing", "latestAuditScore"],
+      "properties": {
+        "artifacts": { "type": "integer", "minimum": 1 },
+        "audits": { "type": "integer", "minimum": 0 },
+        "verifications": { "type": "integer", "minimum": 0 },
+        "repairPlans": { "type": "integer", "minimum": 0 },
+        "trends": { "type": "integer", "minimum": 0 },
+        "attestations": { "type": "integer", "minimum": 0 },
+        "trustReports": { "type": "integer", "minimum": 0 },
+        "passing": { "type": "integer", "minimum": 0 },
+        "failing": { "type": "integer", "minimum": 0 },
+        "latestAuditScore": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 }
+      }
+    },
+    "entries": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/entry" } },
+    "warnings": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  },
+  "$defs": {
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["critical", "major", "minor", "info"],
+      "properties": {
+        "critical": { "type": "integer", "minimum": 0 },
+        "major": { "type": "integer", "minimum": 0 },
+        "minor": { "type": "integer", "minimum": 0 },
+        "info": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["covered", "total"],
+      "properties": {
+        "covered": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "gateViolation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "actual", "expected"],
+      "properties": {
+        "page": { "type": "string", "format": "uri" },
+        "code": { "enum": ["severity-threshold", "minimum-score", "minimum-coverage", "max-waived-findings", "baseline-age", "policy-drift"] },
+        "actual": { "type": "number", "minimum": 0 },
+        "expected": { "type": "number", "minimum": 0 }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "state", "title", "artifactPath", "visualPath"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["page-audit", "site-audit", "page-verification", "site-verification", "quality-trend", "repair-plan", "evidence-attestation", "evidence-trust-report"] },
+        "state": { "enum": ["passed", "failed", "informational"] },
+        "title": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "format": "uri" },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "finishedAt": { "type": ["string", "null"], "format": "date-time" },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "minimumScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "scoreDelta": { "type": "integer", "minimum": -100, "maximum": 100 },
+        "gateFailed": { "type": "boolean" },
+        "findings": { "$ref": "#/$defs/counts" },
+        "waivedFindings": { "type": "integer", "minimum": 0 },
+        "coverage": { "$ref": "#/$defs/coverage" },
+        "gateViolations": { "type": "array", "items": { "$ref": "#/$defs/gateViolation" } },
+        "owners": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "changes": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "artifactPath": { "type": "string", "pattern": "^(?![A-Za-z]:)(?!/).+\\.json$" },
+        "visualPath": { "type": "string", "pattern": "^(?![A-Za-z]:)(?!/).+\\.(?:html|md|json)$" }
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4175/examples/waiver-lab/index.html",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/waiver-lab",
+  "checks": [
+    {
+      "id": "legacy-export-visible",
+      "selector": "[data-testid=legacy-export]",
+      "assertion": "visible",
+      "severity": "major",
+      "title": "Legacy customer export must remain available",
+      "titleZh": "旧版客户导出功能必须保持可用",
+      "remediation": "Restore the export control or complete the tracked replacement before removing the waiver.",
+      "remediationZh": "恢复导出控件，或在移除豁免前完成已跟踪的替代方案。"
+    }
+  ],
+  "waivers": [
+    {
+      "id": "legacy-export-web-42",
+      "ruleId": "custom-legacy-export-visible",
+      "selector": "[data-testid=legacy-export]",
+      "reason": "Replacement is tracked in WEB-42",
+      "owner": "Web Platform",
+      "expires": "2099-12-31",
+      "include": ["/examples/waiver-lab/**"]
+    }
+  ]
+}

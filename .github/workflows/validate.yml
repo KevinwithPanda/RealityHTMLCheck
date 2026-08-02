@@ -1,0 +1,322 @@
+name: Validate skill
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install pinned browser adapter
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Compile report tooling
+        run: |
+          python -m py_compile realitycheck/scripts/report.py tests/test_skill.py scripts/install-skill.py
+          node --check realitycheck/scripts/audit.mjs
+          node --check realitycheck/scripts/artifact-validator.mjs
+          node --check realitycheck/scripts/config.mjs
+          node --check realitycheck/scripts/site-report.mjs
+
+      - name: Verify package contents
+        run: npm pack --dry-run
+
+      - name: Prove a repair with real browser runs
+        shell: bash
+        run: |
+          server_pid=""
+          cleanup() {
+            if [ -n "$server_pid" ]; then
+              kill "$server_pid" 2>/dev/null || true
+            fi
+          }
+          wait_for_demo() {
+            python - <<'PY'
+          import time
+          import urllib.request
+          for _ in range(50):
+              try:
+                  urllib.request.urlopen("http://127.0.0.1:4173", timeout=1)
+                  break
+              except Exception:
+                  time.sleep(0.1)
+          else:
+              raise SystemExit("demo server did not start")
+          PY
+          }
+          trap cleanup EXIT
+
+          python -m http.server 4173 --bind 127.0.0.1 --directory examples/demo-broken >/tmp/realitycheck-demo.log 2>&1 &
+          server_pid=$!
+          wait_for_demo
+          set +e
+          npm run audit -- http://127.0.0.1:4173 \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-before \
+            --fail-on major
+          status=$?
+          set -e
+          test "$status" -eq 1
+          before_report="$(find .realitycheck/ci-before -name report.json -print -quit)"
+          test -n "$before_report"
+
+          cleanup
+          wait "$server_pid" 2>/dev/null || true
+          server_pid=""
+          python -m http.server 4173 --bind 127.0.0.1 --directory examples/demo-fixed >/tmp/realitycheck-fixed.log 2>&1 &
+          server_pid=$!
+          wait_for_demo
+          npm run audit -- http://127.0.0.1:4173 \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-after \
+            --compare "$before_report" \
+            --fail-on major
+          after_report="$(find .realitycheck/ci-after -name report.json -print -quit)"
+          verification="$(find .realitycheck/ci-after -name verification.json -print -quit)"
+          test -n "$after_report"
+          test -n "$verification"
+          test -f "$(dirname "$after_report")/screenshots/mobile-375.png"
+          test -f "$(dirname "$after_report")/report.sarif"
+          test -f "$(dirname "$after_report")/report.junit.xml"
+          python - "$verification" <<'PY'
+          import json
+          import sys
+          verification = json.load(open(sys.argv[1], encoding="utf-8"))
+          assert verification["counts"]["resolved"] >= 6, verification
+          assert verification["counts"]["remaining"] == 0, verification
+          assert verification["counts"]["new"] == 0, verification
+          assert verification["counts"]["unverified"] == 0, verification
+          assert not verification["threshold"]["met"], verification
+          PY
+          node realitycheck/scripts/audit.mjs validate "$before_report" "$after_report" "$verification"
+
+      - name: Prove safe multi-page discovery and site reporting
+        shell: bash
+        run: |
+          python -m http.server 4174 --bind 127.0.0.1 --directory . >/tmp/realitycheck-site.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..50}; do
+            if curl --fail --silent http://127.0.0.1:4174/examples/showcase-site/index.html >/dev/null; then break; fi
+            sleep 0.1
+          done
+          set +e
+          npm run audit -- http://127.0.0.1:4174/examples/showcase-site/index.html \
+            --config examples/showcase-site/realitycheck.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-site \
+            --fail-on major
+          status=$?
+          set -e
+          test "$status" -eq 1
+          site_report="$(find .realitycheck/ci-site -name site-report.json -print -quit)"
+          test -n "$site_report"
+          python - "$site_report" <<'PY'
+          import json
+          import sys
+          site = json.load(open(sys.argv[1], encoding="utf-8"))
+          assert site["summary"]["pagesCompleted"] == 4, site
+          assert site["summary"]["pagesFailed"] == 0, site
+          assert site["summary"]["gateFailed"], site
+          assert not any("logout" in page["url"] for page in site["pages"]), site
+          PY
+          node realitycheck/scripts/audit.mjs validate "$site_report"
+
+      - name: Prove deep resilience detectors with positive and negative fixtures
+        shell: bash
+        run: |
+          python -m http.server 4176 --bind 127.0.0.1 --directory . >/tmp/realitycheck-lab.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..50}; do
+            if curl --fail --silent http://127.0.0.1:4176/examples/scenario-lab/broken.html >/dev/null; then break; fi
+            sleep 0.1
+          done
+          set +e
+          npm run audit -- http://127.0.0.1:4176/examples/scenario-lab/broken.html \
+            --mode deep \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-lab-broken \
+            --fail-on major
+          broken_status=$?
+          set -e
+          test "$broken_status" -eq 1
+          npm run audit -- http://127.0.0.1:4176/examples/scenario-lab/fixed.html \
+            --mode deep \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-lab-fixed \
+            --fail-on major
+          broken_report="$(find .realitycheck/ci-lab-broken -name report.json -print -quit)"
+          fixed_report="$(find .realitycheck/ci-lab-fixed -name report.json -print -quit)"
+          python - "$broken_report" "$fixed_report" <<'PY'
+          import json
+          import sys
+          broken = json.load(open(sys.argv[1], encoding="utf-8"))
+          fixed = json.load(open(sys.argv[2], encoding="utf-8"))
+          rules = {finding["ruleId"] for finding in broken["findings"]}
+          expected = {
+              "reduced-motion-persistent-animation",
+              "dark-scheme-low-contrast",
+              "missing-api-error-feedback",
+              "missing-empty-state",
+          }
+          assert expected <= rules, (expected - rules, broken)
+          assert fixed["score"]["overall"] == 100, fixed
+          assert not fixed["findings"], fixed
+          PY
+          node realitycheck/scripts/audit.mjs validate "$broken_report" "$fixed_report"
+
+      - name: Prove authenticated auditing without storage-state leakage
+        shell: bash
+        run: |
+          python -m http.server 4177 --bind 127.0.0.1 --directory . >/tmp/realitycheck-auth.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..50}; do
+            if curl --fail --silent http://127.0.0.1:4177/examples/authenticated-app/index.html >/dev/null; then break; fi
+            sleep 0.1
+          done
+          state_path="$RUNNER_TEMP/realitycheck-fixture-state.json"
+          node examples/authenticated-app/write-fixture-state.mjs http://127.0.0.1:4177 "$state_path"
+          set +e
+          npm run audit -- http://127.0.0.1:4177/examples/authenticated-app/index.html \
+            --config examples/authenticated-app/realitycheck.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-auth-anonymous \
+            --fail-on major
+          anonymous_status=$?
+          set -e
+          test "$anonymous_status" -eq 1
+          npm run audit -- http://127.0.0.1:4177/examples/authenticated-app/index.html \
+            --config examples/authenticated-app/realitycheck.config.json \
+            --storage-state "$state_path" \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-authenticated \
+            --fail-on major
+          anonymous_report="$(find .realitycheck/ci-auth-anonymous -name report.json -print -quit)"
+          authenticated_report="$(find .realitycheck/ci-authenticated -name report.json -print -quit)"
+          python - "$anonymous_report" "$authenticated_report" "$state_path" <<'PY'
+          import json
+          import pathlib
+          import sys
+          anonymous = json.load(open(sys.argv[1], encoding="utf-8"))
+          authenticated = json.load(open(sys.argv[2], encoding="utf-8"))
+          assert {finding["ruleId"] for finding in anonymous["findings"]} == {"custom-admin-panel-visible"}, anonymous
+          assert authenticated["score"]["overall"] == 100, authenticated
+          assert not authenticated["findings"], authenticated
+          serialized = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
+          state = pathlib.Path(sys.argv[3]).read_text(encoding="utf-8")
+          assert sys.argv[3] not in serialized
+          assert "fixture-authenticated" in state and "fixture-authenticated" not in serialized
+          PY
+          node realitycheck/scripts/audit.mjs validate "$anonymous_report" "$authenticated_report"
+          set +e
+          npm run audit -- http://127.0.0.1:4177/examples/accessibility-lab/broken.html \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-accessibility-broken \
+            --fail-on major
+          accessibility_status=$?
+          set -e
+          test "$accessibility_status" -eq 1
+          npm run audit -- http://127.0.0.1:4177/examples/accessibility-lab/fixed.html \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-accessibility-fixed \
+            --fail-on major
+          accessibility_broken="$(find .realitycheck/ci-accessibility-broken -name report.json -print -quit)"
+          accessibility_fixed="$(find .realitycheck/ci-accessibility-fixed -name report.json -print -quit)"
+          python - "$accessibility_broken" "$accessibility_fixed" <<'PY'
+          import json
+          import sys
+          broken = json.load(open(sys.argv[1], encoding="utf-8"))
+          fixed = json.load(open(sys.argv[2], encoding="utf-8"))
+          expected = {
+              "control-accessible-name",
+              "document-language-missing",
+              "document-title-missing",
+              "duplicate-element-id",
+              "heading-level-skip",
+          }
+          assert {finding["ruleId"] for finding in broken["findings"]} == expected, broken
+          assert fixed["score"]["overall"] == 100 and not fixed["findings"], fixed
+          PY
+          node realitycheck/scripts/audit.mjs validate "$accessibility_broken" "$accessibility_fixed"
+          set +e
+          npm run audit -- http://127.0.0.1:4177/examples/waiver-lab/index.html --config examples/waiver-lab/unwaived.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-waiver-unwaived \
+            --fail-on major
+          waiver_unwaived_status=$?
+          set -e
+          test "$waiver_unwaived_status" -eq 1
+          npm run audit -- http://127.0.0.1:4177/examples/waiver-lab/index.html --config examples/waiver-lab/realitycheck.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-waiver-governed \
+            --fail-on major
+          waiver_unwaived="$(find .realitycheck/ci-waiver-unwaived -name report.json -print -quit)"
+          waiver_governed="$(find .realitycheck/ci-waiver-governed -name report.json -print -quit)"
+          python - "$waiver_unwaived" "$waiver_governed" <<'PY'
+          import json
+          import sys
+          unwaived = json.load(open(sys.argv[1], encoding="utf-8"))
+          governed = json.load(open(sys.argv[2], encoding="utf-8"))
+          assert unwaived["findings"][0]["ruleId"] == "custom-legacy-export-visible", unwaived
+          assert unwaived["score"]["overall"] == 96 and unwaived["threshold"]["met"], unwaived
+          assert governed["findings"][0]["fingerprint"] == unwaived["findings"][0]["fingerprint"], governed
+          assert governed["findings"][0]["waiver"]["id"] == "legacy-export-web-42", governed
+          assert governed["score"]["overall"] == 100 and governed["score"]["waivedFindings"] == 1, governed
+          assert not governed["threshold"]["met"], governed
+          PY
+          node realitycheck/scripts/audit.mjs validate "$waiver_unwaived" "$waiver_governed"
+          node realitycheck/scripts/audit.mjs validate examples/waiver-lab/unwaived.config.json examples/waiver-lab/realitycheck.config.json
+
+      - name: Validate reference report
+        run: python realitycheck/scripts/report.py validate examples/reference-run/report.json --fail-on critical
+
+      - name: Verify the major quality gate
+        shell: bash
+        run: |
+          set +e
+          python realitycheck/scripts/report.py validate examples/reference-run/report.json --fail-on major
+          status=$?
+          set -e
+          test "$status" -eq 1
+
+      - name: Upload real-browser evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: realitycheck-browser-report
+          path: |
+            .realitycheck/ci-before
+            .realitycheck/ci-after
+            .realitycheck/ci-site
+            .realitycheck/ci-lab-broken
+            .realitycheck/ci-lab-fixed
+            .realitycheck/ci-auth-anonymous
+            .realitycheck/ci-authenticated
+            .realitycheck/ci-accessibility-broken
+            .realitycheck/ci-accessibility-fixed
+            .realitycheck/ci-waiver-unwaived
+            .realitycheck/ci-waiver-governed
+          if-no-files-found: error

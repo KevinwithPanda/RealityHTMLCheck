@@ -1,0 +1,44 @@
+{
+  "name": "realitycheck-web-audit",
+  "version": "0.3.0",
+  "description": "Break your localhost before your users do — evidence-first browser stress tests and verified fixes.",
+  "type": "module",
+  "bin": {
+    "realitycheck": "realitycheck/scripts/audit.mjs"
+  },
+  "scripts": {
+    "audit": "node realitycheck/scripts/audit.mjs audit",
+    "demo": "node realitycheck/scripts/audit.mjs audit http://127.0.0.1:4173 --fail-on major",
+    "test": "python -m unittest discover -s tests -v && node --test tests/*.test.mjs",
+    "test:python": "python -m unittest discover -s tests -v",
+    "test:node": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "playwright-core": "1.61.1"
+  },
+  "keywords": [
+    "codex",
+    "playwright",
+    "visual-testing",
+    "accessibility",
+    "responsive",
+    "qa",
+    "ai"
+  ],
+  "license": "MIT",
+  "files": [
+    "realitycheck/SKILL.md",
+    "realitycheck/agents",
+    "realitycheck/assets",
+    "realitycheck/references",
+    "realitycheck/scripts/*.mjs",
+    "realitycheck/scripts/*.py",
+    "README.md",
+    "LICENSE"
+  ]
+}

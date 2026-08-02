@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/trend-v1.json",
+  "title": "RealityCheck Quality Trend",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "generatedAt", "summary", "series", "warnings"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "kind": { "const": "quality-trend" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runs", "targets", "latestAverage", "regressedTargets", "improvedTargets"],
+      "properties": {
+        "runs": { "type": "integer", "minimum": 1 },
+        "targets": { "type": "integer", "minimum": 1 },
+        "latestAverage": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "regressedTargets": { "type": "integer", "minimum": 0 },
+        "improvedTargets": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "series": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/series" } },
+    "warnings": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  },
+  "$defs": {
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["critical", "major", "minor", "info"],
+      "properties": {
+        "critical": { "type": "integer", "minimum": 0 },
+        "major": { "type": "integer", "minimum": 0 },
+        "minor": { "type": "integer", "minimum": 0 },
+        "info": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runId", "startedAt", "finishedAt", "score", "gateFailed", "findings", "coverage", "reportPath"],
+      "properties": {
+        "runId": { "type": "string", "minLength": 1 },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "finishedAt": { "type": "string", "format": "date-time" },
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "gateFailed": { "type": "boolean" },
+        "findings": { "$ref": "#/$defs/counts" },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["covered", "total"],
+          "properties": {
+            "covered": { "type": "integer", "minimum": 0 },
+            "total": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "reportPath": { "type": "string", "pattern": "^(?![A-Za-z]:)(?!/).+\\.(?:html|json)$" }
+      }
+    },
+    "series": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "title", "firstScore", "latestScore", "scoreDelta", "points"],
+      "properties": {
+        "target": { "type": "string", "format": "uri" },
+        "title": { "type": "string" },
+        "firstScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "latestScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "scoreDelta": { "type": "integer", "minimum": -100, "maximum": 100 },
+        "points": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/point" } },
+        "translations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["zh-CN"],
+          "properties": {
+            "zh-CN": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["title"],
+              "properties": { "title": { "type": "string" } }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "../realitycheck/assets/evidence-trust.schema.json",
+  "schemaVersion": "1",
+  "kind": "evidence-trust-policy",
+  "requireAttestation": true,
+  "keys": [
+    {
+      "keyId": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "name": "Replace with the approved release CI key",
+      "status": "trusted",
+      "notBefore": "2026-01-01T00:00:00Z",
+      "notAfter": "2027-01-01T00:00:00Z"
+    }
+  ]
+}

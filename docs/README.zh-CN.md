@@ -1,0 +1,298 @@
+# RealityCheck
+
+> **先把本地网站压出问题，再修掉问题，最后证明真的修好了。**
+
+RealityCheck 是面向 Codex 的本地 Web 核查 skill，也提供可独立运行的浏览器 CLI。它不只生成静态报告：在你明确授权后，Codex 会依据真实浏览器证据修改应用源码，再用同一检测器复测，并生成修复前后对比。
+
+当前版本：`v0.3.0 Beta`。未执行的场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
+
+可直接打开包含 15 个真实入口的[演示中心](../examples/index.html)：除了参考报告、全站夹具与 Deep 修复证明，还能查看稳定最新入口、100 份产物目录、68 次运行的风险台账、失败组合门禁，以及可信/拒绝两类签名决策。
+
+## 一句话使用
+
+一次安装后，只需要告诉 Codex：
+
+```text
+使用 $realitycheck 核查当前应用，修复高置信度的主要问题，并证明每项修复真的有效。
+```
+
+如果当前仓库有可识别的启动脚本或已有本地服务，不必提供网址。RealityCheck 会自动：
+
+1. 找到或启动应用；
+2. 在安全边界内发现配置路由，并用真实浏览器和独立上下文执行压力场景；
+3. 保存 DOM 测量值与截图；
+4. 仅修复你已授权且证据充分的应用根因；
+5. 用原检测器复跑，输出修复前后对比。
+
+只核查、不改源码：
+
+```text
+使用 $realitycheck 核查当前应用，不要修改源码。
+```
+
+## 安装 skill
+
+在克隆后的仓库中运行一次：
+
+```bash
+python scripts/install-skill.py
+```
+
+如果 Codex 没有自动刷新 skill 列表，请重新加载。再次执行安装命令会先把旧版本保存为带时间戳的备份。
+
+## 为什么报告可信
+
+RealityCheck 不会只看截图就主观评价“好不好”。计分问题必须包含检测规则、稳定元素定位、测量值、复现步骤和证据，并与无压力的桌面基线比较：
+
+- `existing`：基线已经存在；
+- `new`：只在压力场景出现；
+- `worsened`：相比基线可测量地变严重；
+- `resolved`：同一稳定指纹在成功完成的证明场景中不再复现。
+
+低置信度观察不会扣分，也不会让 CI 失败。如果证明场景被跳过、不受支持或运行失败，结果只能是“未验证”，不能冒充“已解决”。
+
+## 独立 CLI
+
+不通过 Codex 也可以直接运行真实浏览器核查：
+
+```bash
+npm install
+npm run audit -- http://localhost:3000
+```
+
+环境要求：Node.js 20+、Python 3.11+，以及已经安装的 Chrome、Edge 或 Chromium。项目只安装固定版本的 Playwright Core，不会偷偷下载浏览器。
+
+深度核查和修复前后验证：
+
+```bash
+npm run audit -- http://localhost:3000 --mode deep --fail-on major
+npm run audit -- http://localhost:3000 --compare .realitycheck/runs/修复前/report.json
+npm run audit -- http://localhost:3000 --baseline .realitycheck/baseline/report.json
+npx realitycheck audit --config realitycheck.config.json
+```
+
+第二条命令会生成新报告，以及 `verification.json`、中英双语 `verification.md` 和可视化 `verification.html`。退出码 `1` 表示命中了质量门禁，不代表报告生成失败。
+
+首次配置或排查环境时可以运行：
+
+```bash
+npx realitycheck init
+npx realitycheck doctor
+```
+
+## 全站核查与项目规则
+
+`realitycheck.config.json` 可以把单页检查升级成有边界的项目质量策略。命令行参数优先于配置；配置中的相对路径以配置文件所在目录为准。
+
+```json
+{
+  "$schema": "./node_modules/realitycheck-web-audit/realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:3000/",
+  "mode": "quick",
+  "failOn": "major",
+  "qualityGate": {
+    "minimumScore": 90,
+    "minimumCoveragePercent": 90,
+    "maxWaivedFindings": 2
+  },
+  "baselinePolicy": {
+    "maxAgeDays": 30,
+    "requireSamePolicy": true
+  },
+  "owners": [
+    {
+      "id": "web-platform",
+      "name": "Web Platform",
+      "ruleIds": ["custom-primary-navigation-named"],
+      "include": ["/app/**"]
+    }
+  ],
+  "crawl": {
+    "enabled": true,
+    "maxPages": 20,
+    "maxDepth": 2,
+    "include": ["/app/**"],
+    "exclude": ["/logout/**", "/checkout/**"]
+  },
+  "checks": [
+    {
+      "id": "primary-navigation-named",
+      "selector": "nav",
+      "assertion": "accessible-name",
+      "severity": "major"
+    }
+  ],
+  "budgets": {
+    "navigationMs": 2500,
+    "requests": 80,
+    "transferKb": 1500,
+    "domNodes": 1800,
+    "severity": "major"
+  },
+  "waivers": [
+    {
+      "id": "legacy-toolbar-web-42",
+      "ruleId": "custom-toolbar-minimum-size",
+      "reason": "替换工作由 WEB-42 跟踪",
+      "owner": "Web Platform",
+      "expires": "2027-01-31",
+      "include": ["/app/legacy/**"]
+    }
+  ]
+}
+```
+
+爬虫只跟随同源页面链接，会去掉查询参数和片段，不点击控件、不提交表单，并默认拒绝退出、购买、删除与 OAuth 等危险路径。每个页面都在隔离浏览器上下文中执行；单页运行失败不会抹掉其他页面的证据。
+
+自定义检查仅允许声明式断言：`exists`、`visible`、`enabled`、`accessible-name`、`attribute`、`count`、`no-horizontal-overflow`、`minimum-size`，并可用路由 glob 限定范围。任意 JavaScript 会被拒绝。需要登录的应用可通过 `--storage-state` 或 `REALITYCHECK_STORAGE_STATE` 加载 Playwright 登录状态；路径、Cookie、Token 和具体值都不会进入报告。
+
+受治理的豁免可以处理企业里的已知欠账，但不会隐藏问题。每条豁免必须指定精确规则、原因和到期日，也可以限定负责人、选择器和路由。报告仍保留问题、截图、修复建议和豁免元数据，只在有效期内把它排除出评分与门禁；`doctor` 会阻止过期策略，SARIF 会写入外部抑制，JUnit 则保留证据但不让该场景失败。
+
+发布策略不只是一条严重级别阈值。`qualityGate` 可以要求最低确定性评分、成功完成场景的最低比例，以及最多允许的有效豁免数。每一项失败条件都会写入 JSON、由 CLI 打印，并在单页报告中用中英文解释。严格对比和“只拦新增回归”的基线流程都会保留这些策略限制，不能借进入验证流程绕过。`policy.config.json` 夹具故意设置 `failOn: "never"`，但评分 **96/100** 仍低于要求的 **100**，因此门禁失败。
+
+问题责任归属会把证据变成可落实的工作，又不会根据页面文案猜团队。`owners` 可同时匹配精确规则 ID 和路由 glob；只有一个匹配时，稳定团队 ID 与名称才会进入单页/全站报告、前后对比、修复计划和证据目录。若多个团队重叠匹配，问题会保持未分配并产生警告，避免把工作静默派错。它与豁免负责人不是一回事：问题归属回答“谁来处理”，豁免负责人记录“谁接受了临时例外”。
+
+回归基线也可以过期。`baselinePolicy.maxAgeDays` 限制 `--baseline` 容忍已知欠账的有效期；`requireSamePolicy` 则防止删除自定义检查、改变预算、切换场景模式或检测器版本后，把“检测器变了”伪装成“问题修好了”。每次独立核查都会记录非敏感检测策略的 SHA-256 指纹。RealityCheck 仍会完整生成单页/全站验证，再写入 `baseline-age` 或 `policy-drift` 违规。该策略只约束回归门禁基线；显式 `--compare` 仍可用于历史分析。
+
+合成的 [`examples/authenticated-app`](../examples/authenticated-app) 夹具端到端证明了这条边界：匿名运行因管理面板规则未满足而得到 96/100；同一页面加载仅限回环地址的合成状态后得到 100/100。CI 还会断言状态路径和合成值都没有进入 `report.json`。
+
+成对的 [`examples/accessibility-lab`](../examples/accessibility-lab) 夹具用于验证不依赖 axe-core 的保守规则。负例会产生 5 个实测问题：缺少语言、缺少标题、重复 ID、标题跳级和无名称图标控件，得分 **93/100**；修复版为 **100/100**。这些检查扩大了基线覆盖，但不声称 WCAG 合规。
+
+[`examples/waiver-lab`](../examples/waiver-lab) 可以直接演示治理效果。使用 `unwaived.config.json` 核查时，缺失的导出控件会得到 **96/100** 并触发 Major 门禁；改用 `realitycheck.config.json` 后，同一个问题仍完整显示，但命名豁免让结果变为 **100/100** 且门禁通过。报告会明确展示负责人、原因和到期日，不会假装缺陷已经消失。
+
+多页面核查会额外生成 `site-report.json`、`site-report.md` 和双语 `site-report.html`。把旧的 `site-report.json` 传给 `--baseline`，即可容忍已知欠账，同时阻止全站范围内的新增、恶化或未验证回归。
+
+## 默认场景
+
+| 场景 | Quick | 核查目标 |
+| --- | :---: | --- |
+| Baseline | 是 | 运行时/资源问题、无名称控件、文档语言与标题、重复 ID、标题结构、自定义规则和性能预算 |
+| 375px 手机 | 是 | 离屏操作、固定宽度和页面横向溢出 |
+| 长文本 | 是 | 中文、emoji、无空格长串造成的新截断或恶化 |
+| RTL 阿拉伯语 | 是 | 物理方向 CSS 和对齐假设 |
+| 图片失败 | 是 | 替代文本缺失和媒体失败韧性 |
+| 键盘 Tab | 是 | 不触发业务操作的焦点可达性与可见性 |
+| 减少动态 | Deep | 用户请求减少动态后仍持续运行的非进度动画 |
+| 深色模式 | Deep | 按计算前景色/背景色近似核查已声明深色主题的文字对比度 |
+| 慢接口 | Deep | 有边界的同源请求延迟与恢复 |
+| 接口错误 | Deep | 安全同源 GET 请求返回 503 后是否提供可见恢复反馈 |
+| 空数据 | Deep | 安全 JSON 数组变为空后的空状态 |
+| 200% 页面缩放 | Deep | 仅在适配器支持真实缩放时运行 |
+| axe-core | Deep | 仅在项目已经提供 axe 时运行 |
+
+## 可操作报告
+
+每次运行默认保存在目标仓库：
+
+```text
+.realitycheck/runs/<run-id>/
+├── audit-input.json
+├── report.json
+├── report.md
+├── report.html
+├── report.sarif
+├── report.junit.xml
+├── repair-plan.json
+├── repair-plan.md
+├── evidence-manifest.json
+└── screenshots/
+```
+
+输出根目录还会生成稳定的 `latest.json` 与双语 `latest.html` 入口。只有单页/全站报告以及用户要求的前后对比完整写出后，它们才会更新，并用可移植相对路径指向带时间戳的产物。历史运行不会被覆盖，而看板和书签也不用再猜运行 ID。门禁未通过但完整生成的核查会成为最新证据；中途失败的半成品不会。
+
+`evidence-manifest.json` 会记录完整运行中的每个文件，包括可移植路径、字节数、媒体类型和 SHA-256 摘要。`realitycheck validate` 会重新计算摘要，因此报告或截图缺失、截断或后来被修改时都会失败，而不会继续伪装成原始证据。可选的 `attest` 命令会先复核整包完整性，再用 Ed25519 私钥签署清单；产物只包含公钥、稳定 `sha256:` 密钥 ID 和签名，不包含私钥。稳定 `latest` 入口只会在验签及配置的签名者授权都通过后挂载签名凭证。
+
+签名有效只证明持有对应私钥，并不自动代表组织授权。企业归档应把 [`examples/evidence-trust.example.json`](../examples/evidence-trust.example.json) 复制为独立版本化的信任注册表，在其中维护可信/已撤销密钥和生效窗口，再生成可供人审阅的中英双语决策：
+
+```bash
+npx realitycheck attest .realitycheck/runs/RUN/evidence-manifest.json \
+  --private-key ci-ed25519.pem
+npx realitycheck validate .realitycheck/runs/RUN \
+  --trust-policy evidence-trust.json
+npx realitycheck trust-report .realitycheck/runs/RUN/evidence-manifest.json \
+  --trust-policy evidence-trust.json
+```
+
+`trust-report` 会分别判断文件完整性、Ed25519 签名和签名者授权；即使全部密钥被紧急撤销或签名文件损坏，也会保留带明确原因的 `REJECTED` 报告，而验证和签名命令继续 fail-closed。
+
+执行前后对比后，还会增加 `verification.json`、中英双语 `verification.md`，以及可切换语言的独立 `verification.html` 看板。每次单页渲染还会输出通过 Schema 校验的 JSON 与 Markdown 修复交接清单，其中包含稳定指纹、证明场景、修复建议和验收条件。全站核查会生成站点看板；趋势聚合会生成 `trend.json`、`trend.md` 与双语 `trend.html`。产物目录可把这些结果汇总成一个可搜索、可筛选的双语入口，不依赖数据库或在线服务。
+
+HTML 报告完全离线，可切换中文/英文，不加载远程资源。每个有效问题都有“复制修复并验证任务”按钮；也可以先筛选问题、选择当前显示项，再一次复制只包含稳定问题 ID 与证明场景的批量修复计划。这些操作只准备有边界的 Codex 任务，静态页面本身不会绕过授权直接修改源码。
+
+可以查看仓库中的[可视化参考报告](../examples/reference-run/report.html)和 [Markdown 报告](../examples/reference-run/report.md)。它们用于演示渲染器与 CI 合同；判断其他应用前必须重新运行核查。
+
+## 运行故障 Demo
+
+终端 1：
+
+```bash
+python -m http.server 4173 --bind 127.0.0.1 --directory examples/demo-broken
+```
+
+终端 2：
+
+```bash
+npm run audit -- http://127.0.0.1:4173 --fail-on never
+```
+
+Demo 故意包含固定宽度、手机端操作不可达、长文本截断、图片替代文本缺失、控制台错误、弱焦点样式和空数据故障。Quick 的六个真实浏览器场景通常可在数秒内完成。
+
+[`examples/demo-fixed`](../examples/demo-fixed) 包含对应的应用层修复。CI 会让故障版和修正版使用同一个网址，分别执行全新的真实浏览器核查；只要旧问题仍能复现，或出现新增/未验证问题，流程就失败。v0.2 开发时的本地证明结果为：评分从 **69 提升到 100**，**7 个已解决、0 个仍存在、0 个新增、0 个未验证**。
+
+### 运行 Deep 韧性实验室
+
+先从仓库根目录启动静态服务，再核查成对夹具：
+
+```bash
+python -m http.server 4175 --bind 127.0.0.1 --directory .
+npm run audit -- http://127.0.0.1:4175/examples/scenario-lab/broken.html --mode deep --fail-on never
+npm run audit -- http://127.0.0.1:4175/examples/scenario-lab/fixed.html --mode deep --fail-on major
+```
+
+负例会稳定暴露持续动态、深色模式低对比度、缺少 503 恢复反馈、缺少空状态四类问题；正例修复同样四个条件。v0.3 本地实测结果为：故障版 **86/100、4 个问题**，修复版 **100/100、0 个问题**。
+
+## 安全边界
+
+- 默认只允许 localhost、回环地址和私网；公网必须明确确认授权。
+- 核查不会点击购买、删除、发布、发送、登录、同意或提交动作。
+- 报告会脱敏敏感字段、查询参数、Bearer Token 和类似 JWT 的文本。
+- 网络压力只在独立上下文中作用于安全的同源请求。
+- Audit 模式只读；只有明确的修复或加固请求才允许修改源码。
+- 无云服务、无遥测、无隐藏模型调用、无隐藏浏览器下载。
+
+只对你拥有或获准测试的应用使用 RealityCheck。
+
+## CI 与底层工具
+
+Python 报告工具不依赖第三方包。每次渲染都会同时输出 HTML、Markdown、JSON、SARIF 2.1.0 与 JUnit XML：
+
+```bash
+python realitycheck/scripts/report.py validate \
+  .realitycheck/runs/<run-id>/report.json \
+  --fail-on major
+
+python realitycheck/scripts/report.py compare \
+  .realitycheck/runs/<before>/report.json \
+  .realitycheck/runs/<after>/report.json \
+  --fail-on major
+
+python realitycheck/scripts/report.py trend .realitycheck/runs \
+  --output .realitycheck/trends
+
+npx realitycheck validate .realitycheck/runs
+
+npx realitycheck catalog .realitycheck/runs \
+  --output .realitycheck/catalog
+
+npx realitycheck risk-register .realitycheck/runs \
+  --output .realitycheck/risks \
+  --max-open-age-days 30 \
+  --max-open-risks 20 \
+  --max-recurring-risks 10
+```
+
+`validate` 会使用标准兼容的 JSON Schema 校验器，递归验证项目配置、报告、修复/验证产物、趋势、目录、最新入口、完整性清单和风险台账。`catalog` 会先校验发现的每份源产物，明确警告并跳过不兼容旧文件，再生成可搜索的产物目录。`risk-register` 按精确目标与稳定指纹聚合页面问题，记录首次/最近出现时间和重复次数，再结合最新证明场景与可用策略指纹保守地区分开放、已豁免、已解决与未验证风险；场景缺失或策略漂移都会明确保持未验证。开放风险总数、最长开放天数和反复风险总数均可设为组合门禁，失败时仍保留全部 JSON、双语 HTML、Markdown 和防公式注入 CSV 证据。所有合同位于 [`realitycheck/assets`](../realitycheck/assets)。
+
+本仓库也可直接作为复合 GitHub Action 使用。Action 会先执行页面/全站核查，可选地签署每份清单并按信任注册表生成决策，再始终尝试生成产物目录与长期风险台账；它会在页面、组合风险或信任门禁失败时先上传完整证据，之后才让作业失败。Action 暴露目录、风险、签名数、信任决策数及各层退出码，并支持 `max-open-risk-age-days`、`max-open-risks` 与 `max-recurring-risks` 三类组合预算。参考 [`examples/github-actions/quality-gate.yml`](../examples/github-actions/quality-gate.yml) 可建立只阻止新增回归的门禁。
+
+项目目前仍以 Codex 为主要交互入口，但独立 CLI 和报告工具可以直接在克隆仓库中使用。路线图、贡献和安全说明见 [`ROADMAP.md`](../ROADMAP.md)、[`CONTRIBUTING.md`](../CONTRIBUTING.md) 与 [`SECURITY.md`](../SECURITY.md)。项目采用 [MIT License](../LICENSE)。

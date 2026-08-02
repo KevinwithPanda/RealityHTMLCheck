@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.3.0",
+  "kind": "evidence-manifest",
+  "generatedAt": "2026-08-01T04:00:42.000Z",
+  "source": {
+    "artifactKind": "page-audit",
+    "runId": "reference-demo-v0.3.0",
+    "target": "http://127.0.0.1:4173/"
+  },
+  "algorithm": "sha256",
+  "summary": {
+    "files": 8,
+    "bytes": 126518
+  },
+  "files": [
+    {
+      "path": "audit-input.json",
+      "bytes": 14140,
+      "sha256": "fb927d3d8721c8ff9e48e77a02dc6a0e585b28dcbc2f130217da4c4d56c5f9d5",
+      "mediaType": "application/json"
+    },
+    {
+      "path": "repair-plan.json",
+      "bytes": 8137,
+      "sha256": "62b2fe202cf890d9ee4ceab2ac18392a28eeed676d7dfbc0070181c9b9a51c7c",
+      "mediaType": "application/json"
+    },
+    {
+      "path": "repair-plan.md",
+      "bytes": 3500,
+      "sha256": "8bf3d20908cc0c48d79d70a0334ea9310483cb35d76ebff0fe698ef2503e4b1f",
+      "mediaType": "text/markdown"
+    },
+    {
+      "path": "report.html",
+      "bytes": 62344,
+      "sha256": "492ff91f1b7497768ad13a3d66dcfbee21f6d6afffcdb1fd16b5ba9dcbd32dd7",
+      "mediaType": "text/html"
+    },
+    {
+      "path": "report.json",
+      "bytes": 15967,
+      "sha256": "7749c386f807e8fd48418f9ff4b5a246162c0c99613fa82f731580eec1d5f472",
+      "mediaType": "application/json"
+    },
+    {
+      "path": "report.junit.xml",
+      "bytes": 2066,
+      "sha256": "0b8838d54d88bf6ff54e0a7c339cb2cf66d3dadc5978ae3f7d0bed643a557777",
+      "mediaType": "application/xml"
+    },
+    {
+      "path": "report.md",
+      "bytes": 6737,
+      "sha256": "81bc88009a14ec2a12ed47e6447a6297c70d6046bf6253cea1013f7d7c564842",
+      "mediaType": "text/markdown"
+    },
+    {
+      "path": "report.sarif",
+      "bytes": 13627,
+      "sha256": "b8c603ab4108c2ca2a6095eca88e7e7804030bb5ae87f24fabfd9c78f4f0b05e",
+      "mediaType": "application/sarif+json"
+    }
+  ]
+}

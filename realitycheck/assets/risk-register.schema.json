@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/risk-register-v1.json",
+  "title": "RealityCheck Longitudinal Risk Register",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "generatedAt", "summary", "policy", "entries", "warnings"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "kind": { "const": "risk-register" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["risks", "open", "recurring", "overdue", "waived", "resolved", "unverified", "targets", "runs"],
+      "properties": {
+        "risks": { "type": "integer", "minimum": 0 },
+        "open": { "type": "integer", "minimum": 0 },
+        "recurring": { "type": "integer", "minimum": 0 },
+        "overdue": { "type": "integer", "minimum": 0 },
+        "waived": { "type": "integer", "minimum": 0 },
+        "resolved": { "type": "integer", "minimum": 0 },
+        "unverified": { "type": "integer", "minimum": 0 },
+        "targets": { "type": "integer", "minimum": 1 },
+        "runs": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxOpenAgeDays", "maxOpenRisks", "maxRecurringRisks", "gateFailed", "violations"],
+      "properties": {
+        "maxOpenAgeDays": { "type": ["integer", "null"], "minimum": 0, "maximum": 3650 },
+        "maxOpenRisks": { "type": ["integer", "null"], "minimum": 0, "maximum": 100000 },
+        "maxRecurringRisks": { "type": ["integer", "null"], "minimum": 0, "maximum": 100000 },
+        "gateFailed": { "type": "boolean" },
+        "violations": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "actual", "expected"],
+            "properties": {
+              "code": { "enum": ["open-risk-age", "open-risk-count", "recurring-risk-count"] },
+              "actual": { "type": "integer", "minimum": 0 },
+              "expected": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "entries": { "type": "array", "items": { "$ref": "#/$defs/entry" } },
+    "warnings": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  },
+  "$defs": {
+    "portablePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![A-Za-z]:)(?!/).+$"
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 }
+      }
+    },
+    "waiver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reason", "expires"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "owner": { "type": "string", "minLength": 1 },
+        "expires": { "type": "string", "format": "date" }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "fingerprint", "target", "state", "severity", "confidence", "ruleId", "scenarioId", "title", "firstSeen", "lastSeen", "latestRunId", "occurrences", "ageDays", "overdue", "latestReportPath", "evidencePath"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^RISK-[A-F0-9]{10}$" },
+        "fingerprint": { "type": "string", "minLength": 1 },
+        "target": { "type": "string", "format": "uri" },
+        "state": { "enum": ["open", "waived", "resolved", "unverified"] },
+        "severity": { "enum": ["critical", "major", "minor", "info"] },
+        "confidence": { "enum": ["high", "medium", "low"] },
+        "ruleId": { "type": "string", "minLength": 1 },
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "titleZh": { "type": "string", "minLength": 1 },
+        "firstSeen": { "type": "string", "format": "date-time" },
+        "lastSeen": { "type": "string", "format": "date-time" },
+        "latestRunId": { "type": "string", "minLength": 1 },
+        "occurrences": { "type": "integer", "minimum": 1 },
+        "ageDays": { "type": "integer", "minimum": 0 },
+        "overdue": { "type": "boolean" },
+        "unverifiedReason": { "enum": ["scenario-incomplete", "policy-drift"] },
+        "ownership": { "$ref": "#/$defs/ownership" },
+        "waiver": { "$ref": "#/$defs/waiver" },
+        "latestReportPath": { "$ref": "#/$defs/portablePath" },
+        "evidencePath": { "$ref": "#/$defs/portablePath" }
+      }
+    }
+  }
+}

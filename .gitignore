@@ -1,0 +1,10 @@
+realitycheck_codex_bundle.zip
+.realitycheck/
+**/__pycache__/
+*.py[cod]
+.DS_Store
+.pytest_cache/
+.venv/
+node_modules/
+*.tgz
+npm-debug.log*

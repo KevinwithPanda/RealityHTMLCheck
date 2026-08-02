@@ -1,0 +1,237 @@
+{
+  "items": [
+    {
+      "confidence": "high",
+      "findingId": "RC-FB7751933E",
+      "fingerprint": "fb7751933e1dae1692cc806f39622186159c5007c87abbe0320050ee6c23d572",
+      "remediation": {
+        "summary": "Expose the full customer name while preserving the card layout.",
+        "technicalHints": [
+          "Allow wrapping or add an accessible expansion/tooltip mechanism."
+        ]
+      },
+      "reportAnchor": "report.html#RC-FB7751933E",
+      "ruleId": "element-text-clipping",
+      "scenarioId": "long-text",
+      "severity": "major",
+      "title": "Long customer names are clipped without access to the full value",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "在保持卡片布局的同时，让用户能够访问完整客户名称。",
+            "technicalHints": [
+              "允许名称换行，或增加支持键盘和读屏器的展开/提示机制。"
+            ]
+          },
+          "title": "超长客户名称被截断，用户无法访问完整内容"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "long-text"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-920864929A",
+      "fingerprint": "920864929a9614a5de5d92b964db6d1ed6a07ac7ccbfe092a558884e75ac3170",
+      "remediation": {
+        "summary": "Remove the fixed minimum shell width and stack the hero actions at the mobile breakpoint.",
+        "technicalHints": [
+          "Replace min-width: 1040px with responsive grid constraints.",
+          "Allow the primary action to wrap below the heading on narrow screens."
+        ]
+      },
+      "reportAnchor": "report.html#RC-920864929A",
+      "ruleId": "offscreen-critical-control",
+      "scenarioId": "mobile-375",
+      "severity": "major",
+      "title": "Checkout review is outside the mobile viewport",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "移除应用外壳的固定最小宽度，并在手机断点把主操作排列到标题下方。",
+            "technicalHints": [
+              "用响应式网格约束替换 min-width: 1040px。",
+              "在窄屏上允许主要操作换行到标题下方。"
+            ]
+          },
+          "title": "移动端视口内无法看到结账审核按钮"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "mobile-375"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-7AEAC80E10",
+      "fingerprint": "7aeac80e106f68fc401a23305947ffa0751bfafb0a4020a59cfe79f6d9f08af7",
+      "remediation": {
+        "summary": "Handle optional analytics initialization without emitting a production console error.",
+        "technicalHints": [
+          "Use a recoverable warning or feature-state result for an optional integration."
+        ]
+      },
+      "reportAnchor": "report.html#RC-7AEAC80E10",
+      "ruleId": "console-error",
+      "scenarioId": "baseline",
+      "severity": "minor",
+      "title": "The page logs an initialization error",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "处理可选分析服务的初始化失败，不要在生产控制台中输出错误。",
+            "technicalHints": [
+              "对于可选集成，使用可恢复的警告或明确的功能状态结果。"
+            ]
+          },
+          "title": "页面在初始化时输出错误"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-831A358F94",
+      "fingerprint": "831a358f94229cb373fe4ba69cd7c49f2eb6572d703bfc916c7ff61328a9572e",
+      "remediation": {
+        "summary": "Declare the avatar decorative or provide a concise alternative.",
+        "technicalHints": [
+          "Use alt=\"\" when the adjacent customer name already conveys the same information."
+        ]
+      },
+      "reportAnchor": "report.html#RC-831A358F94",
+      "ruleId": "image-alt",
+      "scenarioId": "image-failure",
+      "severity": "minor",
+      "title": "The customer avatar has no text alternative",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "明确头像属于装饰性图片，或者提供简洁的替代文本。",
+            "technicalHints": [
+              "如果旁边的客户名称已经表达了相同信息，请使用 alt=\"\"。"
+            ]
+          },
+          "title": "客户头像没有文本替代内容"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "image-failure"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-02B9DF270A",
+      "fingerprint": "02b9df270a7ab58db15af335bfcc3292ac41e099604da53ffa54af73bf9baa98",
+      "remediation": {
+        "summary": "Use logical spacing so status alignment follows writing direction.",
+        "technicalHints": [
+          "Replace margin-left: auto with margin-inline-start: auto."
+        ]
+      },
+      "reportAnchor": "report.html#RC-02B9DF270A",
+      "ruleId": "rtl-physical-spacing",
+      "scenarioId": "rtl-arabic",
+      "severity": "minor",
+      "title": "Status alignment remains pinned to the physical right side",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "使用逻辑方向的间距属性，使状态标签跟随书写方向对齐。",
+            "technicalHints": [
+              "将 margin-left: auto 替换为 margin-inline-start: auto。"
+            ]
+          },
+          "title": "状态标签仍固定在物理右侧"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "rtl-arabic"
+        ]
+      }
+    },
+    {
+      "confidence": "low",
+      "findingId": "RC-3E80D0B740",
+      "fingerprint": "3e80d0b7409a7389cebefb4da36ff78d5ef5e64d912cd713fb72037acda7d7d9",
+      "remediation": {
+        "summary": "Restore a high-contrast focus-visible style.",
+        "technicalHints": [
+          "Use :focus-visible with a two-pixel outline and offset."
+        ]
+      },
+      "reportAnchor": "report.html#RC-3E80D0B740",
+      "ruleId": "keyboard-focus-visibility",
+      "scenarioId": "keyboard-tab",
+      "severity": "minor",
+      "title": "Interactive elements may not expose a visible focus indicator",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "恢复高对比度的 focus-visible 样式。",
+            "technicalHints": [
+              "使用 :focus-visible，并设置两像素轮廓和适当的 outline-offset。"
+            ]
+          },
+          "title": "交互控件可能没有可见的键盘焦点指示"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "keyboard-tab"
+        ]
+      }
+    }
+  ],
+  "kind": "repair-plan",
+  "schemaVersion": "1",
+  "source": {
+    "reportPath": "report.json",
+    "runId": "reference-demo-v0.3.0",
+    "target": "http://127.0.0.1:4173/"
+  },
+  "summary": {
+    "critical": 0,
+    "items": 6,
+    "major": 2,
+    "minor": 4,
+    "reviewRequired": 1,
+    "waived": 0
+  },
+  "toolVersion": "0.3.0"
+}
