@@ -4,7 +4,7 @@ import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { validateArtifactFiles } from "./artifact-validator.mjs";
 import { TOOL_VERSION } from "./version.mjs";
 
-const CATALOGABLE_FILES = new Set(["report.json", "verification.json", "site-report.json", "site-verification.json", "trend.json", "repair-plan.json", "evidence-attestation.json", "evidence-trust-report.json", "policy-review.json", "github-issue-drafts.json", "release-decision.json"]);
+const CATALOGABLE_FILES = new Set(["report.json", "verification.json", "site-report.json", "site-verification.json", "trend.json", "repair-plan.json", "evidence-attestation.json", "evidence-trust-report.json", "policy-review.json", "github-issue-drafts.json", "release-decision.json", "audit-plan.json"]);
 const SKIPPED_DIRECTORIES = new Set([".git", "node_modules", "__pycache__"]);
 
 function html(value) {
@@ -59,6 +59,24 @@ function linkFor(path, outputDirectory) {
 }
 
 function entryFromArtifact(value, path, outputDirectory) {
+  if (value.kind === "audit-plan") {
+    return {
+      id: value.id,
+      kind: "audit-plan",
+      state: "informational",
+      title: `${value.summary.pagesMax}-page effective audit plan`,
+      target: value.target.url,
+      generatedAt: value.generatedAt,
+      changes: {
+        pagesMax: value.summary.pagesMax,
+        scenariosPerPage: value.summary.scenariosPerPage,
+        executionsMax: value.summary.scenarioExecutionsMax,
+        enabledDetectors: value.summary.enabledDetectors,
+      },
+      artifactPath: portablePath(outputDirectory, path),
+      visualPath: linkFor(path, outputDirectory),
+    };
+  }
   if (value.kind === "release-decision") {
     return {
       id: value.id,
@@ -257,6 +275,7 @@ export function buildArtifactCatalog(inputPaths, outputDirectory, { now = new Da
     generatedAt: now.toISOString(),
     summary: {
       artifacts: entries.length,
+      auditPlans: entries.filter((entry) => entry.kind === "audit-plan").length,
       audits: auditEntries.length,
       verifications: entries.filter((entry) => entry.kind.endsWith("verification")).length,
       repairPlans: entries.filter((entry) => entry.kind === "repair-plan").length,
@@ -279,7 +298,7 @@ export function renderCatalogMarkdown(catalog) {
   const lines = [
     "# RealityCheck artifact catalog",
     "",
-    `Artifacts: **${catalog.summary.artifacts}** · Audits: **${catalog.summary.audits}** · Proofs: **${catalog.summary.verifications}** · Repair plans: **${catalog.summary.repairPlans}** · Issue draft bundles: **${catalog.summary.issueDrafts}** · Release decisions: **${catalog.summary.releaseDecisions}** · Trends: **${catalog.summary.trends}** · Policy reviews: **${catalog.summary.policyReviews}** · Attestations: **${catalog.summary.attestations}** · Trust reports: **${catalog.summary.trustReports}**`,
+    `Artifacts: **${catalog.summary.artifacts}** · Audit plans: **${catalog.summary.auditPlans}** · Audits: **${catalog.summary.audits}** · Proofs: **${catalog.summary.verifications}** · Repair plans: **${catalog.summary.repairPlans}** · Issue draft bundles: **${catalog.summary.issueDrafts}** · Release decisions: **${catalog.summary.releaseDecisions}** · Trends: **${catalog.summary.trends}** · Policy reviews: **${catalog.summary.policyReviews}** · Attestations: **${catalog.summary.attestations}** · Trust reports: **${catalog.summary.trustReports}**`,
     `Passing: **${catalog.summary.passing}** · Failing: **${catalog.summary.failing}**`,
     "",
     "| State | Type | Title / target | Score | Delta | Visual | JSON |",
@@ -318,15 +337,17 @@ export function renderCatalogHtml(catalog) {
   const releaseFilter = `<button data-filter="release-decision" aria-pressed="false" data-en="Decisions" data-zh="决策">Decisions</button>`;
   const attestationFilter = `<button data-filter="evidence-attestation" aria-pressed="false" data-en="Signed" data-zh="签名">Signed</button>`;
   const trustFilter = `<button data-filter="evidence-trust-report" aria-pressed="false" data-en="Trust" data-zh="信任">Trust</button>`;
+  const auditPlanStat = `<div class="stat"><b>${catalog.summary.auditPlans}</b><span data-en="Preflight plans" data-zh="预检计划">Preflight plans</span></div>`;
+  const auditPlanFilter = `<button data-filter="audit-plan" aria-pressed="false" data-en="Preflight" data-zh="预检">Preflight</button>`;
   return page
     .replaceAll("Find the latest page audit, site gate, repair plan, proof, or trend without hunting through run directories.", "Find the latest audit, proof, repair plan, issue draft board, release decision, policy review, trust result, or trend without hunting through run directories.")
     .replaceAll("无需翻找运行目录，即可定位最新单页核查、全站门禁、修复计划、证明或质量趋势。", "无需翻找运行目录，即可定位最新核查、修复证明、修复计划、工单草稿、发布决策、策略审查、信任结果或质量趋势。")
     .replace('<div class="languages">', '<div class="languages" role="group" aria-label="Language">')
     .replace('<div class="filters">', '<div class="filters" role="group" aria-label="Artifact filters">')
     .replace('aria-label="Search catalog">', 'aria-label="Search catalog" data-search-label>')
-    .replace("</section><div class=\"toolbar\">", `${releaseStat}${issueStat}${policyStat}${attestationStat}${trustStat}</section><div class="toolbar">`)
-    .replace('<button data-filter="quality-trend"', `${releaseFilter}${issueFilter}${policyFilter}${attestationFilter}${trustFilter}<button data-filter="quality-trend"`)
-    .replace("filter==='quality-trend'||filter==='repair-plan'", "['quality-trend','repair-plan','release-decision','github-issue-drafts','policy-review','evidence-attestation','evidence-trust-report'].includes(filter)")
+    .replace("</section><div class=\"toolbar\">", `${auditPlanStat}${releaseStat}${issueStat}${policyStat}${attestationStat}${trustStat}</section><div class="toolbar">`)
+    .replace('<button data-filter="quality-trend"', `${auditPlanFilter}${releaseFilter}${issueFilter}${policyFilter}${attestationFilter}${trustFilter}<button data-filter="quality-trend"`)
+    .replace("filter==='quality-trend'||filter==='repair-plan'", "['quality-trend','repair-plan','audit-plan','release-decision','github-issue-drafts','policy-review','evidence-attestation','evidence-trust-report'].includes(filter)")
     .replace("search.placeholder=next==='zh'?'搜索标题、目标、运行或类型':'Search title, target, run, or type';", "search.placeholder=next==='zh'?'搜索标题、目标、运行或类型':'Search title, target, run, or type';search.setAttribute('aria-label',next==='zh'?'搜索产物目录':'Search catalog');document.title=next==='zh'?'RealityCheck 产物目录':'RealityCheck artifact catalog';")
     .replace(" shown';const setLanguage", " shown';};const setLanguage");
 }

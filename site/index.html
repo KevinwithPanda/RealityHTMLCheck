@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="RealityCheck finds real Web UI, visual-regression, API, broken-link, and publishing failures with safe journeys, explicit baselines, reliability, security, performance, accessibility, and repair proof.">
+  <meta name="description" content="RealityCheck previews and runs real Web UI, visual-regression, API, link, privacy, security, performance, and accessibility checks with safe journeys, repair tasks, and release proof.">
   <meta name="theme-color" content="#15171c">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta property="og:title" content="RealityCheck · Evidence-first Web quality">
@@ -40,6 +40,7 @@
       "Visual regression evidence",
       "Accessibility and performance checks",
       "API, link, metadata, security, and aggregate browser storage privacy checks",
+      "Browser-free bilingual audit plan previews",
       "Bilingual repair plans and GitHub issue drafts",
       "Policy anti-weakening review",
       "Freshness-aware GO, REVIEW, or NO-GO release decisions"
@@ -52,6 +53,7 @@
     <div class="wrap topbar-inner">
       <a class="brand" href="#top" aria-label="RealityCheck home"><img src="assets/icon.svg" alt=""><span>RealityCheck</span><small>v0.4</small></a>
       <nav aria-label="Primary navigation">
+        <a href="#plan" data-en="Audit plan" data-zh-cn="核查计划">Audit plan</a>
         <a href="#evidence" data-en="Live evidence" data-zh-cn="真实证据">Live evidence</a>
         <a href="#policy" data-en="Policy guard" data-zh-cn="策略守卫">Policy guard</a>
         <a href="#handoff" data-en="Repair handoff" data-zh-cn="修复交接">Repair handoff</a>
@@ -69,7 +71,7 @@
         <p class="eyebrow" data-en="REAL BROWSER · LOCAL FIRST · EVIDENCE ALWAYS" data-zh-cn="真实浏览器 · 本地优先 · 证据为准">REAL BROWSER · LOCAL FIRST · EVIDENCE ALWAYS</p>
         <h1 data-en="Break your website before your users do." data-zh-cn="在用户发现之前，先把网站问题找出来。">Break your website before your users do.</h1>
         <p class="hero-lede" data-en="RealityCheck audits responsive UI, approved visual baselines, safe journeys, API/network reliability, broken links, publishing, security and aggregate browser-storage privacy policy, Core Web Vitals, accessibility, and recovery—then turns every finding into a repair task with proof." data-zh-cn="RealityCheck 核查响应式界面、已批准视觉基线、安全用户旅程、API/网络可靠性、失效链接、发布、安全与浏览器存储聚合隐私策略、核心体验指标、可访问性和故障恢复，再把问题变成带验证的修复任务。">RealityCheck audits responsive UI, approved visual baselines, safe journeys, API/network reliability, broken links, publishing, security and aggregate browser-storage privacy policy, Core Web Vitals, accessibility, and recovery—then turns every finding into a repair task with proof.</p>
-        <div class="hero-actions"><a class="button primary" href="#start" data-en="Run your first audit" data-zh-cn="开始第一次核查">Run your first audit</a><a class="button ghost" href="evidence/journey/latest.html" data-en="Open a real report" data-zh-cn="打开真实报告">Open a real report</a></div>
+        <div class="hero-actions"><a class="button primary" href="#start" data-en="Run your first audit" data-zh-cn="开始第一次核查">Run your first audit</a><a class="button ghost" href="labs/audit-plan/audit-plan.html" data-en="Preview what will run" data-zh-cn="预览将执行什么">Preview what will run</a><a class="button ghost" href="evidence/journey/latest.html" data-en="Open a real report" data-zh-cn="打开真实报告">Open a real report</a></div>
         <div class="trust-row"><span data-en="No cloud account" data-zh-cn="无需云账号">No cloud account</span><span data-en="No source edits during audit" data-zh-cn="核查时不改源码">No source edits during audit</span><span data-en="English + 中文" data-zh-cn="中文 + English">English + 中文</span></div>
       </div>
       <aside class="terminal" aria-label="RealityCheck command example">
@@ -121,6 +123,11 @@ repair     repair-plan.json</code></pre>
         <article><b>06</b><h3 data-en="Proof and governance" data-zh-cn="证明与治理">Proof and governance</h3><p data-en="Issue drafts, anti-weakening policy review, before/after proof, GitHub annotations, gates, waivers, ownership, risk registers, manifests, and signatures." data-zh-cn="工单草稿、防弱化策略审查、前后证明、GitHub 注释、门禁、豁免、责任归属、风险台账、完整性清单和签名。">Issue drafts, anti-weakening policy review, before/after proof, GitHub annotations, gates, waivers, ownership, risk registers, manifests, and signatures.</p></article>
       </div>
     </div></section>
+
+    <section class="section plan-section wrap" id="plan">
+      <div class="plan-copy"><p class="eyebrow" data-en="UNDERSTAND BEFORE EXECUTION" data-zh-cn="执行前先看懂">UNDERSTAND BEFORE EXECUTION</p><h2 data-en="See the whole audit before opening a browser." data-zh-cn="打开浏览器前，先看完整核查计划。">See the whole audit before opening a browser.</h2><p data-en="The plan command validates and resolves project policy, then writes bilingual HTML, JSON, and Markdown showing page and scenario ceilings, every enabled or disabled detector, safety boundaries, data retention, governance, and the exact next command. It does not request the target or retain selectors, routes, authentication paths, query values, or browser-storage contents." data-zh-cn="plan 命令会校验并解析项目策略，再生成中英双语 HTML、JSON 与 Markdown，展示页面与场景上限、每类检测器的启用状态、安全边界、数据保留、治理规则和下一条命令。它不会请求目标网站，也不会保留选择器、路由、认证路径、查询参数值或浏览器存储内容。">The plan command validates and resolves project policy, then writes bilingual HTML, JSON, and Markdown showing page and scenario ceilings, every enabled or disabled detector, safety boundaries, data retention, governance, and the exact next command. It does not request the target or retain selectors, routes, authentication paths, query values, or browser-storage contents.</p><a class="button primary" href="labs/audit-plan/audit-plan.html" data-en="Open the 301-scenario plan →" data-zh-cn="打开 301 场景计划 →">Open the 301-scenario plan →</a></div>
+      <div class="plan-preview" aria-label="Audit plan example"><div class="plan-preview-head"><span>RealityCheck / PLAN</span><b data-en="PREVIEW" data-zh-cn="预览">PREVIEW</b></div><div><span data-en="Maximum pages" data-zh-cn="最多页面">Maximum pages</span><strong>20</strong></div><div><span data-en="Scenarios per page" data-zh-cn="每页场景">Scenarios per page</span><strong>15</strong></div><div><span data-en="Maximum executions" data-zh-cn="最大执行次数">Maximum executions</span><strong>301</strong></div><div><span data-en="Enabled detectors" data-zh-cn="已启用检测器">Enabled detectors</span><strong>12 / 12</strong></div><code>browser access&nbsp; NONE<br>target request&nbsp;&nbsp; NONE<br>config secrets&nbsp;&nbsp; NOT COPIED</code></div>
+    </section>
 
     <section class="section policy-section wrap" id="policy">
       <div class="policy-copy"><p class="eyebrow" data-en="POLICY CANNOT QUIETLY GET WEAKER" data-zh-cn="策略不能静默变弱">POLICY CANNOT QUIETLY GET WEAKER</p><h2 data-en="Review the rules that review the product." data-zh-cn="也要审查那些审查产品的规则。">Review the rules that review the product.</h2><p data-en="A passing CI result is meaningless if a pull request simply removes the 320px checkpoint, loosens the score or privacy budget, adds masks, or drops security headers. policy-review validates both configs, records safe structural evidence, and blocks clear weakening after writing the report." data-zh-cn="如果拉取请求只是删除 320px 核查点、放宽评分或隐私预算、增加 mask 或移除安全响应头，那么 CI 变绿毫无意义。policy-review 会验证前后配置、记录安全的结构化证据，并在写完报告后阻止明确弱化。">A passing CI result is meaningless if a pull request simply removes the 320px checkpoint, loosens the score or privacy budget, adds masks, or drops security headers. policy-review validates both configs, records safe structural evidence, and blocks clear weakening after writing the report.</p><a class="button primary" href="labs/policy-review/review/policy-review.html" data-en="Open the 48-change policy review →" data-zh-cn="打开 48 项变更的策略审查 →">Open the 48-change policy review →</a></div>

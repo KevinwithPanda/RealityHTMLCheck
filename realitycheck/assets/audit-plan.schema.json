@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/audit-plan-v1.json",
+  "title": "RealityCheck Audit Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "id", "generatedAt", "source", "target", "execution", "summary", "detectors", "governance", "safety", "retention", "warnings", "nextCommand"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "kind": { "const": "audit-plan" },
+    "id": { "type": "string", "pattern": "^PLAN-[A-F0-9]{12}$" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configFile", "policyFingerprint"],
+      "properties": {
+        "configFile": { "type": ["string", "null"], "minLength": 1, "maxLength": 255, "pattern": "^[^/\\\\]+$" },
+        "policyFingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "authorization", "authentication", "inspected"],
+      "properties": {
+        "url": { "type": "string", "format": "uri", "maxLength": 1000 },
+        "authorization": { "enum": ["local-or-private", "explicit-remote"] },
+        "authentication": { "enum": ["anonymous", "storage-state-referenced"] },
+        "inspected": { "const": false }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "failOn", "pageStrategy", "pagesMax", "maxDepth", "explicitRoutes", "includePatterns", "excludePatterns", "scenariosPerPage", "journeyScenarios", "scenarioExecutionsMax", "builtInScenarios", "viewports", "baselineMode"],
+      "properties": {
+        "mode": { "enum": ["quick", "deep"] },
+        "failOn": { "enum": ["critical", "major", "minor", "never"] },
+        "pageStrategy": { "enum": ["target-only", "explicit-routes", "bounded-crawl"] },
+        "pagesMax": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "maxDepth": { "type": "integer", "minimum": 0, "maximum": 8 },
+        "explicitRoutes": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "includePatterns": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "excludePatterns": { "type": "integer", "minimum": 0, "maximum": 200 },
+        "scenariosPerPage": { "type": "integer", "minimum": 6, "maximum": 18 },
+        "journeyScenarios": { "type": "integer", "minimum": 0, "maximum": 20 },
+        "scenarioExecutionsMax": { "type": "integer", "minimum": 6, "maximum": 1820 },
+        "builtInScenarios": { "type": "array", "minItems": 6, "maxItems": 18, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" } },
+        "viewports": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "width", "height", "touch"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,31}$" },
+              "width": { "type": "integer", "minimum": 240, "maximum": 2560 },
+              "height": { "type": "integer", "minimum": 320, "maximum": 2560 },
+              "touch": { "type": "boolean" }
+            }
+          }
+        },
+        "baselineMode": { "enum": ["none", "before-after", "regression-baseline"] }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pagesMax", "scenariosPerPage", "journeyScenarios", "scenarioExecutionsMax", "enabledDetectors", "policySettings"],
+      "properties": {
+        "pagesMax": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "scenariosPerPage": { "type": "integer", "minimum": 6, "maximum": 18 },
+        "journeyScenarios": { "type": "integer", "minimum": 0, "maximum": 20 },
+        "scenarioExecutionsMax": { "type": "integer", "minimum": 6, "maximum": 1820 },
+        "enabledDetectors": { "type": "integer", "minimum": 2, "maximum": 12 },
+        "policySettings": { "type": "integer", "minimum": 1, "maximum": 500 }
+      }
+    },
+    "detectors": { "type": "array", "minItems": 12, "maxItems": 12, "items": { "$ref": "#/$defs/detector" } },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["qualityGate", "baselinePolicy", "waivers", "owners", "baselineMode"],
+      "properties": {
+        "qualityGate": { "type": "boolean" },
+        "baselinePolicy": { "type": "boolean" },
+        "waivers": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "owners": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "baselineMode": { "enum": ["none", "before-after", "regression-baseline"] }
+      }
+    },
+    "safety": { "type": "array", "minItems": 4, "maxItems": 8, "items": { "$ref": "#/$defs/bilingualItem" } },
+    "retention": { "type": "array", "minItems": 5, "maxItems": 10, "items": { "$ref": "#/$defs/retentionItem" } },
+    "warnings": { "type": "array", "minItems": 4, "maxItems": 8, "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+    "nextCommand": { "type": "string", "minLength": 1, "maxLength": 1000, "pattern": "^realitycheck audit [^\\r\\n]+$" }
+  },
+  "$defs": {
+    "detector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "labelZh", "enabled", "policySettings", "severity", "note", "noteZh"],
+      "properties": {
+        "key": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,31}$" },
+        "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "labelZh": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "enabled": { "type": "boolean" },
+        "policySettings": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "severity": { "type": ["string", "null"], "enum": ["critical", "major", "minor", "info", null] },
+        "note": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "noteZh": { "type": "string", "minLength": 1, "maxLength": 300 }
+      }
+    },
+    "bilingualItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "en", "zh"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,31}$" },
+        "en": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "zh": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "retentionItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "retained", "en", "zh"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,31}$" },
+        "retained": { "type": "boolean" },
+        "en": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "zh": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    }
+  }
+}

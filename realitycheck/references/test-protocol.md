@@ -1,5 +1,11 @@
 # RealityCheck test protocol
 
+## Browser-free plan preflight
+
+When the user asks what an audit will do or requires approval before navigation, resolve the effective project policy with `audit.mjs plan` first. The plan command must not load Playwright, discover a browser, request the target, or mutate source. Validate its JSON contract and semantic ID before presenting the bilingual HTML. Treat page and scenario totals as conservative ceilings and never treat the preview as passing evidence.
+
+The plan may disclose target origin/path, viewport dimensions, policy-family counts, severities, and governance counts. It must reduce selectors, routes, exclusions, waiver reasons, authentication inputs, and browser-storage state to non-sensitive counts or explicit non-retention statements. Query values and fragments must be absent.
+
 ## Contents
 
 1. Run invariants

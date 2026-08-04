@@ -39,6 +39,8 @@
     "privacy-testing",
     "cookie-audit",
     "web-storage",
+    "audit-plan",
+    "test-plan",
     "github-actions",
     "responsive",
     "responsive-testing",

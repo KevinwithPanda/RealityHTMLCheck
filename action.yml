@@ -101,6 +101,12 @@ inputs:
     default: "24"
 
 outputs:
+  audit-plan-path:
+    description: Browser-free bilingual preview of the effective audit scope, detectors, governance, and execution ceiling.
+    value: ${{ steps.plan.outputs.audit-plan-path }}
+  plan-exit-code:
+    description: Audit-plan preflight exit code (0 valid, 2 operational or configuration error).
+    value: ${{ steps.plan.outputs.plan-exit-code }}
   exit-code:
     description: RealityCheck exit code (0 passed, 1 quality gate, 2 operational error).
     value: ${{ steps.audit.outputs.exit-code }}
@@ -166,6 +172,47 @@ runs:
     - name: Install the pinned RealityCheck adapter
       shell: bash
       run: npm ci --omit=dev --ignore-scripts --prefix "$GITHUB_ACTION_PATH"
+
+    - name: Preview the effective audit plan without a browser
+      id: plan
+      shell: bash
+      env:
+        RC_URL: ${{ inputs.url }}
+        RC_CONFIG: ${{ inputs.config }}
+        RC_MODE: ${{ inputs.mode }}
+        RC_FAIL_ON: ${{ inputs.fail-on }}
+        RC_BASELINE: ${{ inputs.baseline }}
+        RC_OUTPUT: ${{ inputs.output }}
+        RC_WORKDIR: ${{ inputs.working-directory }}
+        RC_ALLOW_REMOTE: ${{ inputs.allow-remote }}
+        RC_SUMMARY_LANGUAGE: ${{ inputs.summary-language }}
+      run: |
+        cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
+        plan_dir="$RC_OUTPUT/audit-plan"
+        args=(plan)
+        if [ -n "$RC_URL" ]; then args+=("$RC_URL"); fi
+        if [ -n "$RC_CONFIG" ]; then args+=(--config "$RC_CONFIG"); fi
+        args+=(--mode "$RC_MODE" --fail-on "$RC_FAIL_ON" --output "$plan_dir")
+        if [ -n "$RC_BASELINE" ]; then args+=(--baseline "$RC_BASELINE"); fi
+        if [ "$RC_ALLOW_REMOTE" = "true" ]; then args+=(--allow-remote); fi
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" "${args[@]}"
+        plan_status=$?
+        set -e
+        echo "plan-exit-code=$plan_status" >> "$GITHUB_OUTPUT"
+        if [ "$plan_status" -eq 0 ]; then
+          echo "audit-plan-path=$RC_WORKDIR/$plan_dir/audit-plan.html" >> "$GITHUB_OUTPUT"
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            if [ "$RC_SUMMARY_LANGUAGE" = "zh-CN" ]; then
+              cat "$plan_dir/audit-plan.zh-CN.md" >> "$GITHUB_STEP_SUMMARY"
+            else
+              cat "$plan_dir/audit-plan.md" >> "$GITHUB_STEP_SUMMARY"
+            fi
+            printf '\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+        else
+          echo "RealityCheck could not validate the effective audit plan; the browser audit will still preserve diagnostic evidence." >&2
+        fi
 
     - name: Run browser audit
       id: audit
@@ -454,6 +501,7 @@ runs:
       if: always()
       shell: bash
       env:
+        RC_PLAN_EXIT_CODE: ${{ steps.plan.outputs.plan-exit-code }}
         RC_EXIT_CODE: ${{ steps.audit.outputs.exit-code }}
         RC_SUMMARY_EXIT_CODE: ${{ steps.summary.outputs.summary-exit-code }}
         RC_ATTESTATION_OUTCOME: ${{ steps.attest.outcome }}
@@ -462,6 +510,10 @@ runs:
         RC_POLICY_EXIT_CODE: ${{ steps.policy.outputs.policy-exit-code }}
         RC_RELEASE_EXIT_CODE: ${{ steps.release.outputs.release-decision-exit-code }}
       run: |
+        if [ "$RC_PLAN_EXIT_CODE" != "0" ]; then
+          echo "RealityCheck could not validate the browser-free audit plan. Inspect the configuration diagnostics."
+          exit 2
+        fi
         if [ "$RC_ATTESTATION_OUTCOME" = "failure" ]; then
           echo "RealityCheck evidence signing failed. Check that the configured Secret is a valid Ed25519 private key."
           exit 2

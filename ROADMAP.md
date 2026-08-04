@@ -70,6 +70,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Turn repair plans into deduplicated, bilingual GitHub issue drafts with safe local copy/export and no automatic external submission.
 - [x] Add a freshness-aware, SHA-256-bound GO/REVIEW/NO-GO release decision over audit, verification, policy, trust, risk, and repair-review evidence.
 - [x] Add aggregate browser-storage privacy budgets with zero key/value retention, explicit measurement failures, policy anti-weakening coverage, and paired public real-browser proof.
+- [x] Add a browser-free, bilingual effective audit-plan preview with schema validation, semantic binding, safety/data-retention disclosure, and a public demonstration.
 
 ## v1.0 criteria
 

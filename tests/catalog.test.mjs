@@ -19,6 +19,7 @@ test("artifact catalog indexes valid audits and proofs with portable bilingual l
     const policyDirectory = join(root, "policy");
     const issueDirectory = join(root, "issues");
     const releaseDirectory = join(root, "release");
+    const auditPlanDirectory = join(root, "audit-plan");
     const output = join(root, "catalog");
     mkdirSync(pageDirectory, { recursive: true });
     mkdirSync(proofDirectory, { recursive: true });
@@ -27,6 +28,7 @@ test("artifact catalog indexes valid audits and proofs with portable bilingual l
     cpSync(resolve("examples/policy-review-lab/review"), policyDirectory, { recursive: true });
     cpSync(resolve("examples/issue-drafts-lab"), issueDirectory, { recursive: true });
     cpSync(resolve("examples/release-decision-lab"), releaseDirectory, { recursive: true });
+    cpSync(resolve("examples/audit-plan-lab"), auditPlanDirectory, { recursive: true });
     copyFileSync(resolve("examples/reference-run/report.json"), join(pageDirectory, "report.json"));
     const ownedReport = JSON.parse(readFileSync(join(pageDirectory, "report.json"), "utf8"));
     ownedReport.findings[0].ownership = { id: "web-platform", name: "Web Platform" };
@@ -49,8 +51,9 @@ test("artifact catalog indexes valid audits and proofs with portable bilingual l
     writeFileSync(privateKeyPath, privateKey.export({ type: "pkcs8", format: "pem" }));
     const signed = writeEvidenceAttestation(join(attestedDirectory, "evidence-manifest.json"), privateKeyPath, { createdAt: new Date("2026-08-01T15:00:00Z") });
 
-    const catalog = buildArtifactCatalog([pageDirectory, proofDirectory, invalidDirectory, signed.jsonPath, policyDirectory, issueDirectory, releaseDirectory], output, { now: new Date("2026-08-01T16:00:00Z") });
-    assert.equal(catalog.summary.artifacts, 6);
+    const catalog = buildArtifactCatalog([pageDirectory, proofDirectory, invalidDirectory, signed.jsonPath, policyDirectory, issueDirectory, releaseDirectory, auditPlanDirectory], output, { now: new Date("2026-08-01T16:00:00Z") });
+    assert.equal(catalog.summary.artifacts, 7);
+    assert.equal(catalog.summary.auditPlans, 1);
     assert.equal(catalog.summary.audits, 1);
     assert.equal(catalog.summary.verifications, 1);
     assert.equal(catalog.summary.repairPlans, 0);
@@ -73,6 +76,10 @@ test("artifact catalog indexes valid audits and proofs with portable bilingual l
     assert.equal(releaseEntry.state, "failed");
     assert.equal(releaseEntry.title, "Release NO-GO");
     assert.deepEqual(releaseEntry.changes, { passed: 0, review: 1, failed: 2, missing: 0, stale: 0 });
+    const auditPlanEntry = catalog.entries.find((entry) => entry.kind === "audit-plan");
+    assert.equal(auditPlanEntry.state, "informational");
+    assert.equal(auditPlanEntry.title, "20-page effective audit plan");
+    assert.deepEqual(auditPlanEntry.changes, { pagesMax: 20, scenariosPerPage: 15, executionsMax: 301, enabledDetectors: 12 });
     assert.equal(catalog.warnings.length, 1);
     assert.equal(catalog.entries.every((entry) => !/^[A-Za-z]:|^\//.test(entry.visualPath)), true);
 
@@ -86,6 +93,8 @@ test("artifact catalog indexes valid audits and proofs with portable bilingual l
     assert.match(html, /data-filter="policy-review"/);
     assert.match(html, /data-filter="github-issue-drafts"/);
     assert.match(html, /data-filter="release-decision"/);
+    assert.match(html, /data-filter="audit-plan"/);
+    assert.match(html, /20-page effective audit plan/);
     assert.match(html, /issue draft board, release decision, policy review, trust result/);
     assert.match(html, /role="group" aria-label="Artifact filters"/);
     assert.match(html, /搜索产物目录/);
@@ -110,6 +119,7 @@ test("artifact catalog indexes valid audits and proofs with portable bilingual l
     delete legacyCatalog.summary.policyReviews;
     delete legacyCatalog.summary.issueDrafts;
     delete legacyCatalog.summary.releaseDecisions;
+    delete legacyCatalog.summary.auditPlans;
     const legacyPath = join(root, "legacy-catalog.json");
     writeFileSync(legacyPath, JSON.stringify(legacyCatalog), "utf8");
     const [legacyValidation] = validateArtifactFiles([legacyPath]);

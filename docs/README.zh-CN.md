@@ -82,6 +82,17 @@ npm run audit -- http://localhost:3000 --baseline .realitycheck/baseline/report.
 npx realitycheck audit --config realitycheck.config.json
 ```
 
+### 运行前先看懂核查计划
+
+如果项目策略看起来过于抽象，可以在打开浏览器前先解析它：
+
+```bash
+npx realitycheck plan --config realitycheck.config.json \
+  --output .realitycheck/audit-plan
+```
+
+`plan` 会校验最终生效的配置，并生成 `audit-plan.json`、中英文 Markdown 和一个可离线切换语言的 `audit-plan.html`。预览会明确展示页面上限、每页场景、最大场景执行次数、12 类检测器的启用/未启用状态、治理规则、安全边界、数据保留范围，以及可复制的正式核查命令。它不会启动浏览器，也不会请求目标网站；查询参数值、路由模式、选择器、认证文件路径、Cookie/存储内容和密钥都不会复制到产物中。仓库内的 [301 次执行示例](../examples/audit-plan-lab/audit-plan.html) 展示了启用全部检测器类别的 Deep 策略。
+
 第二条命令会生成新报告，以及 `verification.json`、中英双语 `verification.md` 和可视化 `verification.html`。退出码 `1` 表示命中了质量门禁，不代表报告生成失败。
 
 无需把证据发送给外部 API，也可以把已校验报告转换为有上限的 GitHub 作业摘要和安全转义的工作流注释：
@@ -100,6 +111,7 @@ npx realitycheck github-summary .realitycheck/runs \
 ```bash
 npx realitycheck profiles
 npx realitycheck init --profile product --base-url http://localhost:3000
+npx realitycheck plan --config realitycheck.config.json
 npx realitycheck doctor
 npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
 ```
@@ -441,6 +453,6 @@ npx realitycheck release-decision .realitycheck \
 
 `release-decision` 会把最新有效的质量门禁、前后验证、策略审查、证据信任结果、风险台账与修复复核队列汇总为一份保守的发布审批包。`--require` 指定必须存在的控制，`--max-age-hours` 会拒绝过期的必需证据；每个所选来源都用 SHA-256 绑定，但不会把目标 URL、页面标题、问题正文、豁免理由或截图复制进决策。命令输出 JSON、中英文 Markdown 和交互式双语 HTML；退出码 `0` 表示可发布，`1` 表示不可发布，`3` 表示待人工复核，`2` 表示运行或证据错误。它只记录决策，绝不会部署或批准发布。[`examples/release-decision-lab`](../examples/release-decision-lab) 提供一份真实的三控制项“不可发布”决策包。
 
-本仓库也可直接作为复合 GitHub Action 使用。Action 会先执行页面/全站核查，可选地签署清单、评估信任、比较 `policy-before` 与 `policy-after`，自动生成绝不外发的工单草稿看板，再生成长期风险台账、发布决策与完整产物目录；所有证据会在页面、策略、组合风险、信任或发布门禁生效前上传。Action 暴露 `issue-drafts-path`、`policy-review-path` / `policy-exit-code`，以及 `release-decision-path`、`release-decision` / `release-decision-exit-code`。通过 `release-required-controls` 和 `release-max-age-hours` 可以把缺失或过期证据变成“不可发布”；“待复核”会留给人处理，而不会伪装成工具故障。参考 [`examples/github-actions/quality-gate.yml`](../examples/github-actions/quality-gate.yml) 可建立只阻止新增回归的门禁。
+本仓库也可直接作为复合 GitHub Action 使用。Action 在打开浏览器前会先生成经过校验的中英双语有效核查计划，把它加入任务摘要与待上传证据；`audit-plan-path` 指向离线 HTML，`plan-exit-code` 会让无效预检在诊断证据保留后关闭门禁。随后 Action 执行页面/全站核查，可选地签署清单、评估信任、比较 `policy-before` 与 `policy-after`，自动生成绝不外发的工单草稿看板，再生成长期风险台账、发布决策与完整产物目录；所有证据会在计划、页面、策略、组合风险、信任或发布门禁生效前上传。Action 暴露 `issue-drafts-path`、`policy-review-path` / `policy-exit-code`，以及 `release-decision-path`、`release-decision` / `release-decision-exit-code`。通过 `release-required-controls` 和 `release-max-age-hours` 可以把缺失或过期证据变成“不可发布”；“待复核”会留给人处理，而不会伪装成工具故障。参考 [`examples/github-actions/quality-gate.yml`](../examples/github-actions/quality-gate.yml) 可建立只阻止新增回归的门禁。
 
 项目目前仍以 Codex 为主要交互入口，但独立 CLI 和报告工具可以直接在克隆仓库中使用。路线图、贡献和安全说明见 [`ROADMAP.md`](../ROADMAP.md)、[`CONTRIBUTING.md`](../CONTRIBUTING.md) 与 [`SECURITY.md`](../SECURITY.md)。项目采用 [MIT License](../LICENSE)。

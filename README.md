@@ -109,6 +109,17 @@ npm run audit -- audit --config realitycheck.config.json
 
 The second command creates a fresh report plus `verification.json`, bilingual `verification.md`, and a visual `verification.html`. Exit code `1` means the configured quality threshold was not met; the reports were still generated successfully.
 
+### Preview exactly what will run
+
+If a project policy feels too abstract, resolve it before opening a browser:
+
+```bash
+npx realitycheck plan --config realitycheck.config.json \
+  --output .realitycheck/audit-plan
+```
+
+`plan` validates the effective config and writes `audit-plan.json`, English/Chinese Markdown, and a self-contained bilingual `audit-plan.html`. The preview shows the page ceiling, per-page scenarios, maximum scenario executions, all 12 enabled/disabled detector families, governance, safety boundaries, data retention, and a copy-ready audit command. It does not start a browser or request the target. Query values, route patterns, selectors, authentication paths, Cookie/storage contents, and secrets are not copied into the artifact. The committed [301-execution example](examples/audit-plan-lab/audit-plan.html) demonstrates a Deep policy with every detector family enabled.
+
 Turn validated reports into a bounded GitHub job summary and escaped workflow annotations without sending evidence to an API:
 
 ```bash
@@ -125,6 +136,7 @@ Initialize and diagnose a project without opening a browser:
 ```bash
 npx realitycheck profiles
 npx realitycheck init --profile product --base-url http://localhost:3000
+npx realitycheck plan --config realitycheck.config.json
 npx realitycheck doctor
 npx realitycheck visual-approve .realitycheck/runs/RUN/report.json
 ```
@@ -482,7 +494,7 @@ npx realitycheck release-decision .realitycheck \
 
 `release-decision` assembles the newest valid quality gate, before/after verification, policy review, evidence-trust result, risk register, and repair-review queue into one conservative approval packet. `--require` names controls that must exist; `--max-age-hours` rejects stale required evidence. Every selected source is bound by SHA-256, while target URLs, page titles, finding text, waiver reasons, and report screenshots are not copied into the decision. The command writes JSON, English/Chinese Markdown, and an interactive bilingual HTML view. Exit codes are intentionally distinct: `0` = `GO`, `1` = `NO-GO`, `3` = `REVIEW`, and `2` = operational or invalid-evidence failure. It records a decision but never deploys or approves a release. [`examples/release-decision-lab`](examples/release-decision-lab) is a real three-control `NO-GO` packet.
 
-This repository is also a reusable composite GitHub Action. It emits bounded Error/Warning/Notice annotations from validated latest reports, adds the prioritized Markdown view to the job summary, builds a non-submitting issue-draft board, builds the longitudinal risk register and release decision, then catalogs the complete bundle. The board is exposed as `issue-drafts-path`; the approval packet is exposed as `release-decision-path`, `release-decision`, and `release-decision-exit-code`. Configure `release-required-controls` and `release-max-age-hours` to make missing or stale evidence a `NO-GO`. Optional `policy-before` and `policy-after` inputs add the anti-weakening review to the same job summary and expose `policy-review-path` / `policy-exit-code`. The Action uploads the complete evidence bundle before enforcing page/site quality, policy, portfolio-risk, evidence-trust, or release decisions; `REVIEW` remains visible for human handling instead of being mislabeled as an operational error. See [`examples/github-actions/quality-gate.yml`](examples/github-actions/quality-gate.yml) for a regression-only baseline gate.
+This repository is also a reusable composite GitHub Action. Before opening a browser, it writes the validated bilingual effective plan into the job summary and uploaded evidence bundle; `audit-plan-path` links to its offline HTML and `plan-exit-code` makes an invalid preflight fail closed after diagnostics are preserved. The Action then emits bounded Error/Warning/Notice annotations from validated latest reports, adds the prioritized Markdown view to the job summary, builds a non-submitting issue-draft board, builds the longitudinal risk register and release decision, then catalogs the complete bundle. The board is exposed as `issue-drafts-path`; the approval packet is exposed as `release-decision-path`, `release-decision`, and `release-decision-exit-code`. Configure `release-required-controls` and `release-max-age-hours` to make missing or stale evidence a `NO-GO`. Optional `policy-before` and `policy-after` inputs add the anti-weakening review to the same job summary and expose `policy-review-path` / `policy-exit-code`. The Action uploads the complete evidence bundle before enforcing plan validity, page/site quality, policy, portfolio-risk, evidence-trust, or release decisions; `REVIEW` remains visible for human handling instead of being mislabeled as an operational error. See [`examples/github-actions/quality-gate.yml`](examples/github-actions/quality-gate.yml) for a regression-only baseline gate.
 
 ## Project status
 

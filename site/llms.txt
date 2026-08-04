@@ -1,6 +1,6 @@
 # RealityCheck
 
-RealityCheck is a local-first, evidence-first Web quality audit skill and CLI. It uses a real installed Chrome, Edge, or Chromium browser to stress responsive layouts, user journeys, API and network recovery, links, publishing metadata, visual baselines, performance, accessibility, security policy, and aggregate Cookie/Web Storage privacy budgets. It writes bilingual human reports plus machine-readable JSON, SARIF, JUnit, repair plans, policy reviews, issue drafts, manifests, verification evidence, and freshness-aware GO/REVIEW/NO-GO release decisions.
+RealityCheck is a local-first, evidence-first Web quality audit skill and CLI. Before browser access, it can write a bilingual audit-plan preview of effective coverage, safety, and data retention. It then uses a real installed Chrome, Edge, or Chromium browser to stress responsive layouts, user journeys, API and network recovery, links, publishing metadata, visual baselines, performance, accessibility, security policy, and aggregate Cookie/Web Storage privacy budgets. It writes bilingual human reports plus machine-readable JSON, SARIF, JUnit, repair plans, policy reviews, issue drafts, manifests, verification evidence, and freshness-aware GO/REVIEW/NO-GO release decisions.
 
 RealityCheck never treats an unsupported check as passed. Audit mode is read-only, remote targets require explicit authorization, and generated GitHub issue drafts are local files that are never submitted automatically.
 
@@ -14,6 +14,7 @@ RealityCheck never treats an unsupported check as passed. Audit mode is read-onl
 - GitHub issue draft example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/issue-drafts/github-issue-drafts.html
 - Release decision example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/release-decision/release-decision.html
 - Aggregate browser storage privacy evidence: https://kevinwithpanda.github.io/RealityHTMLCheck/evidence/privacy/latest.html
+- Browser-free audit plan example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/audit-plan/audit-plan.html
 - English guide: https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/README.md
 - Chinese guide: https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/docs/README.zh-CN.md
 - Report contracts: https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/realitycheck/references/report-schema.md
@@ -21,7 +22,7 @@ RealityCheck never treats an unsupported check as passed. Audit mode is read-onl
 
 ## Quick start
 
-Clone the repository, run `npm install`, then run `npm run demo`. To audit an authorized local app, run `npm run audit -- http://localhost:3000`.
+Clone the repository, run `npm install`, then run `npm run demo`. To preview an existing project policy without browser access, run `npx realitycheck plan --config realitycheck.config.json`. To audit an authorized local app, run `npm run audit -- http://localhost:3000`.
 
 ## Licensing
 

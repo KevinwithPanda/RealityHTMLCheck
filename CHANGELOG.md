@@ -6,6 +6,8 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ### Added
 
+- A browser-free `plan` command that resolves effective project coverage into a schema-validated, fingerprint-bound, bilingual HTML/JSON/Markdown preview with page/scenario ceilings, all detector states, explicit safety and retention boundaries, a copy-ready next command, and a committed 301-execution demonstration. The composite Action now publishes this fail-closed preflight before browser access, and the evidence catalog indexes it alongside run evidence.
+
 - Search-friendly JSON-LD, a Web manifest, crawler and LLM entry points, visible CI status, and explicit support/community policies without third-party runtime analytics.
 - Opt-in API/all-resource network reliability budgets for HTTP errors, transport failures, slow requests, and third-party request volume, with bounded query-free endpoint samples and no response-body retention.
 - Passing/failing network fixtures plus committed real-browser evidence proving a missing API fails at 96/100 while the restored endpoint passes at 100/100.

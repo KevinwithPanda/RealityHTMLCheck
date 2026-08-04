@@ -2,6 +2,12 @@
 
 `scripts/report.py init` creates `audit-input.json`. The auditor fills it, and `render` produces sanitized `report.json`, `report.md`, `report.html`, SARIF 2.1.0, JUnit XML, and a repair plan from the same normalized data. `compare` matches two rendered reports by stable fingerprint and writes `verification.json`, bilingual `verification.md`, and a self-contained bilingual `verification.html` dashboard. Multi-page audits and trend aggregation use separate versioned contracts described below.
 
+## Audit plan contract
+
+`audit-plan.json` is a browser-free preview governed by `../assets/audit-plan.schema.json`. Its stable `PLAN-...` ID binds the query-free target, detector-policy fingerprint, effective execution ceiling, detector states, and governance settings. Validation recomputes summary counts and the ID, requires every configured viewport to appear in the built-in scenario set, and rejects contradictory maximum-execution totals.
+
+The artifact may retain a portable config filename, target origin/path, viewport dimensions, detector labels/counts, policy severity, and aggregate governance counts. It must not retain target credentials or query values, route globs, selectors, waiver reasons, authentication-state paths/values, Cookie names/values, Web Storage keys/values, or signing secrets. `target.inspected` is always `false`; use a rendered report, not a plan, for pass/fail claims.
+
 ## Top-level fields
 
 | Field | Type | Notes |

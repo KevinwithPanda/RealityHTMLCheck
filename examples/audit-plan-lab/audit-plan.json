@@ -1,0 +1,266 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "kind": "audit-plan",
+  "id": "PLAN-7ED365C56504",
+  "generatedAt": "2026-08-04T21:37:30.842Z",
+  "source": {
+    "configFile": "realitycheck.config.json",
+    "policyFingerprint": "sha256:5f49b8dc577c98d3a5af596116a34bec61dfab3d239d9d886684da10ef310e47"
+  },
+  "target": {
+    "url": "http://127.0.0.1:3000/",
+    "authorization": "local-or-private",
+    "authentication": "anonymous",
+    "inspected": false
+  },
+  "execution": {
+    "mode": "deep",
+    "failOn": "major",
+    "pageStrategy": "bounded-crawl",
+    "pagesMax": 20,
+    "maxDepth": 2,
+    "explicitRoutes": 0,
+    "includePatterns": 1,
+    "excludePatterns": 8,
+    "scenariosPerPage": 15,
+    "journeyScenarios": 1,
+    "scenarioExecutionsMax": 301,
+    "builtInScenarios": [
+      "baseline",
+      "phone-320",
+      "phone-390",
+      "tablet-768",
+      "long-text",
+      "rtl-arabic",
+      "image-failure",
+      "keyboard-tab",
+      "page-zoom-200",
+      "reduced-motion",
+      "dark-scheme",
+      "slow-api",
+      "api-error",
+      "empty-data",
+      "axe"
+    ],
+    "viewports": [
+      {
+        "id": "phone-320",
+        "width": 320,
+        "height": 700,
+        "touch": true
+      },
+      {
+        "id": "phone-390",
+        "width": 390,
+        "height": 844,
+        "touch": true
+      },
+      {
+        "id": "tablet-768",
+        "width": 768,
+        "height": 1024,
+        "touch": true
+      }
+    ],
+    "baselineMode": "none"
+  },
+  "summary": {
+    "pagesMax": 20,
+    "scenariosPerPage": 15,
+    "journeyScenarios": 1,
+    "scenarioExecutionsMax": 301,
+    "enabledDetectors": 12,
+    "policySettings": 55
+  },
+  "detectors": [
+    {
+      "key": "runtime",
+      "label": "Runtime and UI baseline",
+      "labelZh": "运行时与界面基线",
+      "enabled": true,
+      "policySettings": 6,
+      "severity": "major",
+      "note": "Console, request, image, layout, focus, and rendered-state observations.",
+      "noteZh": "观察控制台、请求、图片、布局、焦点与渲染状态。"
+    },
+    {
+      "key": "responsive",
+      "label": "Responsive viewport matrix",
+      "labelZh": "响应式视口矩阵",
+      "enabled": true,
+      "policySettings": 3,
+      "severity": "major",
+      "note": "Each configured viewport runs in a fresh browser context.",
+      "noteZh": "每个配置视口都在新的浏览器上下文中运行。"
+    },
+    {
+      "key": "deep",
+      "label": "Deep recovery and accessibility scenarios",
+      "labelZh": "深度恢复与无障碍场景",
+      "enabled": true,
+      "policySettings": 7,
+      "severity": "major",
+      "note": "Preference, degraded API, empty data, and axe-core scenarios run only in deep mode.",
+      "noteZh": "偏好设置、API 降级、空数据与 axe-core 场景仅在 deep 模式运行。"
+    },
+    {
+      "key": "checks",
+      "label": "Declarative product requirements",
+      "labelZh": "声明式产品要求",
+      "enabled": true,
+      "policySettings": 1,
+      "severity": "major",
+      "note": "Validated selectors and assertions run without arbitrary project code.",
+      "noteZh": "经校验的选择器与断言不会执行任意项目代码。"
+    },
+    {
+      "key": "journeys",
+      "label": "Safe user journeys",
+      "labelZh": "安全用户旅程",
+      "enabled": true,
+      "policySettings": 1,
+      "severity": "major",
+      "note": "Same-origin declarative steps must include proof and cannot submit forms.",
+      "noteZh": "同源声明式步骤必须包含证明，并且不能提交表单。"
+    },
+    {
+      "key": "performance",
+      "label": "Performance budgets",
+      "labelZh": "性能预算",
+      "enabled": true,
+      "policySettings": 4,
+      "severity": "major",
+      "note": "Browser performance metrics are compared with explicit numeric limits.",
+      "noteZh": "将浏览器性能指标与明确的数值上限比较。"
+    },
+    {
+      "key": "network",
+      "label": "Network reliability budgets",
+      "labelZh": "网络可靠性预算",
+      "enabled": true,
+      "policySettings": 6,
+      "severity": "major",
+      "note": "Counts and timings are retained; response bodies and query values are not.",
+      "noteZh": "保留计数与耗时，不保留响应正文与查询参数值。"
+    },
+    {
+      "key": "links",
+      "label": "Same-origin link integrity",
+      "labelZh": "同源链接完整性",
+      "enabled": true,
+      "policySettings": 3,
+      "severity": "major",
+      "note": "A bounded number of allowed same-origin links are checked with HEAD only.",
+      "noteZh": "仅使用 HEAD 核查有限数量且在允许范围内的同源链接。"
+    },
+    {
+      "key": "metadata",
+      "label": "Publishing metadata",
+      "labelZh": "发布元数据",
+      "enabled": true,
+      "policySettings": 9,
+      "severity": "major",
+      "note": "Presence, length, count, and directive facts are retained without copying page text.",
+      "noteZh": "仅保留存在性、长度、数量与指令事实，不复制页面正文。"
+    },
+    {
+      "key": "visual",
+      "label": "Reviewed visual baseline",
+      "labelZh": "经审核的视觉基线",
+      "enabled": true,
+      "policySettings": 4,
+      "severity": "major",
+      "note": "Baselines can change only through a separate explicit approval command.",
+      "noteZh": "视觉基线只能通过独立的显式批准命令变更。"
+    },
+    {
+      "key": "security",
+      "label": "Response and origin security",
+      "labelZh": "响应与来源安全",
+      "enabled": true,
+      "policySettings": 4,
+      "severity": "major",
+      "note": "Headers, mixed content, forms, and origin counts are inspected without submission.",
+      "noteZh": "在不提交数据的前提下检查响应头、混合内容、表单与来源数量。"
+    },
+    {
+      "key": "privacy",
+      "label": "Aggregate browser-storage privacy",
+      "labelZh": "浏览器存储聚合隐私",
+      "enabled": true,
+      "policySettings": 7,
+      "severity": "major",
+      "note": "Only aggregate cookie and Web Storage counts and bytes are retained.",
+      "noteZh": "仅保留 Cookie 与 Web Storage 的聚合数量和字节数。"
+    }
+  ],
+  "governance": {
+    "qualityGate": true,
+    "baselinePolicy": true,
+    "waivers": 0,
+    "owners": 1,
+    "baselineMode": "none"
+  },
+  "safety": [
+    {
+      "id": "preview-only",
+      "en": "This command did not open a browser, request the target, or modify application code.",
+      "zh": "此命令没有打开浏览器、请求目标网站或修改应用代码。"
+    },
+    {
+      "id": "same-origin",
+      "en": "Navigation and declarative journeys remain same-origin and bounded by the route policy.",
+      "zh": "导航与声明式旅程保持同源，并受路由策略限制。"
+    },
+    {
+      "id": "no-submit",
+      "en": "RealityCheck does not submit forms, purchase, delete, sign out, or approve releases.",
+      "zh": "RealityCheck 不会提交表单、购买、删除、退出登录或批准发布。"
+    },
+    {
+      "id": "reviewed-repair",
+      "en": "Repair suggestions and copyable tasks require human review; no fix is applied from this plan.",
+      "zh": "修复建议与可复制任务需要人工复核；此计划不会应用任何修复。"
+    }
+  ],
+  "retention": [
+    {
+      "id": "screenshots",
+      "retained": true,
+      "en": "Audit screenshots and bounded DOM measurements may be written as evidence.",
+      "zh": "核查截图与有限 DOM 测量值可能写入证据。"
+    },
+    {
+      "id": "request-data",
+      "retained": false,
+      "en": "Response bodies and URL query values are not retained.",
+      "zh": "不保留响应正文与 URL 查询参数值。"
+    },
+    {
+      "id": "browser-storage",
+      "retained": false,
+      "en": "Cookie names, values, storage keys, and storage values are not retained.",
+      "zh": "不保留 Cookie 名称和值，也不保留存储键和值。"
+    },
+    {
+      "id": "authentication",
+      "retained": false,
+      "en": "Authentication storage-state paths and values are not copied into the plan or report.",
+      "zh": "认证状态文件路径和值不会复制到计划或报告中。"
+    },
+    {
+      "id": "secrets",
+      "retained": false,
+      "en": "Private signing keys and credentials remain outside generated evidence.",
+      "zh": "私有签名密钥与凭据始终位于生成证据之外。"
+    }
+  ],
+  "warnings": [
+    "This is an execution preview, not evidence that the target passed or failed.",
+    "这是执行预览，不是目标通过或失败的证据。",
+    "The maximum scenario count is conservative; crawl discovery may find fewer than 20 page(s).",
+    "最大场景数按保守上限计算；实际爬取可能少于 20 个页面。"
+  ],
+  "nextCommand": "realitycheck audit --config examples/audit-plan-lab/realitycheck.config.json"
+}

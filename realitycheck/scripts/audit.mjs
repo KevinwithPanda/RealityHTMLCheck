@@ -34,6 +34,7 @@ import { buildGitHubSummary, writeGitHubSummary } from "./github-summary.mjs";
 import { buildPolicyReview, writePolicyReview } from "./policy-review.mjs";
 import { buildIssueDrafts, writeIssueDrafts } from "./issue-drafts.mjs";
 import { buildReleaseDecision, parseRequiredControls, releaseDecisionExitCode, writeReleaseDecision } from "./release-decision.mjs";
+import { buildAuditPlan, writeAuditPlan } from "./audit-plan.mjs";
 
 const require = createRequire(import.meta.url);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -64,6 +65,7 @@ Usage:
   realitycheck init [--profile starter|product|strict] [--base-url URL] [--config PATH]
   realitycheck profiles
   realitycheck doctor [--config PATH]
+  realitycheck plan [URL] [--config PATH] [--output PATH]
   realitycheck visual-approve <REPORT.JSON> [--config PATH] [--replace-baseline]
   realitycheck validate <FILE|DIRECTORY> [...]
   realitycheck catalog <FILE|DIRECTORY> [...] [--output PATH]
@@ -114,6 +116,7 @@ Examples:
   realitycheck profiles
   realitycheck init --profile product --base-url http://localhost:3000
   realitycheck doctor
+  realitycheck plan --config realitycheck.config.json --output .realitycheck/audit-plan
   realitycheck visual-approve .realitycheck/runs/RUN/report.json
   realitycheck validate .realitycheck/runs
   realitycheck catalog .realitycheck --output .realitycheck/catalog
@@ -135,7 +138,7 @@ Examples:
 
 function parseArguments(argv) {
   const args = [...argv];
-  const command = new Set(["audit", "demo", "init", "profiles", "doctor", "visual-approve", "validate", "catalog", "github-summary", "risk-register", "policy-review", "issue-drafts", "release-decision", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
+  const command = new Set(["audit", "demo", "init", "profiles", "doctor", "plan", "visual-approve", "validate", "catalog", "github-summary", "risk-register", "policy-review", "issue-drafts", "release-decision", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
   const options = {
     command,
     target: null,
@@ -2889,6 +2892,26 @@ async function main() {
       initializeProjectConfig(cli);
       return;
     }
+    if (cli.command === "plan") {
+      if (cli.headed || cli.browserPath) throw new Error("plan does not open a browser; remove --headed and --browser");
+      loaded = loadProjectConfig(cli.config);
+      const planOptions = mergeProjectOptions(cli, loaded);
+      if (!planOptions.target) throw new Error(`A target URL is required. Pass one or set baseUrl in ${CONFIG_FILENAME}`);
+      planOptions.target = isPrivateTarget(planOptions.target, planOptions.allowRemote);
+      const storageStateSummary = planOptions.storageState ? inspectStorageState(planOptions.storageState) : null;
+      const output = cli.output ? resolve(cli.output) : resolve(loaded.directory, ".realitycheck/audit-plan");
+      const plan = buildAuditPlan(planOptions, loaded, { storageStateSummary });
+      const outputs = writeAuditPlan(plan, output);
+      const [validation] = validateArtifactFiles([outputs.jsonPath]);
+      if (!validation?.valid) throw new Error(`Generated audit plan failed validation: ${validation?.errors.join("; ") || "unknown validation error"}`);
+      console.log(`audit-plan.json:  ${outputs.jsonPath}`);
+      console.log(`audit-plan.md:    ${outputs.markdownPath}`);
+      console.log(`audit-plan.zh.md: ${outputs.markdownZhPath}`);
+      console.log(`audit-plan.html:  ${outputs.htmlPath}`);
+      console.log(`coverage ceiling: ${plan.summary.pagesMax} page(s), ${plan.summary.scenarioExecutionsMax} scenario execution(s)`);
+      console.log("browser access:   NONE (preview only)");
+      return;
+    }
     if (cli.command === "visual-approve") {
       if (!cli.visualReport) throw new Error("visual-approve requires a report.json path");
       if (cli.output) throw new Error("visual-approve writes to the configured baseline directory; do not pass --output");
@@ -3093,7 +3116,8 @@ async function main() {
   console.log(`Target   ${options.target}`);
   console.log(`Browser  ${executablePath}`);
   console.log(`Config   ${loaded.path || "built-in defaults"}`);
-  console.log(`Scope    ${options.crawl.enabled ? `crawl up to ${options.crawl.maxPages} pages / depth ${options.crawl.maxDepth}` : `${Math.max(1, options.routes.length)} configured page(s)`}`);
+  const configuredPageCount = new Set([options.target, ...options.routes.map((route) => resolveRoute(options.target, route))]).size;
+  console.log(`Scope    ${options.crawl.enabled ? `crawl up to ${options.crawl.maxPages} pages / depth ${options.crawl.maxDepth}` : `${configuredPageCount} configured page(s)`}`);
   console.log(`Auth     ${options.storageState ? "authenticated state loaded (not persisted)" : "anonymous context"}`);
 
   const browser = await chromium.launch({ executablePath, headless: !options.headed });

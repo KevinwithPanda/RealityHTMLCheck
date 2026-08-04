@@ -10,6 +10,12 @@
 
 Profiles generate ordinary JSON with no hidden behavior. They never prove legal, regulatory, security, accessibility, or performance compliance. Review every threshold, required header, route boundary, and exclusion for the application before CI enforcement. `--base-url` rejects credentials, query strings, fragments, and non-HTTP(S) protocols so initialization cannot persist URL secrets.
 
+## Preview the effective policy without browser access
+
+Run `realitycheck plan --config realitycheck.config.json --output .realitycheck/audit-plan` when a human needs to understand or approve the resolved policy before the browser is allowed to navigate. The command validates config and CLI precedence, strips target queries and fragments, and writes schema-validated JSON plus bilingual Markdown and offline HTML.
+
+The plan reports the maximum pages, built-in scenarios per page, declared journeys, conservative maximum scenario executions, all detector families, viewport dimensions, governance counts, safety boundaries, and retained versus excluded data. It intentionally stores counts rather than route globs, selectors, waiver reasons, authentication paths, or storage contents. `target.inspected` remains `false`; a plan is an execution preview, never passing audit evidence.
+
 ## Resolution and precedence
 
 - An explicit `--config PATH` wins.

@@ -7,6 +7,7 @@ import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import { verifyEvidenceManifest } from "./evidence-manifest.mjs";
 import { verifyEvidenceAttestation } from "./evidence-attestation.mjs";
+import { computeAuditPlanId } from "./audit-plan.mjs";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const ASSET_DIR = resolve(SCRIPT_DIR, "../assets");
@@ -27,6 +28,7 @@ const ARTIFACT_FILES = new Set([
   "policy-review.json",
   "github-issue-drafts.json",
   "release-decision.json",
+  "audit-plan.json",
   "realitycheck.config.json",
 ]);
 const SKIPPED_DIRECTORIES = new Set([".git", "node_modules", "__pycache__"]);
@@ -48,6 +50,7 @@ const SCHEMA_BY_ARTIFACT = {
   "policy-review": "policy-review.schema.json",
   "github-issue-drafts": "issue-drafts.schema.json",
   "release-decision": "release-decision.schema.json",
+  "audit-plan": "audit-plan.schema.json",
   config: "config.schema.json",
 };
 
@@ -269,6 +272,46 @@ function verifyReleaseDecision(bundle) {
   return errors;
 }
 
+function verifyAuditPlan(plan) {
+  const errors = [];
+  let target;
+  try {
+    target = new URL(plan.target?.url);
+    if (target.search || target.hash || target.username || target.password) errors.push("/target/url must not retain credentials, query values, or fragments");
+  } catch (_) {
+    errors.push("/target/url is not a valid URL");
+  }
+  const execution = plan.execution || {};
+  const detectors = plan.detectors || [];
+  const detectorKeys = new Set();
+  for (const detector of detectors) {
+    if (detectorKeys.has(detector.key)) errors.push(`/detectors contains duplicate key ${detector.key}`);
+    detectorKeys.add(detector.key);
+  }
+  const viewportIds = new Set((execution.viewports || []).map((item) => item.id));
+  const scenarioIds = new Set(execution.builtInScenarios || []);
+  for (const id of viewportIds) if (!scenarioIds.has(id)) errors.push(`/execution/builtInScenarios is missing viewport ${id}`);
+  if (!scenarioIds.has("baseline")) errors.push("/execution/builtInScenarios is missing baseline");
+  if (scenarioIds.size !== (execution.builtInScenarios || []).length) errors.push("/execution/builtInScenarios contains duplicates");
+  if (execution.scenariosPerPage !== (execution.builtInScenarios || []).length) errors.push("/execution/scenariosPerPage does not match builtInScenarios");
+  const expectedExecutions = execution.pagesMax * execution.scenariosPerPage + execution.journeyScenarios;
+  if (execution.scenarioExecutionsMax !== expectedExecutions) errors.push("/execution/scenarioExecutionsMax does not match page and journey bounds");
+  const expectedSummary = {
+    pagesMax: execution.pagesMax,
+    scenariosPerPage: execution.scenariosPerPage,
+    journeyScenarios: execution.journeyScenarios,
+    scenarioExecutionsMax: expectedExecutions,
+    enabledDetectors: detectors.filter((item) => item.enabled).length,
+    policySettings: detectors.reduce((total, item) => total + item.policySettings, 0),
+  };
+  for (const [key, value] of Object.entries(expectedSummary)) {
+    if (plan.summary?.[key] !== value) errors.push(`/summary/${key} does not match the plan details`);
+  }
+  if (plan.governance?.baselineMode !== execution.baselineMode) errors.push("/governance/baselineMode does not match execution.baselineMode");
+  if (plan.id !== computeAuditPlanId(plan)) errors.push("/id does not bind the effective target, policy, execution, and governance plan");
+  return errors;
+}
+
 export function validateArtifactFiles(inputPaths, { trustedKeyIds = [], requireAttestation = false } = {}) {
   if (!inputPaths.length) throw new Error("validate requires at least one JSON file or directory");
   const trustedKeys = new Set(trustedKeyIds);
@@ -306,6 +349,7 @@ export function validateArtifactFiles(inputPaths, { trustedKeyIds = [], requireA
     if (schemaValid && kind === "policy-review") errors.push(...verifyPolicyReview(value));
     if (schemaValid && kind === "github-issue-drafts") errors.push(...verifyIssueDrafts(value));
     if (schemaValid && kind === "release-decision") errors.push(...verifyReleaseDecision(value));
+    if (schemaValid && kind === "audit-plan") errors.push(...verifyAuditPlan(value));
     if (schemaValid && kind === "evidence-attestation" && trustedKeys.size && !trustedKeys.has(value.signer.keyId)) {
       errors.push(`/signer/keyId is not in the trusted key allowlist: ${value.signer.keyId}`);
     }

@@ -42,9 +42,32 @@ jobs:
           node --check realitycheck/scripts/policy-review.mjs
           node --check realitycheck/scripts/issue-drafts.mjs
           node --check realitycheck/scripts/release-decision.mjs
+          node --check realitycheck/scripts/audit-plan.mjs
 
       - name: Verify package contents
         run: npm pack --dry-run
+
+      - name: Prove the browser-free effective audit plan
+        shell: bash
+        run: |
+          node realitycheck/scripts/audit.mjs plan \
+            --config examples/audit-plan-lab/realitycheck.config.json \
+            --output .realitycheck/ci-audit-plan
+          node realitycheck/scripts/audit.mjs validate \
+            .realitycheck/ci-audit-plan/audit-plan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          plan = json.loads(Path(".realitycheck/ci-audit-plan/audit-plan.json").read_text(encoding="utf-8"))
+          assert plan["summary"]["pagesMax"] == 20, plan
+          assert plan["summary"]["scenariosPerPage"] == 15, plan
+          assert plan["summary"]["scenarioExecutionsMax"] == 301, plan
+          assert plan["summary"]["enabledDetectors"] == 12, plan
+          assert plan["safety"]["browserAccessed"] is False, plan
+          assert "data-testid" not in json.dumps(plan), plan
+          assert Path(".realitycheck/ci-audit-plan/audit-plan.html").is_file()
+          assert Path(".realitycheck/ci-audit-plan/audit-plan.zh-CN.md").is_file()
+          PY
 
       - name: Prove the structural policy anti-weakening gate
         shell: bash

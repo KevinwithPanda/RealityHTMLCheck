@@ -40,6 +40,10 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "labs/release-decision/release-decision.json",
     "labs/release-decision/release-decision.md",
     "labs/release-decision/release-decision.zh-CN.md",
+    "labs/audit-plan/audit-plan.html",
+    "labs/audit-plan/audit-plan.json",
+    "labs/audit-plan/audit-plan.md",
+    "labs/audit-plan/audit-plan.zh-CN.md",
     "labs/reference-run/report.html",
     "labs/links/broken.html",
     "labs/links/fixed.html",
@@ -68,6 +72,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.equal(structuredData.softwareVersion, "0.4.0");
   assert.equal(structuredData.codeRepository, "https://github.com/KevinwithPanda/RealityHTMLCheck");
   assert.ok(structuredData.featureList.includes("Policy anti-weakening review"));
+  assert.ok(structuredData.featureList.includes("Browser-free bilingual audit plan previews"));
   assert.match(html, /data-language="zh-CN"/);
   assert.match(html, /init --profile product --base-url/);
   assert.match(html, /npm run demo/);
@@ -93,6 +98,9 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /给出一个保守的交付答案/);
   assert.match(html, /automatic deployments · 0/);
   assert.match(html, /BROWSER STORAGE PRIVACY/);
+  assert.match(html, /UNDERSTAND BEFORE EXECUTION/);
+  assert.match(html, /Open the 301-scenario plan/);
+  assert.match(html, /browser access&nbsp; NONE/);
   assert.match(html, /浏览器存储隐私/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   const localReferences = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((match) => match[1])
@@ -111,6 +119,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   const llms = readFileSync(resolve(output, "llms.txt"), "utf8");
   assert.match(llms, /GitHub issue drafts are local files that are never submitted automatically/);
   assert.match(llms, /labs\/policy-review\/review\/policy-review\.html/);
+  assert.match(llms, /labs\/audit-plan\/audit-plan\.html/);
 });
 
 test("Pages workflow uses the supported deployment artifact path", () => {
