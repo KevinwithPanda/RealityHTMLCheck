@@ -32,7 +32,7 @@ export const DEFAULT_PROJECT_CONFIG = Object.freeze({
   owners: [],
 });
 
-const TOP_LEVEL_KEYS = new Set(["$schema", "baseUrl", "mode", "failOn", "output", "routes", "crawl", "checks", "journeys", "budgets", "network", "security", "waivers", "qualityGate", "baselinePolicy", "owners"]);
+const TOP_LEVEL_KEYS = new Set(["$schema", "baseUrl", "mode", "failOn", "output", "routes", "crawl", "checks", "journeys", "budgets", "network", "links", "security", "waivers", "qualityGate", "baselinePolicy", "owners"]);
 const CRAWL_KEYS = new Set(["enabled", "maxPages", "maxDepth", "include", "exclude"]);
 const CHECK_KEYS = new Set(["id", "selector", "assertion", "severity", "title", "titleZh", "remediation", "remediationZh", "include", "exclude", "options"]);
 const CHECK_OPTION_KEYS = new Set(["min", "max", "attribute", "equals", "contains", "minWidth", "minHeight"]);
@@ -55,6 +55,7 @@ const BUDGET_KEYS = new Set([
 const SECURITY_KEYS = new Set(["severity", "requiredHeaders", "forbidMixedContent", "secureForms", "maxThirdPartyOrigins", "allowedThirdPartyOrigins"]);
 const SECURITY_HEADERS = new Set(["content-security-policy", "strict-transport-security", "x-content-type-options", "referrer-policy", "permissions-policy"]);
 const NETWORK_KEYS = new Set(["severity", "scope", "maxHttpErrors", "maxFailedRequests", "slowRequestMs", "maxSlowRequests", "maxThirdPartyRequests"]);
+const LINK_POLICY_KEYS = new Set(["severity", "maxFailures", "maxChecked", "timeoutMs"]);
 const WAIVER_KEYS = new Set(["id", "ruleId", "selector", "reason", "owner", "expires", "include", "exclude"]);
 const QUALITY_GATE_KEYS = new Set(["minimumScore", "minimumCoveragePercent", "maxWaivedFindings"]);
 const BASELINE_POLICY_KEYS = new Set(["maxAgeDays", "requireSamePolicy"]);
@@ -280,6 +281,21 @@ function validateNetworkPolicy(value, source) {
   return normalized;
 }
 
+function validateLinkPolicy(value, source) {
+  const label = `${source}.links`;
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new ConfigError(`${label} must be an object`);
+  assertKnownKeys(value, LINK_POLICY_KEYS, label);
+  if (value.maxFailures === undefined) throw new ConfigError(`${label}.maxFailures is required`);
+  const normalized = {
+    severity: value.severity ?? "major",
+    maxFailures: boundedInteger(value.maxFailures, `${label}.maxFailures`, 0, 100),
+    maxChecked: value.maxChecked === undefined ? 50 : boundedInteger(value.maxChecked, `${label}.maxChecked`, 1, 100),
+    timeoutMs: value.timeoutMs === undefined ? 5_000 : boundedInteger(value.timeoutMs, `${label}.timeoutMs`, 500, 15_000),
+  };
+  if (!new Set(["critical", "major", "minor"]).has(normalized.severity)) throw new ConfigError(`${label}.severity is not supported`);
+  return normalized;
+}
+
 function validateWaivers(value, source) {
   if (!Array.isArray(value)) throw new ConfigError(`${source}.waivers must be an array`);
   if (value.length > 100) throw new ConfigError(`${source}.waivers cannot contain more than 100 entries`);
@@ -397,6 +413,7 @@ export function validateProjectConfig(value, source = CONFIG_FILENAME) {
   if (value.journeys !== undefined) normalized.journeys = validateJourneys(value.journeys, source);
   if (value.budgets !== undefined) normalized.budgets = validateBudgets(value.budgets, source);
   if (value.network !== undefined) normalized.network = validateNetworkPolicy(value.network, source);
+  if (value.links !== undefined) normalized.links = validateLinkPolicy(value.links, source);
   if (value.security !== undefined) normalized.security = validateSecurityPolicy(value.security, source);
   if (value.waivers !== undefined) normalized.waivers = validateWaivers(value.waivers, source);
   if (value.qualityGate !== undefined) normalized.qualityGate = validateQualityGate(value.qualityGate, source);
@@ -477,6 +494,7 @@ export function mergeProjectOptions(cli, loaded) {
     journeys: project.journeys || [],
     budgets: project.budgets || null,
     network: project.network || null,
+    links: project.links || null,
     security: project.security || null,
     waivers: project.waivers || [],
     qualityGate: project.qualityGate || null,

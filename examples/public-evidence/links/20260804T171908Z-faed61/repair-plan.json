@@ -1,0 +1,55 @@
+{
+  "items": [
+    {
+      "confidence": "high",
+      "findingId": "RC-D9B4C0700C",
+      "fingerprint": "d9b4c0700c4dc3a7aef2a3159ae7a7c6d2f2f54ec102ce51d8caec179ca41cba",
+      "remediation": {
+        "summary": "Correct or remove every sampled broken href, preserve intentional redirects, and rerun the same link policy without increasing its failure allowance.",
+        "technicalHints": [
+          "HEAD 405/501 responses are recorded as unsupported rather than broken; verify those endpoints manually or make their HEAD behavior standards-compatible."
+        ]
+      },
+      "reportAnchor": "report.html#RC-D9B4C0700C",
+      "ruleId": "link-integrity-failure-budget",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "Broken same-origin links exceed the project budget",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "修正或移除每个样本中的失效 href，保留有意的重定向，并在不提高失败容许数的情况下重新运行同一链接策略。",
+            "technicalHints": [
+              "HEAD 405/501 会记为不支持而非失效；请人工验证这些端点，或让其 HEAD 行为符合标准。"
+            ]
+          },
+          "title": "同源失效链接超过项目预算"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    }
+  ],
+  "kind": "repair-plan",
+  "schemaVersion": "1",
+  "source": {
+    "reportPath": "report.json",
+    "runId": "20260804T171908Z-faed61",
+    "target": "http://127.0.0.1:4182/examples/link-lab/broken.html"
+  },
+  "summary": {
+    "critical": 0,
+    "items": 1,
+    "major": 1,
+    "minor": 0,
+    "reviewRequired": 0,
+    "waived": 0
+  },
+  "toolVersion": "0.4.0"
+}

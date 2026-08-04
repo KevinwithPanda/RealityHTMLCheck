@@ -187,6 +187,48 @@ jobs:
           PY
           node realitycheck/scripts/audit.mjs validate "$broken_report" "$fixed_report"
 
+      - name: Prove HEAD-only link integrity with positive and negative fixtures
+        shell: bash
+        run: |
+          python -m http.server 4178 --bind 127.0.0.1 --directory . >/tmp/realitycheck-links.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..50}; do
+            if curl --fail --silent http://127.0.0.1:4178/examples/link-lab/broken.html >/dev/null; then break; fi
+            sleep 0.1
+          done
+          set +e
+          npm run audit -- http://127.0.0.1:4178/examples/link-lab/broken.html \
+            --config examples/link-lab/broken.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-links-broken \
+            --fail-on major
+          broken_status=$?
+          set -e
+          test "$broken_status" -eq 1
+          npm run audit -- http://127.0.0.1:4178/examples/link-lab/fixed.html \
+            --config examples/link-lab/fixed.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-links-fixed \
+            --fail-on major
+          broken_report="$(find .realitycheck/ci-links-broken -name report.json -print -quit)"
+          fixed_report="$(find .realitycheck/ci-links-fixed -name report.json -print -quit)"
+          python - "$broken_report" "$fixed_report" <<'PY'
+          import json
+          import sys
+          broken = json.load(open(sys.argv[1], encoding="utf-8"))
+          fixed = json.load(open(sys.argv[2], encoding="utf-8"))
+          assert {finding["ruleId"] for finding in broken["findings"]} == {"link-integrity-failure-budget"}, broken
+          finding = broken["findings"][0]
+          assert finding["measurements"]["checked"] == 2, finding
+          assert finding["measurements"]["failures"] == 1, finding
+          assert finding["measurements"]["excluded"] == 1, finding
+          sample = finding["evidence"][0]["failureSamples"][0]
+          assert sample["status"] == 404 and "?" not in sample["url"], sample
+          assert fixed["score"]["overall"] == 100 and not fixed["findings"], fixed
+          PY
+          node realitycheck/scripts/audit.mjs validate "$broken_report" "$fixed_report"
+
       - name: Prove authenticated auditing without storage-state leakage
         shell: bash
         run: |
@@ -313,6 +355,8 @@ jobs:
             .realitycheck/ci-site
             .realitycheck/ci-lab-broken
             .realitycheck/ci-lab-fixed
+            .realitycheck/ci-links-broken
+            .realitycheck/ci-links-fixed
             .realitycheck/ci-auth-anonymous
             .realitycheck/ci-authenticated
             .realitycheck/ci-accessibility-broken

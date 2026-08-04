@@ -101,6 +101,21 @@ test("network reliability budgets are scoped, paired, and bounded", () => {
   assert.throws(() => validateProjectConfig({ network: { maxThirdPartyRequests: -1 } }), /0 to 10000/);
 });
 
+test("link integrity policy is HEAD-only, bounded, and explicit", () => {
+  assert.deepEqual(validateProjectConfig({ links: { maxFailures: 0 } }).links, {
+    severity: "major",
+    maxFailures: 0,
+    maxChecked: 50,
+    timeoutMs: 5000,
+  });
+  const links = { severity: "critical", maxFailures: 2, maxChecked: 100, timeoutMs: 15000 };
+  assert.deepEqual(validateProjectConfig({ links }).links, links);
+  assert.throws(() => validateProjectConfig({ links: {} }), /maxFailures is required/);
+  assert.throws(() => validateProjectConfig({ links: { maxFailures: 0, maxChecked: 0 } }), /1 to 100/);
+  assert.throws(() => validateProjectConfig({ links: { maxFailures: 0, timeoutMs: 499 } }), /500 to 15000/);
+  assert.throws(() => validateProjectConfig({ links: { maxFailures: 0, method: "GET" } }), /unknown property/);
+});
+
 test("security policies are explicit, bounded, and origin-only", () => {
   const security = {
     severity: "major",

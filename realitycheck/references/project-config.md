@@ -140,6 +140,23 @@ Network policy runs in the clean baseline context and is opt-in. Set `scope` to 
 
 Evidence never retains response bodies. Sampled URLs have credentials, fragments, and complete query strings removed before the audit input is written; samples are capped at ten per finding. Use the separate security origin allowlist when the question is whether a third party is approved. Use this policy when the question is whether request failures, latency, or dependency volume may block a release.
 
+## Same-origin link integrity
+
+Link policy runs after the clean baseline settles. It collects anchors without activating them and checks eligible same-origin targets with `HEAD` only:
+
+```json
+{
+  "links": {
+    "maxFailures": 0,
+    "maxChecked": 50,
+    "timeoutMs": 5000,
+    "severity": "major"
+  }
+}
+```
+
+`maxFailures` is required and accepts 0 to 100. `maxChecked` defaults to 50 and is capped at 100; `timeoutMs` defaults to 5000 and accepts 500 to 15000. The checker removes credentials, queries, and fragments, deduplicates targets, and runs at most five requests concurrently. It follows no more than five redirects, stops before leaving the audited origin, and applies the merged crawl include/exclude policy to both initial and redirected paths. A redirect to an external origin is a failure; a route excluded for logout, purchase, deletion, unsubscribe, checkout, or OAuth is skipped without being contacted. `HEAD` 405/501 is reported as unsupported rather than broken. No GET fallback exists, so link checking cannot download a linked document or trigger a GET-only business action.
+
 ## Security baseline
 
 Security checks are opt-in because localhost and production delivery policies differ. Define at least one policy; `severity` defaults to `major`.
@@ -235,7 +252,7 @@ An optional `baselinePolicy` prevents a regression-only `--baseline` from preser
 }
 ```
 
-`maxAgeDays` is an integer from 1 to 3650. Age is measured from the baseline run's `finishedAt` to the new run's `startedAt`, so copying a file does not make old evidence fresh. `requireSamePolicy` compares SHA-256 fingerprints derived from tool version, scenario mode, declarative checks, journeys, performance budgets, network reliability limits, and security policy; property/list ordering is canonicalized, and raw selectors or policy content are not copied into the report. Missing or different fingerprints produce `policy-drift` instead of a false resolution. At least one policy must be active. These gates are enforced only for `--baseline`; `--compare` remains an unrestricted historical analysis tool.
+`maxAgeDays` is an integer from 1 to 3650. Age is measured from the baseline run's `finishedAt` to the new run's `startedAt`, so copying a file does not make old evidence fresh. `requireSamePolicy` compares SHA-256 fingerprints derived from tool version, scenario mode, declarative checks, journeys, performance budgets, network reliability limits, link policy, and security policy; property/list ordering is canonicalized, and raw selectors or policy content are not copied into the report. Missing or different fingerprints produce `policy-drift` instead of a false resolution. At least one policy must be active. These gates are enforced only for `--baseline`; `--compare` remains an unrestricted historical analysis tool.
 
 ## Authenticated pages
 

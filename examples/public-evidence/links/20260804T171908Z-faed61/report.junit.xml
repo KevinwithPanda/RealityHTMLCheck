@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="RealityCheck RealityCheck link integrity lab — broken" tests="6" time="5.072" timestamp="2026-08-04T17:19:08.167Z" failures="1" errors="0" skipped="0">
+  <properties>
+    <property name="realitycheck.runId" value="20260804T171908Z-faed61" />
+    <property name="realitycheck.score" value="96" />
+    <property name="realitycheck.failOn" value="major" />
+    <property name="realitycheck.target" value="http://127.0.0.1:4182/examples/link-lab/broken.html" />
+  </properties>
+  <testcase classname="RealityCheck.browser" name="baseline" time="0.626">
+    <failure message="1 finding(s) met the major threshold" type="RealityCheckQualityGate">RC-D9B4C0700C [major] Broken same-origin links exceed the project budget</failure>
+    <system-out>RC-D9B4C0700C [major/high] Broken same-origin links exceed the project budget</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="mobile-375" time="0.568" />
+  <testcase classname="RealityCheck.browser" name="long-text" time="1.209" />
+  <testcase classname="RealityCheck.browser" name="rtl-arabic" time="1.053" />
+  <testcase classname="RealityCheck.browser" name="image-failure" time="0.580" />
+  <testcase classname="RealityCheck.browser" name="keyboard-tab" time="0.966" />
+</testsuite>

@@ -1,0 +1,13 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4182/examples/link-lab/broken.html",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/link-lab-broken",
+  "links": {
+    "maxFailures": 0,
+    "maxChecked": 20,
+    "timeoutMs": 3000,
+    "severity": "major"
+  }
+}

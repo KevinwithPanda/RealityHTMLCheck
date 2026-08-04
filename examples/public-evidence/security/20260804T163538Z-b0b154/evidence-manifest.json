@@ -11,7 +11,7 @@
   "algorithm": "sha256",
   "summary": {
     "files": 14,
-    "bytes": 349042
+    "bytes": 349643
   },
   "files": [
     {
@@ -34,8 +34,8 @@
     },
     {
       "path": "report.html",
-      "bytes": 55554,
-      "sha256": "ad0eba73a0fcdea2ed6e2b3f00d243681ee0b5e2cf43ed37387bc8f1ee926d36",
+      "bytes": 56155,
+      "sha256": "59b99b2e477a73ae69dcc906904aa647397480d8803b676ff85bcf4a5fb128ad",
       "mediaType": "text/html"
     },
     {

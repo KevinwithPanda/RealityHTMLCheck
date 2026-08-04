@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RealityCheck link integrity lab — broken</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <p class="eyebrow">HEAD-ONLY LINK LAB</p>
+    <h1>One route was removed</h1>
+    <p>The first product link points to a missing same-origin page. The logout path is intentionally present to prove the safety exclusion.</p>
+    <nav aria-label="Product destinations">
+      <a href="missing-guide.html?session=link-lab-secret#setup">Open the missing guide</a>
+      <a href="destination.html">Open the working guide</a>
+      <a href="/logout/account">Excluded logout path</a>
+      <a href="mailto:team@example.test">Ignored email link</a>
+    </nav>
+  </main>
+</body>
+</html>

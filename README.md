@@ -169,6 +169,12 @@ npx realitycheck doctor
     "maxThirdPartyRequests": 2,
     "severity": "major"
   },
+  "links": {
+    "maxFailures": 0,
+    "maxChecked": 50,
+    "timeoutMs": 5000,
+    "severity": "major"
+  },
   "security": {
     "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
     "secureForms": true,
@@ -195,6 +201,8 @@ Custom checks are declarative—`exists`, `visible`, `enabled`, `accessible-name
 
 Network reliability policy can independently govern API-only or all-resource traffic: cap HTTP errors, transport failures, slow requests, and third-party request volume. Evidence includes bounded endpoint samples with credentials, fragments, and query values removed; response bodies are never retained. The paired [`examples/network-lab`](examples/network-lab) fixtures fail at **96/100** for one missing API and pass at **100/100** after the endpoint is restored.
 
+Link integrity policy checks a bounded set of same-origin anchors with `HEAD` only. It never activates links or downloads response bodies, follows at most five same-origin redirects, and reuses the crawler's logout/purchase/delete/OAuth exclusions. The paired [`examples/link-lab`](examples/link-lab) fixtures prove one missing guide fails at **96/100**, the repaired page passes at **100/100**, and query values never enter evidence.
+
 Security baselines are opt-in project policy, so a localhost page is not judged against production headers unless the project asks for them. Policies can require reviewed response headers, forbid mixed content, reject insecure password-form paths, cap unique third-party origins, and allowlist exact HTTPS origins. The [`examples/security-lab`](examples/security-lab) fixture demonstrates three missing headers plus a GET password form without ever submitting it.
 
 Performance budgets now include TTFB, First Contentful Paint, Largest Contentful Paint, and Cumulative Layout Shift in addition to navigation, DOMContentLoaded, request, transfer, and DOM limits. Authenticated apps can load a Playwright storage-state file with `--storage-state` or `REALITYCHECK_STORAGE_STATE`; the path, cookies, tokens, and values are never copied into reports.
@@ -219,7 +227,7 @@ A multi-page run adds `site-report.json`, `site-report.md`, and a bilingual `sit
 
 | Scenario | Quick | What it proves |
 | --- | :---: | --- |
-| Baseline | Yes | Runtime/resource defects, semantics, custom rules, Core Web Vital budgets, network reliability limits, and configured security policy |
+| Baseline | Yes | Runtime/resource defects, semantics, custom rules, Core Web Vital/network/link budgets, and configured security policy |
 | 375px mobile | Yes | Offscreen actions, fixed widths, and document overflow |
 | Long text | Yes | New or worsened clipping under CJK, emoji, and unbroken strings |
 | RTL Arabic | Yes | Physical-direction CSS and alignment assumptions |

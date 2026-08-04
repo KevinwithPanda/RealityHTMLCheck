@@ -1,0 +1,227 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "run": {
+    "id": "20260804T171908Z-faed61",
+    "mode": "quick",
+    "startedAt": "2026-08-04T17:19:08.167Z",
+    "finishedAt": "2026-08-04T17:19:13.253Z",
+    "durationMs": 5072
+  },
+  "target": {
+    "requestedUrl": "http://127.0.0.1:4182/examples/link-lab/broken.html",
+    "finalUrl": "http://127.0.0.1:4182/examples/link-lab/broken.html",
+    "title": "RealityCheck link integrity lab — broken"
+  },
+  "adapter": {
+    "name": "project-playwright",
+    "isolation": "fresh-context",
+    "capabilities": [
+      "console",
+      "dom",
+      "isolated-contexts",
+      "network-routing",
+      "screenshots",
+      "viewport",
+      "bounded-head-link-integrity",
+      "detector-policy-fingerprint"
+    ]
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major",
+    "policyFingerprint": "sha256:ad9ac30dadb401b96ad3d492247725efb3b9ca2bbd0b4b68ff963cac6aef5dbb"
+  },
+  "scenarios": [
+    {
+      "id": "baseline",
+      "status": "completed-with-findings",
+      "durationMs": 626,
+      "notes": [
+        "Baseline runtime findings were recorded."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已记录基线运行时问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "mobile-375",
+      "status": "passed",
+      "durationMs": 568,
+      "notes": [],
+      "translations": {
+        "zh-CN": {
+          "notes": []
+        }
+      }
+    },
+    {
+      "id": "long-text",
+      "status": "passed",
+      "durationMs": 1209,
+      "notes": [
+        "5 deterministic text mutations were applied."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已执行 5 次确定性的文本替换。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "rtl-arabic",
+      "status": "passed",
+      "durationMs": 1053,
+      "notes": [
+        "Directionality stress test only; translation quality was not assessed."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "仅进行书写方向压力测试；未评估翻译质量。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "image-failure",
+      "status": "passed",
+      "durationMs": 580,
+      "notes": [
+        "Expected image request aborts were excluded from failed-request findings."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "预期的图片请求中止未计入普通请求失败问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "keyboard-tab",
+      "status": "passed",
+      "durationMs": 966,
+      "notes": [
+        "No controls were activated or submitted."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未激活或提交任何控件。"
+          ]
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "link-integrity-failure-budget",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Broken same-origin links exceed the project budget",
+      "summary": "1 safely checked same-origin link(s) failed, above the configured maximum of 0.",
+      "url": "http://127.0.0.1:4182/examples/link-lab/broken.html",
+      "measurements": {
+        "discovered": 4,
+        "eligible": 2,
+        "checked": 2,
+        "passed": 1,
+        "failures": 1,
+        "unsupported": 0,
+        "excluded": 1,
+        "truncated": 0,
+        "statusCounts": {
+          "200": 1,
+          "404": 1
+        },
+        "limit": 0,
+        "method": "HEAD",
+        "maxRedirects": 5,
+        "timeoutMs": 3000
+      },
+      "evidence": [
+        {
+          "type": "link-integrity",
+          "method": "HEAD",
+          "failureSamples": [
+            {
+              "url": "http://127.0.0.1:4182/examples/link-lab/missing-guide.html",
+              "status": 404,
+              "reason": "http-error",
+              "redirects": []
+            }
+          ],
+          "discovered": 4,
+          "eligible": 2,
+          "checked": 2,
+          "passed": 1,
+          "failures": 1,
+          "unsupported": 0,
+          "excluded": 1,
+          "truncated": 0,
+          "statusCounts": {
+            "200": 1,
+            "404": 1
+          },
+          "limit": 0
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Same-origin link integrity"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh context without activating any link.",
+        "Collect bounded same-origin anchor targets after the page settles.",
+        "Issue HEAD requests only, following at most five same-origin allowed redirects, and compare failures with the configured limit."
+      ],
+      "remediation": {
+        "summary": "Correct or remove every sampled broken href, preserve intentional redirects, and rerun the same link policy without increasing its failure allowance.",
+        "technicalHints": [
+          "HEAD 405/501 responses are recorded as unsupported rather than broken; verify those endpoints manually or make their HEAD behavior standards-compatible."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "同源失效链接超过项目预算",
+          "summary": "安全核查的同源链接中有 1 个失败，超过配置上限 0。",
+          "reproductionSteps": [
+            "在新的上下文中打开页面，不激活任何链接。",
+            "页面稳定后收集有上限的同源锚点目标。",
+            "仅发送 HEAD 请求，最多跟随五次同源且允许的重定向，并将失败数与配置上限比较。"
+          ],
+          "remediation": {
+            "summary": "修正或移除每个样本中的失效 href，保留有意的重定向，并在不提高失败容许数的情况下重新运行同一链接策略。",
+            "technicalHints": [
+              "HEAD 405/501 会记为不支持而非失效；请人工验证这些端点，或让其 HEAD 行为符合标准。"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "warnings": [
+    "Standalone audit used an already-installed system browser (150.0.7871.116).",
+    "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    "Link integrity checked 2 same-origin target(s) with HEAD only: 1 failed, 0 did not support HEAD, 1 were excluded by safety policy, and 0 exceeded the configured cap."
+  ],
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "独立核查使用了已安装的系统浏览器（150.0.7871.116）。",
+        "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        "链接完整性仅使用 HEAD 核查了 2 个同源目标：1 个失败，0 个不支持 HEAD，1 个被安全策略排除，0 个超过配置上限。"
+      ]
+    }
+  }
+}

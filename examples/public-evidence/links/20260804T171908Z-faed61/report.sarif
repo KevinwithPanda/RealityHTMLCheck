@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "20260804T171908Z-faed61"
+      },
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/link-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Broken same-origin links exceed the project budget: 1 safely checked same-origin link(s) failed, above the configured maximum of 0."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "d9b4c0700c4dc3a7aef2a3159ae7a7c6d2f2f54ec102ce51d8caec179ca41cba"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-D9B4C0700C",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "link-integrity-failure-budget"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "RealityCheck",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "1 safely checked same-origin link(s) failed, above the configured maximum of 0."
+              },
+              "help": {
+                "markdown": "Correct or remove every sampled broken href, preserve intentional redirects, and rerun the same link policy without increasing its failure allowance.\n\n- HEAD 405/501 responses are recorded as unsupported rather than broken; verify those endpoints manually or make their HEAD behavior standards-compatible.",
+                "text": "Correct or remove every sampled broken href, preserve intentional redirects, and rerun the same link policy without increasing its failure allowance.\n\n- HEAD 405/501 responses are recorded as unsupported rather than broken; verify those endpoints manually or make their HEAD behavior standards-compatible."
+              },
+              "id": "link-integrity-failure-budget",
+              "name": "link_integrity_failure_budget",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Broken same-origin links exceed the project budget"
+              }
+            }
+          ],
+          "semanticVersion": "0.4.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

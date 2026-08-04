@@ -391,6 +391,7 @@ function runDoctor(options, loaded) {
   if (options.journeys.length) check("Safe user journeys", () => `${options.journeys.length} validated journey(s); same-origin, no form submission`);
   if (options.budgets) check("Performance budgets", () => `${Object.keys(options.budgets).length - 1} configured limit(s)`);
   if (options.network) check("Network reliability", () => `${Object.keys(options.network).filter((key) => key.startsWith("max")).length} configured ${options.network.scope} request limit(s); no response bodies or query values retained`);
+  if (options.links) check("Link integrity", () => `HEAD-only checks capped at ${options.links.maxChecked} same-origin links; ${options.links.maxFailures} failure(s) allowed`);
   if (options.security) check("Security baseline", () => `${Object.keys(options.security).length - 1} explicit policy setting(s); no form submission`);
   if (options.waivers.length) check("Governed waivers", () => {
     const now = new Date();
@@ -1118,6 +1119,118 @@ function runNetworkPolicies(runtime, target, policy) {
   return findings;
 }
 
+async function checkLinkWithHead(context, initialUrl, documentOrigin, crawl, timeoutMs) {
+  let currentUrl = initialUrl;
+  const redirects = [];
+  for (let hop = 0; hop <= 5; hop += 1) {
+    let response;
+    try {
+      response = await context.request.fetch(currentUrl, {
+        method: "HEAD",
+        timeout: timeoutMs,
+        maxRedirects: 0,
+        failOnStatusCode: false,
+        headers: { "cache-control": "no-cache" },
+      });
+      const status = response.status();
+      const headers = response.headers();
+      await response.dispose();
+      if (status >= 300 && status < 400) {
+        const location = headers.location;
+        if (!location) return { url: initialUrl, status, reason: "redirect-without-location", redirects };
+        let next;
+        try { next = new URL(location, currentUrl); } catch (_) { return { url: initialUrl, status, reason: "invalid-redirect-location", redirects }; }
+        next.username = "";
+        next.password = "";
+        next.search = "";
+        next.hash = "";
+        redirects.push({ status, url: next.toString() });
+        if (next.origin !== documentOrigin) return { url: initialUrl, status, reason: "cross-origin-redirect", redirects };
+        if (!routeAllowed(next.pathname, crawl)) return { url: initialUrl, status, reason: "excluded-redirect", redirects, skipped: true };
+        currentUrl = next.toString();
+        continue;
+      }
+      if ([405, 501].includes(status)) return { url: initialUrl, status, reason: "head-unsupported", redirects, unsupported: true };
+      if (status >= 400) return { url: initialUrl, status, reason: "http-error", redirects };
+      return { url: initialUrl, status, redirects, passed: true };
+    } catch (error) {
+      if (response) await response.dispose().catch(() => {});
+      return { url: initialUrl, status: 0, reason: "request-failed", errorType: String(error?.name || "Error").slice(0, 80), redirects };
+    }
+  }
+  return { url: initialUrl, status: 0, reason: "too-many-redirects", redirects };
+}
+
+async function runLinkIntegrityPolicy(page, context, target, policy, crawl) {
+  if (!policy) return { findings: [], summary: null };
+  const documentOrigin = new URL(target).origin;
+  const discovered = await page.evaluate(() => [...document.querySelectorAll("a[href]")].slice(0, 1_000).map((anchor) => anchor.href));
+  const excluded = [];
+  const canonical = [];
+  for (const raw of discovered) {
+    let url;
+    try { url = new URL(raw, target); } catch (_) { continue; }
+    if (!["http:", "https:"].includes(url.protocol) || url.origin !== documentOrigin || url.username || url.password) continue;
+    url.search = "";
+    url.hash = "";
+    if (!routeAllowed(url.pathname, crawl)) {
+      excluded.push(url.pathname);
+      continue;
+    }
+    canonical.push(url.toString());
+  }
+  const unique = [...new Set(canonical)].sort();
+  const targets = unique.slice(0, policy.maxChecked);
+  const results = new Array(targets.length);
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < targets.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await checkLinkWithHead(context, targets[index], documentOrigin, crawl, policy.timeoutMs);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(5, targets.length) }, () => worker()));
+  const failures = results.filter((item) => !item.passed && !item.unsupported && !item.skipped);
+  const unsupported = results.filter((item) => item.unsupported);
+  const skipped = results.filter((item) => item.skipped);
+  const statusCounts = Object.fromEntries([...new Set(results.map((item) => item.status))].sort((a, b) => a - b).map((status) => [String(status), results.filter((item) => item.status === status).length]));
+  const summary = {
+    discovered: discovered.length,
+    eligible: unique.length,
+    checked: targets.length,
+    passed: results.filter((item) => item.passed).length,
+    failures: failures.length,
+    unsupported: unsupported.length,
+    excluded: [...new Set(excluded)].length + skipped.length,
+    truncated: Math.max(0, unique.length - targets.length),
+    statusCounts,
+  };
+  if (failures.length <= policy.maxFailures) return { findings: [], summary };
+  return {
+    summary,
+    findings: [finding({
+      ruleId: "link-integrity-failure-budget",
+      scenarioId: "baseline",
+      classification: "existing",
+      severity: policy.severity,
+      confidence: "high",
+      title: "Broken same-origin links exceed the project budget",
+      titleZh: "同源失效链接超过项目预算",
+      summary: `${failures.length} safely checked same-origin link(s) failed, above the configured maximum of ${policy.maxFailures}.`,
+      summaryZh: `安全核查的同源链接中有 ${failures.length} 个失败，超过配置上限 ${policy.maxFailures}。`,
+      measurements: { ...summary, limit: policy.maxFailures, method: "HEAD", maxRedirects: 5, timeoutMs: policy.timeoutMs },
+      evidence: [{ type: "link-integrity", method: "HEAD", failureSamples: failures.slice(0, 20), ...summary, limit: policy.maxFailures }, screenshotEvidence("baseline", "Same-origin link integrity")],
+      steps: ["Open the page in a fresh context without activating any link.", "Collect bounded same-origin anchor targets after the page settles.", "Issue HEAD requests only, following at most five same-origin allowed redirects, and compare failures with the configured limit."],
+      stepsZh: ["在新的上下文中打开页面，不激活任何链接。", "页面稳定后收集有上限的同源锚点目标。", "仅发送 HEAD 请求，最多跟随五次同源且允许的重定向，并将失败数与配置上限比较。"],
+      fix: "Correct or remove every sampled broken href, preserve intentional redirects, and rerun the same link policy without increasing its failure allowance.",
+      fixZh: "修正或移除每个样本中的失效 href，保留有意的重定向，并在不提高失败容许数的情况下重新运行同一链接策略。",
+      hints: ["HEAD 405/501 responses are recorded as unsupported rather than broken; verify those endpoints manually or make their HEAD behavior standards-compatible."],
+      hintsZh: ["HEAD 405/501 会记为不支持而非失效；请人工验证这些端点，或让其 HEAD 行为符合标准。"],
+    })],
+  };
+}
+
 async function runSecurityPolicies(page, response, target, policy) {
   if (!policy) return [];
   const findings = [];
@@ -1235,11 +1348,12 @@ async function runSecurityPolicies(page, response, target, policy) {
   return findings;
 }
 
-async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, network = null, security = null) {
+async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, network = null, links = null, security = null, crawl = { include: ["/**"], exclude: [] }) {
   const findings = [];
   const results = new Map();
   let targetTitle = "";
   let finalUrl = target;
+  let linkSummary = null;
 
   console.log("  1/6  Baseline");
   const baseline = await createPage(browser, target, "baseline", runDirectory, contextOptions);
@@ -1368,6 +1482,11 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
   if (customChecks.length) findings.push(...await runCustomChecks(baseline.page, customChecks));
   if (budgets) findings.push(...await runPerformanceBudgets(baseline.page, budgets));
   if (network) findings.push(...runNetworkPolicies(baseline.runtime, finalUrl, network));
+  if (links) {
+    const linkResult = await runLinkIntegrityPolicy(baseline.page, baseline.context, finalUrl, links, crawl);
+    linkSummary = linkResult.summary;
+    findings.push(...linkResult.findings);
+  }
   if (security) findings.push(...await runSecurityPolicies(baseline.page, baseline.response, finalUrl, security));
   results.set("baseline", scenarioResult("baseline", findings.length ? "completed-with-findings" : "passed", baseline.durationMs(), findings.length ? ["Baseline runtime findings were recorded."] : [], findings.length ? ["已记录基线运行时问题。"] : []));
   await baseline.context.close();
@@ -1597,7 +1716,7 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
   await keyboard.context.close();
 
   for (const item of findings) item.url = finalUrl;
-  return { findings, results, targetTitle, finalUrl, baselineLayout };
+  return { findings, results, targetTitle, finalUrl, baselineLayout, linkSummary };
 }
 
 async function runDeepScenarios(browser, target, runDirectory, findings, results, contextOptions = {}) {
@@ -2133,7 +2252,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   const contextOptions = options.storageState ? { storageState: options.storageState } : {};
   const pathname = new URL(target).pathname;
   const applicableChecks = options.checks.filter((check) => routeAllowed(pathname, { include: check.include, exclude: check.exclude }));
-  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.network, options.security);
+  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.network, options.links, options.security, options.crawl);
   if (options.mode === "deep") {
     await runDeepScenarios(browser, target, runDirectory, auditResult.findings, auditResult.results, contextOptions);
   }
@@ -2158,6 +2277,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   if (applicableChecks.length) audit.adapter.capabilities.push("declarative-custom-checks");
   if (options.budgets) audit.adapter.capabilities.push("performance-budgets");
   if (options.network) audit.adapter.capabilities.push("network-reliability-budgets");
+  if (options.links) audit.adapter.capabilities.push("bounded-head-link-integrity");
   if (options.security) audit.adapter.capabilities.push("security-response-and-origin-policy");
   if (journeyResult.scenarios.length) audit.adapter.capabilities.push("safe-declarative-journeys");
   if (options.waivers.length) audit.adapter.capabilities.push("governed-waivers");
@@ -2176,6 +2296,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
     ...(applicableChecks.length ? [`${applicableChecks.length} declarative custom requirement(s) were evaluated without arbitrary script execution.`] : []),
     ...(options.budgets ? [`${Object.keys(options.budgets).length - 1} project performance budget(s) were evaluated from the browser Performance API.`] : []),
     ...(options.network ? [`${Object.keys(options.network).filter((key) => key.startsWith("max")).length} explicit network reliability limit(s) were evaluated without persisting response bodies or query values.`] : []),
+    ...(auditResult.linkSummary ? [`Link integrity checked ${auditResult.linkSummary.checked} same-origin target(s) with HEAD only: ${auditResult.linkSummary.failures} failed, ${auditResult.linkSummary.unsupported} did not support HEAD, ${auditResult.linkSummary.excluded} were excluded by safety policy, and ${auditResult.linkSummary.truncated} exceeded the configured cap.`] : []),
     ...(options.security ? [`${Object.keys(options.security).length - 1} explicit response, origin, and form security policy setting(s) were evaluated without submitting data.`] : []),
     ...(journeyResult.scenarios.length ? [`${journeyResult.scenarios.length} declarative user journey(s) were executed with same-origin and non-submission safety guards.`] : []),
     ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} finding(s) matched an active governed waiver; evidence remains visible but the finding is excluded from score and gate calculations.`] : []),
@@ -2194,6 +2315,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
         ...(applicableChecks.length ? [`已执行 ${applicableChecks.length} 条声明式自定义要求，未运行任意脚本。`] : []),
         ...(options.budgets ? [`已通过浏览器 Performance API 核查 ${Object.keys(options.budgets).length - 1} 项项目性能预算。`] : []),
         ...(options.network ? [`已在不保存响应正文或查询参数值的前提下核查 ${Object.keys(options.network).filter((key) => key.startsWith("max")).length} 项明确的网络可靠性限制。`] : []),
+        ...(auditResult.linkSummary ? [`链接完整性仅使用 HEAD 核查了 ${auditResult.linkSummary.checked} 个同源目标：${auditResult.linkSummary.failures} 个失败，${auditResult.linkSummary.unsupported} 个不支持 HEAD，${auditResult.linkSummary.excluded} 个被安全策略排除，${auditResult.linkSummary.truncated} 个超过配置上限。`] : []),
         ...(options.security ? [`已在不提交数据的前提下核查 ${Object.keys(options.security).length - 1} 项明确的响应、来源与表单安全策略。`] : []),
         ...(journeyResult.scenarios.length ? [`已在同源且禁止提交的安全限制下执行 ${journeyResult.scenarios.length} 个声明式用户旅程。`] : []),
         ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} 个问题命中了有效的可审计豁免；证据仍保留，但不计入评分和门禁。`] : []),

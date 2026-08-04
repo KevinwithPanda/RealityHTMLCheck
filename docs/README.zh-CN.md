@@ -153,6 +153,12 @@ npx realitycheck doctor
     "maxThirdPartyRequests": 2,
     "severity": "major"
   },
+  "links": {
+    "maxFailures": 0,
+    "maxChecked": 50,
+    "timeoutMs": 5000,
+    "severity": "major"
+  },
   "security": {
     "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
     "secureForms": true,
@@ -179,6 +185,8 @@ npx realitycheck doctor
 
 网络可靠性策略可以独立约束“仅 API”或“全部资源”流量：限制 HTTP 错误、传输失败、慢请求及第三方请求数量。证据只保留有上限且已移除凭据、片段和查询参数值的端点样本，绝不保存响应正文。成对的 [`examples/network-lab`](../examples/network-lab) 会让缺失一个 API 的页面得到 **96/100**，恢复接口后得到 **100/100**。
 
+链接完整性策略只通过 `HEAD` 核查有上限的同源锚点，不激活链接、不下载响应正文，最多跟随五次同源重定向，并复用爬虫对退出、购买、删除和 OAuth 路径的排除规则。成对的 [`examples/link-lab`](../examples/link-lab) 证明缺失指南时得到 **96/100**，修复后得到 **100/100**，查询参数值不会进入证据。
+
 安全基线必须由项目显式配置，因此普通 localhost 不会自动被生产响应头要求误伤。策略可要求安全响应头、禁止混合内容、阻止不安全密码表单、限制第三方来源数量，并只允许精确 HTTPS 来源。[`examples/security-lab`](../examples/security-lab) 会在不提交表单的情况下证明三个缺失响应头和一个 GET 密码表单问题。
 
 性能预算除导航、DOMContentLoaded、请求数、传输量和 DOM 数量外，现已覆盖 TTFB、首次内容绘制、最大内容绘制和累积布局偏移。需要登录的应用仍可通过 `--storage-state` 或 `REALITYCHECK_STORAGE_STATE` 加载 Playwright 登录状态；路径、Cookie、Token 和具体值都不会进入报告。
@@ -203,7 +211,7 @@ npx realitycheck doctor
 
 | 场景 | Quick | 核查目标 |
 | --- | :---: | --- |
-| Baseline | 是 | 运行时/资源问题、语义、自定义规则、核心体验性能预算、网络可靠性限制和配置的安全策略 |
+| Baseline | 是 | 运行时/资源问题、语义、自定义规则、核心体验/网络/链接预算和配置的安全策略 |
 | 375px 手机 | 是 | 离屏操作、固定宽度和页面横向溢出 |
 | 长文本 | 是 | 中文、emoji、无空格长串造成的新截断或恶化 |
 | RTL 阿拉伯语 | 是 | 物理方向 CSS 和对齐假设 |

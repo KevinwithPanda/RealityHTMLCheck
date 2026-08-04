@@ -1286,6 +1286,16 @@ def render_html_script() -> str:
     const reportTitle = document.querySelector("[data-report-title]");
     const localizedTitle = language === "zh-CN" ? reportTitle.dataset.zhCn : reportTitle.dataset.en;
     document.title = `${language === "zh-CN" ? "RealityCheck 报告" : "RealityCheck report"} — ${localizedTitle}`;
+    document.querySelectorAll(".fix-prompt-output:not([hidden])").forEach((output) => {
+      const button = output.closest(".finding-actions")?.querySelector(".fix-button");
+      if (button) output.value = buildFixPrompt(button);
+    });
+    const batchOutput = document.querySelector(".batch-fix-output:not([hidden])");
+    if (batchOutput) batchOutput.value = buildBatchFixPrompt(selectedRepairItems());
+    const languageToast = document.querySelector(".toast");
+    languageToast?.classList.remove("visible");
+    if (languageToast) languageToast.textContent = "";
+    clearTimeout(toastTimer);
     updateFindingFilters();
     updateBatchControls();
   }

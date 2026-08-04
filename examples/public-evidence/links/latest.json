@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "kind": "latest-run",
+  "updatedAt": "2026-08-04T17:19:15.636Z",
+  "artifactKind": "page-audit",
+  "runId": "20260804T171908Z-faed61",
+  "target": "http://127.0.0.1:4182/examples/link-lab/broken.html",
+  "state": "failed",
+  "score": 96,
+  "artifacts": {
+    "html": "20260804T171908Z-faed61/report.html",
+    "json": "20260804T171908Z-faed61/report.json",
+    "repairPlanJson": "20260804T171908Z-faed61/repair-plan.json",
+    "repairPlanMarkdown": "20260804T171908Z-faed61/repair-plan.md",
+    "integrityManifest": "20260804T171908Z-faed61/evidence-manifest.json"
+  }
+}

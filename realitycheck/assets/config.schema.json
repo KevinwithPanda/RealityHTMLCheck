@@ -218,6 +218,17 @@
         { "required": ["maxThirdPartyRequests"], "properties": { "maxThirdPartyRequests": true } }
       ]
     },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxFailures"],
+      "properties": {
+        "severity": { "enum": ["critical", "major", "minor"] },
+        "maxFailures": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "maxChecked": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "timeoutMs": { "type": "integer", "minimum": 500, "maximum": 15000 }
+      }
+    },
     "security": {
       "type": "object",
       "additionalProperties": false,

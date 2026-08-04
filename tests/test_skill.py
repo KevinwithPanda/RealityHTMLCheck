@@ -237,6 +237,20 @@ class SkillStructureTests(unittest.TestCase):
         self.assertEqual(broken_config["network"]["maxHttpErrors"], 0)
         self.assertEqual(broken_config["network"]["maxFailedRequests"], 0)
 
+    def test_link_policy_has_paired_head_only_fixtures(self) -> None:
+        fixture = REPOSITORY_ROOT / "examples" / "link-lab"
+        broken = (fixture / "broken.html").read_text(encoding="utf-8")
+        fixed = (fixture / "fixed.html").read_text(encoding="utf-8")
+        broken_config = json.loads((fixture / "broken.config.json").read_text(encoding="utf-8"))
+        fixed_config = json.loads((fixture / "fixed.config.json").read_text(encoding="utf-8"))
+        self.assertIn("missing-guide.html", broken)
+        self.assertNotIn("missing-guide.html", fixed)
+        self.assertIn('href="/logout/account"', broken)
+        self.assertTrue((fixture / "destination.html").is_file())
+        self.assertEqual(broken_config["links"], fixed_config["links"])
+        self.assertEqual(broken_config["links"]["maxFailures"], 0)
+        self.assertNotIn("method", broken_config["links"])
+
     def test_governed_waiver_fixture_is_explicit_and_keeps_the_control_missing(self) -> None:
         fixture = REPOSITORY_ROOT / "examples" / "waiver-lab"
         page = (fixture / "index.html").read_text(encoding="utf-8")
@@ -587,6 +601,13 @@ class ReportCliTests(unittest.TestCase):
             self.assertIn("复制修复并验证任务", html_report)
             self.assertIn("Use $realitycheck to fix and verify", html_report)
             self.assertIn("使用 $realitycheck 修复并验证", html_report)
+            self.assertIn(
+                '.fix-prompt-output:not([hidden])', html_report
+            )
+            self.assertIn("output.value = buildFixPrompt(button)", html_report)
+            self.assertIn("batchOutput.value = buildBatchFixPrompt", html_report)
+            self.assertIn('languageToast?.classList.remove("visible")', html_report)
+            self.assertIn('languageToast.textContent = ""', html_report)
             self.assertIn("Content-Security-Policy", html_report)
 
     def test_render_writes_sarif_and_junit_for_ci_platforms(self) -> None:
