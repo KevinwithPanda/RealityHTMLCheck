@@ -12,6 +12,7 @@ Break a web UI safely before its users do. Run real browser checks, distinguish 
 Select one action and one mode:
 
 - `audit` (default): inspect and report without changing application source.
+- `demo`: when the user wants a walkthrough or proof before providing an app, run `scripts/audit.mjs demo`; it serves only the bundled loopback fixture, preserves the expected failed gate, and never treats fixture findings as defects in the user's project.
 - `fix <finding-id...>`: modify source only for selected findings, add or update tests, rerun the proving scenarios, and compare the before/after reports.
 - `harden` or an explicit request to find and fix: audit first, then fix only high-confidence Critical/Major findings whose evidence identifies an application-owned cause. Ask before any ambiguous or broad change.
 - `quick` (default): baseline plus mobile, long-text, RTL, image-failure, and keyboard checks; target completion under 60 seconds when the page is small and stable.

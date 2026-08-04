@@ -56,6 +56,17 @@ python scripts/install-skill.py
 
 Reload Codex if its skill list does not refresh automatically. Updating with the same command preserves the previous installed skill as a timestamped backup.
 
+## Try a real audit in one command
+
+No app, config, or second terminal is required for the first run:
+
+```bash
+npm install
+npm run demo
+```
+
+From a published package, use `npx realitycheck-web-audit demo`. The command starts a random loopback-only server, audits the bundled intentionally broken UI with real Chrome, writes the bilingual report under `.realitycheck/demo`, and closes the server. The report correctly fails its Major quality gate, while the demo command returns success because those fixture findings are expected; browser, renderer, or evidence failures still return an operational error.
+
 ## What makes a finding real?
 
 RealityCheck does not grade a screenshot by “vibes.” A scored finding needs a detector, a stable target, measured behavior, reproduction steps, and evidence. Stress observations are compared with a clean desktop baseline and classified as:
@@ -341,19 +352,20 @@ Open the committed [visual reference report](examples/reference-run/report.html)
 
 ## Try the intentionally broken demo
 
-Terminal 1:
+The zero-configuration path is:
+
+```bash
+npm run demo
+```
+
+To inspect and edit the full source fixture instead, serve it explicitly and audit the same stable URL:
 
 ```bash
 python -m http.server 4173 --bind 127.0.0.1 --directory examples/demo-broken
-```
-
-Terminal 2:
-
-```bash
 npm run audit -- http://127.0.0.1:4173 --fail-on never
 ```
 
-The demo deliberately contains a fixed-width shell, mobile-only loss of access, long-text clipping, a missing image alternative, a console error, weak focus visibility, and an empty-data failure. A typical local run completes the six Quick scenarios in seconds and produces real screenshots.
+Both demos deliberately contain a fixed-width shell, mobile-only loss of access, long-text clipping, a missing image alternative, a console error, and weak focus visibility. The editable fixture also supports the deeper empty-data comparison. A typical local Quick run completes six real-browser scenarios in seconds and produces screenshots plus repair handoff artifacts.
 
 [`examples/demo-fixed`](examples/demo-fixed) contains the corresponding application-level repairs. CI serves the broken and fixed fixtures at the same URL, runs two fresh real-browser audits, and fails unless the before findings stop reproducing without new or unverified findings. On the local proof run used during v0.2 development, the score moved from **69 to 100**, with **7 resolved, 0 remaining, 0 new, and 0 unverified**.
 

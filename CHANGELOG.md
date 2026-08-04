@@ -14,6 +14,7 @@ All notable changes are documented here. This project follows Semantic Versionin
 - Safe journey `press` and `assert-url` steps for keyboard navigation and pathname checkpoints, with activation-key/editable-control guards and query-free traces.
 - Opt-in publishing metadata contracts for title and description length, canonical destinations, viewport, language, indexing, and primary-heading structure, with paired 75/100 versus 100/100 real-browser evidence.
 - Pathname-keyed visual regression baselines with bounded pixel thresholds, declarative dynamic-region masks, SHA-256 approval indexes, explicit first approval and replacement commands, and self-contained current/approved/diff evidence.
+- A zero-configuration `demo` command with a finite read-only loopback server, bundled broken fixture, automatic teardown, real-browser evidence, and an expected-failure success contract for first-run evaluation.
 
 ### Changed
 

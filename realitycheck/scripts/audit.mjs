@@ -29,10 +29,19 @@ import { buildRiskRegister, writeRiskRegister } from "./risk-register.mjs";
 import { detectorPolicyFingerprint } from "./policy-fingerprint.mjs";
 import { PROFILE_DESCRIPTIONS, buildProjectProfile, formatProfileList } from "./profiles.mjs";
 import { approveVisualBaseline, evaluateVisualRegression } from "./visual-regression.mjs";
+import { startBundledDemoServer } from "./demo-server.mjs";
 
 const require = createRequire(import.meta.url);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPORT_SCRIPT = join(SCRIPT_DIR, "report.py");
+let activeDemoServer = null;
+
+async function closeActiveDemoServer() {
+  if (!activeDemoServer) return;
+  const server = activeDemoServer;
+  activeDemoServer = null;
+  await server.close();
+}
 const FIXTURES = [
   "超长客户名称：上海现实检查与可靠性工程联合实验室",
   "订单状态：正在等待跨区域库存同步与最终人工复核",
@@ -47,6 +56,7 @@ function usage() {
 Usage:
   realitycheck <url> [options]
   realitycheck audit <url> [options]
+  realitycheck demo [--output PATH] [--headed] [--browser PATH]
   realitycheck init [--profile starter|product|strict] [--base-url URL] [--config PATH]
   realitycheck profiles
   realitycheck doctor [--config PATH]
@@ -87,6 +97,7 @@ Options:
 
 Examples:
   realitycheck http://localhost:3000
+  realitycheck demo
   realitycheck init
   realitycheck profiles
   realitycheck init --profile product --base-url http://localhost:3000
@@ -108,7 +119,7 @@ Examples:
 
 function parseArguments(argv) {
   const args = [...argv];
-  const command = new Set(["audit", "init", "profiles", "doctor", "visual-approve", "validate", "catalog", "risk-register", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
+  const command = new Set(["audit", "demo", "init", "profiles", "doctor", "visual-approve", "validate", "catalog", "risk-register", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
   const options = {
     command,
     target: null,
@@ -2804,7 +2815,22 @@ async function main() {
       if (outputs.latestUpdated) console.log("stable latest:             updated with signed receipt");
       return;
     }
-    loaded = loadProjectConfig(cli.config);
+    if (cli.command === "demo") {
+      if (cli.target) throw new Error("demo does not accept a target URL; it serves the bundled loopback fixture");
+      if (cli.config || cli.routes.length || cli.crawl !== undefined || cli.storageState || cli.allowRemote || cli.compareReport || cli.baselineReport) {
+        throw new Error("demo uses an isolated bundled fixture; do not pass project, route, crawl, authentication, comparison, or remote-target options");
+      }
+      activeDemoServer = await startBundledDemoServer();
+      cli.target = activeDemoServer.url;
+      cli.mode = cli.mode || "quick";
+      cli.failOn = cli.failOn || "major";
+      cli.output = cli.output || ".realitycheck/demo";
+      cli.crawl = false;
+      loaded = { path: null, directory: process.cwd(), cwd: process.cwd(), config: {} };
+      console.log(`Bundled demo server started on ${activeDemoServer.url} (loopback only).`);
+    } else {
+      loaded = loadProjectConfig(cli.config);
+    }
     options = mergeProjectOptions(cli, loaded);
     if (options.command === "doctor") {
       process.exitCode = runDoctor(options, loaded);
@@ -2814,6 +2840,7 @@ async function main() {
     options.target = isPrivateTarget(options.target, options.allowRemote);
     if (options.storageState) inspectStorageState(options.storageState);
   } catch (error) {
+    await closeActiveDemoServer();
     console.error(`error: ${error.message}\n\n${usage()}`);
     process.exitCode = 2;
     return;
@@ -2858,6 +2885,7 @@ async function main() {
     }
   } finally {
     await browser.close();
+    await closeActiveDemoServer();
   }
 
   if (siteDirectory) {
@@ -2936,10 +2964,16 @@ async function main() {
   const latestOutputs = publishLatestPage(page, options);
   console.log(`\nOpen report: ${page.reportPath}`);
   console.log(`Stable latest: ${latestOutputs.htmlPath}`);
-  process.exitCode = page.exitCode;
+  if (options.command === "demo" && page.exitCode === 1) {
+    console.log("\nDemo result: expected findings were detected and preserved; returning success because the bundled page is intentionally broken.");
+    process.exitCode = 0;
+  } else {
+    process.exitCode = page.exitCode;
+  }
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
+  await closeActiveDemoServer();
   console.error(`error: ${error.stack || error.message}`);
   process.exitCode = 2;
 });

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>Northstar Console — bundled RealityCheck demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="demo-ribbon">INTENTIONALLY BROKEN</div>
+    <header class="topbar">
+      <a class="brand" href="#dashboard" aria-label="Northstar home"><span>N</span> Northstar</a>
+      <nav aria-label="Primary navigation"><a href="#dashboard">Overview</a><a href="#orders">Orders</a><a href="#customer">Customers</a></nav>
+      <small>Bundled local demo</small>
+    </header>
+    <div class="app-shell" data-testid="app-shell">
+      <aside class="sidebar">
+        <p class="eyebrow">Workspace</p><h2>Commerce OS</h2>
+        <ul><li>Dashboard</li><li>Inbox <b>12</b></li><li>Inventory</li><li>Automations</li><li>Settings</li></ul>
+        <div class="plan"><small>Current plan</small><strong>Founder Pro</strong><span>8,402 / 10,000 events</span></div>
+      </aside>
+      <main id="dashboard">
+        <section class="hero-row">
+          <div><p class="eyebrow">LOCAL EVALUATION</p><h1>Good morning, Mina.</h1><p>Here is what needs your attention today.</p></div>
+          <button class="primary" data-testid="checkout" type="button">Start checkout review</button>
+        </section>
+        <section class="metrics" aria-label="Key metrics">
+          <article><span>Net revenue</span><strong>$84,240</strong><small>+12.4% this month</small></article>
+          <article><span>Open orders</span><strong>1,284</strong><small>48 need review</small></article>
+          <article><span>Fulfillment</span><strong>96.8%</strong><small>On target</small></article>
+        </section>
+        <section class="content-grid">
+          <article class="panel chart-panel"><header><div><p class="eyebrow">Revenue</p><h2>Sales velocity</h2></div><span class="status">Last 7 days</span></header><div class="chart" aria-label="Decorative revenue chart"><i style="height:34%"></i><i style="height:48%"></i><i style="height:43%"></i><i style="height:62%"></i><i style="height:57%"></i><i style="height:78%"></i><i style="height:88%"></i></div></article>
+          <article class="panel" id="customer"><header><div><p class="eyebrow">Priority customer</p><h2>Review required</h2></div></header><div class="customer"><img src="avatar.svg" width="56" height="56" /><div><strong class="customer-name" data-testid="customer-name">Mina Chen</strong><span>mina@example.test</span></div></div><div class="fake-button" role="button" data-testid="export">Export customer report</div></article>
+        </section>
+        <section class="panel orders" id="orders"><header><div><p class="eyebrow">Operations</p><h2>Orders needing attention</h2></div><span id="sync-status" class="status">Syncing…</span></header><div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Status</th><th>Total</th></tr></thead><tbody id="orders-body"></tbody></table></div></section>
+      </main>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -63,6 +63,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add visual-regression baselines with explicit update approval and bounded pixel-difference evidence.
 - [x] Add shareable validated policy presets for starter, product, and strict release adoption.
 - [x] Add explicit publishing metadata contracts with privacy-bounded evidence and paired release fixtures.
+- [x] Add a one-command bundled real-browser demo that needs no application server or project config.
 
 ## v1.0 criteria
 

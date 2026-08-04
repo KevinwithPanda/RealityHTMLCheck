@@ -35,12 +35,32 @@ jobs:
         run: |
           python -m py_compile realitycheck/scripts/report.py tests/test_skill.py scripts/install-skill.py
           node --check realitycheck/scripts/audit.mjs
+          node --check realitycheck/scripts/demo-server.mjs
           node --check realitycheck/scripts/artifact-validator.mjs
           node --check realitycheck/scripts/config.mjs
           node --check realitycheck/scripts/site-report.mjs
 
       - name: Verify package contents
         run: npm pack --dry-run
+
+      - name: Prove the zero-configuration bundled demo
+        shell: bash
+        run: |
+          npm run demo -- --browser "$(command -v google-chrome)" --output .realitycheck/ci-demo
+          demo_report="$(find .realitycheck/ci-demo -name report.json -print -quit)"
+          test -n "$demo_report"
+          python - "$demo_report" <<'PY'
+          import json
+          import sys
+          from urllib.parse import urlsplit
+          report = json.load(open(sys.argv[1], encoding="utf-8"))
+          assert report["score"]["totalFindings"] >= 5, report
+          assert report["score"]["counts"]["major"] >= 2, report
+          assert report["threshold"]["met"], report
+          assert urlsplit(report["target"]["requestedUrl"]).hostname == "127.0.0.1", report
+          assert report["adapter"]["isolation"] == "fresh-context", report
+          PY
+          node realitycheck/scripts/audit.mjs validate "$demo_report"
 
       - name: Prove a repair with real browser runs
         shell: bash

@@ -17,6 +17,7 @@ test("npm publication whitelist covers every security and governance runtime sur
   const required = [
     "realitycheck/SKILL.md",
     "realitycheck/scripts/audit.mjs",
+    "realitycheck/scripts/demo-server.mjs",
     "realitycheck/scripts/visual-regression.mjs",
     "realitycheck/scripts/evidence-attestation.mjs",
     "realitycheck/scripts/evidence-trust.mjs",
@@ -26,6 +27,10 @@ test("npm publication whitelist covers every security and governance runtime sur
     "realitycheck/assets/evidence-trust.schema.json",
     "realitycheck/assets/evidence-trust-report.schema.json",
     "realitycheck/assets/risk-register.schema.json",
+    "realitycheck/assets/demo/index.html",
+    "realitycheck/assets/demo/styles.css",
+    "realitycheck/assets/demo/app.js",
+    "realitycheck/assets/demo/api/orders.json",
     "README.md",
     "LICENSE",
   ];

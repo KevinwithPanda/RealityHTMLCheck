@@ -40,6 +40,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /<link rel="canonical" href="https:\/\/kevinwithpanda\.github\.io\/RealityHTMLCheck\/">/);
   assert.match(html, /data-language="zh-CN"/);
   assert.match(html, /init --profile product --base-url/);
+  assert.match(html, /npm run demo/);
+  assert.match(html, /内置 Demo 不需要应用服务器或配置/);
   assert.match(html, /Choose a transparent starting policy/);
   assert.match(html, /选择一个透明的起始策略/);
   assert.match(html, /ArrowRight changes the tab/);

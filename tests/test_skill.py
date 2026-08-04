@@ -58,6 +58,7 @@ class SkillStructureTests(unittest.TestCase):
             "references/report-schema.md",
             "references/project-config.md",
             "scripts/audit.mjs",
+            "scripts/demo-server.mjs",
             "scripts/artifact-validator.mjs",
             "scripts/evidence-attestation.mjs",
             "scripts/evidence-trust.mjs",
@@ -85,6 +86,10 @@ class SkillStructureTests(unittest.TestCase):
             "assets/evidence-trust.schema.json",
             "assets/evidence-trust-report.schema.json",
             "assets/risk-register.schema.json",
+            "assets/demo/index.html",
+            "assets/demo/styles.css",
+            "assets/demo/app.js",
+            "assets/demo/api/orders.json",
         )
         for relative_path in required:
             path = SKILL_ROOT / relative_path
@@ -184,6 +189,15 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("min-width: 1040px", css_content)
         self.assertIn('data-testid="checkout"', html_content)
         self.assertTrue((demo / "api" / "orders.json").is_file())
+        bundled = SKILL_ROOT / "assets" / "demo"
+        bundled_html = (bundled / "index.html").read_text(encoding="utf-8")
+        bundled_css = (bundled / "styles.css").read_text(encoding="utf-8")
+        bundled_server = (SKILL_ROOT / "scripts" / "demo-server.mjs").read_text(encoding="utf-8")
+        self.assertNotRegex(bundled_html, r"(?:src|href)=['\"]https?://")
+        self.assertIn("INTENTIONALLY BROKEN", bundled_html)
+        self.assertIn("min-width:1040px", bundled_css)
+        self.assertIn('"127.0.0.1"', bundled_server)
+        self.assertIn('new Set(["GET", "HEAD"])', bundled_server)
 
     def test_fixed_demo_is_a_positive_detector_fixture(self) -> None:
         demo = REPOSITORY_ROOT / "examples" / "demo-fixed"
