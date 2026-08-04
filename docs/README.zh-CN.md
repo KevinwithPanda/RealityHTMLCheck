@@ -411,12 +411,17 @@ npx realitycheck risk-register .realitycheck/runs \
 npx realitycheck policy-review \
   policy/main.config.json realitycheck.config.json \
   --output .realitycheck/policy-review
+
+npx realitycheck issue-drafts .realitycheck/runs \
+  --output .realitycheck/issue-drafts
 ```
 
 `validate` 会使用标准兼容的 JSON Schema 校验器，递归验证项目配置、报告、修复/验证产物、趋势、目录、最新入口、完整性清单、风险台账与策略审查。`catalog` 会先校验发现的每份源产物，明确警告并跳过不兼容旧文件，再生成可搜索的产物目录。`risk-register` 按精确目标与稳定指纹聚合页面问题，记录首次/最近出现时间和重复次数，再结合最新证明场景与可用策略指纹保守地区分开放、已豁免、已解决与未验证风险；场景缺失或策略漂移都会明确保持未验证。开放风险总数、最长开放天数和反复风险总数均可设为组合门禁，失败时仍保留全部 JSON、双语 HTML、Markdown 和防公式注入 CSV 证据。
 
 `policy-review` 会先验证前后两份配置，再比较实际生效的结构化约束，并输出通过 Schema 校验的 JSON、英文/中文 Markdown 与可搜索双语 HTML。删除视口、检查或安全响应头，Deep 改 Quick，放宽预算/评分门禁，新增视觉 mask 或豁免等会归类为 `weakened`；证据写完后返回退出码 `1`。无法自动判断强弱的路由 glob、选择器或断点尺寸变化会归类为 `review`，不会强行猜测。产物只保存文件名、策略指纹、安全 ID/计数与有界解释，不保存 base URL、选择器、应用路由、豁免原因或本机路径。[`examples/policy-review-lab`](../examples/policy-review-lab) 提供 40 项变化的可运行示例。
 
-本仓库也可直接作为复合 GitHub Action 使用。Action 会先执行页面/全站核查，可选地签署清单、评估信任、比较 `policy-before` 与 `policy-after`，再生成产物目录与长期风险台账；所有证据会在页面、策略、组合风险或信任门禁生效前上传。Action 还暴露 `policy-review-path` / `policy-exit-code`，并把所选语言的策略摘要写入作业摘要。参考 [`examples/github-actions/quality-gate.yml`](../examples/github-actions/quality-gate.yml) 可建立只阻止新增回归的门禁。
+`issue-drafts` 会把一份或多份已验证的 `repair-plan.json` 变成本地、复核优先的 GitHub 工单交接。它按稳定指纹去重，但保留每次运行/场景的证据链接；移除 URL 查询参数和片段，阻断意外 `@` 提及，把低置信度问题单独放入待复核，并继续明确展示已豁免证据。命令输出通过 Schema 校验的 JSON、中英文 Markdown、CSV 和带复制按钮的可搜索双语看板。它不会调用 GitHub，也不会自动创建工单。[`examples/issue-drafts-lab`](../examples/issue-drafts-lab) 提供由参考核查生成的六份真实草稿。
+
+本仓库也可直接作为复合 GitHub Action 使用。Action 会先执行页面/全站核查，可选地签署清单、评估信任、比较 `policy-before` 与 `policy-after`，自动生成绝不外发的工单草稿看板，再生成产物目录与长期风险台账；所有证据会在页面、策略、组合风险或信任门禁生效前上传。Action 暴露 `issue-drafts-path`、`policy-review-path` / `policy-exit-code`，并把所选语言的策略摘要写入作业摘要。参考 [`examples/github-actions/quality-gate.yml`](../examples/github-actions/quality-gate.yml) 可建立只阻止新增回归的门禁。
 
 项目目前仍以 Codex 为主要交互入口，但独立 CLI 和报告工具可以直接在克隆仓库中使用。路线图、贡献和安全说明见 [`ROADMAP.md`](../ROADMAP.md)、[`CONTRIBUTING.md`](../CONTRIBUTING.md) 与 [`SECURITY.md`](../SECURITY.md)。项目采用 [MIT License](../LICENSE)。

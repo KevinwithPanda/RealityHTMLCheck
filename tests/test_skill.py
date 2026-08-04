@@ -61,6 +61,7 @@ class SkillStructureTests(unittest.TestCase):
             "scripts/demo-server.mjs",
             "scripts/github-summary.mjs",
             "scripts/policy-review.mjs",
+            "scripts/issue-drafts.mjs",
             "scripts/artifact-validator.mjs",
             "scripts/evidence-attestation.mjs",
             "scripts/evidence-trust.mjs",
@@ -89,6 +90,7 @@ class SkillStructureTests(unittest.TestCase):
             "assets/evidence-trust-report.schema.json",
             "assets/risk-register.schema.json",
             "assets/policy-review.schema.json",
+            "assets/issue-drafts.schema.json",
             "assets/demo/index.html",
             "assets/demo/styles.css",
             "assets/demo/app.js",
@@ -135,6 +137,9 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("policy-after", action)
         self.assertIn("policy-review-path", action)
         self.assertIn("policy-exit-code", action)
+        self.assertIn("Build reviewable GitHub issue drafts", action)
+        self.assertIn("issue-drafts-path", action)
+        self.assertIn("github-issue-drafts.html", action)
         self.assertIn('exit "$RC_EXIT_CODE"', action)
         self.assertNotIn("eval ", action)
 

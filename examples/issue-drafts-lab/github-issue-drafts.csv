@@ -1,0 +1,7 @@
+"id","title","severity","confidence","disposition","rule","owner","occurrences","labels"
+"ISSUE-920864929A96","[major] Checkout review is outside the mobile viewport","major","high","actionable","offscreen-critical-control","","1","realitycheck severity:major disposition:actionable rule:offscreen-critical-control"
+"ISSUE-FB7751933E1D","[major] Long customer names are clipped without access to the full value","major","high","actionable","element-text-clipping","","1","realitycheck severity:major disposition:actionable rule:element-text-clipping"
+"ISSUE-02B9DF270A7A","[minor] Status alignment remains pinned to the physical right side","minor","high","actionable","rtl-physical-spacing","","1","realitycheck severity:minor disposition:actionable rule:rtl-physical-spacing"
+"ISSUE-7AEAC80E106F","[minor] The page logs an initialization error","minor","high","actionable","console-error","","1","realitycheck severity:minor disposition:actionable rule:console-error"
+"ISSUE-831A358F9422","[minor] The customer avatar has no text alternative","minor","high","actionable","image-alt","","1","realitycheck severity:minor disposition:actionable rule:image-alt"
+"ISSUE-3E80D0B7409A","[minor] Interactive elements may not expose a visible focus indicator","minor","low","review","keyboard-focus-visibility","","1","realitycheck severity:minor disposition:review rule:keyboard-focus-visibility"

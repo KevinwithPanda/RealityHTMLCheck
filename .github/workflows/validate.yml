@@ -40,6 +40,7 @@ jobs:
           node --check realitycheck/scripts/config.mjs
           node --check realitycheck/scripts/site-report.mjs
           node --check realitycheck/scripts/policy-review.mjs
+          node --check realitycheck/scripts/issue-drafts.mjs
 
       - name: Verify package contents
         run: npm pack --dry-run
@@ -72,6 +73,29 @@ jobs:
           assert "Tracked in WEB-410" not in serialized, serialized
           assert Path(".realitycheck/ci-policy-review/policy-review.html").is_file()
           assert Path(".realitycheck/ci-policy-review/policy-review.zh-CN.md").is_file()
+          PY
+
+      - name: Prove the non-submitting GitHub issue draft handoff
+        shell: bash
+        run: |
+          node realitycheck/scripts/audit.mjs issue-drafts \
+            examples/reference-run/repair-plan.json \
+            --output .realitycheck/ci-issue-drafts
+          node realitycheck/scripts/audit.mjs validate \
+            .realitycheck/ci-issue-drafts/github-issue-drafts.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          drafts = json.loads(Path(".realitycheck/ci-issue-drafts/github-issue-drafts.json").read_text(encoding="utf-8"))
+          assert drafts["summary"] == {
+              "drafts": 6, "occurrences": 6, "duplicates": 0,
+              "actionable": 5, "review": 1, "waived": 0,
+              "critical": 0, "major": 2, "minor": 4, "info": 0,
+          }
+          assert all(item["verification"]["requireFingerprintAbsent"] for item in drafts["drafts"])
+          html = Path(".realitycheck/ci-issue-drafts/github-issue-drafts.html").read_text(encoding="utf-8")
+          assert "navigator.clipboard.writeText" in html
+          assert "NO AUTO-SUBMISSION" in html
           PY
 
       - name: Prove the zero-configuration bundled demo

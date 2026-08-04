@@ -41,6 +41,9 @@
     "responsive-testing",
     "policy-as-code",
     "config-diff",
+    "github-issues",
+    "issue-tracker",
+    "developer-experience",
     "qa",
     "ai"
   ],

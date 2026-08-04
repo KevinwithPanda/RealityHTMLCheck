@@ -24,6 +24,7 @@ const ARTIFACT_FILES = new Set([
   "evidence-trust-report.json",
   "risk-register.json",
   "policy-review.json",
+  "github-issue-drafts.json",
   "realitycheck.config.json",
 ]);
 const SKIPPED_DIRECTORIES = new Set([".git", "node_modules", "__pycache__"]);
@@ -43,6 +44,7 @@ const SCHEMA_BY_ARTIFACT = {
   "evidence-trust-report": "evidence-trust-report.schema.json",
   "risk-register": "risk-register.schema.json",
   "policy-review": "policy-review.schema.json",
+  "github-issue-drafts": "issue-drafts.schema.json",
   config: "config.schema.json",
 };
 
@@ -173,6 +175,36 @@ function verifyPolicyReview(review) {
   return errors;
 }
 
+function verifyIssueDrafts(bundle) {
+  const errors = [];
+  const drafts = bundle.drafts || [];
+  const occurrences = drafts.reduce((sum, draft) => sum + (draft.occurrences?.length || 0), 0);
+  const expected = {
+    drafts: drafts.length,
+    occurrences,
+    duplicates: occurrences - drafts.length,
+    actionable: drafts.filter((draft) => draft.disposition === "actionable").length,
+    review: drafts.filter((draft) => draft.disposition === "review").length,
+    waived: drafts.filter((draft) => draft.disposition === "waived").length,
+    critical: drafts.filter((draft) => draft.severity === "critical").length,
+    major: drafts.filter((draft) => draft.severity === "major").length,
+    minor: drafts.filter((draft) => draft.severity === "minor").length,
+    info: drafts.filter((draft) => draft.severity === "info").length,
+  };
+  for (const [key, value] of Object.entries(expected)) {
+    if (bundle.summary?.[key] !== value) errors.push(`/summary/${key} does not match the issue drafts`);
+  }
+  const ids = new Set();
+  const fingerprints = new Set();
+  for (const draft of drafts) {
+    if (ids.has(draft.id)) errors.push(`/drafts contains duplicate id ${draft.id}`);
+    if (fingerprints.has(draft.fingerprint)) errors.push(`/drafts contains duplicate fingerprint ${draft.fingerprint}`);
+    ids.add(draft.id);
+    fingerprints.add(draft.fingerprint);
+  }
+  return errors;
+}
+
 export function validateArtifactFiles(inputPaths, { trustedKeyIds = [], requireAttestation = false } = {}) {
   if (!inputPaths.length) throw new Error("validate requires at least one JSON file or directory");
   const trustedKeys = new Set(trustedKeyIds);
@@ -208,6 +240,7 @@ export function validateArtifactFiles(inputPaths, { trustedKeyIds = [], requireA
     if (schemaValid && kind === "evidence-trust-report") errors.push(...verifyEvidenceTrustReport(value));
     if (schemaValid && kind === "risk-register") errors.push(...verifyRiskRegister(value));
     if (schemaValid && kind === "policy-review") errors.push(...verifyPolicyReview(value));
+    if (schemaValid && kind === "github-issue-drafts") errors.push(...verifyIssueDrafts(value));
     if (schemaValid && kind === "evidence-attestation" && trustedKeys.size && !trustedKeys.has(value.signer.keyId)) {
       errors.push(`/signer/keyId is not in the trusted key allowlist: ${value.signer.keyId}`);
     }

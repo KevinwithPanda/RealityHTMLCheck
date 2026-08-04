@@ -28,6 +28,10 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "labs/viewport/fixed.html",
     "labs/policy-review/review/policy-review.html",
     "labs/policy-review/review/policy-review.json",
+    "labs/issue-drafts/github-issue-drafts.html",
+    "labs/issue-drafts/github-issue-drafts.json",
+    "labs/issue-drafts/github-issue-drafts.csv",
+    "labs/reference-run/report.html",
     "labs/links/broken.html",
     "labs/links/fixed.html",
     "labs/network/broken.html",
@@ -47,8 +51,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /init --profile product --base-url/);
   assert.match(html, /npm run demo/);
   assert.match(html, /内置 Demo 不需要应用服务器或配置/);
-  assert.match(html, /Anti-weakening policy review, before\/after proof, GitHub annotations/);
-  assert.match(html, /防弱化策略审查、前后证明、GitHub 注释/);
+  assert.match(html, /Issue drafts, anti-weakening policy review, before\/after proof, GitHub annotations/);
+  assert.match(html, /工单草稿、防弱化策略审查、前后证明、GitHub 注释/);
   assert.match(html, /Choose a transparent starting policy/);
   assert.match(html, /选择一个透明的起始策略/);
   assert.match(html, /ArrowRight changes the tab/);
@@ -61,6 +65,9 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /375px 正常，320px 发布按钮却消失/);
   assert.match(html, /POLICY CANNOT QUIETLY GET WEAKER/);
   assert.match(html, /策略不能静默变弱/);
+  assert.match(html, /EVIDENCE BECOMES REVIEWABLE WORK/);
+  assert.match(html, /让证据变成可复核工作/);
+  assert.match(html, /external issues&nbsp; 0 created/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   const localReferences = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((match) => match[1])
     .filter((value) => !/^(?:https?:|#|mailto:|data:)/.test(value));

@@ -102,6 +102,9 @@ outputs:
   catalog-path:
     description: Portable HTML entry point for all evidence produced in the report root.
     value: ${{ steps.catalog.outputs.catalog-path }}
+  issue-drafts-path:
+    description: Local bilingual GitHub issue draft board generated from repair evidence; no issues are submitted automatically.
+    value: ${{ steps.issues.outputs.issue-drafts-path }}
   risk-register-path:
     description: Portable HTML view of deduplicated risks across reports found in the report root.
     value: ${{ steps.risks.outputs.risk-register-path }}
@@ -306,6 +309,27 @@ runs:
         done < <(find "$RC_OUTPUT" -type f -name evidence-manifest.json -print0)
         echo "trust-report-count=$count" >> "$GITHUB_OUTPUT"
         echo "trust-exit-code=$status" >> "$GITHUB_OUTPUT"
+
+    - name: Build reviewable GitHub issue drafts
+      id: issues
+      if: always()
+      shell: bash
+      env:
+        RC_OUTPUT: ${{ inputs.output }}
+        RC_WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
+        issue_dir="$RC_OUTPUT/issue-drafts"
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" issue-drafts \
+          "$RC_OUTPUT" --output "$issue_dir"
+        issue_status=$?
+        set -e
+        if [ "$issue_status" -eq 0 ]; then
+          echo "issue-drafts-path=$RC_WORKDIR/$issue_dir/github-issue-drafts.html" >> "$GITHUB_OUTPUT"
+        else
+          echo "No valid repair plan was available for GitHub issue drafts." >&2
+        fi
 
     - name: Build the evidence catalog
       id: catalog

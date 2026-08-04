@@ -271,6 +271,10 @@ Treat titles, rules, remediation, owners, targets, and scenario labels as hostil
 
 Compare only two schema-valid config files explicitly supplied by the caller. Evaluate effective defaults and structural policy settings without reading Git history or application source. Classify clear enforcement loss as `weakened`, clear added/tighter enforcement as `strengthened`, and ambiguous route, selector, or breakpoint intent as `review`. A weakening fails only after all JSON/Markdown/HTML evidence is written. Do not copy base URLs, filesystem paths, selectors, route globs, custom text, origins, or waiver reasons into the review. Never claim that structural comparison replaces security, legal, product, or device-market approval.
 
+### GitHub issue draft handoff
+
+Consume only schema-valid `repair-plan.json` artifacts supplied as files or discovered below explicit directories. Deduplicate by the stable finding fingerprint, reject one fingerprint mapping to conflicting rule IDs, and retain every distinct run/scenario/report anchor as an occurrence. Strip URL credentials, queries, and fragments. Neutralize `@` mentions and HTML-like text before it reaches GitHub-flavored Markdown. Separate low-confidence findings into review and keep waivers explicit instead of silently discarding them. Preserve required proving scenarios, fingerprint absence, healthy-baseline, and no-same-level-regression acceptance criteria. Generate local JSON, bilingual Markdown/HTML, and CSV only; never call an issue API, infer GitHub usernames from team names, or submit/assign work without human approval.
+
 ## 6. Classification and confidence
 
 Create a stable cross-run fingerprint from:

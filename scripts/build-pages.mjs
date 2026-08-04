@@ -28,6 +28,8 @@ copy("examples/security-lab", "labs/security");
 copy("examples/accessibility-lab", "labs/accessibility");
 copy("examples/viewport-lab", "labs/viewport");
 copy("examples/policy-review-lab", "labs/policy-review");
+copy("examples/issue-drafts-lab", "labs/issue-drafts");
+copy("examples/reference-run", "labs/reference-run");
 writeFileSync(join(output, ".nojekyll"), "", "utf8");
 
 const latest = ["viewport", "journey", "visual", "network", "links", "metadata", "security", "accessibility"].map((kind) => {

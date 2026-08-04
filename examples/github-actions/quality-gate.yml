@@ -43,6 +43,8 @@ jobs:
           # earlier step, e.g. git show origin/main:realitycheck.config.json.
           # policy-before: /tmp/realitycheck-main.config.json
           # policy-after: realitycheck.config.json
+          # Every completed repair plan also produces a local issue-draft board;
+          # use the Action's issue-drafts-path output to link it from later steps.
           # Optional: signs every completed manifest without committing the key.
           # attestation-private-key: ${{ secrets.REALITYCHECK_ED25519_PRIVATE_KEY }}
           # attestation-trusted-key-id: ${{ vars.REALITYCHECK_ED25519_KEY_ID }}

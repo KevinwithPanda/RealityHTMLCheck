@@ -18,6 +18,7 @@ All notable changes are documented here. This project follows Semantic Versionin
 - Latest-target GitHub job summaries and bounded Error/Warning/Notice workflow annotations with bilingual output, query removal, waiver handling, stale-run suppression, and hostile command-text neutralization.
 - A bounded one-to-six responsive viewport matrix with isolated contexts, per-breakpoint screenshots and attribution, profile-specific phone/tablet coverage, policy fingerprinting, and paired 92/100 versus 100/100 real-browser fixtures.
 - A schema-validated `policy-review` anti-weakening gate with conservative structural classification, safe metadata-only evidence, bilingual Markdown/HTML, GitHub Action inputs/outputs, and a 40-change governance fixture.
+- Review-first GitHub issue draft bundles that deduplicate stable fingerprints, preserve every evidence occurrence and acceptance condition, remove query values, neutralize mentions, and export schema-validated JSON, bilingual Markdown/HTML, and CSV without submitting anything externally.
 
 ### Changed
 
@@ -29,6 +30,7 @@ All notable changes are documented here. This project follows Semantic Versionin
 - Visual baselines can no longer change as a side effect of auditing; an existing different baseline requires `visual-approve --replace-baseline`, while ordinary audits remain read-only.
 - Quick scenario counts and progress now adapt to the configured viewport matrix while preserving the original 375x812 default.
 - The composite Action uploads and summarizes optional policy-change evidence before enforcing its gate, alongside page, portfolio-risk, and trust decisions.
+- The composite Action now produces a local issue-draft board before cataloging and uploads it with the evidence bundle through the `issue-drafts-path` output.
 
 ## [0.4.0] - 2026-08-05
 

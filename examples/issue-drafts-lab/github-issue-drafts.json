@@ -1,0 +1,247 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "kind": "github-issue-drafts",
+  "generatedAt": "2026-08-04T20:06:53.130Z",
+  "summary": {
+    "drafts": 6,
+    "occurrences": 6,
+    "duplicates": 0,
+    "actionable": 5,
+    "review": 1,
+    "waived": 0,
+    "critical": 0,
+    "major": 2,
+    "minor": 4,
+    "info": 0
+  },
+  "sources": [
+    {
+      "filename": "repair-plan.json",
+      "runId": "reference-demo-v0.4.0",
+      "fingerprint": "sha256:35986176c131c2cd5f915085fd476699145f2cefa772ebf275b13e6c4641a388",
+      "items": 6
+    }
+  ],
+  "drafts": [
+    {
+      "id": "ISSUE-920864929A96",
+      "fingerprint": "920864929a9614a5de5d92b964db6d1ed6a07ac7ccbfe092a558884e75ac3170",
+      "ruleId": "offscreen-critical-control",
+      "severity": "major",
+      "confidence": "high",
+      "disposition": "actionable",
+      "title": "[major] Checkout review is outside the mobile viewport",
+      "titleZh": "[major] 移动端视口内无法看到结账审核按钮",
+      "body": "## Problem\n\nCheckout review is outside the mobile viewport\n\n- Severity: `major`\n- Confidence: `high`\n- Rule: `offscreen-critical-control`\n\n## Suggested repair\n\nRemove the fixed minimum shell width and stack the hero actions at the mobile breakpoint.\n\n- Replace min-width: 1040px with responsive grid constraints.\n- Allow the primary action to wrap below the heading on narrow screens.\n\n## Acceptance criteria\n\n- Re-run `baseline`, `mobile-375`.\n- Stable fingerprint `920864929a9614a5de5d92b964db6d1ed6a07ac7ccbfe092a558884e75ac3170` no longer appears.\n- The baseline remains healthy and no regression of equal or greater severity is introduced.\n\n## Evidence\n\n- [reference-demo-v0.4.0 · mobile-375](../reference-run/report.html#RC-920864929A) · http://127.0.0.1:4173/\n\n> This is a locally generated issue draft. Evidence links are relative to the draft bundle; replace them with durable URLs or attach the bundle, then review before creating or assigning a GitHub issue.",
+      "bodyZh": "## 问题\n\n移动端视口内无法看到结账审核按钮\n\n- 严重级别：`major`\n- 置信度：`high`\n- 规则：`offscreen-critical-control`\n\n## 修复建议\n\n移除应用外壳的固定最小宽度，并在手机断点把主操作排列到标题下方。\n\n- 用响应式网格约束替换 min-width: 1040px。\n- 在窄屏上允许主要操作换行到标题下方。\n\n## 验收标准\n\n- 重新运行 `baseline`, `mobile-375`。\n- 稳定指纹 `920864929a9614a5de5d92b964db6d1ed6a07ac7ccbfe092a558884e75ac3170` 不再出现。\n- 基线场景保持健康，且不得出现同级或更严重的新回归。\n\n## 证据\n\n- [reference-demo-v0.4.0 · mobile-375](../reference-run/report.html#RC-920864929A) · http://127.0.0.1:4173/\n\n> 这是本地生成的工单草稿。证据链接相对于草稿包；提交前请替换为长期地址或附上证据包，并人工复核后再创建或分派 GitHub Issue。",
+      "labels": [
+        "realitycheck",
+        "severity:major",
+        "disposition:actionable",
+        "rule:offscreen-critical-control"
+      ],
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "mobile-375"
+        ]
+      },
+      "occurrences": [
+        {
+          "runId": "reference-demo-v0.4.0",
+          "target": "http://127.0.0.1:4173/",
+          "findingId": "RC-920864929A",
+          "scenarioId": "mobile-375",
+          "evidencePath": "../reference-run/report.html#RC-920864929A"
+        }
+      ]
+    },
+    {
+      "id": "ISSUE-FB7751933E1D",
+      "fingerprint": "fb7751933e1dae1692cc806f39622186159c5007c87abbe0320050ee6c23d572",
+      "ruleId": "element-text-clipping",
+      "severity": "major",
+      "confidence": "high",
+      "disposition": "actionable",
+      "title": "[major] Long customer names are clipped without access to the full value",
+      "titleZh": "[major] 超长客户名称被截断，用户无法访问完整内容",
+      "body": "## Problem\n\nLong customer names are clipped without access to the full value\n\n- Severity: `major`\n- Confidence: `high`\n- Rule: `element-text-clipping`\n\n## Suggested repair\n\nExpose the full customer name while preserving the card layout.\n\n- Allow wrapping or add an accessible expansion/tooltip mechanism.\n\n## Acceptance criteria\n\n- Re-run `baseline`, `long-text`.\n- Stable fingerprint `fb7751933e1dae1692cc806f39622186159c5007c87abbe0320050ee6c23d572` no longer appears.\n- The baseline remains healthy and no regression of equal or greater severity is introduced.\n\n## Evidence\n\n- [reference-demo-v0.4.0 · long-text](../reference-run/report.html#RC-FB7751933E) · http://127.0.0.1:4173/\n\n> This is a locally generated issue draft. Evidence links are relative to the draft bundle; replace them with durable URLs or attach the bundle, then review before creating or assigning a GitHub issue.",
+      "bodyZh": "## 问题\n\n超长客户名称被截断，用户无法访问完整内容\n\n- 严重级别：`major`\n- 置信度：`high`\n- 规则：`element-text-clipping`\n\n## 修复建议\n\n在保持卡片布局的同时，让用户能够访问完整客户名称。\n\n- 允许名称换行，或增加支持键盘和读屏器的展开/提示机制。\n\n## 验收标准\n\n- 重新运行 `baseline`, `long-text`。\n- 稳定指纹 `fb7751933e1dae1692cc806f39622186159c5007c87abbe0320050ee6c23d572` 不再出现。\n- 基线场景保持健康，且不得出现同级或更严重的新回归。\n\n## 证据\n\n- [reference-demo-v0.4.0 · long-text](../reference-run/report.html#RC-FB7751933E) · http://127.0.0.1:4173/\n\n> 这是本地生成的工单草稿。证据链接相对于草稿包；提交前请替换为长期地址或附上证据包，并人工复核后再创建或分派 GitHub Issue。",
+      "labels": [
+        "realitycheck",
+        "severity:major",
+        "disposition:actionable",
+        "rule:element-text-clipping"
+      ],
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "long-text"
+        ]
+      },
+      "occurrences": [
+        {
+          "runId": "reference-demo-v0.4.0",
+          "target": "http://127.0.0.1:4173/",
+          "findingId": "RC-FB7751933E",
+          "scenarioId": "long-text",
+          "evidencePath": "../reference-run/report.html#RC-FB7751933E"
+        }
+      ]
+    },
+    {
+      "id": "ISSUE-02B9DF270A7A",
+      "fingerprint": "02b9df270a7ab58db15af335bfcc3292ac41e099604da53ffa54af73bf9baa98",
+      "ruleId": "rtl-physical-spacing",
+      "severity": "minor",
+      "confidence": "high",
+      "disposition": "actionable",
+      "title": "[minor] Status alignment remains pinned to the physical right side",
+      "titleZh": "[minor] 状态标签仍固定在物理右侧",
+      "body": "## Problem\n\nStatus alignment remains pinned to the physical right side\n\n- Severity: `minor`\n- Confidence: `high`\n- Rule: `rtl-physical-spacing`\n\n## Suggested repair\n\nUse logical spacing so status alignment follows writing direction.\n\n- Replace margin-left: auto with margin-inline-start: auto.\n\n## Acceptance criteria\n\n- Re-run `baseline`, `rtl-arabic`.\n- Stable fingerprint `02b9df270a7ab58db15af335bfcc3292ac41e099604da53ffa54af73bf9baa98` no longer appears.\n- The baseline remains healthy and no regression of equal or greater severity is introduced.\n\n## Evidence\n\n- [reference-demo-v0.4.0 · rtl-arabic](../reference-run/report.html#RC-02B9DF270A) · http://127.0.0.1:4173/\n\n> This is a locally generated issue draft. Evidence links are relative to the draft bundle; replace them with durable URLs or attach the bundle, then review before creating or assigning a GitHub issue.",
+      "bodyZh": "## 问题\n\n状态标签仍固定在物理右侧\n\n- 严重级别：`minor`\n- 置信度：`high`\n- 规则：`rtl-physical-spacing`\n\n## 修复建议\n\n使用逻辑方向的间距属性，使状态标签跟随书写方向对齐。\n\n- 将 margin-left: auto 替换为 margin-inline-start: auto。\n\n## 验收标准\n\n- 重新运行 `baseline`, `rtl-arabic`。\n- 稳定指纹 `02b9df270a7ab58db15af335bfcc3292ac41e099604da53ffa54af73bf9baa98` 不再出现。\n- 基线场景保持健康，且不得出现同级或更严重的新回归。\n\n## 证据\n\n- [reference-demo-v0.4.0 · rtl-arabic](../reference-run/report.html#RC-02B9DF270A) · http://127.0.0.1:4173/\n\n> 这是本地生成的工单草稿。证据链接相对于草稿包；提交前请替换为长期地址或附上证据包，并人工复核后再创建或分派 GitHub Issue。",
+      "labels": [
+        "realitycheck",
+        "severity:minor",
+        "disposition:actionable",
+        "rule:rtl-physical-spacing"
+      ],
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "rtl-arabic"
+        ]
+      },
+      "occurrences": [
+        {
+          "runId": "reference-demo-v0.4.0",
+          "target": "http://127.0.0.1:4173/",
+          "findingId": "RC-02B9DF270A",
+          "scenarioId": "rtl-arabic",
+          "evidencePath": "../reference-run/report.html#RC-02B9DF270A"
+        }
+      ]
+    },
+    {
+      "id": "ISSUE-7AEAC80E106F",
+      "fingerprint": "7aeac80e106f68fc401a23305947ffa0751bfafb0a4020a59cfe79f6d9f08af7",
+      "ruleId": "console-error",
+      "severity": "minor",
+      "confidence": "high",
+      "disposition": "actionable",
+      "title": "[minor] The page logs an initialization error",
+      "titleZh": "[minor] 页面在初始化时输出错误",
+      "body": "## Problem\n\nThe page logs an initialization error\n\n- Severity: `minor`\n- Confidence: `high`\n- Rule: `console-error`\n\n## Suggested repair\n\nHandle optional analytics initialization without emitting a production console error.\n\n- Use a recoverable warning or feature-state result for an optional integration.\n\n## Acceptance criteria\n\n- Re-run `baseline`.\n- Stable fingerprint `7aeac80e106f68fc401a23305947ffa0751bfafb0a4020a59cfe79f6d9f08af7` no longer appears.\n- The baseline remains healthy and no regression of equal or greater severity is introduced.\n\n## Evidence\n\n- [reference-demo-v0.4.0 · baseline](../reference-run/report.html#RC-7AEAC80E10) · http://127.0.0.1:4173/\n\n> This is a locally generated issue draft. Evidence links are relative to the draft bundle; replace them with durable URLs or attach the bundle, then review before creating or assigning a GitHub issue.",
+      "bodyZh": "## 问题\n\n页面在初始化时输出错误\n\n- 严重级别：`minor`\n- 置信度：`high`\n- 规则：`console-error`\n\n## 修复建议\n\n处理可选分析服务的初始化失败，不要在生产控制台中输出错误。\n\n- 对于可选集成，使用可恢复的警告或明确的功能状态结果。\n\n## 验收标准\n\n- 重新运行 `baseline`。\n- 稳定指纹 `7aeac80e106f68fc401a23305947ffa0751bfafb0a4020a59cfe79f6d9f08af7` 不再出现。\n- 基线场景保持健康，且不得出现同级或更严重的新回归。\n\n## 证据\n\n- [reference-demo-v0.4.0 · baseline](../reference-run/report.html#RC-7AEAC80E10) · http://127.0.0.1:4173/\n\n> 这是本地生成的工单草稿。证据链接相对于草稿包；提交前请替换为长期地址或附上证据包，并人工复核后再创建或分派 GitHub Issue。",
+      "labels": [
+        "realitycheck",
+        "severity:minor",
+        "disposition:actionable",
+        "rule:console-error"
+      ],
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      },
+      "occurrences": [
+        {
+          "runId": "reference-demo-v0.4.0",
+          "target": "http://127.0.0.1:4173/",
+          "findingId": "RC-7AEAC80E10",
+          "scenarioId": "baseline",
+          "evidencePath": "../reference-run/report.html#RC-7AEAC80E10"
+        }
+      ]
+    },
+    {
+      "id": "ISSUE-831A358F9422",
+      "fingerprint": "831a358f94229cb373fe4ba69cd7c49f2eb6572d703bfc916c7ff61328a9572e",
+      "ruleId": "image-alt",
+      "severity": "minor",
+      "confidence": "high",
+      "disposition": "actionable",
+      "title": "[minor] The customer avatar has no text alternative",
+      "titleZh": "[minor] 客户头像没有文本替代内容",
+      "body": "## Problem\n\nThe customer avatar has no text alternative\n\n- Severity: `minor`\n- Confidence: `high`\n- Rule: `image-alt`\n\n## Suggested repair\n\nDeclare the avatar decorative or provide a concise alternative.\n\n- Use alt=\"\" when the adjacent customer name already conveys the same information.\n\n## Acceptance criteria\n\n- Re-run `baseline`, `image-failure`.\n- Stable fingerprint `831a358f94229cb373fe4ba69cd7c49f2eb6572d703bfc916c7ff61328a9572e` no longer appears.\n- The baseline remains healthy and no regression of equal or greater severity is introduced.\n\n## Evidence\n\n- [reference-demo-v0.4.0 · image-failure](../reference-run/report.html#RC-831A358F94) · http://127.0.0.1:4173/\n\n> This is a locally generated issue draft. Evidence links are relative to the draft bundle; replace them with durable URLs or attach the bundle, then review before creating or assigning a GitHub issue.",
+      "bodyZh": "## 问题\n\n客户头像没有文本替代内容\n\n- 严重级别：`minor`\n- 置信度：`high`\n- 规则：`image-alt`\n\n## 修复建议\n\n明确头像属于装饰性图片，或者提供简洁的替代文本。\n\n- 如果旁边的客户名称已经表达了相同信息，请使用 alt=\"\"。\n\n## 验收标准\n\n- 重新运行 `baseline`, `image-failure`。\n- 稳定指纹 `831a358f94229cb373fe4ba69cd7c49f2eb6572d703bfc916c7ff61328a9572e` 不再出现。\n- 基线场景保持健康，且不得出现同级或更严重的新回归。\n\n## 证据\n\n- [reference-demo-v0.4.0 · image-failure](../reference-run/report.html#RC-831A358F94) · http://127.0.0.1:4173/\n\n> 这是本地生成的工单草稿。证据链接相对于草稿包；提交前请替换为长期地址或附上证据包，并人工复核后再创建或分派 GitHub Issue。",
+      "labels": [
+        "realitycheck",
+        "severity:minor",
+        "disposition:actionable",
+        "rule:image-alt"
+      ],
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "image-failure"
+        ]
+      },
+      "occurrences": [
+        {
+          "runId": "reference-demo-v0.4.0",
+          "target": "http://127.0.0.1:4173/",
+          "findingId": "RC-831A358F94",
+          "scenarioId": "image-failure",
+          "evidencePath": "../reference-run/report.html#RC-831A358F94"
+        }
+      ]
+    },
+    {
+      "id": "ISSUE-3E80D0B7409A",
+      "fingerprint": "3e80d0b7409a7389cebefb4da36ff78d5ef5e64d912cd713fb72037acda7d7d9",
+      "ruleId": "keyboard-focus-visibility",
+      "severity": "minor",
+      "confidence": "low",
+      "disposition": "review",
+      "title": "[minor] Interactive elements may not expose a visible focus indicator",
+      "titleZh": "[minor] 交互控件可能没有可见的键盘焦点指示",
+      "body": "## Problem\n\nInteractive elements may not expose a visible focus indicator\n\n- Severity: `minor`\n- Confidence: `low`\n- Rule: `keyboard-focus-visibility`\n\n## Suggested repair\n\nRestore a high-contrast focus-visible style.\n\n- Use :focus-visible with a two-pixel outline and offset.\n\n## Acceptance criteria\n\n- Re-run `baseline`, `keyboard-tab`.\n- Stable fingerprint `3e80d0b7409a7389cebefb4da36ff78d5ef5e64d912cd713fb72037acda7d7d9` no longer appears.\n- The baseline remains healthy and no regression of equal or greater severity is introduced.\n\n## Evidence\n\n- [reference-demo-v0.4.0 · keyboard-tab](../reference-run/report.html#RC-3E80D0B740) · http://127.0.0.1:4173/\n\n> This is a locally generated issue draft. Evidence links are relative to the draft bundle; replace them with durable URLs or attach the bundle, then review before creating or assigning a GitHub issue.",
+      "bodyZh": "## 问题\n\n交互控件可能没有可见的键盘焦点指示\n\n- 严重级别：`minor`\n- 置信度：`low`\n- 规则：`keyboard-focus-visibility`\n\n## 修复建议\n\n恢复高对比度的 focus-visible 样式。\n\n- 使用 :focus-visible，并设置两像素轮廓和适当的 outline-offset。\n\n## 验收标准\n\n- 重新运行 `baseline`, `keyboard-tab`。\n- 稳定指纹 `3e80d0b7409a7389cebefb4da36ff78d5ef5e64d912cd713fb72037acda7d7d9` 不再出现。\n- 基线场景保持健康，且不得出现同级或更严重的新回归。\n\n## 证据\n\n- [reference-demo-v0.4.0 · keyboard-tab](../reference-run/report.html#RC-3E80D0B740) · http://127.0.0.1:4173/\n\n> 这是本地生成的工单草稿。证据链接相对于草稿包；提交前请替换为长期地址或附上证据包，并人工复核后再创建或分派 GitHub Issue。",
+      "labels": [
+        "realitycheck",
+        "severity:minor",
+        "disposition:review",
+        "rule:keyboard-focus-visibility"
+      ],
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "keyboard-tab"
+        ]
+      },
+      "occurrences": [
+        {
+          "runId": "reference-demo-v0.4.0",
+          "target": "http://127.0.0.1:4173/",
+          "findingId": "RC-3E80D0B740",
+          "scenarioId": "keyboard-tab",
+          "evidencePath": "../reference-run/report.html#RC-3E80D0B740"
+        }
+      ]
+    }
+  ],
+  "warnings": [
+    "Drafts are never submitted automatically. Review scope, ownership, confidentiality, labels, and duplicate status before creating external issues.",
+    "草稿不会自动提交。创建外部工单前，请人工复核范围、责任归属、保密性、标签和重复状态。"
+  ]
+}

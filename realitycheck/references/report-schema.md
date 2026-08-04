@@ -107,6 +107,10 @@ Finding IDs and fingerprints must be unique within a report. Aggregate repeated 
 
 `policy-review.json` is a separate `kind: "policy-review"` artifact. It stores safe before/after filenames and SHA-256 policy fingerprints, summary counts, a gate result, and stable `POLICY-*` changes classified as `weakened`, `strengthened`, or `review`. Summary counts and the gate are recomputed during validation; duplicate change IDs or changes attached to equal fingerprints are rejected. The paired Markdown and HTML files are review surfaces, while JSON remains authoritative.
 
+## GitHub issue draft contract
+
+`github-issue-drafts.json` is a separate `kind: "github-issue-drafts"` artifact built from validated repair plans. One `ISSUE-*` draft represents one stable finding fingerprint; repeated observations remain in its `occurrences` array with portable report anchors. Each draft carries severity, confidence, actionable/review/waived disposition, safe labels, optional accountable owner, English/Chinese title and Markdown body, and the original proving acceptance contract. Semantic validation recomputes all summary/lifecycle counts and rejects duplicate IDs or fingerprints. The sibling bilingual Markdown, HTML, and CSV are review/export surfaces. No artifact represents a submitted external issue.
+
 Visual policy findings use the ordinary finding contract. `visual-baseline-missing` references `screenshots/visual-current.png`; `visual-regression-threshold` additionally references `visual-approved.png` and `visual-diff.png`. Measurements record current/baseline dimensions, whether dimensions match, changed and total pixels, exact ratio and allowed ratio, per-channel threshold, and mask count. Baseline filesystem paths, mask selector text, URL queries, and fragments are not copied into the report. The evidence manifest hashes each emitted visual file like every other screenshot.
 
 ## English and Chinese content
@@ -183,7 +187,7 @@ A before finding is `resolved` only when its fingerprint is absent from the afte
 - `site-report.json` (`kind: "site-audit"`) records bounded discovery, aggregate score and severity counts, per-page status, stable finding summaries, scenario statuses, and portable links to each page's full report.
 - `site-verification.json` (`kind: "site-verification"`) matches page paths and finding fingerprints across two site runs. It distinguishes resolved, remaining, worsened, new, and unverified findings plus failed, added, and removed pages.
 - `trend.json` (`kind: "quality-trend"`) groups exact target URLs into time-ordered series containing score, quality-gate status, severity counts, scenario coverage, and a portable latest-report link.
-- `catalog.json` (`kind: "artifact-catalog"`) is a validated local index of page audits, site audits, page/site verification proofs, trends, repair plans, and signed evidence attestations. Its entries contain portable paths to the machine artifact and best available visual view. The sibling bilingual `catalog.html` supports state/type filters and local search across targets, IDs, and owners; `catalog.md` is suitable for a CI job summary.
+- `catalog.json` (`kind: "artifact-catalog"`) is a validated local index of page audits, site audits, page/site verification proofs, trends, repair plans, issue-draft boards, policy reviews, and signed/trusted evidence. Its entries contain portable paths to the machine artifact and best available visual view. The sibling bilingual `catalog.html` supports state/type filters and local search across targets, IDs, and owners; `catalog.md` is suitable for a CI job summary.
 - `latest.json` (`kind: "latest-run"`) is a stable output-root pointer to the newest fully rendered page or site workflow. It records gate state, score, target, run ID, optional page count, and portable report/repair/verification/integrity paths. Signing or evaluating trust for that same current run adds portable receipt/decision links; historical operations cannot move the pointer. The sibling bilingual `latest.html` is safe to bookmark. Timestamped history remains immutable, and an interrupted workflow must not replace the pointer.
 - `evidence-manifest.json` (`kind: "evidence-manifest"`) lists every file in one completed timestamped run with a portable path, byte count, media type, and SHA-256 digest. Validation recomputes bytes and hashes and fails on missing or changed evidence. The manifest detects archive mutation but does not authenticate the publisher.
 - `evidence-attestation.json` (`kind: "evidence-attestation"`) binds the sibling manifest's exact bytes to an embedded Ed25519 public key and stable SHA-256 key ID. Semantic validation rechecks manifest bytes, digest, key ID, and signature. The signature proves private-key possession; associating the key ID with an organization requires an external trust policy.
@@ -207,6 +211,8 @@ The published schemas are:
 - `assets/evidence-trust.schema.json`
 - `assets/evidence-trust-report.schema.json`
 - `assets/risk-register.schema.json`
+- `assets/policy-review.schema.json`
+- `assets/issue-drafts.schema.json`
 
 Validate a file or directory recursively with `scripts/audit.mjs validate`. `--require-attestation` requires a sibling signature for every discovered evidence manifest and validates that signature automatically; repeat `--trusted-key sha256:...` to restrict accepted signer keys. Exit code `0` means every recognized artifact satisfies schema, semantic integrity, signature, and requested trust policy; `1` means at least one artifact failed; `2` means the command itself could not run or found no artifacts.
 

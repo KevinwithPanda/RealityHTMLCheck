@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/issue-drafts-v1.json",
+  "title": "RealityCheck GitHub Issue Drafts",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "generatedAt", "summary", "sources", "drafts", "warnings"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "kind": { "const": "github-issue-drafts" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["drafts", "occurrences", "duplicates", "actionable", "review", "waived", "critical", "major", "minor", "info"],
+      "properties": {
+        "drafts": { "type": "integer", "minimum": 0 },
+        "occurrences": { "type": "integer", "minimum": 0 },
+        "duplicates": { "type": "integer", "minimum": 0 },
+        "actionable": { "type": "integer", "minimum": 0 },
+        "review": { "type": "integer", "minimum": 0 },
+        "waived": { "type": "integer", "minimum": 0 },
+        "critical": { "type": "integer", "minimum": 0 },
+        "major": { "type": "integer", "minimum": 0 },
+        "minor": { "type": "integer", "minimum": 0 },
+        "info": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["filename", "runId", "fingerprint", "items"],
+        "properties": {
+          "filename": { "const": "repair-plan.json" },
+          "runId": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "fingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "items": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "drafts": { "type": "array", "items": { "$ref": "#/$defs/draft" } },
+    "warnings": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+  },
+  "$defs": {
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 160 }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiredScenarios", "requireFingerprintAbsent", "requireHealthyBaseline", "forbidSameLevelRegression"],
+      "properties": {
+        "requiredScenarios": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 80 } },
+        "requireFingerprintAbsent": { "const": true },
+        "requireHealthyBaseline": { "const": true },
+        "forbidSameLevelRegression": { "const": true }
+      }
+    },
+    "waiver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "expires"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "expires": { "type": "string", "format": "date" }
+      }
+    },
+    "occurrence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runId", "target", "findingId", "scenarioId", "evidencePath"],
+      "properties": {
+        "runId": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "target": { "type": "string", "format": "uri" },
+        "findingId": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "scenarioId": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "evidencePath": { "type": "string", "pattern": "^(?![A-Za-z]:)(?!/).+\\.html#[A-Za-z0-9_-]+$" }
+      }
+    },
+    "draft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "fingerprint", "ruleId", "severity", "confidence", "disposition", "title", "titleZh", "body", "bodyZh", "labels", "verification", "occurrences"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^ISSUE-[A-F0-9]{12}$" },
+        "fingerprint": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "ruleId": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "severity": { "enum": ["critical", "major", "minor", "info"] },
+        "confidence": { "enum": ["high", "medium", "low"] },
+        "disposition": { "enum": ["actionable", "review", "waived"] },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "titleZh": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "body": { "type": "string", "minLength": 1, "maxLength": 20000 },
+        "bodyZh": { "type": "string", "minLength": 1, "maxLength": 20000 },
+        "labels": { "type": "array", "minItems": 2, "maxItems": 8, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9:._-]{0,49}$" } },
+        "owner": { "$ref": "#/$defs/owner" },
+        "waiver": { "$ref": "#/$defs/waiver" },
+        "verification": { "$ref": "#/$defs/verification" },
+        "occurrences": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/occurrence" } }
+      }
+    }
+  }
+}

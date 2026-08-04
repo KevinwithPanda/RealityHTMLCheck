@@ -13,12 +13,13 @@
     "summary": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["artifacts", "audits", "verifications", "repairPlans", "trends", "policyReviews", "attestations", "trustReports", "passing", "failing", "latestAuditScore"],
+      "required": ["artifacts", "audits", "verifications", "trends", "attestations", "trustReports", "passing", "failing", "latestAuditScore"],
       "properties": {
         "artifacts": { "type": "integer", "minimum": 1 },
         "audits": { "type": "integer", "minimum": 0 },
         "verifications": { "type": "integer", "minimum": 0 },
         "repairPlans": { "type": "integer", "minimum": 0 },
+        "issueDrafts": { "type": "integer", "minimum": 0 },
         "trends": { "type": "integer", "minimum": 0 },
         "policyReviews": { "type": "integer", "minimum": 0 },
         "attestations": { "type": "integer", "minimum": 0 },
@@ -69,7 +70,7 @@
       "required": ["id", "kind", "state", "title", "artifactPath", "visualPath"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
-        "kind": { "enum": ["page-audit", "site-audit", "page-verification", "site-verification", "quality-trend", "repair-plan", "policy-review", "evidence-attestation", "evidence-trust-report"] },
+        "kind": { "enum": ["page-audit", "site-audit", "page-verification", "site-verification", "quality-trend", "repair-plan", "github-issue-drafts", "policy-review", "evidence-attestation", "evidence-trust-report"] },
         "state": { "enum": ["passed", "failed", "informational"] },
         "title": { "type": "string", "minLength": 1 },
         "target": { "type": "string", "format": "uri" },

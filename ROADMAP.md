@@ -67,6 +67,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add latest-target GitHub job summaries and bounded, injection-safe workflow annotations.
 - [x] Replace the single fixed mobile checkpoint with a bounded, policy-fingerprinted responsive viewport matrix and paired real-browser fixtures.
 - [x] Add a schema-validated structural policy anti-weakening review with bilingual GitHub Action evidence.
+- [x] Turn repair plans into deduplicated, bilingual GitHub issue drafts with safe local copy/export and no automatic external submission.
 
 ## v1.0 criteria
 

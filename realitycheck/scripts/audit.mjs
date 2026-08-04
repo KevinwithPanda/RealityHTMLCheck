@@ -32,6 +32,7 @@ import { approveVisualBaseline, evaluateVisualRegression } from "./visual-regres
 import { startBundledDemoServer } from "./demo-server.mjs";
 import { buildGitHubSummary, writeGitHubSummary } from "./github-summary.mjs";
 import { buildPolicyReview, writePolicyReview } from "./policy-review.mjs";
+import { buildIssueDrafts, writeIssueDrafts } from "./issue-drafts.mjs";
 
 const require = createRequire(import.meta.url);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -68,6 +69,7 @@ Usage:
   realitycheck github-summary <FILE|DIRECTORY> [...] [--output PATH]
   realitycheck risk-register <FILE|DIRECTORY> [...] [--output PATH]
   realitycheck policy-review <BEFORE_CONFIG> <AFTER_CONFIG> [--output PATH]
+  realitycheck issue-drafts <REPAIR_PLAN|DIRECTORY> [...] [--output PATH]
   realitycheck attest <EVIDENCE-MANIFEST> --private-key PATH
   realitycheck trust-report <EVIDENCE-MANIFEST> --trust-policy PATH
 
@@ -114,6 +116,7 @@ Examples:
   realitycheck github-summary .realitycheck/runs --output .realitycheck/github-summary.md
   realitycheck risk-register .realitycheck --output .realitycheck/risks
   realitycheck policy-review policy/main.json realitycheck.config.json --output .realitycheck/policy-review
+  realitycheck issue-drafts .realitycheck --output .realitycheck/issue-drafts
   realitycheck risk-register .realitycheck --max-open-age-days 30 --max-open-risks 20 --max-recurring-risks 10
   realitycheck attest .realitycheck/runs/RUN/evidence-manifest.json --private-key ci-ed25519.pem
   realitycheck validate .realitycheck/runs/RUN --trusted-key sha256:0123...
@@ -127,7 +130,7 @@ Examples:
 
 function parseArguments(argv) {
   const args = [...argv];
-  const command = new Set(["audit", "demo", "init", "profiles", "doctor", "visual-approve", "validate", "catalog", "github-summary", "risk-register", "policy-review", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
+  const command = new Set(["audit", "demo", "init", "profiles", "doctor", "visual-approve", "validate", "catalog", "github-summary", "risk-register", "policy-review", "issue-drafts", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
   const options = {
     command,
     target: null,
@@ -153,6 +156,7 @@ function parseArguments(argv) {
     githubSummaryPaths: [],
     riskRegisterPaths: [],
     policyReviewPaths: [],
+    issueDraftPaths: [],
     attestationManifest: null,
     trustReportManifest: null,
     privateKey: null,
@@ -248,6 +252,10 @@ function parseArguments(argv) {
       options.policyReviewPaths.push(item);
       continue;
     }
+    if (command === "issue-drafts") {
+      options.issueDraftPaths.push(item);
+      continue;
+    }
     if (command === "attest") {
       if (options.attestationManifest) throw new Error(`Unexpected argument: ${item}`);
       options.attestationManifest = item;
@@ -284,6 +292,7 @@ function parseArguments(argv) {
   if (options.summaryLanguage !== null && command !== "github-summary") throw new Error("--language is only valid with github-summary");
   if (options.summaryLanguage !== null && !new Set(["en", "zh-CN"]).has(options.summaryLanguage)) throw new Error("--language must be en or zh-CN");
   if (command === "policy-review" && options.policyReviewPaths.length !== 2) throw new Error("policy-review requires exactly BEFORE_CONFIG and AFTER_CONFIG");
+  if (command === "issue-drafts" && !options.issueDraftPaths.length) throw new Error("issue-drafts requires at least one repair plan file or directory");
   if ((options.profile || options.baseUrl) && command !== "init") throw new Error("--profile and --base-url are only valid with init");
   if (options.replaceBaseline && command !== "visual-approve") throw new Error("--replace-baseline is only valid with visual-approve");
   return options;
@@ -2855,6 +2864,21 @@ async function main() {
       console.log(`changes:             ${review.summary.changes} (${review.summary.weakened} weakened, ${review.summary.strengthened} strengthened, ${review.summary.review} review)`);
       console.log(`policy gate:         ${review.summary.gateFailed ? "FAILED" : "PASSED"}`);
       process.exitCode = review.summary.gateFailed ? 1 : 0;
+      return;
+    }
+    if (cli.command === "issue-drafts") {
+      if (cli.config || cli.target || cli.routes.length || cli.crawl !== undefined || cli.storageState || cli.compareReport || cli.baselineReport || cli.allowRemote || cli.mode || cli.failOn || cli.headed || cli.browserPath || cli.force || cli.maxPages !== undefined || cli.maxDepth !== undefined) throw new Error("issue-drafts accepts repair plan paths and --output only");
+      const output = resolve(cli.output || ".realitycheck/issue-drafts");
+      const bundle = buildIssueDrafts(cli.issueDraftPaths, output);
+      const outputs = writeIssueDrafts(bundle, output);
+      const [validation] = validateArtifactFiles([outputs.jsonPath]);
+      if (!validation?.valid) throw new Error(`Generated issue drafts failed validation: ${validation?.errors.join("; ")}`);
+      console.log(`github-issue-drafts.json:  ${outputs.jsonPath}`);
+      console.log(`github-issue-drafts.md:    ${outputs.markdownPath}`);
+      console.log(`github-issue-drafts.zh.md: ${outputs.markdownZhPath}`);
+      console.log(`github-issue-drafts.csv:   ${outputs.csvPath}`);
+      console.log(`github-issue-drafts.html:  ${outputs.htmlPath}`);
+      console.log(`drafts:                    ${bundle.summary.drafts} (${bundle.summary.actionable} actionable, ${bundle.summary.review} review, ${bundle.summary.waived} waived, ${bundle.summary.duplicates} duplicates merged)`);
       return;
     }
     if (cli.command === "attest") {
