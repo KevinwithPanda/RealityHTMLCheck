@@ -23,8 +23,11 @@ test("starter, product, and strict profiles are valid independent project polici
   assert.equal(profiles[1].crawl.enabled, true);
   assert.equal(profiles[1].qualityGate.minimumScore, 90);
   assert.equal(profiles[1].metadata.requireCanonical, true);
+  assert.equal(profiles[1].privacy.maxCookies, 20);
+  assert.equal(profiles[1].privacy.maxLocalStorageBytes, 262144);
   assert.equal(profiles[2].failOn, "minor");
   assert.equal(profiles[2].qualityGate.maxWaivedFindings, 0);
+  assert.equal(profiles[2].privacy.maxThirdPartyCookies, 0);
   const temporary = mkdtempSync(join(tmpdir(), "realitycheck-profile-schema-"));
   try {
     const paths = profiles.map((profile, index) => {
@@ -68,6 +71,7 @@ test("CLI lists profiles and initializes a selected policy without opening a bro
     assert.equal(value.network.maxHttpErrors, 0);
     assert.equal(value.links.maxFailures, 0);
     assert.equal(value.security.secureForms, true);
+    assert.equal(value.privacy.maxCookies, 20);
 
     const refused = spawnSync(process.execPath, [CLI, "init", "--profile", "unknown", "--config", join(temporary, "bad.json")], { encoding: "utf8" });
     assert.equal(refused.status, 2);

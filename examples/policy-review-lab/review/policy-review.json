@@ -2,20 +2,20 @@
   "schemaVersion": "1",
   "toolVersion": "0.4.0",
   "kind": "policy-review",
-  "generatedAt": "2026-08-04T19:48:31.023Z",
+  "generatedAt": "2026-08-04T21:02:01.653Z",
   "sources": {
     "before": {
       "filename": "before.config.json",
-      "fingerprint": "sha256:8fa3136aff605f5b98e5ef5e0b1dac43d336203c8ffc4c3c4cb58cdcd4865841"
+      "fingerprint": "sha256:092c5d2a7b43924665a25e64f0a894382d97499aa33da449c6b2374dde8f2e31"
     },
     "after": {
       "filename": "after-weakened.config.json",
-      "fingerprint": "sha256:9ffecba4dc3e0b0a2869fd2e0b3ca94bb0e9dc4fad3fbd837c61ce7339e594a1"
+      "fingerprint": "sha256:5fabc9a80e26bc85e44a3c8347b7a95c49f85b7f2b704e5dd52f524d40cb7d2a"
     }
   },
   "summary": {
-    "changes": 40,
-    "weakened": 38,
+    "changes": 48,
+    "weakened": 46,
     "strengthened": 0,
     "review": 2,
     "gateFailed": true
@@ -292,6 +292,102 @@
       "key": "budgets.severity",
       "title": "Performance finding severity changed from major to minor",
       "titleZh": "性能问题严重级别从 major 调整为 minor",
+      "rationale": "The new severity setting is less likely to block risky evidence.",
+      "rationaleZh": "新的严重级别设置更不容易阻止风险证据。",
+      "before": "major",
+      "after": "minor"
+    },
+    {
+      "id": "POLICY-739DCE6669",
+      "classification": "weakened",
+      "category": "privacy",
+      "key": "privacy.maxCookieBytes",
+      "title": "Privacy budget maxCookieBytes changed from 4096 to 16384",
+      "titleZh": "隐私预算 maxCookieBytes从 4096 调整为 16384",
+      "rationale": "The new numeric limit allows more risk than before.",
+      "rationaleZh": "新的数值限制比以前允许更多风险。",
+      "before": 4096,
+      "after": 16384
+    },
+    {
+      "id": "POLICY-6208653C16",
+      "classification": "weakened",
+      "category": "privacy",
+      "key": "privacy.maxCookies",
+      "title": "Privacy budget maxCookies changed from 10 to 30",
+      "titleZh": "隐私预算 maxCookies从 10 调整为 30",
+      "rationale": "The new numeric limit allows more risk than before.",
+      "rationaleZh": "新的数值限制比以前允许更多风险。",
+      "before": 10,
+      "after": 30
+    },
+    {
+      "id": "POLICY-B9B4469D42",
+      "classification": "weakened",
+      "category": "privacy",
+      "key": "privacy.maxLocalStorageBytes",
+      "title": "Privacy budget maxLocalStorageBytes changed from 131072 to 524288",
+      "titleZh": "隐私预算 maxLocalStorageBytes从 131072 调整为 524288",
+      "rationale": "The new numeric limit allows more risk than before.",
+      "rationaleZh": "新的数值限制比以前允许更多风险。",
+      "before": 131072,
+      "after": 524288
+    },
+    {
+      "id": "POLICY-13AB57BD68",
+      "classification": "weakened",
+      "category": "privacy",
+      "key": "privacy.maxLocalStorageEntries",
+      "title": "Privacy budget maxLocalStorageEntries changed from 20 to 80",
+      "titleZh": "隐私预算 maxLocalStorageEntries从 20 调整为 80",
+      "rationale": "The new numeric limit allows more risk than before.",
+      "rationaleZh": "新的数值限制比以前允许更多风险。",
+      "before": 20,
+      "after": 80
+    },
+    {
+      "id": "POLICY-5E6F3C9887",
+      "classification": "weakened",
+      "category": "privacy",
+      "key": "privacy.maxSessionStorageBytes",
+      "title": "Privacy budget maxSessionStorageBytes changed from 65536 to 262144",
+      "titleZh": "隐私预算 maxSessionStorageBytes从 65536 调整为 262144",
+      "rationale": "The new numeric limit allows more risk than before.",
+      "rationaleZh": "新的数值限制比以前允许更多风险。",
+      "before": 65536,
+      "after": 262144
+    },
+    {
+      "id": "POLICY-56C262AD6E",
+      "classification": "weakened",
+      "category": "privacy",
+      "key": "privacy.maxSessionStorageEntries",
+      "title": "Privacy budget maxSessionStorageEntries changed from 20 to 50",
+      "titleZh": "隐私预算 maxSessionStorageEntries从 20 调整为 50",
+      "rationale": "The new numeric limit allows more risk than before.",
+      "rationaleZh": "新的数值限制比以前允许更多风险。",
+      "before": 20,
+      "after": 50
+    },
+    {
+      "id": "POLICY-A252F754FC",
+      "classification": "weakened",
+      "category": "privacy",
+      "key": "privacy.maxThirdPartyCookies",
+      "title": "Privacy budget maxThirdPartyCookies changed from 0 to 8",
+      "titleZh": "隐私预算 maxThirdPartyCookies从 0 调整为 8",
+      "rationale": "The new numeric limit allows more risk than before.",
+      "rationaleZh": "新的数值限制比以前允许更多风险。",
+      "before": 0,
+      "after": 8
+    },
+    {
+      "id": "POLICY-BE61BE4A82",
+      "classification": "weakened",
+      "category": "privacy",
+      "key": "privacy.severity",
+      "title": "Privacy finding severity changed from major to minor",
+      "titleZh": "隐私问题严重级别从 major 调整为 minor",
       "rationale": "The new severity setting is less likely to block risky evidence.",
       "rationaleZh": "新的严重级别设置更不容易阻止风险证据。",
       "before": "major",

@@ -15,6 +15,7 @@
   "metadata": { "requireViewport": true, "severity": "minor" },
   "visual": { "baselineDirectory": ".realitycheck/visual-baselines", "maxDiffRatio": 0.02, "pixelThreshold": 40, "masks": [".current-time", "[data-ad]"], "severity": "minor" },
   "security": { "requiredHeaders": ["x-content-type-options"], "maxThirdPartyOrigins": 5, "severity": "minor" },
+  "privacy": { "maxCookies": 30, "maxCookieBytes": 16384, "maxThirdPartyCookies": 8, "maxLocalStorageEntries": 80, "maxLocalStorageBytes": 524288, "maxSessionStorageEntries": 50, "maxSessionStorageBytes": 262144, "severity": "minor" },
   "qualityGate": { "minimumScore": 80, "minimumCoveragePercent": 70, "maxWaivedFindings": 5 },
   "baselinePolicy": { "maxAgeDays": 90, "requireSamePolicy": false },
   "waivers": [

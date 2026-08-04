@@ -26,6 +26,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "evidence/metadata/latest.html",
     "evidence/visual/latest.html",
     "evidence/security/latest.html",
+    "evidence/privacy/latest.html",
     "evidence/accessibility/latest.html",
     "labs/journey/broken.html",
     "labs/viewport/broken.html",
@@ -50,6 +51,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "labs/visual/regressed/index.html",
     "labs/visual/baselines/visual-baseline-index.json",
     "labs/security/index.html",
+    "labs/privacy/broken.html",
+    "labs/privacy/fixed.html",
     "labs/accessibility/broken.html",
   ]) assert.equal(existsSync(resolve(output, path)), true, `Pages output is missing ${path}`);
 
@@ -89,6 +92,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /ONE CONSERVATIVE DELIVERY ANSWER/);
   assert.match(html, /给出一个保守的交付答案/);
   assert.match(html, /automatic deployments · 0/);
+  assert.match(html, /BROWSER STORAGE PRIVACY/);
+  assert.match(html, /浏览器存储隐私/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   const localReferences = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((match) => match[1])
     .filter((value) => !/^(?:https?:|#|mailto:|data:)/.test(value));

@@ -1,0 +1,230 @@
+{
+  "items": [
+    {
+      "confidence": "high",
+      "findingId": "RC-58CF6DE19B",
+      "fingerprint": "58cf6de19b30909b0dd0218640d8ba934c1694a0d1fbea88ab0247bb2440feef",
+      "remediation": {
+        "summary": "Reduce application-owned cookie payloads and avoid storing unnecessary state in cookies; do not delete authentication state without product review.",
+        "technicalHints": [
+          "RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+        ]
+      },
+      "reportAnchor": "report.html#RC-58CF6DE19B",
+      "ruleId": "privacy-cookie-byte-budget",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "Cookie bytes exceed the project privacy budget",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "缩减应用自身 Cookie 载荷，避免在 Cookie 中保存不必要状态；未经产品复核不要删除认证状态。",
+            "technicalHints": [
+              "RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"
+            ]
+          },
+          "title": "Cookie 字节数超过项目隐私预算"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-F162EB3E74",
+      "fingerprint": "f162eb3e74f47958b6f0ea5d68fc4f2f780b815d95a6222a474a36208249a3f3",
+      "remediation": {
+        "summary": "Remove cookies that are not needed for the current product behavior, shorten their lifetime where appropriate, and rerun the audit.",
+        "technicalHints": [
+          "RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+        ]
+      },
+      "reportAnchor": "report.html#RC-F162EB3E74",
+      "ruleId": "privacy-cookie-count-budget",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "Cookie count exceeds the project privacy budget",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "移除当前产品行为不需要的 Cookie，并在合适情况下缩短生命周期，然后重新核查。",
+            "technicalHints": [
+              "RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"
+            ]
+          },
+          "title": "Cookie 数量超过项目隐私预算"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-4813EC95B4",
+      "fingerprint": "4813ec95b4f8ac168f64012beef2a9fce313f4c82bd54293921464d048b8668f",
+      "remediation": {
+        "summary": "Minimize persistent client-side payloads and move only appropriate non-secret data to a reviewed storage design.",
+        "technicalHints": [
+          "RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+        ]
+      },
+      "reportAnchor": "report.html#RC-4813EC95B4",
+      "ruleId": "privacy-local-storage-byte-budget",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "localStorage bytes exceed the project privacy budget",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "精简持久化客户端载荷，并只将合适的非敏感数据迁移到经审核的存储设计。",
+            "technicalHints": [
+              "RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"
+            ]
+          },
+          "title": "localStorage 字节数超过项目隐私预算"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-C3D6AFC784",
+      "fingerprint": "c3d6afc784e0d995c5aba6c5c6e11dbb3bd5f3258d5611b5fcfdee62873e496d",
+      "remediation": {
+        "summary": "Remove obsolete application-owned localStorage entries with a reviewed migration and retention plan.",
+        "technicalHints": [
+          "RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+        ]
+      },
+      "reportAnchor": "report.html#RC-C3D6AFC784",
+      "ruleId": "privacy-local-storage-entry-budget",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "localStorage entries exceed the project privacy budget",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "通过经审核的迁移与保留方案移除过期的应用自身 localStorage 条目。",
+            "technicalHints": [
+              "RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"
+            ]
+          },
+          "title": "localStorage 条目数超过项目隐私预算"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-FBF7A4842F",
+      "fingerprint": "fbf7a4842f6164582c8a7a633736ae9a6b23679a3382088151db19fbead6d0f5",
+      "remediation": {
+        "summary": "Reduce session-only payloads and keep sensitive data out of browser storage unless the design is explicitly reviewed.",
+        "technicalHints": [
+          "RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+        ]
+      },
+      "reportAnchor": "report.html#RC-FBF7A4842F",
+      "ruleId": "privacy-session-storage-byte-budget",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "sessionStorage bytes exceed the project privacy budget",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "缩减会话载荷；除非设计经过明确审核，否则不要在浏览器存储中保存敏感数据。",
+            "technicalHints": [
+              "RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"
+            ]
+          },
+          "title": "sessionStorage 字节数超过项目隐私预算"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-35F26228B0",
+      "fingerprint": "35f26228b04ecc7bf5be7ed7b0e669d85dea6b3647b8ffc47ccab9a359b349fe",
+      "remediation": {
+        "summary": "Remove obsolete session-only state and consolidate duplicated application-owned entries after reviewing navigation behavior.",
+        "technicalHints": [
+          "RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+        ]
+      },
+      "reportAnchor": "report.html#RC-35F26228B0",
+      "ruleId": "privacy-session-storage-entry-budget",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "sessionStorage entries exceed the project privacy budget",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "复核导航行为后，移除过期会话状态并合并重复的应用自身条目。",
+            "technicalHints": [
+              "RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"
+            ]
+          },
+          "title": "sessionStorage 条目数超过项目隐私预算"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    }
+  ],
+  "kind": "repair-plan",
+  "schemaVersion": "1",
+  "source": {
+    "reportPath": "report.json",
+    "runId": "20260804T205848Z-25ccf3",
+    "target": "http://127.0.0.1:4182/examples/privacy-lab/broken.html"
+  },
+  "summary": {
+    "critical": 0,
+    "items": 6,
+    "major": 6,
+    "minor": 0,
+    "reviewRequired": 0,
+    "waived": 0
+  },
+  "toolVersion": "0.4.0"
+}

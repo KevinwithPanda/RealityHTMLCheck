@@ -1,8 +1,8 @@
 # RealityCheck release decision
 
-Decision: **NO-GO** · `RELEASE-1C410472D2D2`
+Decision: **NO-GO** · `RELEASE-D7809A1478C6`
 
-- Generated: 2026-08-04T20:42:04.553Z
+- Generated: 2026-08-04T21:06:37.766Z
 - Evidence age limit: 168 hours
 - Required controls: `audit`, `policy`, `issues`
 
@@ -10,8 +10,8 @@ Decision: **NO-GO** · `RELEASE-1C410472D2D2`
 
 | Control | Required | State | Age | Reason |
 | --- | --- | --- | --- | --- |
-| Quality gate | yes | **FAIL** | 88.69h | The selected audit did not satisfy its own configured release gate. |
-| Policy change guard | yes | **FAIL** | 0.89h | 38 structural policy weakening change(s) were detected. |
-| Repair review queue | yes | **REVIEW** | 0.59h | 1 repair draft(s) need an owner or evidence decision. |
+| Quality gate | yes | **FAIL** | 89.1h | The selected audit did not satisfy its own configured release gate. |
+| Policy change guard | yes | **FAIL** | 0.08h | 46 structural policy weakening change(s) were detected. |
+| Repair review queue | yes | **REVIEW** | 1h | 1 repair draft(s) need an owner or evidence decision. |
 
 > This decision summarizes selected RealityCheck artifacts; it does not deploy, approve, or prove the absence of defects.

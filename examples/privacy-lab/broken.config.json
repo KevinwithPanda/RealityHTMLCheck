@@ -1,0 +1,17 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4182/examples/privacy-lab/broken.html",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/privacy-lab-broken",
+  "privacy": {
+    "severity": "major",
+    "maxCookies": 2,
+    "maxCookieBytes": 120,
+    "maxThirdPartyCookies": 0,
+    "maxLocalStorageEntries": 2,
+    "maxLocalStorageBytes": 300,
+    "maxSessionStorageEntries": 2,
+    "maxSessionStorageBytes": 240
+  }
+}

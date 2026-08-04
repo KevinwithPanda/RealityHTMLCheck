@@ -65,7 +65,7 @@ test("artifact catalog indexes valid audits and proofs with portable bilingual l
     assert.deepEqual(catalog.entries.find((entry) => entry.kind === "page-audit").owners, ["Web Platform"]);
     const policyEntry = catalog.entries.find((entry) => entry.kind === "policy-review");
     assert.equal(policyEntry.state, "failed");
-    assert.deepEqual(policyEntry.changes, { weakened: 38, strengthened: 0, review: 2 });
+    assert.deepEqual(policyEntry.changes, { weakened: 46, strengthened: 0, review: 2 });
     const issueEntry = catalog.entries.find((entry) => entry.kind === "github-issue-drafts");
     assert.equal(issueEntry.state, "informational");
     assert.deepEqual(issueEntry.changes, { actionable: 5, review: 1, waived: 0, duplicates: 0 });
@@ -89,7 +89,7 @@ test("artifact catalog indexes valid audits and proofs with portable bilingual l
     assert.match(html, /issue draft board, release decision, policy review, trust result/);
     assert.match(html, /role="group" aria-label="Artifact filters"/);
     assert.match(html, /搜索产物目录/);
-    assert.match(html, /<b>38<\/b> weakened/);
+    assert.match(html, /<b>46<\/b> weakened/);
     assert.match(html, /<b>6<\/b> resolved/);
     assert.match(html, /Gate policy/);
     assert.match(html, /门禁策略/);

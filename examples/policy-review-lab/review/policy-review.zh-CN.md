@@ -1,9 +1,9 @@
 # RealityCheck 策略变更审查
 
-门禁：**失败** · 弱化 38 · 加强 0 · 待复核 2
+门禁：**失败** · 弱化 46 · 加强 0 · 待复核 2
 
-- 之前: `before.config.json` (`sha256:8fa3136aff605f5b98e5ef5e0b1dac43d336203c8ffc4c3c4cb58cdcd4865841`)
-- 之后: `after-weakened.config.json` (`sha256:9ffecba4dc3e0b0a2869fd2e0b3ca94bb0e9dc4fad3fbd837c61ce7339e594a1`)
+- 之前: `before.config.json` (`sha256:092c5d2a7b43924665a25e64f0a894382d97499aa33da449c6b2374dde8f2e31`)
+- 之后: `after-weakened.config.json` (`sha256:5fabc9a80e26bc85e44a3c8347b7a95c49f85b7f2b704e5dd52f524d40cb7d2a`)
 
 ## 变更
 
@@ -32,6 +32,14 @@
 | weakened | performance | **POLICY-DDD6491ED4** 性能限制 cumulativeLayoutShift从 0.1 调整为 0.25 | 新的数值限制比以前允许更多风险。 |
 | weakened | performance | **POLICY-7EF09AF1B7** 性能限制 largestContentfulPaintMs从 2500 调整为 4000 | 新的数值限制比以前允许更多风险。 |
 | weakened | performance | **POLICY-AD6FEA01A9** 性能问题严重级别从 major 调整为 minor | 新的严重级别设置更不容易阻止风险证据。 |
+| weakened | privacy | **POLICY-739DCE6669** 隐私预算 maxCookieBytes从 4096 调整为 16384 | 新的数值限制比以前允许更多风险。 |
+| weakened | privacy | **POLICY-6208653C16** 隐私预算 maxCookies从 10 调整为 30 | 新的数值限制比以前允许更多风险。 |
+| weakened | privacy | **POLICY-B9B4469D42** 隐私预算 maxLocalStorageBytes从 131072 调整为 524288 | 新的数值限制比以前允许更多风险。 |
+| weakened | privacy | **POLICY-13AB57BD68** 隐私预算 maxLocalStorageEntries从 20 调整为 80 | 新的数值限制比以前允许更多风险。 |
+| weakened | privacy | **POLICY-5E6F3C9887** 隐私预算 maxSessionStorageBytes从 65536 调整为 262144 | 新的数值限制比以前允许更多风险。 |
+| weakened | privacy | **POLICY-56C262AD6E** 隐私预算 maxSessionStorageEntries从 20 调整为 50 | 新的数值限制比以前允许更多风险。 |
+| weakened | privacy | **POLICY-A252F754FC** 隐私预算 maxThirdPartyCookies从 0 调整为 8 | 新的数值限制比以前允许更多风险。 |
+| weakened | privacy | **POLICY-BE61BE4A82** 隐私问题严重级别从 major 调整为 minor | 新的严重级别设置更不容易阻止风险证据。 |
 | weakened | release-gate | **POLICY-39219F7AC8** 失败阈值从 major 调整为 critical | 新的严重级别设置更不容易阻止风险证据。 |
 | weakened | release-gate | **POLICY-C7D60F42E2** 最大有效豁免数从 0 调整为 5 | 新的数值限制比以前允许更多风险。 |
 | weakened | release-gate | **POLICY-1C952E808C** 最低覆盖率从 95 调整为 70 | 新的数值限制比以前允许更多风险。 |

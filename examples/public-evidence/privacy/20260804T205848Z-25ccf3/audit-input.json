@@ -1,0 +1,706 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "run": {
+    "id": "20260804T205848Z-25ccf3",
+    "mode": "quick",
+    "startedAt": "2026-08-04T20:58:48.677Z",
+    "finishedAt": "2026-08-04T20:58:53.808Z",
+    "durationMs": 5116
+  },
+  "target": {
+    "requestedUrl": "http://127.0.0.1:4182/examples/privacy-lab/broken.html",
+    "finalUrl": "http://127.0.0.1:4182/examples/privacy-lab/broken.html",
+    "title": "Browser Storage Privacy Budget Lab · Broken"
+  },
+  "adapter": {
+    "name": "project-playwright",
+    "isolation": "fresh-context",
+    "capabilities": [
+      "console",
+      "dom",
+      "isolated-contexts",
+      "network-routing",
+      "screenshots",
+      "viewport",
+      "responsive-viewport-matrix",
+      "aggregate-browser-storage-privacy-budgets",
+      "detector-policy-fingerprint"
+    ]
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major",
+    "viewports": [
+      {
+        "id": "mobile-375",
+        "width": 375,
+        "height": 812,
+        "touch": true
+      }
+    ],
+    "policyFingerprint": "sha256:f438d3a23e88f5599766f62ebf93ac55a99ed2df2d87c87e8e5d56e2a06d8bf5"
+  },
+  "scenarios": [
+    {
+      "id": "baseline",
+      "status": "completed-with-findings",
+      "durationMs": 726,
+      "notes": [
+        "Baseline runtime findings were recorded."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已记录基线运行时问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "mobile-375",
+      "status": "passed",
+      "durationMs": 663,
+      "notes": [
+        "Evaluated 375×812; touch-target checks were enabled."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已核查 375×812；触控目标检查已启用。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "long-text",
+      "status": "passed",
+      "durationMs": 1286,
+      "notes": [
+        "5 deterministic text mutations were applied."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已执行 5 次确定性的文本替换。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "rtl-arabic",
+      "status": "passed",
+      "durationMs": 1052,
+      "notes": [
+        "Directionality stress test only; translation quality was not assessed."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "仅进行书写方向压力测试；未评估翻译质量。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "image-failure",
+      "status": "passed",
+      "durationMs": 614,
+      "notes": [
+        "Expected image request aborts were excluded from failed-request findings."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "预期的图片请求中止未计入普通请求失败问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "keyboard-tab",
+      "status": "passed",
+      "durationMs": 700,
+      "notes": [
+        "No controls were activated or submitted."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未激活或提交任何控件。"
+          ]
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "privacy-cookie-count-budget",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Cookie count exceeds the project privacy budget",
+      "summary": "The isolated baseline measured 4 cookie(s), above the configured maximum of 2.",
+      "url": "http://127.0.0.1:4182/examples/privacy-lab/broken.html",
+      "measurements": {
+        "metric": "maxCookies",
+        "actual": 4,
+        "limit": 2,
+        "aggregate": {
+          "cookieSummary": {
+            "available": true,
+            "count": 4,
+            "bytes": 368,
+            "thirdPartyCount": 0
+          },
+          "localStorage": {
+            "available": true,
+            "entries": 4,
+            "bytes": 1136
+          },
+          "sessionStorage": {
+            "available": true,
+            "entries": 3,
+            "bytes": 654
+          }
+        }
+      },
+      "evidence": [
+        {
+          "type": "privacy-budget",
+          "state": "exceeded",
+          "metric": "maxCookies",
+          "actual": 4,
+          "limit": 2,
+          "aggregate": {
+            "cookieSummary": {
+              "available": true,
+              "count": 4,
+              "bytes": 368,
+              "thirdPartyCount": 0
+            },
+            "localStorage": {
+              "available": true,
+              "entries": 4,
+              "bytes": 1136
+            },
+            "sessionStorage": {
+              "available": true,
+              "entries": 3,
+              "bytes": 654
+            }
+          }
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Aggregate browser storage privacy budget"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh browser context.",
+        "Measure only aggregate maxCookies usage after the baseline settles."
+      ],
+      "remediation": {
+        "summary": "Remove cookies that are not needed for the current product behavior, shorten their lifetime where appropriate, and rerun the audit.",
+        "technicalHints": [
+          "RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "Cookie 数量超过项目隐私预算",
+          "summary": "隔离基线测得 4 个 Cookie，超过配置上限 2。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "基线稳定后，仅测量 maxCookies 聚合用量。"
+          ],
+          "remediation": {
+            "summary": "移除当前产品行为不需要的 Cookie，并在合适情况下缩短生命周期，然后重新核查。",
+            "technicalHints": [
+              "RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"
+            ]
+          }
+        }
+      },
+      "selector": "html"
+    },
+    {
+      "ruleId": "privacy-cookie-byte-budget",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Cookie bytes exceed the project privacy budget",
+      "summary": "The isolated baseline measured 368 cookie byte(s), above the configured maximum of 120.",
+      "url": "http://127.0.0.1:4182/examples/privacy-lab/broken.html",
+      "measurements": {
+        "metric": "maxCookieBytes",
+        "actual": 368,
+        "limit": 120,
+        "aggregate": {
+          "cookieSummary": {
+            "available": true,
+            "count": 4,
+            "bytes": 368,
+            "thirdPartyCount": 0
+          },
+          "localStorage": {
+            "available": true,
+            "entries": 4,
+            "bytes": 1136
+          },
+          "sessionStorage": {
+            "available": true,
+            "entries": 3,
+            "bytes": 654
+          }
+        }
+      },
+      "evidence": [
+        {
+          "type": "privacy-budget",
+          "state": "exceeded",
+          "metric": "maxCookieBytes",
+          "actual": 368,
+          "limit": 120,
+          "aggregate": {
+            "cookieSummary": {
+              "available": true,
+              "count": 4,
+              "bytes": 368,
+              "thirdPartyCount": 0
+            },
+            "localStorage": {
+              "available": true,
+              "entries": 4,
+              "bytes": 1136
+            },
+            "sessionStorage": {
+              "available": true,
+              "entries": 3,
+              "bytes": 654
+            }
+          }
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Aggregate browser storage privacy budget"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh browser context.",
+        "Measure only aggregate maxCookieBytes usage after the baseline settles."
+      ],
+      "remediation": {
+        "summary": "Reduce application-owned cookie payloads and avoid storing unnecessary state in cookies; do not delete authentication state without product review.",
+        "technicalHints": [
+          "RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "Cookie 字节数超过项目隐私预算",
+          "summary": "隔离基线测得 368 个 Cookie 字节，超过配置上限 120。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "基线稳定后，仅测量 maxCookieBytes 聚合用量。"
+          ],
+          "remediation": {
+            "summary": "缩减应用自身 Cookie 载荷，避免在 Cookie 中保存不必要状态；未经产品复核不要删除认证状态。",
+            "technicalHints": [
+              "RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"
+            ]
+          }
+        }
+      },
+      "selector": "html"
+    },
+    {
+      "ruleId": "privacy-local-storage-entry-budget",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "localStorage entries exceed the project privacy budget",
+      "summary": "The isolated baseline measured 4 localStorage entry/entries, above the configured maximum of 2.",
+      "url": "http://127.0.0.1:4182/examples/privacy-lab/broken.html",
+      "measurements": {
+        "metric": "maxLocalStorageEntries",
+        "actual": 4,
+        "limit": 2,
+        "aggregate": {
+          "cookieSummary": {
+            "available": true,
+            "count": 4,
+            "bytes": 368,
+            "thirdPartyCount": 0
+          },
+          "localStorage": {
+            "available": true,
+            "entries": 4,
+            "bytes": 1136
+          },
+          "sessionStorage": {
+            "available": true,
+            "entries": 3,
+            "bytes": 654
+          }
+        }
+      },
+      "evidence": [
+        {
+          "type": "privacy-budget",
+          "state": "exceeded",
+          "metric": "maxLocalStorageEntries",
+          "actual": 4,
+          "limit": 2,
+          "aggregate": {
+            "cookieSummary": {
+              "available": true,
+              "count": 4,
+              "bytes": 368,
+              "thirdPartyCount": 0
+            },
+            "localStorage": {
+              "available": true,
+              "entries": 4,
+              "bytes": 1136
+            },
+            "sessionStorage": {
+              "available": true,
+              "entries": 3,
+              "bytes": 654
+            }
+          }
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Aggregate browser storage privacy budget"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh browser context.",
+        "Measure only aggregate maxLocalStorageEntries usage after the baseline settles."
+      ],
+      "remediation": {
+        "summary": "Remove obsolete application-owned localStorage entries with a reviewed migration and retention plan.",
+        "technicalHints": [
+          "RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "localStorage 条目数超过项目隐私预算",
+          "summary": "隔离基线测得 4 个 localStorage 条目，超过配置上限 2。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "基线稳定后，仅测量 maxLocalStorageEntries 聚合用量。"
+          ],
+          "remediation": {
+            "summary": "通过经审核的迁移与保留方案移除过期的应用自身 localStorage 条目。",
+            "technicalHints": [
+              "RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"
+            ]
+          }
+        }
+      },
+      "selector": "html"
+    },
+    {
+      "ruleId": "privacy-local-storage-byte-budget",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "localStorage bytes exceed the project privacy budget",
+      "summary": "The isolated baseline measured 1136 localStorage byte(s), above the configured maximum of 300.",
+      "url": "http://127.0.0.1:4182/examples/privacy-lab/broken.html",
+      "measurements": {
+        "metric": "maxLocalStorageBytes",
+        "actual": 1136,
+        "limit": 300,
+        "aggregate": {
+          "cookieSummary": {
+            "available": true,
+            "count": 4,
+            "bytes": 368,
+            "thirdPartyCount": 0
+          },
+          "localStorage": {
+            "available": true,
+            "entries": 4,
+            "bytes": 1136
+          },
+          "sessionStorage": {
+            "available": true,
+            "entries": 3,
+            "bytes": 654
+          }
+        }
+      },
+      "evidence": [
+        {
+          "type": "privacy-budget",
+          "state": "exceeded",
+          "metric": "maxLocalStorageBytes",
+          "actual": 1136,
+          "limit": 300,
+          "aggregate": {
+            "cookieSummary": {
+              "available": true,
+              "count": 4,
+              "bytes": 368,
+              "thirdPartyCount": 0
+            },
+            "localStorage": {
+              "available": true,
+              "entries": 4,
+              "bytes": 1136
+            },
+            "sessionStorage": {
+              "available": true,
+              "entries": 3,
+              "bytes": 654
+            }
+          }
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Aggregate browser storage privacy budget"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh browser context.",
+        "Measure only aggregate maxLocalStorageBytes usage after the baseline settles."
+      ],
+      "remediation": {
+        "summary": "Minimize persistent client-side payloads and move only appropriate non-secret data to a reviewed storage design.",
+        "technicalHints": [
+          "RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "localStorage 字节数超过项目隐私预算",
+          "summary": "隔离基线测得 1136 个 localStorage 字节，超过配置上限 300。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "基线稳定后，仅测量 maxLocalStorageBytes 聚合用量。"
+          ],
+          "remediation": {
+            "summary": "精简持久化客户端载荷，并只将合适的非敏感数据迁移到经审核的存储设计。",
+            "technicalHints": [
+              "RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"
+            ]
+          }
+        }
+      },
+      "selector": "html"
+    },
+    {
+      "ruleId": "privacy-session-storage-entry-budget",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "sessionStorage entries exceed the project privacy budget",
+      "summary": "The isolated baseline measured 3 sessionStorage entry/entries, above the configured maximum of 2.",
+      "url": "http://127.0.0.1:4182/examples/privacy-lab/broken.html",
+      "measurements": {
+        "metric": "maxSessionStorageEntries",
+        "actual": 3,
+        "limit": 2,
+        "aggregate": {
+          "cookieSummary": {
+            "available": true,
+            "count": 4,
+            "bytes": 368,
+            "thirdPartyCount": 0
+          },
+          "localStorage": {
+            "available": true,
+            "entries": 4,
+            "bytes": 1136
+          },
+          "sessionStorage": {
+            "available": true,
+            "entries": 3,
+            "bytes": 654
+          }
+        }
+      },
+      "evidence": [
+        {
+          "type": "privacy-budget",
+          "state": "exceeded",
+          "metric": "maxSessionStorageEntries",
+          "actual": 3,
+          "limit": 2,
+          "aggregate": {
+            "cookieSummary": {
+              "available": true,
+              "count": 4,
+              "bytes": 368,
+              "thirdPartyCount": 0
+            },
+            "localStorage": {
+              "available": true,
+              "entries": 4,
+              "bytes": 1136
+            },
+            "sessionStorage": {
+              "available": true,
+              "entries": 3,
+              "bytes": 654
+            }
+          }
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Aggregate browser storage privacy budget"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh browser context.",
+        "Measure only aggregate maxSessionStorageEntries usage after the baseline settles."
+      ],
+      "remediation": {
+        "summary": "Remove obsolete session-only state and consolidate duplicated application-owned entries after reviewing navigation behavior.",
+        "technicalHints": [
+          "RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "sessionStorage 条目数超过项目隐私预算",
+          "summary": "隔离基线测得 3 个 sessionStorage 条目，超过配置上限 2。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "基线稳定后，仅测量 maxSessionStorageEntries 聚合用量。"
+          ],
+          "remediation": {
+            "summary": "复核导航行为后，移除过期会话状态并合并重复的应用自身条目。",
+            "technicalHints": [
+              "RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"
+            ]
+          }
+        }
+      },
+      "selector": "html"
+    },
+    {
+      "ruleId": "privacy-session-storage-byte-budget",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "sessionStorage bytes exceed the project privacy budget",
+      "summary": "The isolated baseline measured 654 sessionStorage byte(s), above the configured maximum of 240.",
+      "url": "http://127.0.0.1:4182/examples/privacy-lab/broken.html",
+      "measurements": {
+        "metric": "maxSessionStorageBytes",
+        "actual": 654,
+        "limit": 240,
+        "aggregate": {
+          "cookieSummary": {
+            "available": true,
+            "count": 4,
+            "bytes": 368,
+            "thirdPartyCount": 0
+          },
+          "localStorage": {
+            "available": true,
+            "entries": 4,
+            "bytes": 1136
+          },
+          "sessionStorage": {
+            "available": true,
+            "entries": 3,
+            "bytes": 654
+          }
+        }
+      },
+      "evidence": [
+        {
+          "type": "privacy-budget",
+          "state": "exceeded",
+          "metric": "maxSessionStorageBytes",
+          "actual": 654,
+          "limit": 240,
+          "aggregate": {
+            "cookieSummary": {
+              "available": true,
+              "count": 4,
+              "bytes": 368,
+              "thirdPartyCount": 0
+            },
+            "localStorage": {
+              "available": true,
+              "entries": 4,
+              "bytes": 1136
+            },
+            "sessionStorage": {
+              "available": true,
+              "entries": 3,
+              "bytes": 654
+            }
+          }
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Aggregate browser storage privacy budget"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh browser context.",
+        "Measure only aggregate maxSessionStorageBytes usage after the baseline settles."
+      ],
+      "remediation": {
+        "summary": "Reduce session-only payloads and keep sensitive data out of browser storage unless the design is explicitly reviewed.",
+        "technicalHints": [
+          "RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "sessionStorage 字节数超过项目隐私预算",
+          "summary": "隔离基线测得 654 个 sessionStorage 字节，超过配置上限 240。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "基线稳定后，仅测量 maxSessionStorageBytes 聚合用量。"
+          ],
+          "remediation": {
+            "summary": "缩减会话载荷；除非设计经过明确审核，否则不要在浏览器存储中保存敏感数据。",
+            "technicalHints": [
+              "RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"
+            ]
+          }
+        }
+      },
+      "selector": "html"
+    }
+  ],
+  "warnings": [
+    "Standalone audit used an already-installed system browser (150.0.7871.116).",
+    "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    "Responsive layout was evaluated in 1 configured viewport(s); touch-target heuristics ran only where touch was enabled.",
+    "7 aggregate cookie and Web Storage privacy budget(s) were evaluated without retaining cookie names, values, storage keys, or storage values."
+  ],
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "独立核查使用了已安装的系统浏览器（150.0.7871.116）。",
+        "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        "已在 1 个配置视口中核查响应式布局；仅在启用 touch 的视口运行触控目标启发式检查。",
+        "已核查 7 项 Cookie 与 Web Storage 聚合隐私预算，未保留 Cookie 名称、值、存储键或存储值。"
+      ]
+    }
+  }
+}

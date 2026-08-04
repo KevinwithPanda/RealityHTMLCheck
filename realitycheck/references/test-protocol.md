@@ -251,6 +251,12 @@ Run configured journeys only once from the primary target, in a fresh context. R
 
 Run only explicitly configured security policy. Required-header evidence records name/presence/status, not header values. Mixed-content checks apply only to HTTPS documents. Secure-form inspection records bounded method/protocol/origin metadata and whether a password field exists, never its value, and never submits. Third-party budgets and allowlists persist unique origins only. Treat a policy violation as High confidence because the project declared the exact boundary; do not infer comprehensive application security from a passing baseline.
 
+### Aggregate browser storage privacy budgets
+
+Run only explicitly configured privacy budgets in the clean baseline context. Use browser-context Cookie state so HttpOnly cookies are included, then retain only total count, UTF-8 name/value bytes, and the count whose normalized domain is not the final document host or one of its parent domains. Measure localStorage and sessionStorage in-page, summing UTF-8 key/value bytes, but return only availability, entry count, and byte total. Never persist names, keys, values, expiry, paths, same-site flags, or exception messages.
+
+Compare each configured maximum independently and emit one High-confidence finding per exceeded budget. If any configured storage surface cannot be measured, emit an explicit measurement-unavailable finding; unknown must never become a zero-value pass. Do not clear, migrate, or rewrite state during an audit. A pass is evidence only for the configured aggregate threshold in that isolated browser run, not consent, tracker, retention, data-flow, or legal-compliance proof.
+
 ### `blank-or-stuck-state`
 
 A high-confidence blank state requires all of the following: fewer than 20 visible text characters, no visible heading/form/button/link/meaningful image, and a nonblank baseline.

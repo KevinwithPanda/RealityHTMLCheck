@@ -1,6 +1,6 @@
 # RealityCheck
 
-RealityCheck is a local-first, evidence-first Web quality audit skill and CLI. It uses a real installed Chrome, Edge, or Chromium browser to stress responsive layouts, user journeys, API and network recovery, links, publishing metadata, visual baselines, performance, accessibility, and security policy. It writes bilingual human reports plus machine-readable JSON, SARIF, JUnit, repair plans, policy reviews, issue drafts, manifests, verification evidence, and freshness-aware GO/REVIEW/NO-GO release decisions.
+RealityCheck is a local-first, evidence-first Web quality audit skill and CLI. It uses a real installed Chrome, Edge, or Chromium browser to stress responsive layouts, user journeys, API and network recovery, links, publishing metadata, visual baselines, performance, accessibility, security policy, and aggregate Cookie/Web Storage privacy budgets. It writes bilingual human reports plus machine-readable JSON, SARIF, JUnit, repair plans, policy reviews, issue drafts, manifests, verification evidence, and freshness-aware GO/REVIEW/NO-GO release decisions.
 
 RealityCheck never treats an unsupported check as passed. Audit mode is read-only, remote targets require explicit authorization, and generated GitHub issue drafts are local files that are never submitted automatically.
 
@@ -13,6 +13,7 @@ RealityCheck never treats an unsupported check as passed. Audit mode is read-onl
 - Policy anti-weakening example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/policy-review/review/policy-review.html
 - GitHub issue draft example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/issue-drafts/github-issue-drafts.html
 - Release decision example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/release-decision/release-decision.html
+- Aggregate browser storage privacy evidence: https://kevinwithpanda.github.io/RealityHTMLCheck/evidence/privacy/latest.html
 - English guide: https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/README.md
 - Chinese guide: https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/docs/README.zh-CN.md
 - Report contracts: https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/realitycheck/references/report-schema.md

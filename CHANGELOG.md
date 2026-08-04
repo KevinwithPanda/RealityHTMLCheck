@@ -10,7 +10,7 @@ All notable changes are documented here. This project follows Semantic Versionin
 - Opt-in API/all-resource network reliability budgets for HTTP errors, transport failures, slow requests, and third-party request volume, with bounded query-free endpoint samples and no response-body retention.
 - Passing/failing network fixtures plus committed real-browser evidence proving a missing API fails at 96/100 while the restored endpoint passes at 100/100.
 - HEAD-only same-origin link integrity budgets with bounded concurrency/redirects/timeouts, dangerous-route exclusions, query-free failure samples, and paired 96/100 versus 100/100 fixtures.
-- A bilingual GitHub Pages product site that now publishes eight immutable real-browser evidence packs, live fixtures, repair actions, and a SHA-256-verifiable reference report.
+- A bilingual GitHub Pages product site that now publishes nine immutable real-browser evidence packs, live fixtures, repair actions, and a SHA-256-verifiable reference report.
 - Validated `starter`, `product`, and `strict` project profiles, with secret-safe `init --profile ... --base-url ...` generation and a bilingual profile catalog.
 - Safe journey `press` and `assert-url` steps for keyboard navigation and pathname checkpoints, with activation-key/editable-control guards and query-free traces.
 - Opt-in publishing metadata contracts for title and description length, canonical destinations, viewport, language, indexing, and primary-heading structure, with paired 75/100 versus 100/100 real-browser evidence.
@@ -18,7 +18,8 @@ All notable changes are documented here. This project follows Semantic Versionin
 - A zero-configuration `demo` command with a finite read-only loopback server, bundled broken fixture, automatic teardown, real-browser evidence, and an expected-failure success contract for first-run evaluation.
 - Latest-target GitHub job summaries and bounded Error/Warning/Notice workflow annotations with bilingual output, query removal, waiver handling, stale-run suppression, and hostile command-text neutralization.
 - A bounded one-to-six responsive viewport matrix with isolated contexts, per-breakpoint screenshots and attribution, profile-specific phone/tablet coverage, policy fingerprinting, and paired 92/100 versus 100/100 real-browser fixtures.
-- A schema-validated `policy-review` anti-weakening gate with conservative structural classification, safe metadata-only evidence, bilingual Markdown/HTML, GitHub Action inputs/outputs, and a 40-change governance fixture.
+- A schema-validated `policy-review` anti-weakening gate with conservative structural classification, safe metadata-only evidence, bilingual Markdown/HTML, GitHub Action inputs/outputs, and a 48-change governance fixture.
+- Opt-in aggregate Cookie, third-party Cookie, localStorage, and sessionStorage privacy budgets with UTF-8 byte/entry limits, fail-closed measurement handling, zero key/value retention, policy fingerprinting, anti-weakening review, paired 76/100 versus 100/100 fixtures, and committed real-browser evidence.
 - Review-first GitHub issue draft bundles that deduplicate stable fingerprints, preserve every evidence occurrence and acceptance condition, remove query values, neutralize mentions, and export schema-validated JSON, bilingual Markdown/HTML, and CSV without submitting anything externally.
 - A conservative `release-decision` command and Action output that selects fresh validated audit, verification, policy, trust, risk, and repair-review controls; binds sources by SHA-256; preserves distinct GO/REVIEW/NO-GO exits; and never deploys or approves a release.
 

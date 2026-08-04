@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="RealityCheck Browser Storage Privacy Budget Lab · Broken" tests="6" time="5.116" timestamp="2026-08-04T20:58:48.677Z" failures="1" errors="0" skipped="0">
+  <properties>
+    <property name="realitycheck.runId" value="20260804T205848Z-25ccf3" />
+    <property name="realitycheck.score" value="76" />
+    <property name="realitycheck.failOn" value="major" />
+    <property name="realitycheck.target" value="http://127.0.0.1:4182/examples/privacy-lab/broken.html" />
+  </properties>
+  <testcase classname="RealityCheck.browser" name="baseline" time="0.726">
+    <failure message="6 finding(s) met the major threshold" type="RealityCheckQualityGate">RC-58CF6DE19B [major] Cookie bytes exceed the project privacy budget
+RC-F162EB3E74 [major] Cookie count exceeds the project privacy budget
+RC-4813EC95B4 [major] localStorage bytes exceed the project privacy budget
+RC-C3D6AFC784 [major] localStorage entries exceed the project privacy budget
+RC-FBF7A4842F [major] sessionStorage bytes exceed the project privacy budget
+RC-35F26228B0 [major] sessionStorage entries exceed the project privacy budget</failure>
+    <system-out>RC-58CF6DE19B [major/high] Cookie bytes exceed the project privacy budget
+RC-F162EB3E74 [major/high] Cookie count exceeds the project privacy budget
+RC-4813EC95B4 [major/high] localStorage bytes exceed the project privacy budget
+RC-C3D6AFC784 [major/high] localStorage entries exceed the project privacy budget
+RC-FBF7A4842F [major/high] sessionStorage bytes exceed the project privacy budget
+RC-35F26228B0 [major/high] sessionStorage entries exceed the project privacy budget</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="mobile-375" time="0.663" />
+  <testcase classname="RealityCheck.browser" name="long-text" time="1.286" />
+  <testcase classname="RealityCheck.browser" name="rtl-arabic" time="1.052" />
+  <testcase classname="RealityCheck.browser" name="image-failure" time="0.614" />
+  <testcase classname="RealityCheck.browser" name="keyboard-tab" time="0.700" />
+</testsuite>

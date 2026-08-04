@@ -18,6 +18,7 @@
   "metadata": { "requireCanonical": true, "requireViewport": true, "requireLang": true, "forbidNoindex": true, "requireSingleH1": true, "severity": "major" },
   "visual": { "baselineDirectory": ".realitycheck/visual-baselines", "maxDiffRatio": 0.002, "pixelThreshold": 28, "masks": [".current-time"], "severity": "major" },
   "security": { "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"], "forbidMixedContent": true, "secureForms": true, "maxThirdPartyOrigins": 2, "severity": "major" },
+  "privacy": { "maxCookies": 10, "maxCookieBytes": 4096, "maxThirdPartyCookies": 0, "maxLocalStorageEntries": 20, "maxLocalStorageBytes": 131072, "maxSessionStorageEntries": 20, "maxSessionStorageBytes": 65536, "severity": "major" },
   "qualityGate": { "minimumScore": 95, "minimumCoveragePercent": 95, "maxWaivedFindings": 0 },
   "baselinePolicy": { "maxAgeDays": 30, "requireSamePolicy": true },
   "waivers": []

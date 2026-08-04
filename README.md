@@ -134,8 +134,8 @@ Three validated presets remove the blank-config problem:
 | Profile | Best for | Included policy |
 | --- | --- | --- |
 | `starter` | First audit, personal projects | Quick scenarios, one 375px viewport, 25 safe links, essential metadata, forgiving score gate |
-| `product` | Active product teams | Deep scenarios, 360px phone + 768px tablet, crawl, performance, API, links, metadata, security, governance |
-| `strict` | Mature release pipelines | 320px + 390px phones and 768px tablet, tighter budgets, all-resource reliability, zero active waivers |
+| `product` | Active product teams | Deep scenarios, 360px phone + 768px tablet, crawl, performance, API, links, metadata, security, aggregate storage privacy, governance |
+| `strict` | Mature release pipelines | 320px + 390px phones and 768px tablet, tighter performance/storage budgets, all-resource reliability, zero active waivers |
 
 `init` defaults to `starter`. A preset is a transparent starting file, not a compliance certification: review its limits and safety exclusions before CI adoption.
 
@@ -251,6 +251,16 @@ Three validated presets remove the blank-config problem:
     "allowedThirdPartyOrigins": ["https://cdn.example.com"],
     "severity": "major"
   },
+  "privacy": {
+    "maxCookies": 20,
+    "maxCookieBytes": 8192,
+    "maxThirdPartyCookies": 5,
+    "maxLocalStorageEntries": 50,
+    "maxLocalStorageBytes": 262144,
+    "maxSessionStorageEntries": 30,
+    "maxSessionStorageBytes": 131072,
+    "severity": "major"
+  },
   "waivers": [
     {
       "id": "legacy-toolbar-web-42",
@@ -284,6 +294,8 @@ Keep approval and comparison on a consistent browser/OS/font environment, normal
 
 Security baselines are opt-in project policy, so a localhost page is not judged against production headers unless the project asks for them. Policies can require reviewed response headers, forbid mixed content, reject insecure password-form paths, cap unique third-party origins, and allowlist exact HTTPS origins. The [`examples/security-lab`](examples/security-lab) fixture demonstrates three missing headers plus a GET password form without ever submitting it.
 
+Aggregate browser-storage privacy budgets are also opt-in. They can cap total Cookie count/UTF-8 bytes, third-party Cookie count, and localStorage/sessionStorage entry and byte totals in the clean isolated baseline. Reports keep only aggregate counts, availability, bytes, and limits—never Cookie names or values, Web Storage keys or values, or exception text. If a configured surface cannot be measured, the audit fails visibly instead of treating unknown as zero. The paired [`examples/privacy-lab`](examples/privacy-lab) fixture produces six targeted failures at **76/100**, proves no fixture markers leak into `report.json`, and passes the same limits at **100/100** after the state is bounded. This is a project-defined storage budget, not consent, tracker, retention, or legal-compliance proof; RealityCheck never clears state automatically.
+
 Performance budgets now include TTFB, First Contentful Paint, Largest Contentful Paint, and Cumulative Layout Shift in addition to navigation, DOMContentLoaded, request, transfer, and DOM limits. Authenticated apps can load a Playwright storage-state file with `--storage-state` or `REALITYCHECK_STORAGE_STATE`; the path, cookies, tokens, and values are never copied into reports.
 
 Governed waivers support real-world known debt without hiding it. A waiver requires an exact rule, reason, and expiry; it may also name an owner, selector, and route scope. The report still shows the finding, screenshots, remediation, and waiver metadata, while score and gate ignore it until expiry. `doctor` fails on expired policy, SARIF records an external suppression, and JUnit keeps the evidence without failing the scenario.
@@ -306,7 +318,7 @@ A multi-page run adds `site-report.json`, `site-report.md`, and a bilingual `sit
 
 | Scenario | Quick | What it proves |
 | --- | :---: | --- |
-| Baseline | Yes | Runtime/resource defects, semantics, custom rules, Core Web Vital/network/link budgets, and configured security policy |
+| Baseline | Yes | Runtime/resource defects, semantics, custom rules, Core Web Vital/network/link/storage-privacy budgets, and configured security policy |
 | Configured responsive viewports (default: 375×812) | Yes | Breakpoint-specific offscreen actions, fixed widths, overflow, and severe touch-target loss |
 | Long text | Yes | New or worsened clipping under CJK, emoji, and unbroken strings |
 | RTL Arabic | Yes | Physical-direction CSS and alignment assumptions |
@@ -464,7 +476,7 @@ npx realitycheck release-decision .realitycheck \
 
 `validate` uses a standards-compliant JSON Schema validator and recursively checks project configs, page reports, repair plans, page verification, site reports, site verification, trends, catalogs, latest pointers, integrity manifests, Ed25519 attestations, evidence trust policies, risk registers, policy reviews, issue-draft bundles, and release decisions. `--require-attestation` makes every discovered manifest require a sibling signature and automatically validates it; combine this with one or more `--trusted-key` values or use `--trust-policy` for an archive-level trust gate with revocation and validity windows. `catalog` validates every discovered source artifact, includes signed receipts, issue boards, and release decisions, skips incompatible historical files with visible warnings, and writes a searchable artifact inventory. `risk-register` groups page findings by exact target and stable fingerprint, records first/last seen and recurrence, exposes dedicated recurring and overdue filters, and uses the newest proving scenario plus available policy fingerprints to distinguish open, waived, resolved, and unverified risk. Optional open-count, age, and recurrence limits turn the ledger into a portfolio quality gate: the JSON/HTML/Markdown outputs are still written, while exit code `1` tells CI that the debt policy failed. Scenario gaps or policy drift remain explicitly unverified. It also emits formula-injection-safe CSV.
 
-`policy-review` validates both configs, compares their effective structural enforcement, and produces schema-validated JSON plus English/Chinese Markdown and a bilingual searchable HTML review. Removing a viewport/check/header, switching Deep to Quick, loosening budgets or quality gates, adding visual masks or waivers, and similar changes are classified as `weakened` and return exit code `1` after evidence is written. Ambiguous route-glob, selector, or breakpoint changes are marked `review` instead of guessed. The artifact stores only filenames, policy fingerprints, safe IDs/counts, and bounded rationales—not base URLs, selectors, application routes, waiver reasons, or source paths. [`examples/policy-review-lab`](examples/policy-review-lab) contains a 40-change demonstration.
+`policy-review` validates both configs, compares their effective structural enforcement, and produces schema-validated JSON plus English/Chinese Markdown and a bilingual searchable HTML review. Removing a viewport/check/header, switching Deep to Quick, loosening performance, storage-privacy, or quality-gate limits, adding visual masks or waivers, and similar changes are classified as `weakened` and return exit code `1` after evidence is written. Ambiguous route-glob, selector, or breakpoint changes are marked `review` instead of guessed. The artifact stores only filenames, policy fingerprints, safe IDs/counts, and bounded rationales—not base URLs, selectors, application routes, waiver reasons, or source paths. [`examples/policy-review-lab`](examples/policy-review-lab) contains a 48-change demonstration.
 
 `issue-drafts` converts one or more validated `repair-plan.json` artifacts into a local, review-first GitHub handoff. Stable fingerprints are deduplicated while every run/scenario evidence link remains visible; URL queries and fragments are removed, `@` mentions are neutralized, low-confidence findings are separated for review, and waived evidence stays explicit. The command writes schema-validated JSON, English/Chinese Markdown, CSV, and a searchable bilingual board with copy buttons. It never calls GitHub or creates an issue. [`examples/issue-drafts-lab`](examples/issue-drafts-lab) contains six real drafts generated from the reference audit.
 

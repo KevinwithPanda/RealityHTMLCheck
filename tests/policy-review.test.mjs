@@ -18,6 +18,7 @@ test("policy review blocks structural weakening without copying sensitive config
   assert.ok(review.summary.review >= 2, review.summary);
   assert.ok(review.changes.some((item) => item.key === "viewports.phone-320" && item.classification === "weakened"));
   assert.ok(review.changes.some((item) => item.key === "security.requiredHeaders" && item.classification === "weakened"));
+  assert.ok(review.changes.some((item) => item.key === "privacy.maxCookies" && item.classification === "weakened"));
   assert.ok(review.changes.some((item) => item.key === "qualityGate.minimumScore" && item.classification === "weakened"));
   assert.ok(review.changes.some((item) => item.key === "exceptions.temporary-release-action" && item.classification === "weakened"));
   const serialized = JSON.stringify(review);

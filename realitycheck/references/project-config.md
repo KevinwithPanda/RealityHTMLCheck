@@ -5,8 +5,8 @@
 ## Validated starting profiles
 
 - `starter` keeps Quick mode, one 375x812 viewport, and crawling off while adding a bounded 25-target link check, essential title/viewport/language rules, and a forgiving release score.
-- `product` enables Deep mode, 360x800 phone plus 768x1024 tablet checkpoints, a 20-page safe crawl, performance/API/link/publishing/security policies, and a 30-day same-policy baseline rule.
-- `strict` checks 320x700 and 390x844 phones plus a 768x1024 tablet, tightens budgets and metadata ranges, audits all resource requests, requires five reviewed response headers, and permits no active waivers. It is expected to reveal adoption work.
+- `product` enables Deep mode, 360x800 phone plus 768x1024 tablet checkpoints, a 20-page safe crawl, performance/API/link/publishing/security/browser-storage privacy policies, and a 30-day same-policy baseline rule.
+- `strict` checks 320x700 and 390x844 phones plus a 768x1024 tablet, tightens performance and aggregate browser-storage budgets, audits all resource requests, requires five reviewed response headers, and permits no active waivers. It is expected to reveal adoption work.
 
 Profiles generate ordinary JSON with no hidden behavior. They never prove legal, regulatory, security, accessibility, or performance compliance. Review every threshold, required header, route boundary, and exclusion for the application before CI enforcement. `--base-url` rejects credentials, query strings, fragments, and non-HTTP(S) protocols so initialization cannot persist URL secrets.
 
@@ -256,6 +256,29 @@ Security checks are opt-in because localhost and production delivery policies di
 
 Supported response headers are `content-security-policy`, `strict-transport-security`, `x-content-type-options`, `referrer-policy`, and `permissions-policy`. Header checks record presence only, not values. `secureForms` inspects password fields, form methods, and resolved action protocols without reading or submitting field values; loopback HTTP remains trusted except that passwords sent through GET are still reported. Third-party policy stores only unique origins, never resource paths or query parameters. Allowed origins must be exact HTTPS origins without credentials, paths, queries, or fragments.
 
+## Aggregate browser storage privacy budgets
+
+Browser storage privacy checks are opt-in project budgets evaluated after the clean baseline settles. Define at least one limit; `severity` defaults to `major`.
+
+```json
+{
+  "privacy": {
+    "maxCookies": 20,
+    "maxCookieBytes": 8192,
+    "maxThirdPartyCookies": 5,
+    "maxLocalStorageEntries": 50,
+    "maxLocalStorageBytes": 262144,
+    "maxSessionStorageEntries": 30,
+    "maxSessionStorageBytes": 131072,
+    "severity": "major"
+  }
+}
+```
+
+Cookie count accepts 0 to 500, cookie bytes 0 to 1,000,000, Web Storage entry counts 0 to 10,000, and Web Storage byte totals 0 to 10,000,000. Byte totals are UTF-8 bytes across each key/value pair; Cookie bytes count each name and value. A Cookie is first-party when its normalized domain is the final document host or a parent domain of that host. Every scenario starts in a fresh browser context, so the observation covers state created or loaded for that isolated baseline, including an explicitly supplied storage state.
+
+Evidence contains only availability, counts, byte totals, actual limits, and a screenshot. It intentionally never contains Cookie names or values, localStorage/sessionStorage keys or values, or browser exception text. If a configured surface cannot be measured, the audit produces `privacy-storage-measurement-unavailable` instead of treating the missing value as zero. Passing proves only that this route stayed inside the reviewed aggregate budgets in this isolated run. It is not a consent audit, tracker classifier, retention audit, data-flow inspection, or legal compliance claim. Remove or migrate application state only after product/security review; the audit never clears storage automatically.
+
 ## Finding ownership
 
 `owners` assigns active findings to accountable teams using stable rule IDs and path-only route globs. Each entry must declare a stable lowercase `id`, a display `name`, and at least one routing constraint. `ruleIds` matches exact detector/custom-rule IDs; `include` and `exclude` use the same `*` / `**` path semantics as crawl policy.
@@ -332,7 +355,7 @@ An optional `baselinePolicy` prevents a regression-only `--baseline` from preser
 }
 ```
 
-`maxAgeDays` is an integer from 1 to 3650. Age is measured from the baseline run's `finishedAt` to the new run's `startedAt`, so copying a file does not make old evidence fresh. `requireSamePolicy` compares SHA-256 fingerprints derived from tool version, scenario mode, declarative checks, journeys, performance budgets, network reliability limits, link policy, publishing metadata policy, visual policy, and security policy; property/list ordering is canonicalized, derived machine-local baseline paths are excluded, and raw selectors or policy content are not copied into the report. Missing or different fingerprints produce `policy-drift` instead of a false resolution. At least one policy must be active. These gates are enforced only for `--baseline`; `--compare` remains an unrestricted historical analysis tool.
+`maxAgeDays` is an integer from 1 to 3650. Age is measured from the baseline run's `finishedAt` to the new run's `startedAt`, so copying a file does not make old evidence fresh. `requireSamePolicy` compares SHA-256 fingerprints derived from tool version, scenario mode, declarative checks, journeys, performance budgets, network reliability limits, link policy, publishing metadata policy, visual policy, security policy, and aggregate browser-storage privacy budgets; property/list ordering is canonicalized, derived machine-local baseline paths are excluded, and raw selectors or policy content are not copied into the report. Missing or different fingerprints produce `policy-drift` instead of a false resolution. At least one policy must be active. These gates are enforced only for `--baseline`; `--compare` remains an unrestricted historical analysis tool.
 
 ## Authenticated pages
 
@@ -351,6 +374,6 @@ realitycheck policy-review \
   --output .realitycheck/policy-review
 ```
 
-Both inputs must pass the config contract. The command compares effective defaults plus explicit responsive, coverage, detector, budget, release-gate, baseline, security, ownership, and exception settings. It writes `policy-review.json`, English and Chinese Markdown, and one offline bilingual HTML view. Any `weakened` change makes the gate exit `1`; `review` changes remain visible but need human approval because route-glob overlap, breakpoint market coverage, selector intent, and legal/product requirements are not safe to infer. Exit `2` means invalid input or rendering failure.
+Both inputs must pass the config contract. The command compares effective defaults plus explicit responsive, coverage, detector, performance, browser-storage privacy, release-gate, baseline, security, ownership, and exception settings. It writes `policy-review.json`, English and Chinese Markdown, and one offline bilingual HTML view. Any `weakened` change makes the gate exit `1`; `review` changes remain visible but need human approval because route-glob overlap, breakpoint market coverage, selector intent, and legal/product requirements are not safe to infer. Exit `2` means invalid input or rendering failure.
 
 The review is deliberately metadata-minimal: source entries contain basenames and SHA-256 policy fingerprints, while changes contain stable IDs, categories, keys, counts/safe scalar values, and bounded bilingual rationales. It does not copy base URLs, filesystem paths, route patterns, selectors, custom titles/remediation, allowed origins, waiver reasons, or other arbitrary configuration text.

@@ -11,7 +11,7 @@ const reference = JSON.parse(readFileSync("examples/reference-run/report.json", 
 test("GitHub summary selects latest targets, localizes output, and bounds annotations", () => {
   const result = buildGitHubSummary(["examples/public-evidence"], { maxAnnotations: 5, language: "zh-CN" });
   assert.ok(result.summary.validatedReports >= 10);
-  assert.equal(result.summary.latestTargets, 8);
+  assert.equal(result.summary.latestTargets, 9);
   assert.equal(result.summary.annotations, 5);
   assert.ok(result.summary.truncatedAnnotations > 0);
   assert.match(result.markdown, /RealityCheck 拉取请求摘要/);

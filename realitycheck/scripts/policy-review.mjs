@@ -53,6 +53,7 @@ function effective(config) {
     metadata: config.metadata ?? null,
     visual: config.visual ? Object.fromEntries(Object.entries(config.visual).filter(([key]) => key !== "baselineDirectoryPath")) : null,
     security: config.security ?? null,
+    privacy: config.privacy ?? null,
     waivers: config.waivers ?? [],
     qualityGate: config.qualityGate ?? null,
     baselinePolicy: config.baselinePolicy ?? null,
@@ -233,6 +234,13 @@ export function buildPolicyReview(beforePath, afterPath, { now = new Date() } = 
     for (const key of ["forbidMixedContent", "secureForms"]) compareBoolean(add, { before: before.security[key] ?? false, after: after.security[key] ?? false, category: "security", key: `security.${key}`, label: `Security rule ${key}`, labelZh: `安全规则 ${key}` });
     compareNumber(add, { before: before.security.maxThirdPartyOrigins ?? null, after: after.security.maxThirdPartyOrigins ?? null, category: "security", key: "security.maxThirdPartyOrigins", label: "Third-party origin limit", labelZh: "第三方来源上限", higherIsStronger: false });
     compareSeverity(add, { before: before.security.severity, after: after.security.severity, category: "security", key: "security.severity", label: "Security finding severity", labelZh: "安全问题严重级别", ranking: FINDING_SEVERITY });
+  }
+
+  if (comparePolicyPresence(add, before.privacy, after.privacy, "privacy", "Browser storage privacy budget", "浏览器存储隐私预算")) {
+    for (const key of ["maxCookies", "maxCookieBytes", "maxThirdPartyCookies", "maxLocalStorageEntries", "maxLocalStorageBytes", "maxSessionStorageEntries", "maxSessionStorageBytes"]) {
+      compareNumber(add, { before: before.privacy[key] ?? null, after: after.privacy[key] ?? null, category: "privacy", key: `privacy.${key}`, label: `Privacy budget ${key}`, labelZh: `隐私预算 ${key}`, higherIsStronger: false });
+    }
+    compareSeverity(add, { before: before.privacy.severity, after: after.privacy.severity, category: "privacy", key: "privacy.severity", label: "Privacy finding severity", labelZh: "隐私问题严重级别", ranking: FINDING_SEVERITY });
   }
 
   if (comparePolicyPresence(add, before.qualityGate, after.qualityGate, "release-gate", "Numeric release gate", "数值发布门禁")) {

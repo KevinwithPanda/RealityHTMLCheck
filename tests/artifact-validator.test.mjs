@@ -55,6 +55,18 @@ test("the published responsive matrix evidence verifies every committed output",
   assert.equal(result.valid, true, result.errors.join("\n"));
 });
 
+test("the published aggregate privacy evidence verifies every committed output", () => {
+  const latest = JSON.parse(readFileSync(resolve("examples/public-evidence/privacy/latest.json"), "utf8"));
+  const [manifest, report] = validateArtifactFiles([
+    resolve("examples/public-evidence/privacy", latest.artifacts.integrityManifest),
+    resolve("examples/public-evidence/privacy", latest.artifacts.json),
+  ]);
+  assert.equal(manifest.kind, "evidence-manifest");
+  assert.equal(manifest.valid, true, manifest.errors.join("\n"));
+  assert.equal(report.kind, "report");
+  assert.equal(report.valid, true, report.errors.join("\n"));
+});
+
 test("committed interactive HTML surfaces contain parseable inline scripts", () => {
   for (const path of ["examples/reference-run/report.html", "examples/index.html", "examples/issue-drafts-lab/github-issue-drafts.html", "examples/release-decision-lab/release-decision.html"]) {
     const source = readFileSync(resolve(path), "utf8");
@@ -101,6 +113,14 @@ test("visual regression fixture policies satisfy the project policy schema", () 
 test("responsive viewport fixture policies satisfy the project policy schema", () => {
   for (const name of ["broken.config.json", "fixed.config.json"]) {
     const [result] = validateArtifactFiles([resolve(`examples/viewport-lab/${name}`)]);
+    assert.equal(result.kind, "config");
+    assert.equal(result.valid, true, `${name}: ${result.errors.join("\n")}`);
+  }
+});
+
+test("aggregate browser storage privacy fixtures satisfy the project policy schema", () => {
+  for (const name of ["broken.config.json", "fixed.config.json"]) {
+    const [result] = validateArtifactFiles([resolve(`examples/privacy-lab/${name}`)]);
     assert.equal(result.kind, "config");
     assert.equal(result.valid, true, `${name}: ${result.errors.join("\n")}`);
   }

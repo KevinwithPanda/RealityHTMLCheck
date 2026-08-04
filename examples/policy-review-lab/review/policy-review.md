@@ -1,9 +1,9 @@
 # RealityCheck policy change review
 
-Gate: **FAILED** · 38 weakened · 0 strengthened · 2 review
+Gate: **FAILED** · 46 weakened · 0 strengthened · 2 review
 
-- Before: `before.config.json` (`sha256:8fa3136aff605f5b98e5ef5e0b1dac43d336203c8ffc4c3c4cb58cdcd4865841`)
-- After: `after-weakened.config.json` (`sha256:9ffecba4dc3e0b0a2869fd2e0b3ca94bb0e9dc4fad3fbd837c61ce7339e594a1`)
+- Before: `before.config.json` (`sha256:092c5d2a7b43924665a25e64f0a894382d97499aa33da449c6b2374dde8f2e31`)
+- After: `after-weakened.config.json` (`sha256:5fabc9a80e26bc85e44a3c8347b7a95c49f85b7f2b704e5dd52f524d40cb7d2a`)
 
 ## Changes
 
@@ -32,6 +32,14 @@ Gate: **FAILED** · 38 weakened · 0 strengthened · 2 review
 | weakened | performance | **POLICY-DDD6491ED4** Performance limit cumulativeLayoutShift changed from 0.1 to 0.25 | The new numeric limit allows more risk than before. |
 | weakened | performance | **POLICY-7EF09AF1B7** Performance limit largestContentfulPaintMs changed from 2500 to 4000 | The new numeric limit allows more risk than before. |
 | weakened | performance | **POLICY-AD6FEA01A9** Performance finding severity changed from major to minor | The new severity setting is less likely to block risky evidence. |
+| weakened | privacy | **POLICY-739DCE6669** Privacy budget maxCookieBytes changed from 4096 to 16384 | The new numeric limit allows more risk than before. |
+| weakened | privacy | **POLICY-6208653C16** Privacy budget maxCookies changed from 10 to 30 | The new numeric limit allows more risk than before. |
+| weakened | privacy | **POLICY-B9B4469D42** Privacy budget maxLocalStorageBytes changed from 131072 to 524288 | The new numeric limit allows more risk than before. |
+| weakened | privacy | **POLICY-13AB57BD68** Privacy budget maxLocalStorageEntries changed from 20 to 80 | The new numeric limit allows more risk than before. |
+| weakened | privacy | **POLICY-5E6F3C9887** Privacy budget maxSessionStorageBytes changed from 65536 to 262144 | The new numeric limit allows more risk than before. |
+| weakened | privacy | **POLICY-56C262AD6E** Privacy budget maxSessionStorageEntries changed from 20 to 50 | The new numeric limit allows more risk than before. |
+| weakened | privacy | **POLICY-A252F754FC** Privacy budget maxThirdPartyCookies changed from 0 to 8 | The new numeric limit allows more risk than before. |
+| weakened | privacy | **POLICY-BE61BE4A82** Privacy finding severity changed from major to minor | The new severity setting is less likely to block risky evidence. |
 | weakened | release-gate | **POLICY-39219F7AC8** Failure threshold changed from major to critical | The new severity setting is less likely to block risky evidence. |
 | weakened | release-gate | **POLICY-C7D60F42E2** Maximum active waivers changed from 0 to 5 | The new numeric limit allows more risk than before. |
 | weakened | release-gate | **POLICY-1C952E808C** Minimum coverage changed from 95 to 70 | The new numeric limit allows more risk than before. |

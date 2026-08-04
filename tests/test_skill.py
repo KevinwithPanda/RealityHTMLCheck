@@ -325,6 +325,31 @@ class SkillStructureTests(unittest.TestCase):
         self.assertTrue(broken_config["metadata"]["forbidNoindex"])
         self.assertTrue(broken_config["metadata"]["requireSingleH1"])
 
+    def test_privacy_budget_has_paired_aggregate_only_evidence(self) -> None:
+        fixture = REPOSITORY_ROOT / "examples" / "privacy-lab"
+        broken = (fixture / "broken.html").read_text(encoding="utf-8")
+        fixed = (fixture / "fixed.html").read_text(encoding="utf-8")
+        broken_config = json.loads((fixture / "broken.config.json").read_text(encoding="utf-8"))
+        fixed_config = json.loads((fixture / "fixed.config.json").read_text(encoding="utf-8"))
+        self.assertEqual(broken_config["privacy"], fixed_config["privacy"])
+        self.assertIn("localStorage.setItem", broken)
+        self.assertIn("sessionStorage.setItem", broken)
+        self.assertIn("rc_consent=essential", fixed)
+
+        evidence = REPOSITORY_ROOT / "examples" / "public-evidence" / "privacy"
+        latest = json.loads((evidence / "latest.json").read_text(encoding="utf-8"))
+        report = json.loads((evidence / latest["artifacts"]["json"]).read_text(encoding="utf-8"))
+        self.assertEqual(report["score"]["overall"], 76)
+        self.assertEqual(len(report["findings"]), 6)
+        self.assertTrue(all(item["ruleId"].startswith("privacy-") for item in report["findings"]))
+        self.assertEqual(
+            report["findings"][0]["measurements"]["aggregate"]["cookieSummary"],
+            {"available": True, "bytes": 368, "count": 4, "thirdPartyCount": 0},
+        )
+        serialized = json.dumps(report, ensure_ascii=False)
+        for marker in ("rc_fixture_", "fixture-", "rc-local-", "local-fixture-", "rc-session-", "session-fixture-"):
+            self.assertNotIn(marker, serialized)
+
     def test_viewport_matrix_fixture_exposes_only_the_narrow_breakpoint(self) -> None:
         fixture = REPOSITORY_ROOT / "examples" / "viewport-lab"
         broken = (fixture / "broken.html").read_text(encoding="utf-8")

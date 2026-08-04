@@ -1,7 +1,7 @@
 interface:
   display_name: "RealityCheck"
-  short_description: "Audit UI, APIs, links, security, and releases"
+  short_description: "Audit UI, APIs, privacy, security, and releases"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/logo.svg"
   brand_color: "#FF5C35"
-  default_prompt: "Use $realitycheck on this app to choose an appropriate transparent starter/product/strict policy when setup is requested, audit safe user journeys, API/network reliability, link integrity, security, accessibility, performance, and stress states, then fix selected high-confidence major issues and prove every fix."
+  default_prompt: "Use $realitycheck on this app to choose an appropriate transparent starter/product/strict policy when setup is requested, audit safe user journeys, API/network reliability, link integrity, aggregate browser-storage privacy budgets, security, accessibility, performance, and stress states, then fix selected high-confidence major issues and prove every fix."

@@ -39,7 +39,7 @@ export const DEFAULT_PROJECT_CONFIG = Object.freeze({
   owners: [],
 });
 
-const TOP_LEVEL_KEYS = new Set(["$schema", "baseUrl", "mode", "failOn", "output", "routes", "viewports", "crawl", "checks", "journeys", "budgets", "network", "links", "metadata", "visual", "security", "waivers", "qualityGate", "baselinePolicy", "owners"]);
+const TOP_LEVEL_KEYS = new Set(["$schema", "baseUrl", "mode", "failOn", "output", "routes", "viewports", "crawl", "checks", "journeys", "budgets", "network", "links", "metadata", "visual", "security", "privacy", "waivers", "qualityGate", "baselinePolicy", "owners"]);
 const VIEWPORT_KEYS = new Set(["id", "width", "height", "touch"]);
 const RESERVED_VIEWPORT_IDS = new Set(["baseline", "long-text", "rtl-arabic", "image-failure", "keyboard-tab", "page-zoom-200", "reduced-motion", "dark-scheme", "slow-api", "api-error", "empty-data", "axe"]);
 const CRAWL_KEYS = new Set(["enabled", "maxPages", "maxDepth", "include", "exclude"]);
@@ -64,6 +64,7 @@ const BUDGET_KEYS = new Set([
 ]);
 const SECURITY_KEYS = new Set(["severity", "requiredHeaders", "forbidMixedContent", "secureForms", "maxThirdPartyOrigins", "allowedThirdPartyOrigins"]);
 const SECURITY_HEADERS = new Set(["content-security-policy", "strict-transport-security", "x-content-type-options", "referrer-policy", "permissions-policy"]);
+const PRIVACY_KEYS = new Set(["severity", "maxCookies", "maxCookieBytes", "maxThirdPartyCookies", "maxLocalStorageEntries", "maxLocalStorageBytes", "maxSessionStorageEntries", "maxSessionStorageBytes"]);
 const NETWORK_KEYS = new Set(["severity", "scope", "maxHttpErrors", "maxFailedRequests", "slowRequestMs", "maxSlowRequests", "maxThirdPartyRequests"]);
 const LINK_POLICY_KEYS = new Set(["severity", "maxFailures", "maxChecked", "timeoutMs"]);
 const METADATA_POLICY_KEYS = new Set(["severity", "titleMinLength", "titleMaxLength", "descriptionMinLength", "descriptionMaxLength", "requireCanonical", "requireViewport", "requireLang", "forbidNoindex", "requireSingleH1"]);
@@ -299,6 +300,26 @@ function validateSecurityPolicy(value, source) {
   return normalized;
 }
 
+function validatePrivacyPolicy(value, source) {
+  const label = `${source}.privacy`;
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new ConfigError(`${label} must be an object`);
+  assertKnownKeys(value, PRIVACY_KEYS, label);
+  const normalized = { severity: value.severity ?? "major" };
+  if (!new Set(["critical", "major", "minor"]).has(normalized.severity)) throw new ConfigError(`${label}.severity is not supported`);
+  for (const key of ["maxCookies", "maxThirdPartyCookies"]) {
+    if (value[key] !== undefined) normalized[key] = boundedInteger(value[key], `${label}.${key}`, 0, 500);
+  }
+  if (value.maxCookieBytes !== undefined) normalized.maxCookieBytes = boundedInteger(value.maxCookieBytes, `${label}.maxCookieBytes`, 0, 1_000_000);
+  for (const key of ["maxLocalStorageEntries", "maxSessionStorageEntries"]) {
+    if (value[key] !== undefined) normalized[key] = boundedInteger(value[key], `${label}.${key}`, 0, 10_000);
+  }
+  for (const key of ["maxLocalStorageBytes", "maxSessionStorageBytes"]) {
+    if (value[key] !== undefined) normalized[key] = boundedInteger(value[key], `${label}.${key}`, 0, 10_000_000);
+  }
+  if (Object.keys(normalized).length === 1) throw new ConfigError(`${label} must define at least one storage or cookie budget`);
+  return normalized;
+}
+
 function validateNetworkPolicy(value, source) {
   const label = `${source}.network`;
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new ConfigError(`${label} must be an object`);
@@ -501,6 +522,7 @@ export function validateProjectConfig(value, source = CONFIG_FILENAME) {
   if (value.metadata !== undefined) normalized.metadata = validateMetadataPolicy(value.metadata, source);
   if (value.visual !== undefined) normalized.visual = validateVisualPolicy(value.visual, source);
   if (value.security !== undefined) normalized.security = validateSecurityPolicy(value.security, source);
+  if (value.privacy !== undefined) normalized.privacy = validatePrivacyPolicy(value.privacy, source);
   if (value.waivers !== undefined) normalized.waivers = validateWaivers(value.waivers, source);
   if (value.qualityGate !== undefined) normalized.qualityGate = validateQualityGate(value.qualityGate, source);
   if (value.baselinePolicy !== undefined) normalized.baselinePolicy = validateBaselinePolicy(value.baselinePolicy, source);
@@ -588,6 +610,7 @@ export function mergeProjectOptions(cli, loaded) {
       baselineDirectoryPath: resolveVisualBaselineDirectory(loaded.directory, project.visual.baselineDirectory),
     } : null,
     security: project.security || null,
+    privacy: project.privacy || null,
     waivers: project.waivers || [],
     qualityGate: project.qualityGate || null,
     baselinePolicy: project.baselinePolicy || null,

@@ -1,0 +1,363 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "20260804T205848Z-25ccf3"
+      },
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "html"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/privacy-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Cookie bytes exceed the project privacy budget: The isolated baseline measured 368 cookie byte(s), above the configured maximum of 120."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "58cf6de19b30909b0dd0218640d8ba934c1694a0d1fbea88ab0247bb2440feef"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-58CF6DE19B",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "privacy-cookie-byte-budget"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "html"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/privacy-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Cookie count exceeds the project privacy budget: The isolated baseline measured 4 cookie(s), above the configured maximum of 2."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "f162eb3e74f47958b6f0ea5d68fc4f2f780b815d95a6222a474a36208249a3f3"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-F162EB3E74",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "privacy-cookie-count-budget"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "html"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/privacy-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "localStorage bytes exceed the project privacy budget: The isolated baseline measured 1136 localStorage byte(s), above the configured maximum of 300."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "4813ec95b4f8ac168f64012beef2a9fce313f4c82bd54293921464d048b8668f"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-4813EC95B4",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "privacy-local-storage-byte-budget"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "html"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/privacy-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "localStorage entries exceed the project privacy budget: The isolated baseline measured 4 localStorage entry/entries, above the configured maximum of 2."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "c3d6afc784e0d995c5aba6c5c6e11dbb3bd5f3258d5611b5fcfdee62873e496d"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-C3D6AFC784",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "privacy-local-storage-entry-budget"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "html"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/privacy-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "sessionStorage bytes exceed the project privacy budget: The isolated baseline measured 654 sessionStorage byte(s), above the configured maximum of 240."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "fbf7a4842f6164582c8a7a633736ae9a6b23679a3382088151db19fbead6d0f5"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-FBF7A4842F",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "privacy-session-storage-byte-budget"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "html"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/privacy-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "sessionStorage entries exceed the project privacy budget: The isolated baseline measured 3 sessionStorage entry/entries, above the configured maximum of 2."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "35f26228b04ecc7bf5be7ed7b0e669d85dea6b3647b8ffc47ccab9a359b349fe"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-35F26228B0",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "privacy-session-storage-entry-budget"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "RealityCheck",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The isolated baseline measured 368 cookie byte(s), above the configured maximum of 120."
+              },
+              "help": {
+                "markdown": "Reduce application-owned cookie payloads and avoid storing unnecessary state in cookies; do not delete authentication state without product review.\n\n- RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values.",
+                "text": "Reduce application-owned cookie payloads and avoid storing unnecessary state in cookies; do not delete authentication state without product review.\n\n- RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+              },
+              "id": "privacy-cookie-byte-budget",
+              "name": "privacy_cookie_byte_budget",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Cookie bytes exceed the project privacy budget"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The isolated baseline measured 4 cookie(s), above the configured maximum of 2."
+              },
+              "help": {
+                "markdown": "Remove cookies that are not needed for the current product behavior, shorten their lifetime where appropriate, and rerun the audit.\n\n- RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values.",
+                "text": "Remove cookies that are not needed for the current product behavior, shorten their lifetime where appropriate, and rerun the audit.\n\n- RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+              },
+              "id": "privacy-cookie-count-budget",
+              "name": "privacy_cookie_count_budget",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Cookie count exceeds the project privacy budget"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The isolated baseline measured 1136 localStorage byte(s), above the configured maximum of 300."
+              },
+              "help": {
+                "markdown": "Minimize persistent client-side payloads and move only appropriate non-secret data to a reviewed storage design.\n\n- RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values.",
+                "text": "Minimize persistent client-side payloads and move only appropriate non-secret data to a reviewed storage design.\n\n- RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+              },
+              "id": "privacy-local-storage-byte-budget",
+              "name": "privacy_local_storage_byte_budget",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "localStorage bytes exceed the project privacy budget"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The isolated baseline measured 4 localStorage entry/entries, above the configured maximum of 2."
+              },
+              "help": {
+                "markdown": "Remove obsolete application-owned localStorage entries with a reviewed migration and retention plan.\n\n- RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values.",
+                "text": "Remove obsolete application-owned localStorage entries with a reviewed migration and retention plan.\n\n- RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+              },
+              "id": "privacy-local-storage-entry-budget",
+              "name": "privacy_local_storage_entry_budget",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "localStorage entries exceed the project privacy budget"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The isolated baseline measured 654 sessionStorage byte(s), above the configured maximum of 240."
+              },
+              "help": {
+                "markdown": "Reduce session-only payloads and keep sensitive data out of browser storage unless the design is explicitly reviewed.\n\n- RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values.",
+                "text": "Reduce session-only payloads and keep sensitive data out of browser storage unless the design is explicitly reviewed.\n\n- RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+              },
+              "id": "privacy-session-storage-byte-budget",
+              "name": "privacy_session_storage_byte_budget",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "sessionStorage bytes exceed the project privacy budget"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The isolated baseline measured 3 sessionStorage entry/entries, above the configured maximum of 2."
+              },
+              "help": {
+                "markdown": "Remove obsolete session-only state and consolidate duplicated application-owned entries after reviewing navigation behavior.\n\n- RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values.",
+                "text": "Remove obsolete session-only state and consolidate duplicated application-owned entries after reviewing navigation behavior.\n\n- RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."
+              },
+              "id": "privacy-session-storage-entry-budget",
+              "name": "privacy_session_storage_entry_budget",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "sessionStorage entries exceed the project privacy budget"
+              }
+            }
+          ],
+          "semanticVersion": "0.4.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

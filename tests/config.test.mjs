@@ -197,6 +197,27 @@ test("security policies are explicit, bounded, and origin-only", () => {
   assert.throws(() => validateProjectConfig({ security: { allowedThirdPartyOrigins: ["https://cdn.example.com/assets"] } }), /without a path/);
 });
 
+test("browser storage privacy budgets are aggregate-only, bounded, and preserved", () => {
+  const privacy = {
+    severity: "major",
+    maxCookies: 20,
+    maxCookieBytes: 8192,
+    maxThirdPartyCookies: 2,
+    maxLocalStorageEntries: 50,
+    maxLocalStorageBytes: 262144,
+    maxSessionStorageEntries: 30,
+    maxSessionStorageBytes: 131072,
+  };
+  assert.deepEqual(validateProjectConfig({ privacy }).privacy, privacy);
+  assert.deepEqual(validateProjectConfig({ privacy: { maxCookies: 0 } }).privacy, { severity: "major", maxCookies: 0 });
+  assert.throws(() => validateProjectConfig({ privacy: { severity: "major" } }), /at least one storage or cookie budget/);
+  assert.throws(() => validateProjectConfig({ privacy: { maxCookies: 501 } }), /0 to 500/);
+  assert.throws(() => validateProjectConfig({ privacy: { maxLocalStorageBytes: 10000001 } }), /0 to 10000000/);
+  assert.throws(() => validateProjectConfig({ privacy: { cookieNames: ["session"] } }), /unknown property/);
+  const merged = mergeProjectOptions({ routes: [] }, { config: { privacy }, directory: process.cwd(), cwd: process.cwd(), path: null });
+  assert.deepEqual(merged.privacy, privacy);
+});
+
 test("governed waivers require ownership context and expire automatically", () => {
   assert.throws(() => validateProjectConfig({ waivers: [{ id: "known-risk", ruleId: "overflow", reason: "Migration", expires: "soon" }] }), /valid YYYY-MM-DD/);
   assert.throws(() => validateProjectConfig({ waivers: [{ id: "known-risk", ruleId: "overflow", expires: "2027-01-01" }] }), /reason/);

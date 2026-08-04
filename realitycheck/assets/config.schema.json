@@ -332,6 +332,29 @@
         { "required": ["allowedThirdPartyOrigins"], "properties": { "allowedThirdPartyOrigins": true } }
       ]
     },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "severity": { "enum": ["critical", "major", "minor"] },
+        "maxCookies": { "type": "integer", "minimum": 0, "maximum": 500 },
+        "maxCookieBytes": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+        "maxThirdPartyCookies": { "type": "integer", "minimum": 0, "maximum": 500 },
+        "maxLocalStorageEntries": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "maxLocalStorageBytes": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "maxSessionStorageEntries": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "maxSessionStorageBytes": { "type": "integer", "minimum": 0, "maximum": 10000000 }
+      },
+      "anyOf": [
+        { "required": ["maxCookies"], "properties": { "maxCookies": true } },
+        { "required": ["maxCookieBytes"], "properties": { "maxCookieBytes": true } },
+        { "required": ["maxThirdPartyCookies"], "properties": { "maxThirdPartyCookies": true } },
+        { "required": ["maxLocalStorageEntries"], "properties": { "maxLocalStorageEntries": true } },
+        { "required": ["maxLocalStorageBytes"], "properties": { "maxLocalStorageBytes": true } },
+        { "required": ["maxSessionStorageEntries"], "properties": { "maxSessionStorageEntries": true } },
+        { "required": ["maxSessionStorageBytes"], "properties": { "maxSessionStorageBytes": true } }
+      ]
+    },
     "crawl": {
       "type": "object",
       "additionalProperties": false,

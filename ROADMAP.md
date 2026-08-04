@@ -69,6 +69,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add a schema-validated structural policy anti-weakening review with bilingual GitHub Action evidence.
 - [x] Turn repair plans into deduplicated, bilingual GitHub issue drafts with safe local copy/export and no automatic external submission.
 - [x] Add a freshness-aware, SHA-256-bound GO/REVIEW/NO-GO release decision over audit, verification, policy, trust, risk, and repair-review evidence.
+- [x] Add aggregate browser-storage privacy budgets with zero key/value retention, explicit measurement failures, policy anti-weakening coverage, and paired public real-browser proof.
 
 ## v1.0 criteria
 

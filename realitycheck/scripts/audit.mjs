@@ -489,6 +489,7 @@ function runDoctor(options, loaded) {
   check("Responsive viewport matrix", () => `${options.viewports.length} bounded viewport(s): ${options.viewports.map((item) => `${item.id}=${item.width}x${item.height}${item.touch ? "/touch" : ""}`).join(", ")}`);
   if (options.visual) check("Visual regression", () => `${(options.visual.maxDiffRatio * 100).toFixed(3)}% changed-pixel limit; ${options.visual.masks.length} mask(s); baseline updates require visual-approve`);
   if (options.security) check("Security baseline", () => `${Object.keys(options.security).length - 1} explicit policy setting(s); no form submission`);
+  if (options.privacy) check("Browser storage privacy", () => `${Object.keys(options.privacy).length - 1} aggregate cookie/Web Storage budget(s); no names, keys, or values retained`);
   if (options.waivers.length) check("Governed waivers", () => {
     const now = new Date();
     const expired = options.waivers.filter((waiver) => new Date(`${waiver.expires}T23:59:59.999Z`) < now);
@@ -1623,7 +1624,112 @@ async function runSecurityPolicies(page, response, target, policy) {
   return findings;
 }
 
-async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, network = null, links = null, metadataPolicy = null, visual = null, security = null, viewports = DEFAULT_PROJECT_CONFIG.viewports, crawl = { include: ["/**"], exclude: [] }) {
+async function runPrivacyPolicies(page, context, target, policy) {
+  if (!policy) return [];
+  const findings = [];
+  const targetHost = new URL(target).hostname.toLowerCase();
+  let cookieMetrics = { available: false, count: 0, bytes: 0, thirdPartyCount: 0 };
+  try {
+    const cookies = await context.cookies();
+    const byteLength = (value) => Buffer.byteLength(String(value ?? ""), "utf8");
+    const firstParty = (cookie) => {
+      const domain = String(cookie.domain || "").replace(/^\./, "").toLowerCase();
+      return Boolean(domain) && (targetHost === domain || targetHost.endsWith(`.${domain}`));
+    };
+    cookieMetrics = {
+      available: true,
+      count: cookies.length,
+      bytes: cookies.reduce((total, cookie) => total + byteLength(cookie.name) + byteLength(cookie.value), 0),
+      thirdPartyCount: cookies.filter((cookie) => !firstParty(cookie)).length,
+    };
+  } catch (_) {
+    // A failed measurement is reported below and is never converted into a zero-value pass.
+  }
+
+  let storageMetrics = {
+    localStorage: { available: false, entries: 0, bytes: 0 },
+    sessionStorage: { available: false, entries: 0, bytes: 0 },
+  };
+  try {
+    storageMetrics = await page.evaluate(() => {
+      const encoder = new TextEncoder();
+      const measure = (storage) => {
+        try {
+          let bytes = 0;
+          for (let index = 0; index < storage.length; index += 1) {
+            const key = storage.key(index) || "";
+            const value = storage.getItem(key) || "";
+            bytes += encoder.encode(key).byteLength + encoder.encode(value).byteLength;
+          }
+          return { available: true, entries: storage.length, bytes };
+        } catch (_) {
+          return { available: false, entries: 0, bytes: 0 };
+        }
+      };
+      return { localStorage: measure(localStorage), sessionStorage: measure(sessionStorage) };
+    });
+  } catch (_) {
+    // Preserve the bounded unavailable state without copying browser exception text.
+  }
+
+  const aggregate = {
+    cookieSummary: cookieMetrics,
+    localStorage: storageMetrics.localStorage,
+    sessionStorage: storageMetrics.sessionStorage,
+  };
+  const screenshot = screenshotEvidence("baseline", "Aggregate browser storage privacy budget");
+  const configuredLocalStorage = policy.maxLocalStorageEntries !== undefined || policy.maxLocalStorageBytes !== undefined;
+  const configuredSessionStorage = policy.maxSessionStorageEntries !== undefined || policy.maxSessionStorageBytes !== undefined;
+  const configuredCookies = policy.maxCookies !== undefined || policy.maxCookieBytes !== undefined || policy.maxThirdPartyCookies !== undefined;
+  const unavailable = [
+    ...(configuredCookies && !cookieMetrics.available ? ["cookies"] : []),
+    ...(configuredLocalStorage && !storageMetrics.localStorage.available ? ["localStorage"] : []),
+    ...(configuredSessionStorage && !storageMetrics.sessionStorage.available ? ["sessionStorage"] : []),
+  ];
+  if (unavailable.length) {
+    findings.push(finding({
+      ruleId: "privacy-storage-measurement-unavailable", scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
+      title: "A configured browser storage privacy budget could not be measured", titleZh: "已配置的浏览器存储隐私预算无法测量",
+      summary: `${unavailable.join(", ")} could not be read in the isolated browser context, so RealityCheck did not treat the missing measurements as zero.`,
+      summaryZh: `隔离浏览器上下文无法读取 ${unavailable.join("、")}，因此 RealityCheck 没有把缺失测量值当作 0。`,
+      selector: "html", measurements: { unavailable, aggregate }, evidence: [{ type: "privacy-budget", state: "measurement-unavailable", unavailable, aggregate }, screenshot],
+      steps: ["Open the page in a fresh browser context.", "Attempt aggregate-only cookie and Web Storage measurements without retaining any names, keys, or values."],
+      stepsZh: ["在新的浏览器上下文中打开页面。", "仅尝试测量 Cookie 与 Web Storage 聚合值，不保留名称、键或值。"],
+      fix: "Investigate the route's origin and browser storage restrictions, then rerun; do not waive the check by assuming unavailable storage is empty.",
+      fixZh: "检查该路由的来源与浏览器存储限制后重新核查；不要通过假设不可用存储为空来绕过检查。",
+    }));
+  }
+
+  const budgets = [
+    { key: "maxCookies", actual: cookieMetrics.count, available: cookieMetrics.available, ruleId: "privacy-cookie-count-budget", title: "Cookie count exceeds the project privacy budget", titleZh: "Cookie 数量超过项目隐私预算", noun: "cookie(s)", nounZh: "个 Cookie", fix: "Remove cookies that are not needed for the current product behavior, shorten their lifetime where appropriate, and rerun the audit.", fixZh: "移除当前产品行为不需要的 Cookie，并在合适情况下缩短生命周期，然后重新核查。" },
+    { key: "maxCookieBytes", actual: cookieMetrics.bytes, available: cookieMetrics.available, ruleId: "privacy-cookie-byte-budget", title: "Cookie bytes exceed the project privacy budget", titleZh: "Cookie 字节数超过项目隐私预算", noun: "cookie byte(s)", nounZh: "个 Cookie 字节", fix: "Reduce application-owned cookie payloads and avoid storing unnecessary state in cookies; do not delete authentication state without product review.", fixZh: "缩减应用自身 Cookie 载荷，避免在 Cookie 中保存不必要状态；未经产品复核不要删除认证状态。" },
+    { key: "maxThirdPartyCookies", actual: cookieMetrics.thirdPartyCount, available: cookieMetrics.available, ruleId: "privacy-third-party-cookie-budget", title: "Third-party cookie count exceeds the project privacy budget", titleZh: "第三方 Cookie 数量超过项目隐私预算", noun: "third-party cookie(s)", nounZh: "个第三方 Cookie", fix: "Remove unnecessary third-party integrations or load them only after the reviewed consent and product flow permits it.", fixZh: "移除不必要的第三方集成，或只在经审核的同意与产品流程允许后加载。" },
+    { key: "maxLocalStorageEntries", actual: storageMetrics.localStorage.entries, available: storageMetrics.localStorage.available, ruleId: "privacy-local-storage-entry-budget", title: "localStorage entries exceed the project privacy budget", titleZh: "localStorage 条目数超过项目隐私预算", noun: "localStorage entry/entries", nounZh: "个 localStorage 条目", fix: "Remove obsolete application-owned localStorage entries with a reviewed migration and retention plan.", fixZh: "通过经审核的迁移与保留方案移除过期的应用自身 localStorage 条目。" },
+    { key: "maxLocalStorageBytes", actual: storageMetrics.localStorage.bytes, available: storageMetrics.localStorage.available, ruleId: "privacy-local-storage-byte-budget", title: "localStorage bytes exceed the project privacy budget", titleZh: "localStorage 字节数超过项目隐私预算", noun: "localStorage byte(s)", nounZh: "个 localStorage 字节", fix: "Minimize persistent client-side payloads and move only appropriate non-secret data to a reviewed storage design.", fixZh: "精简持久化客户端载荷，并只将合适的非敏感数据迁移到经审核的存储设计。" },
+    { key: "maxSessionStorageEntries", actual: storageMetrics.sessionStorage.entries, available: storageMetrics.sessionStorage.available, ruleId: "privacy-session-storage-entry-budget", title: "sessionStorage entries exceed the project privacy budget", titleZh: "sessionStorage 条目数超过项目隐私预算", noun: "sessionStorage entry/entries", nounZh: "个 sessionStorage 条目", fix: "Remove obsolete session-only state and consolidate duplicated application-owned entries after reviewing navigation behavior.", fixZh: "复核导航行为后，移除过期会话状态并合并重复的应用自身条目。" },
+    { key: "maxSessionStorageBytes", actual: storageMetrics.sessionStorage.bytes, available: storageMetrics.sessionStorage.available, ruleId: "privacy-session-storage-byte-budget", title: "sessionStorage bytes exceed the project privacy budget", titleZh: "sessionStorage 字节数超过项目隐私预算", noun: "sessionStorage byte(s)", nounZh: "个 sessionStorage 字节", fix: "Reduce session-only payloads and keep sensitive data out of browser storage unless the design is explicitly reviewed.", fixZh: "缩减会话载荷；除非设计经过明确审核，否则不要在浏览器存储中保存敏感数据。" },
+  ];
+  for (const budget of budgets) {
+    const limit = policy[budget.key];
+    if (limit === undefined || !budget.available || budget.actual <= limit) continue;
+    findings.push(finding({
+      ruleId: budget.ruleId, scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
+      title: budget.title, titleZh: budget.titleZh,
+      summary: `The isolated baseline measured ${budget.actual} ${budget.noun}, above the configured maximum of ${limit}.`,
+      summaryZh: `隔离基线测得 ${budget.actual} ${budget.nounZh}，超过配置上限 ${limit}。`,
+      selector: "html", measurements: { metric: budget.key, actual: budget.actual, limit, aggregate },
+      evidence: [{ type: "privacy-budget", state: "exceeded", metric: budget.key, actual: budget.actual, limit, aggregate }, screenshot],
+      steps: ["Open the page in a fresh browser context.", `Measure only aggregate ${budget.key} usage after the baseline settles.`],
+      stepsZh: ["在新的浏览器上下文中打开页面。", `基线稳定后，仅测量 ${budget.key} 聚合用量。`],
+      fix: budget.fix, fixZh: budget.fixZh,
+      hints: ["RealityCheck intentionally does not retain cookie names, values, storage keys, or storage values."],
+      hintsZh: ["RealityCheck 有意不保留 Cookie 名称、值、存储键或存储值。"],
+    }));
+  }
+  return findings;
+}
+
+async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, network = null, links = null, metadataPolicy = null, visual = null, security = null, privacy = null, viewports = DEFAULT_PROJECT_CONFIG.viewports, crawl = { include: ["/**"], exclude: [] }) {
   const findings = [];
   const results = new Map();
   let targetTitle = "";
@@ -1773,6 +1879,7 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
     findings.push(...visualResult.findings);
   }
   if (security) findings.push(...await runSecurityPolicies(baseline.page, baseline.response, finalUrl, security));
+  if (privacy) findings.push(...await runPrivacyPolicies(baseline.page, baseline.context, finalUrl, privacy));
   results.set("baseline", scenarioResult("baseline", findings.length ? "completed-with-findings" : "passed", baseline.durationMs(), findings.length ? ["Baseline runtime findings were recorded."] : [], findings.length ? ["已记录基线运行时问题。"] : []));
   await baseline.context.close();
 
@@ -2600,7 +2707,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   const contextOptions = options.storageState ? { storageState: options.storageState } : {};
   const pathname = new URL(target).pathname;
   const applicableChecks = options.checks.filter((check) => routeAllowed(pathname, { include: check.include, exclude: check.exclude }));
-  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.network, options.links, options.metadata, options.visual, options.security, options.viewports, options.crawl);
+  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.network, options.links, options.metadata, options.visual, options.security, options.privacy, options.viewports, options.crawl);
   if (options.mode === "deep") {
     await runDeepScenarios(browser, target, runDirectory, auditResult.findings, auditResult.results, contextOptions, 5 + options.viewports.length);
   }
@@ -2631,6 +2738,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   if (options.metadata) audit.adapter.capabilities.push("publishing-metadata-policy");
   if (options.visual) audit.adapter.capabilities.push("explicit-visual-regression-baseline");
   if (options.security) audit.adapter.capabilities.push("security-response-and-origin-policy");
+  if (options.privacy) audit.adapter.capabilities.push("aggregate-browser-storage-privacy-budgets");
   if (journeyResult.scenarios.length) audit.adapter.capabilities.push("safe-declarative-journeys");
   if (options.waivers.length) audit.adapter.capabilities.push("governed-waivers");
   if (options.qualityGate) audit.adapter.capabilities.push("release-policy-gates");
@@ -2655,6 +2763,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
     ...(options.metadata ? [`${Object.keys(options.metadata).length - 1} explicit publishing metadata rule(s) were evaluated from counts, lengths, directives, and query-free destinations without retaining title or description text.`] : []),
     ...(auditResult.visualSummary ? [`Visual regression policy finished with ${auditResult.visualSummary.state} state using ${auditResult.visualSummary.measurements.maskedSelectors} declared mask(s); baseline replacement always requires an explicit approval command.`] : []),
     ...(options.security ? [`${Object.keys(options.security).length - 1} explicit response, origin, and form security policy setting(s) were evaluated without submitting data.`] : []),
+    ...(options.privacy ? [`${Object.keys(options.privacy).length - 1} aggregate cookie and Web Storage privacy budget(s) were evaluated without retaining cookie names, values, storage keys, or storage values.`] : []),
     ...(journeyResult.scenarios.length ? [`${journeyResult.scenarios.length} declarative user journey(s) were executed with same-origin and non-submission safety guards.`] : []),
     ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} finding(s) matched an active governed waiver; evidence remains visible but the finding is excluded from score and gate calculations.`] : []),
     ...(waiverResult.expiredIds.length ? [`Expired waiver(s) were ignored: ${waiverResult.expiredIds.join(", ")}.`] : []),
@@ -2677,6 +2786,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
         ...(options.metadata ? [`已通过计数、长度、指令和不含查询值的目标核查 ${Object.keys(options.metadata).length - 1} 项明确的发布元数据规则，未保留标题或描述正文。`] : []),
         ...(auditResult.visualSummary ? [`视觉回归策略以 ${auditResult.visualSummary.state} 状态完成，并使用 ${auditResult.visualSummary.measurements.maskedSelectors} 个声明式 mask；替换基线始终需要显式批准命令。`] : []),
         ...(options.security ? [`已在不提交数据的前提下核查 ${Object.keys(options.security).length - 1} 项明确的响应、来源与表单安全策略。`] : []),
+        ...(options.privacy ? [`已核查 ${Object.keys(options.privacy).length - 1} 项 Cookie 与 Web Storage 聚合隐私预算，未保留 Cookie 名称、值、存储键或存储值。`] : []),
         ...(journeyResult.scenarios.length ? [`已在同源且禁止提交的安全限制下执行 ${journeyResult.scenarios.length} 个声明式用户旅程。`] : []),
         ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} 个问题命中了有效的可审计豁免；证据仍保留，但不计入评分和门禁。`] : []),
         ...(waiverResult.expiredIds.length ? [`已忽略过期豁免：${waiverResult.expiredIds.join("、")}。`] : []),

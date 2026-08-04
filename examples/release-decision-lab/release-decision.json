@@ -2,8 +2,8 @@
   "schemaVersion": "1",
   "toolVersion": "0.4.0",
   "kind": "release-decision",
-  "id": "RELEASE-1C410472D2D2",
-  "generatedAt": "2026-08-04T20:42:04.553Z",
+  "id": "RELEASE-D7809A1478C6",
+  "generatedAt": "2026-08-04T21:06:37.766Z",
   "decision": "no-go",
   "policy": {
     "maxAgeHours": 168,
@@ -31,7 +31,7 @@
       "required": true,
       "state": "fail",
       "observedAt": "2026-08-01T04:00:42.000Z",
-      "ageHours": 88.69,
+      "ageHours": 89.1,
       "candidates": 1,
       "artifact": {
         "kind": "report",
@@ -74,18 +74,18 @@
       "labelZh": "策略变更守卫",
       "required": true,
       "state": "fail",
-      "observedAt": "2026-08-04T19:48:31.023Z",
-      "ageHours": 0.89,
+      "observedAt": "2026-08-04T21:02:01.653Z",
+      "ageHours": 0.08,
       "candidates": 1,
       "artifact": {
         "kind": "policy-review",
         "path": "../policy-review-lab/review/policy-review.json",
-        "sha256": "sha256:920ad76c39746beea5c99f04020a983fab9b5471d2114e4c2f3e6eb36f392ae7"
+        "sha256": "sha256:eaf30028a70de6a3d6c6e63a8e5482e919ccb09b5abda47beffcb995c9308f9d"
       },
       "facts": [
         {
           "key": "weakened",
-          "value": 38,
+          "value": 46,
           "label": "Weakened",
           "labelZh": "弱化"
         },
@@ -106,8 +106,8 @@
         {
           "code": "policy-weakened",
           "outcome": "fail",
-          "message": "38 structural policy weakening change(s) were detected.",
-          "messageZh": "检测到 38 项结构化策略弱化。"
+          "message": "46 structural policy weakening change(s) were detected.",
+          "messageZh": "检测到 46 项结构化策略弱化。"
         }
       ]
     },
@@ -118,7 +118,7 @@
       "required": true,
       "state": "review",
       "observedAt": "2026-08-04T20:06:53.130Z",
-      "ageHours": 0.59,
+      "ageHours": 1,
       "candidates": 1,
       "artifact": {
         "kind": "github-issue-drafts",

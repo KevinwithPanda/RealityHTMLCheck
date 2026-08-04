@@ -36,4 +36,5 @@ test("detector policy fingerprint is order-independent but changes with behavior
   assert.notEqual(first, visualFingerprint);
   assert.equal(visualFingerprint, detectorPolicyFingerprint({ mode: "quick", visual: { ...visual, baselineDirectoryPath: "/different/machine/baselines" } }));
   assert.notEqual(first, detectorPolicyFingerprint({ mode: "quick", checks: [], budgets: { requests: 80, navigationMs: 2000, severity: "major" }, security: { severity: "major", requiredHeaders: ["content-security-policy"] } }));
+  assert.notEqual(first, detectorPolicyFingerprint({ mode: "quick", checks: [], budgets: { requests: 80, navigationMs: 2000, severity: "major" }, privacy: { severity: "major", maxCookies: 10, maxLocalStorageBytes: 131072 } }));
 });

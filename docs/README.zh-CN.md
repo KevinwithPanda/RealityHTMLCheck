@@ -109,8 +109,8 @@ npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
 | 预设 | 适用场景 | 已包含策略 |
 | --- | --- | --- |
 | `starter` | 第一次核查、个人项目 | Quick 场景、一个 375px 视口、25 个安全链接、基础元数据和宽松门禁 |
-| `product` | 持续迭代的产品团队 | Deep 场景、360px 手机 + 768px 平板、有限爬取、性能、API、元数据、安全和治理 |
-| `strict` | 成熟发布流水线 | 320px + 390px 手机与 768px 平板、更严格预算、全资源可靠性和零有效豁免 |
+| `product` | 持续迭代的产品团队 | Deep 场景、360px 手机 + 768px 平板、有限爬取、性能、API、元数据、安全、存储聚合隐私和治理 |
+| `strict` | 成熟发布流水线 | 320px + 390px 手机与 768px 平板、更严格的性能/存储预算、全资源可靠性和零有效豁免 |
 
 `init` 默认使用 `starter`。预设只是透明、可编辑的起点，不是合规认证；接入 CI 前仍需审核阈值与安全排除路径。
 
@@ -226,6 +226,16 @@ npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
     "allowedThirdPartyOrigins": ["https://cdn.example.com"],
     "severity": "major"
   },
+  "privacy": {
+    "maxCookies": 20,
+    "maxCookieBytes": 8192,
+    "maxThirdPartyCookies": 5,
+    "maxLocalStorageEntries": 50,
+    "maxLocalStorageBytes": 262144,
+    "maxSessionStorageEntries": 30,
+    "maxSessionStorageBytes": 131072,
+    "severity": "major"
+  },
   "waivers": [
     {
       "id": "legacy-toolbar-web-42",
@@ -259,6 +269,8 @@ npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
 
 安全基线必须由项目显式配置，因此普通 localhost 不会自动被生产响应头要求误伤。策略可要求安全响应头、禁止混合内容、阻止不安全密码表单、限制第三方来源数量，并只允许精确 HTTPS 来源。[`examples/security-lab`](../examples/security-lab) 会在不提交表单的情况下证明三个缺失响应头和一个 GET 密码表单问题。
 
+浏览器存储聚合隐私预算同样由项目显式启用。它可以限制 Cookie 总数/UTF-8 字节、第三方 Cookie 数量，以及 localStorage/sessionStorage 的条目数和字节总量。报告只保留可用状态、数量、字节和阈值，绝不保留 Cookie 名称/值、Web Storage 键/值或浏览器异常正文；配置的存储面无法测量时会明确失败，不会把未知当作 0。成对的 [`examples/privacy-lab`](../examples/privacy-lab) 会让故障页产生六项针对性问题并得到 **76/100**，同时证明夹具标记没有泄漏到 `report.json`；相同预算下的修复页得到 **100/100**。这只是项目定义的存储预算，不是同意管理、追踪器分类、保留期限、数据流或法律合规证明；RealityCheck 也不会自动清除状态。
+
 性能预算除导航、DOMContentLoaded、请求数、传输量和 DOM 数量外，现已覆盖 TTFB、首次内容绘制、最大内容绘制和累积布局偏移。需要登录的应用仍可通过 `--storage-state` 或 `REALITYCHECK_STORAGE_STATE` 加载 Playwright 登录状态；路径、Cookie、Token 和具体值都不会进入报告。
 
 受治理的豁免可以处理企业里的已知欠账，但不会隐藏问题。每条豁免必须指定精确规则、原因和到期日，也可以限定负责人、选择器和路由。报告仍保留问题、截图、修复建议和豁免元数据，只在有效期内把它排除出评分与门禁；`doctor` 会阻止过期策略，SARIF 会写入外部抑制，JUnit 则保留证据但不让该场景失败。
@@ -281,7 +293,7 @@ npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
 
 | 场景 | Quick | 核查目标 |
 | --- | :---: | --- |
-| Baseline | 是 | 运行时/资源问题、语义、自定义规则、核心体验/网络/链接预算和配置的安全策略 |
+| Baseline | 是 | 运行时/资源问题、语义、自定义规则、核心体验/网络/链接/存储隐私预算和配置的安全策略 |
 | 配置的响应式视口（默认 375×812） | 是 | 特定断点的离屏操作、固定宽度、横向溢出和严重触控目标损失 |
 | 长文本 | 是 | 中文、emoji、无空格长串造成的新截断或恶化 |
 | RTL 阿拉伯语 | 是 | 物理方向 CSS 和对齐假设 |
@@ -423,7 +435,7 @@ npx realitycheck release-decision .realitycheck \
 
 `validate` 会使用标准兼容的 JSON Schema 校验器，递归验证项目配置、报告、修复/验证产物、趋势、目录、最新入口、完整性清单、风险台账与策略审查。`catalog` 会先校验发现的每份源产物，明确警告并跳过不兼容旧文件，再生成可搜索的产物目录。`risk-register` 按精确目标与稳定指纹聚合页面问题，记录首次/最近出现时间和重复次数，再结合最新证明场景与可用策略指纹保守地区分开放、已豁免、已解决与未验证风险；场景缺失或策略漂移都会明确保持未验证。开放风险总数、最长开放天数和反复风险总数均可设为组合门禁，失败时仍保留全部 JSON、双语 HTML、Markdown 和防公式注入 CSV 证据。
 
-`policy-review` 会先验证前后两份配置，再比较实际生效的结构化约束，并输出通过 Schema 校验的 JSON、英文/中文 Markdown 与可搜索双语 HTML。删除视口、检查或安全响应头，Deep 改 Quick，放宽预算/评分门禁，新增视觉 mask 或豁免等会归类为 `weakened`；证据写完后返回退出码 `1`。无法自动判断强弱的路由 glob、选择器或断点尺寸变化会归类为 `review`，不会强行猜测。产物只保存文件名、策略指纹、安全 ID/计数与有界解释，不保存 base URL、选择器、应用路由、豁免原因或本机路径。[`examples/policy-review-lab`](../examples/policy-review-lab) 提供 40 项变化的可运行示例。
+`policy-review` 会先验证前后两份配置，再比较实际生效的结构化约束，并输出通过 Schema 校验的 JSON、英文/中文 Markdown 与可搜索双语 HTML。删除视口、检查或安全响应头，Deep 改 Quick，放宽性能/存储隐私/评分门禁，新增视觉 mask 或豁免等会归类为 `weakened`；证据写完后返回退出码 `1`。无法自动判断强弱的路由 glob、选择器或断点尺寸变化会归类为 `review`，不会强行猜测。产物只保存文件名、策略指纹、安全 ID/计数与有界解释，不保存 base URL、选择器、应用路由、豁免原因或本机路径。[`examples/policy-review-lab`](../examples/policy-review-lab) 提供 48 项变化的可运行示例。
 
 `issue-drafts` 会把一份或多份已验证的 `repair-plan.json` 变成本地、复核优先的 GitHub 工单交接。它按稳定指纹去重，但保留每次运行/场景的证据链接；移除 URL 查询参数和片段，阻断意外 `@` 提及，把低置信度问题单独放入待复核，并继续明确展示已豁免证据。命令输出通过 Schema 校验的 JSON、中英文 Markdown、CSV 和带复制按钮的可搜索双语看板。它不会调用 GitHub，也不会自动创建工单。[`examples/issue-drafts-lab`](../examples/issue-drafts-lab) 提供由参考核查生成的六份真实草稿。
 
