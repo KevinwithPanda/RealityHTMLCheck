@@ -12,7 +12,7 @@
       "startPath": "/examples/journey-lab/broken.html",
       "severity": "major",
       "steps": [
-        { "action": "click", "selector": "[role=tab][aria-controls=notifications]" },
+        { "action": "press", "selector": "[role=tab][aria-controls=general]", "key": "ArrowRight" },
         { "action": "assert", "selector": "#notifications", "assertion": "visible" }
       ]
     }

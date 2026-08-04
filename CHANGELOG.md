@@ -11,12 +11,14 @@ All notable changes are documented here. This project follows Semantic Versionin
 - HEAD-only same-origin link integrity budgets with bounded concurrency/redirects/timeouts, dangerous-route exclusions, query-free failure samples, and paired 96/100 versus 100/100 fixtures.
 - A bilingual GitHub Pages product site that publishes five immutable real-browser evidence packs, live fixtures, repair actions, and a SHA-256-verifiable reference report.
 - Validated `starter`, `product`, and `strict` project profiles, with secret-safe `init --profile ... --base-url ...` generation and a bilingual profile catalog.
+- Safe journey `press` and `assert-url` steps for keyboard navigation and pathname checkpoints, with activation-key/editable-control guards and query-free traces.
 
 ### Changed
 
 - Detector policy fingerprints and `doctor` output now include network reliability and link-integrity policy so removing an API or navigation gate cannot masquerade as a verified fix.
 - Generated Markdown metadata uses explicit lists instead of invisible hard-break whitespace, keeping repository quality checks clean across editors and GitHub.
 - Switching report language now regenerates any visible individual or batch repair task and clears stale-language copy feedback.
+- Failed journey assertions now keep one measured trace record instead of adding a second duplicate failure entry.
 
 ## [0.4.0] - 2026-08-05
 

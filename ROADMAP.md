@@ -53,6 +53,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 ## v0.4 - Product workflows and public proof
 
 - [x] Add safe declarative user journeys with per-step evidence and non-submission guards.
+- [x] Extend safe journeys with navigation-only keyboard input and query-free path assertions.
 - [x] Bundle axe-core for bounded WCAG A/AA and best-practice evidence in Deep mode.
 - [x] Add explicit response, form, and third-party-origin security policy.
 - [x] Add Core Web Vital budgets captured from pre-navigation observers.

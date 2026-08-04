@@ -187,6 +187,48 @@ jobs:
           PY
           node realitycheck/scripts/audit.mjs validate "$broken_report" "$fixed_report"
 
+      - name: Prove safe keyboard journeys and URL assertions with paired fixtures
+        shell: bash
+        run: |
+          python -m http.server 4179 --bind 127.0.0.1 --directory . >/tmp/realitycheck-journeys.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..50}; do
+            if curl --fail --silent http://127.0.0.1:4179/examples/journey-lab/broken.html >/dev/null; then break; fi
+            sleep 0.1
+          done
+          set +e
+          npm run audit -- http://127.0.0.1:4179/examples/journey-lab/broken.html \
+            --config examples/journey-lab/broken.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-journey-broken \
+            --fail-on major
+          broken_status=$?
+          set -e
+          test "$broken_status" -eq 1
+          npm run audit -- http://127.0.0.1:4179/examples/journey-lab/index.html \
+            --config examples/journey-lab/realitycheck.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-journey-fixed \
+            --fail-on major
+          broken_report="$(find .realitycheck/ci-journey-broken -name report.json -print -quit)"
+          fixed_report="$(find .realitycheck/ci-journey-fixed -name report.json -print -quit)"
+          python - "$broken_report" "$fixed_report" <<'PY'
+          import json
+          import sys
+          broken = json.load(open(sys.argv[1], encoding="utf-8"))
+          fixed = json.load(open(sys.argv[2], encoding="utf-8"))
+          assert {finding["ruleId"] for finding in broken["findings"]} == {"journey-settings-notifications"}, broken
+          trace = broken["findings"][0]["evidence"][0]["steps"]
+          assert len(trace) == 2, trace
+          assert trace[0]["action"] == "press" and trace[0]["keyboardInput"] == "ArrowRight", trace
+          assert trace[1]["action"] == "assert" and not trace[1]["passed"] and trace[1]["count"] == 0, trace
+          journey = next(item for item in fixed["scenarios"] if item["id"] == "journey-settings-notifications")
+          assert journey["status"] == "passed", journey
+          assert fixed["score"]["overall"] == 100 and not fixed["findings"], fixed
+          PY
+          node realitycheck/scripts/audit.mjs validate "$broken_report" "$fixed_report"
+
       - name: Prove HEAD-only link integrity with positive and negative fixtures
         shell: bash
         run: |
@@ -355,6 +397,8 @@ jobs:
             .realitycheck/ci-site
             .realitycheck/ci-lab-broken
             .realitycheck/ci-lab-fixed
+            .realitycheck/ci-journey-broken
+            .realitycheck/ci-journey-fixed
             .realitycheck/ci-links-broken
             .realitycheck/ci-links-fixed
             .realitycheck/ci-auth-anonymous

@@ -251,6 +251,20 @@ class SkillStructureTests(unittest.TestCase):
         self.assertEqual(broken_config["links"]["maxFailures"], 0)
         self.assertNotIn("method", broken_config["links"])
 
+    def test_safe_journey_fixture_proves_keyboard_and_url_states(self) -> None:
+        fixture = REPOSITORY_ROOT / "examples" / "journey-lab"
+        config = json.loads((fixture / "realitycheck.config.json").read_text(encoding="utf-8"))
+        broken = json.loads((fixture / "broken.config.json").read_text(encoding="utf-8"))
+        script = (fixture / "app.js").read_text(encoding="utf-8")
+        actions = [step["action"] for step in config["journeys"][0]["steps"]]
+        self.assertIn("press", actions)
+        self.assertIn("assert-url", actions)
+        press = next(step for step in config["journeys"][0]["steps"] if step["action"] == "press")
+        self.assertEqual(press["key"], "ArrowRight")
+        self.assertEqual(broken["journeys"][0]["steps"][0], press)
+        self.assertIn('event.key === "ArrowRight"', script)
+        self.assertNotIn('event.key === "Enter"', script)
+
     def test_governed_waiver_fixture_is_explicit_and_keeps_the_control_missing(self) -> None:
         fixture = REPOSITORY_ROOT / "examples" / "waiver-lab"
         page = (fixture / "index.html").read_text(encoding="utf-8")

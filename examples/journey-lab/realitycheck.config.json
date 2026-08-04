@@ -13,11 +13,12 @@
       "severity": "major",
       "steps": [
         { "action": "assert", "selector": "[role=tab]", "assertion": "count", "options": { "min": 2 } },
-        { "action": "click", "selector": "[role=tab][aria-controls=notifications]" },
+        { "action": "press", "selector": "[role=tab][aria-controls=general]", "key": "ArrowRight" },
         { "action": "assert", "selector": "#notifications", "assertion": "visible" },
         { "action": "click", "selector": "[aria-controls=advanced]" },
         { "action": "assert", "selector": "#advanced", "assertion": "visible" },
         { "action": "click", "selector": "a[href='profile.html']" },
+        { "action": "assert-url", "path": "/examples/journey-lab/profile.html" },
         { "action": "assert", "selector": "h1", "assertion": "accessible-name" }
       ]
     }

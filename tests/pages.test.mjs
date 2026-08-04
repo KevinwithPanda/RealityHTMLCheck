@@ -35,6 +35,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /init --profile product --base-url/);
   assert.match(html, /Choose a transparent starting policy/);
   assert.match(html, /选择一个透明的起始策略/);
+  assert.match(html, /ArrowRight changes the tab/);
+  assert.match(html, /方向键切换标签后/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   const localReferences = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((match) => match[1])
     .filter((value) => !/^(?:https?:|#|mailto:|data:)/.test(value));
@@ -51,4 +53,7 @@ test("Pages workflow uses the supported deployment artifact path", () => {
   assert.match(workflow, /actions\/upload-pages-artifact@v4/);
   assert.match(workflow, /actions\/deploy-pages@v4/);
   assert.match(workflow, /path: _site/);
+  assert.match(workflow, /continue-on-error: true/);
+  assert.match(workflow, /Settings → Pages → Source: GitHub Actions/);
+  assert.match(workflow, /if: steps\.pages\.outcome == 'success'/);
 });

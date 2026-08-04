@@ -1,0 +1,56 @@
+{
+  "items": [
+    {
+      "confidence": "high",
+      "findingId": "RC-0F3087966F",
+      "fingerprint": "0f3087966fc43df8428fd93988b158bb32d17ad07888527666babb9c5f4415c5",
+      "remediation": {
+        "summary": "Restore the first failed application state or transition; keep the journey assertion unchanged and rerun the entire journey.",
+        "technicalHints": [
+          "Use the step trace and failure screenshot to distinguish a missing state from a blocked transition."
+        ]
+      },
+      "reportAnchor": "report.html#RC-0F3087966F",
+      "ruleId": "journey-settings-notifications",
+      "scenarioId": "journey-settings-notifications",
+      "severity": "major",
+      "title": "User journey failed: Settings notifications remain usable",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "修复第一个失败的应用状态或转换；保持旅程断言不变，并重新运行完整旅程。",
+            "technicalHints": [
+              "利用步骤轨迹和失败截图区分状态缺失与转换受阻。"
+            ]
+          },
+          "title": "用户旅程未通过：设置通知流程保持可用"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "journey-settings-notifications"
+        ]
+      }
+    }
+  ],
+  "kind": "repair-plan",
+  "schemaVersion": "1",
+  "source": {
+    "reportPath": "report.json",
+    "runId": "20260804T174746Z-c5865b",
+    "target": "http://127.0.0.1:4182/examples/journey-lab/broken.html"
+  },
+  "summary": {
+    "critical": 0,
+    "items": 1,
+    "major": 1,
+    "minor": 0,
+    "reviewRequired": 0,
+    "waived": 0
+  },
+  "toolVersion": "0.4.0"
+}

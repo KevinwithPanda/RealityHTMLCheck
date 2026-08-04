@@ -185,18 +185,22 @@ test("declarative journeys require safe bounded navigation and a proving asserti
     severity: "major",
     steps: [
       { action: "assert", selector: "[role=tab]", assertion: "count", options: { min: 2 } },
-      { action: "click", selector: "[role=tab][aria-controls=security]" },
+      { action: "press", selector: "[role=tab][aria-controls=general]", key: "ArrowRight" },
       { action: "assert", selector: "#security", assertion: "visible" },
       { action: "goto", path: "/settings/profile" },
+      { action: "assert-url", path: "/settings/profile" },
       { action: "assert", selector: "h1", assertion: "accessible-name" },
     ],
   }];
   const config = validateProjectConfig({ journeys });
-  assert.equal(config.journeys[0].steps.length, 5);
+  assert.equal(config.journeys[0].steps.length, 6);
   assert.equal(config.journeys[0].startPath, "/settings");
   assert.throws(() => validateProjectConfig({ journeys: [{ id: "bad-journey", steps: [{ action: "goto", path: "https://example.com" }] }] }), /same-origin absolute path/);
   assert.throws(() => validateProjectConfig({ journeys: [{ id: "no-proof", steps: [{ action: "click", selector: "button" }] }] }), /at least one assert/);
-  assert.throws(() => validateProjectConfig({ journeys: [{ id: "script-step", steps: [{ action: "javascript", selector: "body" }, { action: "assert", selector: "body", assertion: "exists" }] }] }), /goto, click, or assert/);
+  assert.throws(() => validateProjectConfig({ journeys: [{ id: "script-step", steps: [{ action: "javascript", selector: "body" }, { action: "assert", selector: "body", assertion: "exists" }] }] }), /goto, click, press, assert, or assert-url/);
+  assert.throws(() => validateProjectConfig({ journeys: [{ id: "unsafe-key", steps: [{ action: "press", selector: "button", key: "Enter" }, { action: "assert", selector: "body", assertion: "exists" }] }] }), /must be Escape/);
+  assert.throws(() => validateProjectConfig({ journeys: [{ id: "url-query", steps: [{ action: "assert-url", path: "https://example.com/settings" }] }] }), /same-origin absolute path/);
+  assert.throws(() => validateProjectConfig({ journeys: [{ id: "secret-query", steps: [{ action: "assert-url", path: "/settings?token=secret" }] }] }), /query-free pathname/);
 });
 
 test("CLI values override project values and paths resolve beside the config", () => {

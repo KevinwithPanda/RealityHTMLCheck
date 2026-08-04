@@ -17,7 +17,7 @@ Use one adapter for a run and record its capabilities. Do not mix evidence from 
 | Bounded same-origin link discovery | Supported | Manual | Project-dependent |
 | CDP page zoom | Unsupported | Adapter-dependent | Chromium only |
 | axe-core | Bundled in Deep | Adapter-dependent | Only when already installed |
-| Safe declarative journeys | Supported | Manual | Project-dependent |
+| Safe journeys, navigation keys, and path assertions | Supported | Manual | Project-dependent |
 | Network reliability budgets | Supported | Adapter-dependent | Project-dependent |
 | HEAD-only same-origin link integrity | Supported | Manual | Project-dependent |
 | Response/origin security policy | Supported | Adapter-dependent | Project-dependent |

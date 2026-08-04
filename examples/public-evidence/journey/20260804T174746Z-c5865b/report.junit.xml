@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="RealityCheck Broken Journey Lab · RealityCheck" tests="7" time="6.688" timestamp="2026-08-04T17:47:46.875Z" failures="1" errors="0" skipped="0">
+  <properties>
+    <property name="realitycheck.runId" value="20260804T174746Z-c5865b" />
+    <property name="realitycheck.score" value="96" />
+    <property name="realitycheck.failOn" value="major" />
+    <property name="realitycheck.target" value="http://127.0.0.1:4182/examples/journey-lab/broken.html" />
+  </properties>
+  <testcase classname="RealityCheck.browser" name="baseline" time="0.619" />
+  <testcase classname="RealityCheck.browser" name="mobile-375" time="0.655" />
+  <testcase classname="RealityCheck.browser" name="long-text" time="1.088" />
+  <testcase classname="RealityCheck.browser" name="rtl-arabic" time="1.129" />
+  <testcase classname="RealityCheck.browser" name="image-failure" time="0.735" />
+  <testcase classname="RealityCheck.browser" name="keyboard-tab" time="1.040" />
+  <testcase classname="RealityCheck.browser" name="journey-settings-notifications" time="1.328">
+    <failure message="1 finding(s) met the major threshold" type="RealityCheckQualityGate">RC-0F3087966F [major] User journey failed: Settings notifications remain usable</failure>
+    <system-out>RC-0F3087966F [major/high] User journey failed: Settings notifications remain usable</system-out>
+  </testcase>
+</testsuite>

@@ -57,6 +57,12 @@ test("an explicitly named alternate project policy is recognized by its schema r
   assert.equal(result.valid, true, result.errors.join("\n"));
 });
 
+test("keyboard and URL journey steps satisfy the project policy schema", () => {
+  const [result] = validateArtifactFiles([resolve("examples/journey-lab/realitycheck.config.json")]);
+  assert.equal(result.kind, "config");
+  assert.equal(result.valid, true, result.errors.join("\n"));
+});
+
 test("validation reports precise paths for incompatible artifacts", () => {
   const directory = mkdtempSync(join(tmpdir(), "realitycheck-validation-"));
   try {

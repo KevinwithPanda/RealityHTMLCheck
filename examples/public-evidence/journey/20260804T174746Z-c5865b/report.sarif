@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "20260804T174746Z-c5865b"
+      },
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "#notifications"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/journey-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "User journey failed: Settings notifications remain usable: Step 2 (assert) did not complete: Assertion visible failed for #notifications"
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "0f3087966fc43df8428fd93988b158bb32d17ad07888527666babb9c5f4415c5"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-0F3087966F",
+            "scenarioId": "journey-settings-notifications",
+            "severity": "major"
+          },
+          "ruleId": "journey-settings-notifications"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "RealityCheck",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "Step 2 (assert) did not complete: Assertion visible failed for #notifications"
+              },
+              "help": {
+                "markdown": "Restore the first failed application state or transition; keep the journey assertion unchanged and rerun the entire journey.\n\n- Use the step trace and failure screenshot to distinguish a missing state from a blocked transition.",
+                "text": "Restore the first failed application state or transition; keep the journey assertion unchanged and rerun the entire journey.\n\n- Use the step trace and failure screenshot to distinguish a missing state from a blocked transition."
+              },
+              "id": "journey-settings-notifications",
+              "name": "journey_settings_notifications",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "journey-settings-notifications"
+                ]
+              },
+              "shortDescription": {
+                "text": "User journey failed: Settings notifications remain usable"
+              }
+            }
+          ],
+          "semanticVersion": "0.4.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

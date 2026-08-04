@@ -2,17 +2,17 @@
   "schemaVersion": "1",
   "toolVersion": "0.4.0",
   "kind": "latest-run",
-  "updatedAt": "2026-08-04T16:35:52.929Z",
+  "updatedAt": "2026-08-04T17:47:58.779Z",
   "artifactKind": "page-audit",
-  "runId": "20260804T163538Z-34ea95",
+  "runId": "20260804T174746Z-c5865b",
   "target": "http://127.0.0.1:4182/examples/journey-lab/broken.html",
   "state": "failed",
   "score": 96,
   "artifacts": {
-    "html": "20260804T163538Z-34ea95/report.html",
-    "json": "20260804T163538Z-34ea95/report.json",
-    "repairPlanJson": "20260804T163538Z-34ea95/repair-plan.json",
-    "repairPlanMarkdown": "20260804T163538Z-34ea95/repair-plan.md",
-    "integrityManifest": "20260804T163538Z-34ea95/evidence-manifest.json"
+    "html": "20260804T174746Z-c5865b/report.html",
+    "json": "20260804T174746Z-c5865b/report.json",
+    "repairPlanJson": "20260804T174746Z-c5865b/repair-plan.json",
+    "repairPlanMarkdown": "20260804T174746Z-c5865b/repair-plan.md",
+    "integrityManifest": "20260804T174746Z-c5865b/evidence-manifest.json"
   }
 }

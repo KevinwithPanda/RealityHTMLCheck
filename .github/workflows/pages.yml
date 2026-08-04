@@ -28,10 +28,22 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run site:build
-      - uses: actions/configure-pages@v5
+      - name: Prepare GitHub Pages
+        id: pages
+        continue-on-error: true
+        uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
+      - name: Explain one-time Pages setup
+        if: steps.pages.outcome != 'success'
+        run: |
+          {
+            echo '## Public demo built, deployment waiting'
+            echo
+            echo 'Enable **Settings → Pages → Source: GitHub Actions** once. The next push or manual workflow run will deploy the already-tested `_site` artifact.'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Deploy to GitHub Pages
         id: deployment
+        if: steps.pages.outcome == 'success'
         uses: actions/deploy-pages@v4

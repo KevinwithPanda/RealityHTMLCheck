@@ -79,7 +79,7 @@ Unknown fields and executable assertions are rejected before browser navigation.
 
 ## Safe declarative journeys
 
-Journeys prove small read-only user workflows without accepting executable config. Each journey has a stable ID, same-origin `startPath`, severity, and 1–50 ordered steps. At least one step must be an `assert`.
+Journeys prove small read-only user workflows without accepting executable config. Each journey has a stable ID, same-origin `startPath`, severity, and 1–50 ordered steps. At least one step must be an `assert` or `assert-url`.
 
 ```json
 {
@@ -91,9 +91,10 @@ Journeys prove small read-only user workflows without accepting executable confi
       "severity": "major",
       "steps": [
         { "action": "assert", "selector": "[role=tab]", "assertion": "count", "options": { "min": 2 } },
-        { "action": "click", "selector": "[role=tab][aria-controls=notifications]" },
+        { "action": "press", "selector": "[role=tab][aria-controls=general]", "key": "ArrowRight" },
         { "action": "assert", "selector": "#notifications", "assertion": "visible" },
         { "action": "goto", "path": "/profile" },
+        { "action": "assert-url", "path": "/profile" },
         { "action": "assert", "selector": "h1", "assertion": "accessible-name" }
       ]
     }
@@ -101,7 +102,9 @@ Journeys prove small read-only user workflows without accepting executable confi
 }
 ```
 
-`goto` accepts only absolute paths on the audited origin and obeys the merged crawl exclusions. `click` must match exactly one same-origin link, tab, disclosure, or non-submit button explicitly marked `data-realitycheck-safe="true"`. Labels suggesting delete, purchase, payment, submission, sending, logout, or unsubscribe are refused even when marked. The runner never fills inputs or submits forms. It saves a screenshot after every completed step, stops at the first failure, and creates one evidence-backed journey finding with a bounded step trace.
+`goto` accepts only absolute paths on the audited origin and obeys the merged crawl exclusions. `assert-url` compares the current pathname exactly and never records a query or fragment. `click` must match exactly one same-origin link, tab, disclosure, or non-submit button explicitly marked `data-realitycheck-safe="true"`. Labels suggesting delete, purchase, payment, submission, sending, logout, or unsubscribe are refused even when marked.
+
+`press` must match exactly one non-editable structural widget (`tab`, `tablist`, `menu`, `menuitem`, `dialog`, `tree`, `treeitem`, `grid`, `row`, `body`) or an explicitly safe element. Only `Escape`, arrow keys, `Home`, `End`, `Tab`, and `Shift+Tab` are accepted. Activation and text-entry keys such as Enter, Space, and printable characters are rejected before navigation. The runner never fills inputs or submits forms. It saves a screenshot after every completed step, stops at the first failure, and creates one evidence-backed journey finding with a bounded step trace.
 
 ## Performance budgets
 

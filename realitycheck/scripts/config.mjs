@@ -38,8 +38,9 @@ const CHECK_KEYS = new Set(["id", "selector", "assertion", "severity", "title", 
 const CHECK_OPTION_KEYS = new Set(["min", "max", "attribute", "equals", "contains", "minWidth", "minHeight"]);
 const CHECK_ASSERTIONS = new Set(["exists", "visible", "enabled", "accessible-name", "attribute", "count", "no-horizontal-overflow", "minimum-size"]);
 const JOURNEY_KEYS = new Set(["id", "title", "titleZh", "startPath", "severity", "steps"]);
-const JOURNEY_STEP_KEYS = new Set(["action", "path", "selector", "assertion", "options"]);
-const JOURNEY_ACTIONS = new Set(["goto", "click", "assert"]);
+const JOURNEY_STEP_KEYS = new Set(["action", "path", "selector", "assertion", "options", "key"]);
+const JOURNEY_ACTIONS = new Set(["goto", "click", "press", "assert", "assert-url"]);
+const JOURNEY_KEYS_ALLOWED = new Set(["Escape", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "Tab", "Shift+Tab"]);
 const BUDGET_KEYS = new Set([
   "severity",
   "navigationMs",
@@ -188,25 +189,32 @@ function validateJourneys(value, source) {
       const stepLabel = `${label}.steps[${stepIndex}]`;
       if (!step || typeof step !== "object" || Array.isArray(step)) throw new ConfigError(`${stepLabel} must be an object`);
       assertKnownKeys(step, JOURNEY_STEP_KEYS, stepLabel);
-      if (!JOURNEY_ACTIONS.has(step.action)) throw new ConfigError(`${stepLabel}.action must be goto, click, or assert`);
-      if (step.action === "goto") {
+      if (!JOURNEY_ACTIONS.has(step.action)) throw new ConfigError(`${stepLabel}.action must be goto, click, press, assert, or assert-url`);
+      if (step.action === "goto" || step.action === "assert-url") {
         if (typeof step.path !== "string" || !step.path.startsWith("/") || step.path.startsWith("//") || step.path.length > 1_000) throw new ConfigError(`${stepLabel}.path must be a same-origin absolute path`);
-        if (step.selector !== undefined || step.assertion !== undefined || step.options !== undefined) throw new ConfigError(`${stepLabel} contains fields that are not valid for goto`);
-        return { action: "goto", path: step.path };
+        if (step.action === "assert-url" && /[?#]/.test(step.path)) throw new ConfigError(`${stepLabel}.path must be a query-free pathname without a fragment`);
+        if (step.selector !== undefined || step.assertion !== undefined || step.options !== undefined || step.key !== undefined) throw new ConfigError(`${stepLabel} contains fields that are not valid for ${step.action}`);
+        return { action: step.action, path: step.path };
       }
       const normalizedStep = { action: step.action, selector: validateJourneySelector(step.selector, `${stepLabel}.selector`) };
       if (step.action === "click") {
-        if (step.path !== undefined || step.assertion !== undefined || step.options !== undefined) throw new ConfigError(`${stepLabel} contains fields that are not valid for click`);
+        if (step.path !== undefined || step.assertion !== undefined || step.options !== undefined || step.key !== undefined) throw new ConfigError(`${stepLabel} contains fields that are not valid for click`);
+        return normalizedStep;
+      }
+      if (step.action === "press") {
+        if (!JOURNEY_KEYS_ALLOWED.has(step.key)) throw new ConfigError(`${stepLabel}.key must be Escape, an Arrow key, Home, End, Tab, or Shift+Tab`);
+        if (step.path !== undefined || step.assertion !== undefined || step.options !== undefined) throw new ConfigError(`${stepLabel} contains fields that are not valid for press`);
+        normalizedStep.key = step.key;
         return normalizedStep;
       }
       if (!CHECK_ASSERTIONS.has(step.assertion)) throw new ConfigError(`${stepLabel}.assertion is not supported`);
       normalizedStep.assertion = step.assertion;
       if (step.options !== undefined) normalizedStep.options = validateJourneyOptions(step.options, `${stepLabel}.options`);
-      if (step.path !== undefined) throw new ConfigError(`${stepLabel}.path is not valid for assert`);
+      if (step.path !== undefined || step.key !== undefined) throw new ConfigError(`${stepLabel}.path and .key are not valid for assert`);
       if (step.assertion === "attribute" && !normalizedStep.options?.attribute) throw new ConfigError(`${stepLabel}.options.attribute is required for the attribute assertion`);
       return normalizedStep;
     });
-    if (!normalized.steps.some((step) => step.action === "assert")) throw new ConfigError(`${label}.steps must include at least one assert action`);
+    if (!normalized.steps.some((step) => ["assert", "assert-url"].includes(step.action))) throw new ConfigError(`${label}.steps must include at least one assert or assert-url action`);
     return normalized;
   });
 }

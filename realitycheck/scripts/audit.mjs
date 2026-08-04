@@ -2166,6 +2166,27 @@ async function inspectJourneyClick(page, selector, target, crawl) {
   return metadata;
 }
 
+async function inspectJourneyPress(page, selector) {
+  const locator = page.locator(selector);
+  const count = await locator.count();
+  if (count !== 1) throw new ConfigError(`Journey press selector ${JSON.stringify(selector)} must match exactly one element; matched ${count}`);
+  const metadata = await locator.evaluate((element) => ({
+    tag: element.tagName.toLowerCase(),
+    role: (element.getAttribute("role") || "").toLowerCase(),
+    editable: element instanceof HTMLInputElement
+      || element instanceof HTMLTextAreaElement
+      || element instanceof HTMLSelectElement
+      || element.isContentEditable,
+    explicitlySafe: element.getAttribute("data-realitycheck-safe") === "true",
+  }));
+  const safeRoles = new Set(["tab", "tablist", "menu", "menuitem", "dialog", "tree", "treeitem", "grid", "row"]);
+  const safeStructuralTarget = metadata.tag === "body" || safeRoles.has(metadata.role) || metadata.explicitlySafe;
+  if (metadata.editable || !safeStructuralTarget) {
+    throw new ConfigError("Journey key presses are limited to non-editable structural widgets or elements marked data-realitycheck-safe=true");
+  }
+  return metadata;
+}
+
 async function runDeclarativeJourneys(browser, target, runDirectory, journeys, contextOptions, crawl) {
   const findings = [];
   const scenarios = [];
@@ -2196,22 +2217,55 @@ async function runDeclarativeJourneys(browser, target, runDirectory, journeys, c
             await session.page.locator(step.selector).click({ timeout: 5_000 });
             await settle(session.page, 700);
             trace.push({ step: stepIndex + 1, action: "click", selector: step.selector, element: metadata.tag, passed: true });
+          } else if (step.action === "press") {
+            const metadata = await inspectJourneyPress(session.page, step.selector);
+            await session.page.locator(step.selector).press(step.key, { timeout: 5_000 });
+            await settle(session.page, 700);
+            trace.push({ step: stepIndex + 1, action: "press", selector: step.selector, keyboardInput: step.key, element: metadata.tag, role: metadata.role || null, passed: true });
+          } else if (step.action === "assert-url") {
+            const actualPath = new URL(session.page.url()).pathname;
+            const passed = actualPath === step.path;
+            trace.push({ step: stepIndex + 1, action: "assert-url", expectedPath: step.path, actualPath, passed });
+            if (!passed) {
+              const error = new Error(`URL path assertion expected ${step.path} but observed ${actualPath}`);
+              error.reasonZh = `URL 路径断言期望 ${step.path}，实际为 ${actualPath}`;
+              throw error;
+            }
           } else {
             const assertion = await evaluateJourneyAssertion(session.page, step);
             trace.push({ step: stepIndex + 1, action: "assert", selector: step.selector, assertion: step.assertion, count: assertion.count, visibleCount: assertion.visibleCount, passed: assertion.passed });
-            if (!assertion.passed) throw new Error(`Assertion ${step.assertion} failed for ${step.selector}`);
+            if (!assertion.passed) {
+              const error = new Error(`Assertion ${step.assertion} failed for ${step.selector}`);
+              error.reasonZh = `元素 ${step.selector} 的 ${step.assertion} 断言未通过`;
+              throw error;
+            }
           }
           await session.page.screenshot({ path: join(runDirectory, "screenshots", `${scenarioId}-step-${stepIndex + 1}.png`), fullPage: true });
         } catch (error) {
-          failure = { step: stepIndex + 1, action: step.action, selector: step.selector, path: step.path, reason: String(error.message || error).slice(0, 500) };
-          trace.push({ ...failure, passed: false });
+          failure = {
+            step: stepIndex + 1,
+            action: step.action,
+            selector: step.selector,
+            path: step.path,
+            reason: String(error.message || error).slice(0, 500),
+            reasonZh: String(error.reasonZh || "步骤未满足安全约束或预期状态；请结合英文原因和步骤证据复核。").slice(0, 500),
+          };
+          const { reasonZh: _reasonZh, ...recordedFailure } = failure;
+          if (trace.at(-1)?.step === failure.step && trace.at(-1)?.passed === false) Object.assign(trace.at(-1), recordedFailure);
+          else trace.push({ ...recordedFailure, passed: false });
           await session.page.screenshot({ path: join(runDirectory, "screenshots", `${scenarioId}-failure.png`), fullPage: true }).catch(() => {});
           break;
         }
       }
     } catch (error) {
-      failure = { step: 0, action: "start", reason: String(error.message || error).slice(0, 500) };
-      trace.push({ ...failure, passed: false });
+      failure = {
+        step: 0,
+        action: "start",
+        reason: String(error.message || error).slice(0, 500),
+        reasonZh: "旅程无法在安全约束内启动；请结合英文原因和配置复核。",
+      };
+      const { reasonZh: _reasonZh, ...recordedFailure } = failure;
+      trace.push({ ...recordedFailure, passed: false });
     } finally {
       if (session) {
         finalPath = new URL(session.page.url()).pathname;
@@ -2226,12 +2280,12 @@ async function runDeclarativeJourneys(browser, target, runDirectory, journeys, c
       findings.push(finding({
         ruleId: `journey-${journey.id}`, scenarioId, classification: "existing", severity: journey.severity, confidence: "high",
         title: `User journey failed: ${title}`, titleZh: `用户旅程未通过：${titleZh}`,
-        summary: `Step ${failure.step || "start"} (${failure.action}) did not complete: ${failure.reason}`, summaryZh: `第 ${failure.step || "起始"} 步（${failure.action}）未完成：${failure.reason}`,
+        summary: `Step ${failure.step || "start"} (${failure.action}) did not complete: ${failure.reason}`, summaryZh: `第 ${failure.step || "起始"} 步（${failure.action}）未完成：${failure.reasonZh}`,
         selector: failure.selector,
         measurements: { completedSteps: trace.filter((item) => item.passed).length, totalSteps: journey.steps.length, failedStep: failure.step, failedAction: failure.action, finalPath },
         evidence,
-        steps: [`Open the journey at ${journey.startPath} in a fresh isolated context.`, ...journey.steps.map((step, index) => `${index + 1}. ${step.action}${step.path ? ` ${step.path}` : ""}${step.selector ? ` ${step.selector}` : ""}${step.assertion ? ` (${step.assertion})` : ""}.`)],
-        stepsZh: [`在新的隔离上下文中从 ${journey.startPath} 打开旅程。`, ...journey.steps.map((step, index) => `${index + 1}. 执行 ${step.action}${step.path ? ` ${step.path}` : ""}${step.selector ? ` ${step.selector}` : ""}${step.assertion ? `（${step.assertion}）` : ""}。`)],
+        steps: [`Open the journey at ${journey.startPath} in a fresh isolated context.`, ...journey.steps.map((step, index) => `${index + 1}. ${step.action}${step.path ? ` ${step.path}` : ""}${step.selector ? ` ${step.selector}` : ""}${step.key ? ` ${step.key}` : ""}${step.assertion ? ` (${step.assertion})` : ""}.`)],
+        stepsZh: [`在新的隔离上下文中从 ${journey.startPath} 打开旅程。`, ...journey.steps.map((step, index) => `${index + 1}. 执行 ${step.action}${step.path ? ` ${step.path}` : ""}${step.selector ? ` ${step.selector}` : ""}${step.key ? ` ${step.key}` : ""}${step.assertion ? `（${step.assertion}）` : ""}。`)],
         fix: "Restore the first failed application state or transition; keep the journey assertion unchanged and rerun the entire journey.",
         fixZh: "修复第一个失败的应用状态或转换；保持旅程断言不变，并重新运行完整旅程。",
         hints: ["Use the step trace and failure screenshot to distinguish a missing state from a blocked transition."],

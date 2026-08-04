@@ -155,8 +155,10 @@ Three validated presets remove the blank-config problem:
       "startPath": "/app/settings",
       "severity": "major",
       "steps": [
-        { "action": "click", "selector": "[role=tab][aria-controls=notifications]" },
-        { "action": "assert", "selector": "#notifications", "assertion": "visible" }
+        { "action": "press", "selector": "[role=tab][aria-controls=general]", "key": "ArrowRight" },
+        { "action": "assert", "selector": "#notifications", "assertion": "visible" },
+        { "action": "goto", "path": "/app/profile" },
+        { "action": "assert-url", "path": "/app/profile" }
       ]
     }
   ],
@@ -208,7 +210,7 @@ Three validated presets remove the blank-config problem:
 
 The crawler only follows same-origin page links, strips query strings and fragments, never clicks controls or submits forms, and rejects common logout, purchase, delete, and OAuth routes by default. Each page runs in isolated browser contexts. One page failure does not erase evidence from the others.
 
-Custom checks are declarative—`exists`, `visible`, `enabled`, `accessible-name`, `attribute`, `count`, `no-horizontal-overflow`, or `minimum-size`—and may be restricted by route globs. Declarative journeys reuse these assertions across safe same-origin navigation, tabs, and disclosures; every step gets a checkpoint screenshot. The runner refuses form submission, destructive labels, excluded routes, ambiguous click selectors, and unmarked business buttons. Arbitrary JavaScript is deliberately rejected. See the passing and failing [`examples/journey-lab`](examples/journey-lab) configurations.
+Custom checks are declarative—`exists`, `visible`, `enabled`, `accessible-name`, `attribute`, `count`, `no-horizontal-overflow`, or `minimum-size`—and may be restricted by route globs. Declarative journeys reuse these assertions across safe same-origin navigation, tabs, disclosures, navigation-only keyboard presses, and pathname checkpoints; every step gets a screenshot. The runner refuses form submission, activation/text-entry keys, editable press targets, destructive labels, excluded routes, ambiguous click selectors, and unmarked business buttons. URL assertions never persist query or fragment values. Arbitrary JavaScript is deliberately rejected. See the passing and failing [`examples/journey-lab`](examples/journey-lab) configurations.
 
 Network reliability policy can independently govern API-only or all-resource traffic: cap HTTP errors, transport failures, slow requests, and third-party request volume. Evidence includes bounded endpoint samples with credentials, fragments, and query values removed; response bodies are never retained. The paired [`examples/network-lab`](examples/network-lab) fixtures fail at **96/100** for one missing API and pass at **100/100** after the endpoint is restored.
 

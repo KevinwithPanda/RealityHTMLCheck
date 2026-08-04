@@ -139,8 +139,10 @@ npx realitycheck doctor
       "startPath": "/app/settings",
       "severity": "major",
       "steps": [
-        { "action": "click", "selector": "[role=tab][aria-controls=notifications]" },
-        { "action": "assert", "selector": "#notifications", "assertion": "visible" }
+        { "action": "press", "selector": "[role=tab][aria-controls=general]", "key": "ArrowRight" },
+        { "action": "assert", "selector": "#notifications", "assertion": "visible" },
+        { "action": "goto", "path": "/app/profile" },
+        { "action": "assert-url", "path": "/app/profile" }
       ]
     }
   ],
@@ -192,7 +194,7 @@ npx realitycheck doctor
 
 爬虫只跟随同源页面链接，会去掉查询参数和片段，不点击控件、不提交表单，并默认拒绝退出、购买、删除与 OAuth 等危险路径。每个页面都在隔离浏览器上下文中执行；单页运行失败不会抹掉其他页面的证据。
 
-自定义检查仅允许声明式断言：`exists`、`visible`、`enabled`、`accessible-name`、`attribute`、`count`、`no-horizontal-overflow`、`minimum-size`，并可用路由 glob 限定范围。声明式旅程可以跨同源导航、标签页和折叠面板复用这些断言，每一步都有截图；运行器会拒绝表单提交、危险文案、排除路由、匹配多个元素的点击和未明确标记的业务按钮。任意 JavaScript 都会被拒绝。可直接运行 [`examples/journey-lab`](../examples/journey-lab) 的成功与失败配置。
+自定义检查仅允许声明式断言：`exists`、`visible`、`enabled`、`accessible-name`、`attribute`、`count`、`no-horizontal-overflow`、`minimum-size`，并可用路由 glob 限定范围。声明式旅程可以跨同源导航、标签页、折叠面板、仅导航用途的键盘操作和路径断言复用这些规则，每一步都有截图；运行器会拒绝表单提交、激活/文本输入键、可编辑的按键目标、危险文案、排除路由、匹配多个元素的点击和未明确标记的业务按钮。URL 断言不会保留查询或片段值，任意 JavaScript 都会被拒绝。可直接运行 [`examples/journey-lab`](../examples/journey-lab) 的成功与失败配置。
 
 网络可靠性策略可以独立约束“仅 API”或“全部资源”流量：限制 HTTP 错误、传输失败、慢请求及第三方请求数量。证据只保留有上限且已移除凭据、片段和查询参数值的端点样本，绝不保存响应正文。成对的 [`examples/network-lab`](../examples/network-lab) 会让缺失一个 API 的页面得到 **96/100**，恢复接口后得到 **100/100**。
 

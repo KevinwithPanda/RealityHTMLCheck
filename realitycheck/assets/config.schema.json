@@ -124,7 +124,7 @@
             "type": "array",
             "minItems": 1,
             "maxItems": 50,
-            "contains": { "type": "object", "required": ["action"], "properties": { "action": { "const": "assert" } } },
+            "contains": { "type": "object", "required": ["action"], "properties": { "action": { "enum": ["assert", "assert-url"] } } },
             "items": {
               "oneOf": [
                 {
@@ -138,6 +138,22 @@
                   "additionalProperties": false,
                   "required": ["action", "selector"],
                   "properties": { "action": { "const": "click" }, "selector": { "type": "string", "minLength": 1, "maxLength": 500 } }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["action", "selector", "key"],
+                  "properties": {
+                    "action": { "const": "press" },
+                    "selector": { "type": "string", "minLength": 1, "maxLength": 500 },
+                    "key": { "enum": ["Escape", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "Tab", "Shift+Tab"] }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["action", "path"],
+                  "properties": { "action": { "const": "assert-url" }, "path": { "type": "string", "pattern": "^/(?!/)[^?#]*$", "maxLength": 1000 } }
                 },
                 {
                   "type": "object",
