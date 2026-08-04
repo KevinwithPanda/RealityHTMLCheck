@@ -83,6 +83,14 @@ inputs:
     description: Language for the GitHub job summary and finding annotations (en or zh-CN).
     required: false
     default: en
+  policy-before:
+    description: Optional base-branch RealityCheck config snapshot used for structural policy review.
+    required: false
+    default: ""
+  policy-after:
+    description: Optional proposed RealityCheck config paired with policy-before; both are required together.
+    required: false
+    default: ""
 
 outputs:
   exit-code:
@@ -115,6 +123,12 @@ outputs:
   summary-exit-code:
     description: Workflow-summary generation exit code (0 generated, 2 unavailable or invalid input).
     value: ${{ steps.summary.outputs.summary-exit-code }}
+  policy-review-path:
+    description: Bilingual HTML policy-change review when policy-before and policy-after are configured.
+    value: ${{ steps.policy.outputs.policy-review-path }}
+  policy-exit-code:
+    description: Policy review exit code (0 no weakening/not configured, 1 weakening blocked, 2 operational error).
+    value: ${{ steps.policy.outputs.policy-exit-code }}
 
 runs:
   using: composite
@@ -190,6 +204,46 @@ runs:
         else
           cat "$annotation_log" >&2
           echo "RealityCheck could not build trusted workflow annotations; the primary audit result remains authoritative." >&2
+        fi
+
+    - name: Review project policy changes
+      id: policy
+      if: always()
+      shell: bash
+      env:
+        RC_POLICY_BEFORE: ${{ inputs.policy-before }}
+        RC_POLICY_AFTER: ${{ inputs.policy-after }}
+        RC_OUTPUT: ${{ inputs.output }}
+        RC_WORKDIR: ${{ inputs.working-directory }}
+        RC_SUMMARY_LANGUAGE: ${{ inputs.summary-language }}
+      run: |
+        if [ -z "$RC_POLICY_BEFORE" ] && [ -z "$RC_POLICY_AFTER" ]; then
+          echo "policy-exit-code=0" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        if [ -z "$RC_POLICY_BEFORE" ] || [ -z "$RC_POLICY_AFTER" ]; then
+          echo "policy-exit-code=2" >> "$GITHUB_OUTPUT"
+          echo "policy-before and policy-after must be configured together." >&2
+          exit 0
+        fi
+        cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
+        policy_dir="$RC_OUTPUT/policy-review"
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" policy-review \
+          "$RC_POLICY_BEFORE" "$RC_POLICY_AFTER" --output "$policy_dir"
+        policy_status=$?
+        set -e
+        echo "policy-exit-code=$policy_status" >> "$GITHUB_OUTPUT"
+        if [ "$policy_status" -le 1 ]; then
+          echo "policy-review-path=$RC_WORKDIR/$policy_dir/policy-review.html" >> "$GITHUB_OUTPUT"
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            printf '\n' >> "$GITHUB_STEP_SUMMARY"
+            if [ "$RC_SUMMARY_LANGUAGE" = "zh-CN" ]; then
+              cat "$policy_dir/policy-review.zh-CN.md" >> "$GITHUB_STEP_SUMMARY"
+            else
+              cat "$policy_dir/policy-review.md" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
         fi
 
     - name: Sign completed evidence manifests
@@ -327,6 +381,7 @@ runs:
         RC_ATTESTATION_OUTCOME: ${{ steps.attest.outcome }}
         RC_RISK_EXIT_CODE: ${{ steps.risks.outputs.risk-exit-code }}
         RC_TRUST_EXIT_CODE: ${{ steps.trust.outputs.trust-exit-code }}
+        RC_POLICY_EXIT_CODE: ${{ steps.policy.outputs.policy-exit-code }}
       run: |
         if [ "$RC_ATTESTATION_OUTCOME" = "failure" ]; then
           echo "RealityCheck evidence signing failed. Check that the configured Secret is a valid Ed25519 private key."
@@ -344,11 +399,16 @@ runs:
           echo "RealityCheck could not evaluate the configured evidence trust policy."
           exit 2
         fi
+        if [ "$RC_POLICY_EXIT_CODE" = "2" ]; then
+          echo "RealityCheck could not complete the configured policy review."
+          exit 2
+        fi
         if [ "$RC_EXIT_CODE" -eq 1 ]; then
           echo "RealityCheck quality gate failed. Download the uploaded evidence report for exact findings."
         elif [ "$RC_EXIT_CODE" -eq 2 ]; then
           echo "RealityCheck could not complete. Review the audit log and environment doctor output."
         fi
         if [ "$RC_TRUST_EXIT_CODE" = "1" ]; then echo "RealityCheck evidence trust policy rejected one or more bundles."; fi
-        if [ "$RC_EXIT_CODE" -eq 1 ] || [ "$RC_RISK_EXIT_CODE" = "1" ] || [ "$RC_TRUST_EXIT_CODE" = "1" ]; then exit 1; fi
+        if [ "$RC_POLICY_EXIT_CODE" = "1" ]; then echo "RealityCheck blocked one or more structural policy weakenings."; fi
+        if [ "$RC_EXIT_CODE" -eq 1 ] || [ "$RC_RISK_EXIT_CODE" = "1" ] || [ "$RC_TRUST_EXIT_CODE" = "1" ] || [ "$RC_POLICY_EXIT_CODE" = "1" ]; then exit 1; fi
         exit "$RC_EXIT_CODE"

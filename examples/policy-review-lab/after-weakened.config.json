@@ -1,0 +1,23 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:3000/",
+  "mode": "quick",
+  "failOn": "critical",
+  "viewports": [
+    { "id": "phone-390", "width": 390, "height": 844, "touch": false },
+    { "id": "tablet-768", "width": 820, "height": 1180, "touch": true }
+  ],
+  "crawl": { "enabled": false, "maxPages": 10, "maxDepth": 1, "include": ["/**"], "exclude": ["/logout/**", "/admin/**"] },
+  "checks": [],
+  "budgets": { "largestContentfulPaintMs": 4000, "cumulativeLayoutShift": 0.25, "severity": "minor" },
+  "network": { "scope": "api", "maxHttpErrors": 2, "maxFailedRequests": 1, "severity": "minor" },
+  "links": { "maxFailures": 3, "maxChecked": 10, "timeoutMs": 3000, "severity": "minor" },
+  "metadata": { "requireViewport": true, "severity": "minor" },
+  "visual": { "baselineDirectory": ".realitycheck/visual-baselines", "maxDiffRatio": 0.02, "pixelThreshold": 40, "masks": [".current-time", "[data-ad]"], "severity": "minor" },
+  "security": { "requiredHeaders": ["x-content-type-options"], "maxThirdPartyOrigins": 5, "severity": "minor" },
+  "qualityGate": { "minimumScore": 80, "minimumCoveragePercent": 70, "maxWaivedFindings": 5 },
+  "baselinePolicy": { "maxAgeDays": 90, "requireSamePolicy": false },
+  "waivers": [
+    { "id": "temporary-release-action", "ruleId": "custom-release-action-visible", "reason": "Tracked in WEB-410", "owner": "Web Platform", "expires": "2027-01-31" }
+  ]
+}

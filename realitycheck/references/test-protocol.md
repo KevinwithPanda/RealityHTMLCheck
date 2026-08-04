@@ -267,6 +267,10 @@ Consume only schema-valid page reports and, when a directory is supplied, fail i
 
 Treat titles, rules, remediation, owners, targets, and scenario labels as hostile. Normalize controls and whitespace, neutralize command-looking `::` sequences, escape percent signs plus property colons/commas, bound title/message lengths, and do not claim a repository filename or line number without source evidence. Keep the Markdown summary below GitHub's per-step limit and report how many annotations were omitted by the configured cap. A newer passing report must remove stale findings from the current summary.
 
+### Policy change review
+
+Compare only two schema-valid config files explicitly supplied by the caller. Evaluate effective defaults and structural policy settings without reading Git history or application source. Classify clear enforcement loss as `weakened`, clear added/tighter enforcement as `strengthened`, and ambiguous route, selector, or breakpoint intent as `review`. A weakening fails only after all JSON/Markdown/HTML evidence is written. Do not copy base URLs, filesystem paths, selectors, route globs, custom text, origins, or waiver reasons into the review. Never claim that structural comparison replaces security, legal, product, or device-market approval.
+
 ## 6. Classification and confidence
 
 Create a stable cross-run fingerprint from:

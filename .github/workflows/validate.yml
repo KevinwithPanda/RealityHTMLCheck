@@ -39,9 +39,40 @@ jobs:
           node --check realitycheck/scripts/artifact-validator.mjs
           node --check realitycheck/scripts/config.mjs
           node --check realitycheck/scripts/site-report.mjs
+          node --check realitycheck/scripts/policy-review.mjs
 
       - name: Verify package contents
         run: npm pack --dry-run
+
+      - name: Prove the structural policy anti-weakening gate
+        shell: bash
+        run: |
+          set +e
+          node realitycheck/scripts/audit.mjs policy-review \
+            examples/policy-review-lab/before.config.json \
+            examples/policy-review-lab/after-weakened.config.json \
+            --output .realitycheck/ci-policy-review
+          policy_status=$?
+          set -e
+          test "$policy_status" -eq 1
+          node realitycheck/scripts/audit.mjs validate .realitycheck/ci-policy-review/policy-review.json
+          node realitycheck/scripts/audit.mjs policy-review \
+            examples/policy-review-lab/after-weakened.config.json \
+            examples/policy-review-lab/before.config.json \
+            --output .realitycheck/ci-policy-strengthening
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          review = json.loads(Path(".realitycheck/ci-policy-review/policy-review.json").read_text(encoding="utf-8"))
+          assert review["summary"]["gateFailed"], review
+          assert review["summary"]["weakened"] >= 20, review
+          serialized = json.dumps(review)
+          assert "data-testid" not in serialized, serialized
+          assert "/admin/" not in serialized, serialized
+          assert "Tracked in WEB-410" not in serialized, serialized
+          assert Path(".realitycheck/ci-policy-review/policy-review.html").is_file()
+          assert Path(".realitycheck/ci-policy-review/policy-review.zh-CN.md").is_file()
+          PY
 
       - name: Prove the zero-configuration bundled demo
         shell: bash

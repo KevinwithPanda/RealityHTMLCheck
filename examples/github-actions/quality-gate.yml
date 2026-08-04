@@ -39,6 +39,10 @@ jobs:
           # Emit at most this many safely escaped annotations in English or Chinese.
           max-annotations: 20
           summary-language: en
+          # Optional policy anti-weakening gate. Create the base snapshot in an
+          # earlier step, e.g. git show origin/main:realitycheck.config.json.
+          # policy-before: /tmp/realitycheck-main.config.json
+          # policy-after: realitycheck.config.json
           # Optional: signs every completed manifest without committing the key.
           # attestation-private-key: ${{ secrets.REALITYCHECK_ED25519_PRIVATE_KEY }}
           # attestation-trusted-key-id: ${{ vars.REALITYCHECK_ED25519_KEY_ID }}

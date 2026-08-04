@@ -23,6 +23,7 @@ const ARTIFACT_FILES = new Set([
   "evidence-trust.json",
   "evidence-trust-report.json",
   "risk-register.json",
+  "policy-review.json",
   "realitycheck.config.json",
 ]);
 const SKIPPED_DIRECTORIES = new Set([".git", "node_modules", "__pycache__"]);
@@ -41,6 +42,7 @@ const SCHEMA_BY_ARTIFACT = {
   "evidence-trust-policy": "evidence-trust.schema.json",
   "evidence-trust-report": "evidence-trust-report.schema.json",
   "risk-register": "risk-register.schema.json",
+  "policy-review": "policy-review.schema.json",
   config: "config.schema.json",
 };
 
@@ -149,6 +151,28 @@ function verifyRiskRegister(register) {
   return errors;
 }
 
+function verifyPolicyReview(review) {
+  const errors = [];
+  const changes = review.changes || [];
+  const expected = {
+    changes: changes.length,
+    weakened: changes.filter((item) => item.classification === "weakened").length,
+    strengthened: changes.filter((item) => item.classification === "strengthened").length,
+    review: changes.filter((item) => item.classification === "review").length,
+  };
+  for (const [key, value] of Object.entries(expected)) {
+    if (review.summary?.[key] !== value) errors.push(`/summary/${key} does not match the policy changes`);
+  }
+  if (Boolean(review.summary?.gateFailed) !== (expected.weakened > 0)) errors.push("/summary/gateFailed must match the presence of weakened changes");
+  const ids = new Set();
+  for (const change of changes) {
+    if (ids.has(change.id)) errors.push(`/changes contains duplicate id ${change.id}`);
+    ids.add(change.id);
+  }
+  if (review.sources?.before?.fingerprint === review.sources?.after?.fingerprint && changes.length) errors.push("/sources equivalent fingerprints cannot contain policy changes");
+  return errors;
+}
+
 export function validateArtifactFiles(inputPaths, { trustedKeyIds = [], requireAttestation = false } = {}) {
   if (!inputPaths.length) throw new Error("validate requires at least one JSON file or directory");
   const trustedKeys = new Set(trustedKeyIds);
@@ -183,6 +207,7 @@ export function validateArtifactFiles(inputPaths, { trustedKeyIds = [], requireA
     if (schemaValid && kind === "evidence-attestation") errors.push(...verifyEvidenceAttestation(path, value));
     if (schemaValid && kind === "evidence-trust-report") errors.push(...verifyEvidenceTrustReport(value));
     if (schemaValid && kind === "risk-register") errors.push(...verifyRiskRegister(value));
+    if (schemaValid && kind === "policy-review") errors.push(...verifyPolicyReview(value));
     if (schemaValid && kind === "evidence-attestation" && trustedKeys.size && !trustedKeys.has(value.signer.keyId)) {
       errors.push(`/signer/keyId is not in the trusted key allowlist: ${value.signer.keyId}`);
     }

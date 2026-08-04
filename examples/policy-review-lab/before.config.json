@@ -1,0 +1,24 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:3000/",
+  "mode": "deep",
+  "failOn": "major",
+  "viewports": [
+    { "id": "phone-320", "width": 320, "height": 700, "touch": true },
+    { "id": "phone-390", "width": 390, "height": 844, "touch": true },
+    { "id": "tablet-768", "width": 768, "height": 1024, "touch": true }
+  ],
+  "crawl": { "enabled": true, "maxPages": 20, "maxDepth": 2, "include": ["/**"], "exclude": ["/logout/**"] },
+  "checks": [
+    { "id": "release-action-visible", "selector": "[data-testid=release-action]", "assertion": "visible", "severity": "major" }
+  ],
+  "budgets": { "largestContentfulPaintMs": 2500, "cumulativeLayoutShift": 0.1, "severity": "major" },
+  "network": { "scope": "all", "maxHttpErrors": 0, "maxFailedRequests": 0, "severity": "major" },
+  "links": { "maxFailures": 0, "maxChecked": 50, "timeoutMs": 5000, "severity": "major" },
+  "metadata": { "requireCanonical": true, "requireViewport": true, "requireLang": true, "forbidNoindex": true, "requireSingleH1": true, "severity": "major" },
+  "visual": { "baselineDirectory": ".realitycheck/visual-baselines", "maxDiffRatio": 0.002, "pixelThreshold": 28, "masks": [".current-time"], "severity": "major" },
+  "security": { "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"], "forbidMixedContent": true, "secureForms": true, "maxThirdPartyOrigins": 2, "severity": "major" },
+  "qualityGate": { "minimumScore": 95, "minimumCoveragePercent": 95, "maxWaivedFindings": 0 },
+  "baselinePolicy": { "maxAgeDays": 30, "requireSamePolicy": true },
+  "waivers": []
+}

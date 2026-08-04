@@ -31,6 +31,7 @@ import { PROFILE_DESCRIPTIONS, buildProjectProfile, formatProfileList } from "./
 import { approveVisualBaseline, evaluateVisualRegression } from "./visual-regression.mjs";
 import { startBundledDemoServer } from "./demo-server.mjs";
 import { buildGitHubSummary, writeGitHubSummary } from "./github-summary.mjs";
+import { buildPolicyReview, writePolicyReview } from "./policy-review.mjs";
 
 const require = createRequire(import.meta.url);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -66,6 +67,7 @@ Usage:
   realitycheck catalog <FILE|DIRECTORY> [...] [--output PATH]
   realitycheck github-summary <FILE|DIRECTORY> [...] [--output PATH]
   realitycheck risk-register <FILE|DIRECTORY> [...] [--output PATH]
+  realitycheck policy-review <BEFORE_CONFIG> <AFTER_CONFIG> [--output PATH]
   realitycheck attest <EVIDENCE-MANIFEST> --private-key PATH
   realitycheck trust-report <EVIDENCE-MANIFEST> --trust-policy PATH
 
@@ -111,6 +113,7 @@ Examples:
   realitycheck catalog .realitycheck --output .realitycheck/catalog
   realitycheck github-summary .realitycheck/runs --output .realitycheck/github-summary.md
   realitycheck risk-register .realitycheck --output .realitycheck/risks
+  realitycheck policy-review policy/main.json realitycheck.config.json --output .realitycheck/policy-review
   realitycheck risk-register .realitycheck --max-open-age-days 30 --max-open-risks 20 --max-recurring-risks 10
   realitycheck attest .realitycheck/runs/RUN/evidence-manifest.json --private-key ci-ed25519.pem
   realitycheck validate .realitycheck/runs/RUN --trusted-key sha256:0123...
@@ -124,7 +127,7 @@ Examples:
 
 function parseArguments(argv) {
   const args = [...argv];
-  const command = new Set(["audit", "demo", "init", "profiles", "doctor", "visual-approve", "validate", "catalog", "github-summary", "risk-register", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
+  const command = new Set(["audit", "demo", "init", "profiles", "doctor", "visual-approve", "validate", "catalog", "github-summary", "risk-register", "policy-review", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
   const options = {
     command,
     target: null,
@@ -149,6 +152,7 @@ function parseArguments(argv) {
     catalogPaths: [],
     githubSummaryPaths: [],
     riskRegisterPaths: [],
+    policyReviewPaths: [],
     attestationManifest: null,
     trustReportManifest: null,
     privateKey: null,
@@ -240,6 +244,10 @@ function parseArguments(argv) {
       options.riskRegisterPaths.push(item);
       continue;
     }
+    if (command === "policy-review") {
+      options.policyReviewPaths.push(item);
+      continue;
+    }
     if (command === "attest") {
       if (options.attestationManifest) throw new Error(`Unexpected argument: ${item}`);
       options.attestationManifest = item;
@@ -275,6 +283,7 @@ function parseArguments(argv) {
   if (options.maxAnnotations !== null && command !== "github-summary") throw new Error("--max-annotations is only valid with github-summary");
   if (options.summaryLanguage !== null && command !== "github-summary") throw new Error("--language is only valid with github-summary");
   if (options.summaryLanguage !== null && !new Set(["en", "zh-CN"]).has(options.summaryLanguage)) throw new Error("--language must be en or zh-CN");
+  if (command === "policy-review" && options.policyReviewPaths.length !== 2) throw new Error("policy-review requires exactly BEFORE_CONFIG and AFTER_CONFIG");
   if ((options.profile || options.baseUrl) && command !== "init") throw new Error("--profile and --base-url are only valid with init");
   if (options.replaceBaseline && command !== "visual-approve") throw new Error("--replace-baseline is only valid with visual-approve");
   return options;
@@ -2830,6 +2839,22 @@ async function main() {
       } else if (cli.maxOpenAgeDays !== null || cli.maxOpenRisks !== null || cli.maxRecurringRisks !== null) {
         console.log("risk policy:        PASS");
       }
+      return;
+    }
+    if (cli.command === "policy-review") {
+      if (cli.config || cli.target || cli.routes.length || cli.crawl !== undefined || cli.storageState || cli.compareReport || cli.baselineReport || cli.allowRemote || cli.mode || cli.failOn || cli.headed || cli.browserPath || cli.force || cli.maxPages !== undefined || cli.maxDepth !== undefined) throw new Error("policy-review accepts two explicit config paths and --output only");
+      const output = resolve(cli.output || ".realitycheck/policy-review");
+      const review = buildPolicyReview(cli.policyReviewPaths[0], cli.policyReviewPaths[1]);
+      const outputs = writePolicyReview(review, output);
+      const [validation] = validateArtifactFiles([outputs.jsonPath]);
+      if (!validation?.valid) throw new Error(`Generated policy review failed validation: ${validation?.errors.join("; ")}`);
+      console.log(`policy-review.json:  ${outputs.jsonPath}`);
+      console.log(`policy-review.md:    ${outputs.markdownPath}`);
+      console.log(`policy-review.zh.md: ${outputs.markdownZhPath}`);
+      console.log(`policy-review.html:  ${outputs.htmlPath}`);
+      console.log(`changes:             ${review.summary.changes} (${review.summary.weakened} weakened, ${review.summary.strengthened} strengthened, ${review.summary.review} review)`);
+      console.log(`policy gate:         ${review.summary.gateFailed ? "FAILED" : "PASSED"}`);
+      process.exitCode = review.summary.gateFailed ? 1 : 0;
       return;
     }
     if (cli.command === "attest") {

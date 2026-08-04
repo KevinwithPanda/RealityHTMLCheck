@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/policy-review-v1.json",
+  "title": "RealityCheck Policy Change Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "generatedAt", "sources", "summary", "changes", "warnings"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "kind": { "const": "policy-review" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": { "$ref": "#/$defs/source" },
+        "after": { "$ref": "#/$defs/source" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["changes", "weakened", "strengthened", "review", "gateFailed"],
+      "properties": {
+        "changes": { "type": "integer", "minimum": 0 },
+        "weakened": { "type": "integer", "minimum": 0 },
+        "strengthened": { "type": "integer", "minimum": 0 },
+        "review": { "type": "integer", "minimum": 0 },
+        "gateFailed": { "type": "boolean" }
+      }
+    },
+    "changes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/change" }
+    },
+    "warnings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filename", "fingerprint"],
+      "properties": {
+        "filename": { "type": "string", "minLength": 1, "maxLength": 255, "pattern": "^[^/\\\\]+$" },
+        "fingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "value": {
+      "anyOf": [
+        { "type": "string", "maxLength": 120 },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "classification", "category", "key", "title", "titleZh", "rationale", "rationaleZh", "before", "after"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^POLICY-[A-F0-9]{10}$" },
+        "classification": { "enum": ["weakened", "strengthened", "review"] },
+        "category": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "key": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "titleZh": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "rationale": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "rationaleZh": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "before": { "$ref": "#/$defs/value" },
+        "after": { "$ref": "#/$defs/value" }
+      }
+    }
+  }
+}

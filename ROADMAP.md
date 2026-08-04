@@ -66,6 +66,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add a one-command bundled real-browser demo that needs no application server or project config.
 - [x] Add latest-target GitHub job summaries and bounded, injection-safe workflow annotations.
 - [x] Replace the single fixed mobile checkpoint with a bounded, policy-fingerprinted responsive viewport matrix and paired real-browser fixtures.
+- [x] Add a schema-validated structural policy anti-weakening review with bilingual GitHub Action evidence.
 
 ## v1.0 criteria
 

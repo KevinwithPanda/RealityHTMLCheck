@@ -27,6 +27,7 @@ copy("examples/visual-regression-lab", "labs/visual");
 copy("examples/security-lab", "labs/security");
 copy("examples/accessibility-lab", "labs/accessibility");
 copy("examples/viewport-lab", "labs/viewport");
+copy("examples/policy-review-lab", "labs/policy-review");
 writeFileSync(join(output, ".nojekyll"), "", "utf8");
 
 const latest = ["viewport", "journey", "visual", "network", "links", "metadata", "security", "accessibility"].map((kind) => {

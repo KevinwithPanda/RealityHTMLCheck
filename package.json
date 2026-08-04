@@ -39,6 +39,8 @@
     "github-actions",
     "responsive",
     "responsive-testing",
+    "policy-as-code",
+    "config-diff",
     "qa",
     "ai"
   ],

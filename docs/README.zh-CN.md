@@ -407,10 +407,16 @@ npx realitycheck risk-register .realitycheck/runs \
   --max-open-age-days 30 \
   --max-open-risks 20 \
   --max-recurring-risks 10
+
+npx realitycheck policy-review \
+  policy/main.config.json realitycheck.config.json \
+  --output .realitycheck/policy-review
 ```
 
-`validate` 会使用标准兼容的 JSON Schema 校验器，递归验证项目配置、报告、修复/验证产物、趋势、目录、最新入口、完整性清单和风险台账。`catalog` 会先校验发现的每份源产物，明确警告并跳过不兼容旧文件，再生成可搜索的产物目录。`risk-register` 按精确目标与稳定指纹聚合页面问题，记录首次/最近出现时间和重复次数，再结合最新证明场景与可用策略指纹保守地区分开放、已豁免、已解决与未验证风险；场景缺失或策略漂移都会明确保持未验证。开放风险总数、最长开放天数和反复风险总数均可设为组合门禁，失败时仍保留全部 JSON、双语 HTML、Markdown 和防公式注入 CSV 证据。所有合同位于 [`realitycheck/assets`](../realitycheck/assets)。
+`validate` 会使用标准兼容的 JSON Schema 校验器，递归验证项目配置、报告、修复/验证产物、趋势、目录、最新入口、完整性清单、风险台账与策略审查。`catalog` 会先校验发现的每份源产物，明确警告并跳过不兼容旧文件，再生成可搜索的产物目录。`risk-register` 按精确目标与稳定指纹聚合页面问题，记录首次/最近出现时间和重复次数，再结合最新证明场景与可用策略指纹保守地区分开放、已豁免、已解决与未验证风险；场景缺失或策略漂移都会明确保持未验证。开放风险总数、最长开放天数和反复风险总数均可设为组合门禁，失败时仍保留全部 JSON、双语 HTML、Markdown 和防公式注入 CSV 证据。
 
-本仓库也可直接作为复合 GitHub Action 使用。Action 会先执行页面/全站核查，可选地签署每份清单并按信任注册表生成决策，再始终尝试生成产物目录与长期风险台账；它会在页面、组合风险或信任门禁失败时先上传完整证据，之后才让作业失败。Action 暴露目录、风险、签名数、信任决策数及各层退出码，并支持 `max-open-risk-age-days`、`max-open-risks` 与 `max-recurring-risks` 三类组合预算。参考 [`examples/github-actions/quality-gate.yml`](../examples/github-actions/quality-gate.yml) 可建立只阻止新增回归的门禁。
+`policy-review` 会先验证前后两份配置，再比较实际生效的结构化约束，并输出通过 Schema 校验的 JSON、英文/中文 Markdown 与可搜索双语 HTML。删除视口、检查或安全响应头，Deep 改 Quick，放宽预算/评分门禁，新增视觉 mask 或豁免等会归类为 `weakened`；证据写完后返回退出码 `1`。无法自动判断强弱的路由 glob、选择器或断点尺寸变化会归类为 `review`，不会强行猜测。产物只保存文件名、策略指纹、安全 ID/计数与有界解释，不保存 base URL、选择器、应用路由、豁免原因或本机路径。[`examples/policy-review-lab`](../examples/policy-review-lab) 提供 40 项变化的可运行示例。
+
+本仓库也可直接作为复合 GitHub Action 使用。Action 会先执行页面/全站核查，可选地签署清单、评估信任、比较 `policy-before` 与 `policy-after`，再生成产物目录与长期风险台账；所有证据会在页面、策略、组合风险或信任门禁生效前上传。Action 还暴露 `policy-review-path` / `policy-exit-code`，并把所选语言的策略摘要写入作业摘要。参考 [`examples/github-actions/quality-gate.yml`](../examples/github-actions/quality-gate.yml) 可建立只阻止新增回归的门禁。
 
 项目目前仍以 Codex 为主要交互入口，但独立 CLI 和报告工具可以直接在克隆仓库中使用。路线图、贡献和安全说明见 [`ROADMAP.md`](../ROADMAP.md)、[`CONTRIBUTING.md`](../CONTRIBUTING.md) 与 [`SECURITY.md`](../SECURITY.md)。项目采用 [MIT License](../LICENSE)。

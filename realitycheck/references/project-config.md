@@ -339,3 +339,18 @@ An optional `baselinePolicy` prevents a regression-only `--baseline` from preser
 Pass an existing Playwright storage-state JSON file with `--storage-state PATH` or the `REALITYCHECK_STORAGE_STATE` environment variable. The CLI validates its top-level `cookies` and `origins` arrays, then loads it into each isolated context. It does not persist the path or any stored value.
 
 Use a least-privileged test account. Do not commit storage-state files, print them in CI logs, or use production admin sessions.
+
+## Review policy changes before merging
+
+Use a separately captured base-branch config and the proposed config. The review never reads Git history itself, so the caller controls exactly which two trusted files are compared:
+
+```bash
+realitycheck policy-review \
+  /tmp/realitycheck-main.config.json \
+  realitycheck.config.json \
+  --output .realitycheck/policy-review
+```
+
+Both inputs must pass the config contract. The command compares effective defaults plus explicit responsive, coverage, detector, budget, release-gate, baseline, security, ownership, and exception settings. It writes `policy-review.json`, English and Chinese Markdown, and one offline bilingual HTML view. Any `weakened` change makes the gate exit `1`; `review` changes remain visible but need human approval because route-glob overlap, breakpoint market coverage, selector intent, and legal/product requirements are not safe to infer. Exit `2` means invalid input or rendering failure.
+
+The review is deliberately metadata-minimal: source entries contain basenames and SHA-256 policy fingerprints, while changes contain stable IDs, categories, keys, counts/safe scalar values, and bounded bilingual rationales. It does not copy base URLs, filesystem paths, route patterns, selectors, custom titles/remediation, allowed origins, waiver reasons, or other arbitrary configuration text.

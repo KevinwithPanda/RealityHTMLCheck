@@ -103,6 +103,10 @@ Waived findings remain part of `findings`, severity counts, screenshots, Markdow
 Fingerprints use rule ID, scenario ID, normalized URL path, and normalized selector. Measurements are intentionally excluded so a detector keeps the same identity when pixel values change between runs.
 Finding IDs and fingerprints must be unique within a report. Aggregate repeated runtime messages or measurements into one finding rather than emitting duplicate cards.
 
+## Policy review contract
+
+`policy-review.json` is a separate `kind: "policy-review"` artifact. It stores safe before/after filenames and SHA-256 policy fingerprints, summary counts, a gate result, and stable `POLICY-*` changes classified as `weakened`, `strengthened`, or `review`. Summary counts and the gate are recomputed during validation; duplicate change IDs or changes attached to equal fingerprints are rejected. The paired Markdown and HTML files are review surfaces, while JSON remains authoritative.
+
 Visual policy findings use the ordinary finding contract. `visual-baseline-missing` references `screenshots/visual-current.png`; `visual-regression-threshold` additionally references `visual-approved.png` and `visual-diff.png`. Measurements record current/baseline dimensions, whether dimensions match, changed and total pixels, exact ratio and allowed ratio, per-channel threshold, and mask count. Baseline filesystem paths, mask selector text, URL queries, and fragments are not copied into the report. The evidence manifest hashes each emitted visual file like every other screenshot.
 
 ## English and Chinese content
