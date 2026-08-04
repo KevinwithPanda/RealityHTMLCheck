@@ -18,6 +18,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "site.webmanifest",
     "sitemap.xml",
     "assets/icon.svg",
+    "assets/social-preview.png",
     "reference/report.html",
     "evidence/viewport/latest.html",
     "evidence/journey/latest.html",
@@ -69,12 +70,17 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">/);
   assert.match(html, /<link rel="manifest" href="site\.webmanifest">/);
   assert.match(html, /<meta name="twitter:card" content="summary_large_image">/);
+  assert.match(html, /<meta property="og:image" content="https:\/\/kevinwithpanda\.github\.io\/RealityHTMLCheck\/assets\/social-preview\.png">/);
+  assert.match(html, /<meta property="og:image:type" content="image\/png">/);
+  assert.match(html, /<meta property="og:image:width" content="1280">/);
+  assert.match(html, /<meta property="og:image:height" content="640">/);
   const structuredDataMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
   assert.ok(structuredDataMatch, "Pages homepage is missing JSON-LD product metadata");
   const structuredData = JSON.parse(structuredDataMatch[1]);
   assert.equal(structuredData["@type"], "SoftwareApplication");
   assert.equal(structuredData.softwareVersion, "0.4.0");
   assert.equal(structuredData.codeRepository, "https://github.com/KevinwithPanda/RealityHTMLCheck");
+  assert.equal(structuredData.image, "https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png");
   assert.ok(structuredData.featureList.includes("Policy anti-weakening review"));
   assert.ok(structuredData.featureList.includes("Browser-free bilingual audit plan previews"));
   assert.match(html, /data-language="zh-CN"/);
