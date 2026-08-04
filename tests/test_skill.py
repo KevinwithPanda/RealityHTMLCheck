@@ -122,6 +122,7 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("risk-register-path", action)
         self.assertIn("Sign completed evidence manifests", action)
         self.assertIn("attestation-private-key", action)
+
         self.assertIn("attestation-trusted-key-id", action)
         self.assertIn("attestation-count", action)
         self.assertIn("max-open-risk-age-days", action)
@@ -155,6 +156,12 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn('RC_RELEASE_EXIT_CODE" = "3', action)
         self.assertIn('exit "$RC_EXIT_CODE"', action)
         self.assertNotIn("eval ", action)
+
+    def test_validation_workflow_waits_for_the_browser_fixture_without_hiding_startup_errors(self) -> None:
+        workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "validate.yml").read_text(encoding="utf-8")
+        self.assertIn("--retry-connrefused", workflow)
+        self.assertIn('cat "$lab_log"', workflow)
+        self.assertIn("trap cleanup_lab EXIT", workflow)
 
     def test_version_and_release_metadata_agree(self) -> None:
         version = (REPOSITORY_ROOT / "VERSION").read_text(encoding="utf-8").strip()

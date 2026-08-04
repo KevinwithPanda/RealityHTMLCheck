@@ -161,10 +161,22 @@ jobs:
       - name: Prove semantic response-header failure and recovery
         shell: bash
         run: |
-          node examples/security-header-lab/server.mjs 4193 > "$RUNNER_TEMP/realitycheck-security-header-lab.log" 2>&1 &
+          lab_log="$RUNNER_TEMP/realitycheck-security-header-lab.log"
+          node examples/security-header-lab/server.mjs 4193 > "$lab_log" 2>&1 &
           lab_pid=$!
-          trap 'kill "$lab_pid" 2>/dev/null || true' EXIT
-          curl --fail --silent --show-error --retry 20 --retry-delay 1 http://127.0.0.1:4193/fixed > /dev/null
+          cleanup_lab() {
+            status=$?
+            if test "$status" -ne 0; then
+              cat "$lab_log"
+            fi
+            kill "$lab_pid" 2>/dev/null || true
+            exit "$status"
+          }
+          trap cleanup_lab EXIT
+          # A fresh runner can reach curl before Node has bound the loopback
+          # socket. Plain `--retry` does not retry connection-refused errors.
+          curl --fail --silent --show-error --retry 20 --retry-delay 1 \
+            --retry-connrefused http://127.0.0.1:4193/fixed > /dev/null
           set +e
           node realitycheck/scripts/audit.mjs audit \
             --config examples/security-header-lab/broken.config.json \
