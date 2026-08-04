@@ -145,10 +145,14 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
 test("Pages workflow uses the supported deployment artifact path", () => {
   const workflow = readFileSync(".github/workflows/pages.yml", "utf8");
   assert.match(workflow, /npm run site:build/);
+  assert.match(workflow, /actions\/configure-pages@v6/);
   assert.match(workflow, /actions\/upload-pages-artifact@v4/);
   assert.match(workflow, /actions\/deploy-pages@v4/);
   assert.match(workflow, /path: _site/);
   assert.match(workflow, /continue-on-error: true/);
   assert.match(workflow, /Settings → Pages → Source: GitHub Actions/);
+  assert.match(workflow, /Require a real Pages deployment/);
+  assert.match(workflow, /GitHub Pages is not enabled for this repository/);
+  assert.match(workflow, /exit 1/);
   assert.match(workflow, /if: steps\.pages\.outcome == 'success'/);
 });

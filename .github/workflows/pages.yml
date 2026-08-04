@@ -31,7 +31,7 @@ jobs:
       - name: Prepare GitHub Pages
         id: pages
         continue-on-error: true
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
@@ -43,6 +43,11 @@ jobs:
             echo
             echo 'Enable **Settings → Pages → Source: GitHub Actions** once. The next push or manual workflow run will deploy the already-tested `_site` artifact.'
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Require a real Pages deployment
+        if: steps.pages.outcome != 'success'
+        run: |
+          echo 'GitHub Pages is not enabled for this repository. Open Settings → Pages, set Source to GitHub Actions, then rerun this workflow.' >&2
+          exit 1
       - name: Deploy to GitHub Pages
         id: deployment
         if: steps.pages.outcome == 'success'
