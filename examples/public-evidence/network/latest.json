@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "kind": "latest-run",
+  "updatedAt": "2026-08-04T16:59:09.325Z",
+  "artifactKind": "page-audit",
+  "runId": "20260804T165903Z-d3b2e3",
+  "target": "http://127.0.0.1:4182/examples/network-lab/broken.html",
+  "state": "failed",
+  "score": 96,
+  "artifacts": {
+    "html": "20260804T165903Z-d3b2e3/report.html",
+    "json": "20260804T165903Z-d3b2e3/report.json",
+    "repairPlanJson": "20260804T165903Z-d3b2e3/repair-plan.json",
+    "repairPlanMarkdown": "20260804T165903Z-d3b2e3/repair-plan.md",
+    "integrityManifest": "20260804T165903Z-d3b2e3/evidence-manifest.json"
+  }
+}

@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="RealityCheck RealityCheck network policy lab — broken" tests="6" time="5.274" timestamp="2026-08-04T16:59:03.576Z" failures="1" errors="0" skipped="0">
+  <properties>
+    <property name="realitycheck.runId" value="20260804T165903Z-d3b2e3" />
+    <property name="realitycheck.score" value="96" />
+    <property name="realitycheck.failOn" value="major" />
+    <property name="realitycheck.target" value="http://127.0.0.1:4182/examples/network-lab/broken.html" />
+  </properties>
+  <testcase classname="RealityCheck.browser" name="baseline" time="0.796">
+    <failure message="1 finding(s) met the major threshold" type="RealityCheckQualityGate">RC-55552DF828 [major] HTTP error responses exceed the network reliability budget</failure>
+    <system-out>RC-55552DF828 [major/high] HTTP error responses exceed the network reliability budget</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="mobile-375" time="0.651" />
+  <testcase classname="RealityCheck.browser" name="long-text" time="1.105" />
+  <testcase classname="RealityCheck.browser" name="rtl-arabic" time="1.037" />
+  <testcase classname="RealityCheck.browser" name="image-failure" time="0.841" />
+  <testcase classname="RealityCheck.browser" name="keyboard-tab" time="0.781" />
+</testsuite>

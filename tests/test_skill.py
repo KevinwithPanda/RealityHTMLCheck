@@ -223,6 +223,20 @@ class SkillStructureTests(unittest.TestCase):
         self.assertEqual(fixed.count('id="metric"'), 0)
         self.assertIn('aria-label="More workspace options"', fixed)
 
+    def test_network_policy_has_paired_failure_and_recovery_fixtures(self) -> None:
+        fixture = REPOSITORY_ROOT / "examples" / "network-lab"
+        broken_script = (fixture / "broken.js").read_text(encoding="utf-8")
+        fixed_script = (fixture / "fixed.js").read_text(encoding="utf-8")
+        broken_config = json.loads((fixture / "broken.config.json").read_text(encoding="utf-8"))
+        fixed_config = json.loads((fixture / "fixed.config.json").read_text(encoding="utf-8"))
+        self.assertIn("missing-orders.json", broken_script)
+        self.assertIn('fetch("orders.json"', fixed_script)
+        self.assertTrue((fixture / "orders.json").is_file())
+        self.assertEqual(broken_config["network"], fixed_config["network"])
+        self.assertEqual(broken_config["network"]["scope"], "api")
+        self.assertEqual(broken_config["network"]["maxHttpErrors"], 0)
+        self.assertEqual(broken_config["network"]["maxFailedRequests"], 0)
+
     def test_governed_waiver_fixture_is_explicit_and_keeps_the_control_missing(self) -> None:
         fixture = REPOSITORY_ROOT / "examples" / "waiver-lab"
         page = (fixture / "index.html").read_text(encoding="utf-8")

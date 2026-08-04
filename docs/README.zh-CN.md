@@ -144,6 +144,15 @@ npx realitycheck doctor
     "domNodes": 1800,
     "severity": "major"
   },
+  "network": {
+    "scope": "api",
+    "maxHttpErrors": 0,
+    "maxFailedRequests": 0,
+    "slowRequestMs": 1000,
+    "maxSlowRequests": 1,
+    "maxThirdPartyRequests": 2,
+    "severity": "major"
+  },
   "security": {
     "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
     "secureForms": true,
@@ -167,6 +176,8 @@ npx realitycheck doctor
 爬虫只跟随同源页面链接，会去掉查询参数和片段，不点击控件、不提交表单，并默认拒绝退出、购买、删除与 OAuth 等危险路径。每个页面都在隔离浏览器上下文中执行；单页运行失败不会抹掉其他页面的证据。
 
 自定义检查仅允许声明式断言：`exists`、`visible`、`enabled`、`accessible-name`、`attribute`、`count`、`no-horizontal-overflow`、`minimum-size`，并可用路由 glob 限定范围。声明式旅程可以跨同源导航、标签页和折叠面板复用这些断言，每一步都有截图；运行器会拒绝表单提交、危险文案、排除路由、匹配多个元素的点击和未明确标记的业务按钮。任意 JavaScript 都会被拒绝。可直接运行 [`examples/journey-lab`](../examples/journey-lab) 的成功与失败配置。
+
+网络可靠性策略可以独立约束“仅 API”或“全部资源”流量：限制 HTTP 错误、传输失败、慢请求及第三方请求数量。证据只保留有上限且已移除凭据、片段和查询参数值的端点样本，绝不保存响应正文。成对的 [`examples/network-lab`](../examples/network-lab) 会让缺失一个 API 的页面得到 **96/100**，恢复接口后得到 **100/100**。
 
 安全基线必须由项目显式配置，因此普通 localhost 不会自动被生产响应头要求误伤。策略可要求安全响应头、禁止混合内容、阻止不安全密码表单、限制第三方来源数量，并只允许精确 HTTPS 来源。[`examples/security-lab`](../examples/security-lab) 会在不提交表单的情况下证明三个缺失响应头和一个 GET 密码表单问题。
 
@@ -192,7 +203,7 @@ npx realitycheck doctor
 
 | 场景 | Quick | 核查目标 |
 | --- | :---: | --- |
-| Baseline | 是 | 运行时/资源问题、语义、自定义规则、核心体验性能预算和配置的安全策略 |
+| Baseline | 是 | 运行时/资源问题、语义、自定义规则、核心体验性能预算、网络可靠性限制和配置的安全策略 |
 | 375px 手机 | 是 | 离屏操作、固定宽度和页面横向溢出 |
 | 长文本 | 是 | 中文、emoji、无空格长串造成的新截断或恶化 |
 | RTL 阿拉伯语 | 是 | 物理方向 CSS 和对齐假设 |

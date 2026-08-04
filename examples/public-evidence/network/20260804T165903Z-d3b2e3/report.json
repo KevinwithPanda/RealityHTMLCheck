@@ -1,0 +1,235 @@
+{
+  "adapter": {
+    "capabilities": [
+      "console",
+      "dom",
+      "isolated-contexts",
+      "network-routing",
+      "screenshots",
+      "viewport",
+      "network-reliability-budgets",
+      "detector-policy-fingerprint"
+    ],
+    "isolation": "fresh-context",
+    "name": "project-playwright"
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major",
+    "policyFingerprint": "sha256:9f73c960bba221865e6261d903c94a3828d09b0c19620fdfe60f01514db9fb43"
+  },
+  "findings": [
+    {
+      "classification": "existing",
+      "confidence": "high",
+      "evidence": [
+        {
+          "actual": 1,
+          "limit": 0,
+          "policy": "network-http-error-budget",
+          "samples": [
+            {
+              "durationMs": 82,
+              "method": "GET",
+              "origin": "http://127.0.0.1:4182",
+              "resourceType": "fetch",
+              "status": 404,
+              "url": "http://127.0.0.1:4182/examples/network-lab/missing-orders.json"
+            }
+          ],
+          "scope": "api",
+          "type": "network-policy"
+        },
+        {
+          "label": "Baseline network policy",
+          "path": "screenshots/baseline.png",
+          "type": "screenshot"
+        }
+      ],
+      "fingerprint": "55552df82815b93921b3548cf9db8a8a5a25baff7d47ff89f2d8f2b86fdd9206",
+      "id": "RC-55552DF828",
+      "measurements": {
+        "actual": 1,
+        "limit": 0,
+        "scope": "api",
+        "statuses": {
+          "404": 1
+        }
+      },
+      "remediation": {
+        "summary": "Restore each application-owned endpoint or remove the request intentionally; document an exception instead of hiding a known failure.",
+        "technicalHints": [
+          "Start with 5xx responses and XHR/fetch calls on the critical path."
+        ]
+      },
+      "reproductionSteps": [
+        "Open the target in a fresh browser context with an empty cache.",
+        "Observe XHR and fetch requests until the page settles, then compare the recorded count with the configured limit."
+      ],
+      "ruleId": "network-http-error-budget",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "summary": "1 in-scope request(s) returned HTTP 4xx/5xx responses, above the configured maximum of 0.",
+      "title": "HTTP error responses exceed the network reliability budget",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "恢复每个应用自身的接口，或在确认无用后移除请求；对已知例外应保留记录，不要隐藏失败。",
+            "technicalHints": [
+              "优先处理关键路径中的 5xx 响应和 XHR/fetch 调用。"
+            ]
+          },
+          "reproductionSteps": [
+            "在缓存为空的新浏览器上下文中打开目标页面。",
+            "观察页面稳定前的 XHR 与 fetch请求，并将记录数量与配置上限比较。"
+          ],
+          "summary": "有 1 个策略范围内的请求返回 HTTP 4xx/5xx，超过配置上限 0。",
+          "title": "HTTP 错误响应超过网络可靠性预算"
+        }
+      },
+      "url": "http://127.0.0.1:4182/examples/network-lab/broken.html"
+    }
+  ],
+  "run": {
+    "durationMs": 5274.0,
+    "finishedAt": "2026-08-04T16:59:08.864Z",
+    "id": "20260804T165903Z-d3b2e3",
+    "mode": "quick",
+    "startedAt": "2026-08-04T16:59:03.576Z"
+  },
+  "scenarios": [
+    {
+      "durationMs": 796.0,
+      "id": "baseline",
+      "notes": [
+        "Baseline runtime findings were recorded."
+      ],
+      "status": "completed-with-findings",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已记录基线运行时问题。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 651.0,
+      "id": "mobile-375",
+      "notes": [],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": []
+        }
+      }
+    },
+    {
+      "durationMs": 1105.0,
+      "id": "long-text",
+      "notes": [
+        "3 deterministic text mutations were applied."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已执行 3 次确定性的文本替换。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 1037.0,
+      "id": "rtl-arabic",
+      "notes": [
+        "Directionality stress test only; translation quality was not assessed."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "仅进行书写方向压力测试；未评估翻译质量。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 841.0,
+      "id": "image-failure",
+      "notes": [
+        "Expected image request aborts were excluded from failed-request findings."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "预期的图片请求中止未计入普通请求失败问题。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 781.0,
+      "id": "keyboard-tab",
+      "notes": [
+        "No controls were activated or submitted."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未激活或提交任何控件。"
+          ]
+        }
+      }
+    }
+  ],
+  "schemaVersion": "1",
+  "score": {
+    "baselinePenalty": 4.0,
+    "chaosPenalty": 0.0,
+    "counts": {
+      "critical": 0,
+      "info": 0,
+      "major": 1,
+      "minor": 0
+    },
+    "ignoredLowConfidenceFindings": 0,
+    "overall": 96,
+    "scoredFindings": 1,
+    "totalFindings": 1
+  },
+  "target": {
+    "finalUrl": "http://127.0.0.1:4182/examples/network-lab/broken.html",
+    "requestedUrl": "http://127.0.0.1:4182/examples/network-lab/broken.html",
+    "title": "RealityCheck network policy lab — broken"
+  },
+  "threshold": {
+    "coveragePercent": 100.0,
+    "failOn": "major",
+    "met": true,
+    "violations": [
+      {
+        "actual": 1,
+        "code": "severity-threshold",
+        "expected": 0
+      }
+    ]
+  },
+  "toolVersion": "0.4.0",
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "独立核查使用了已安装的系统浏览器（150.0.7871.116）。",
+        "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        "已在不保存响应正文或查询参数值的前提下核查 4 项明确的网络可靠性限制。"
+      ]
+    }
+  },
+  "warnings": [
+    "Standalone audit used an already-installed system browser (150.0.7871.116).",
+    "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    "4 explicit network reliability limit(s) were evaluated without persisting response bodies or query values."
+  ]
+}

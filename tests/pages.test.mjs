@@ -16,9 +16,12 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "assets/icon.svg",
     "reference/report.html",
     "evidence/journey/latest.html",
+    "evidence/network/latest.html",
     "evidence/security/latest.html",
     "evidence/accessibility/latest.html",
     "labs/journey/broken.html",
+    "labs/network/broken.html",
+    "labs/network/fixed.html",
     "labs/security/index.html",
     "labs/accessibility/broken.html",
   ]) assert.equal(existsSync(resolve(output, path)), true, `Pages output is missing ${path}`);

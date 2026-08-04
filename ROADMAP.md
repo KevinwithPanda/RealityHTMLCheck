@@ -50,6 +50,18 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add explicit regression-baseline freshness policy for page and site release gates.
 - [x] Prevent false resolutions by fingerprinting detector policy and gating regression baselines on policy drift.
 
+## v0.4 - Product workflows and public proof
+
+- [x] Add safe declarative user journeys with per-step evidence and non-submission guards.
+- [x] Bundle axe-core for bounded WCAG A/AA and best-practice evidence in Deep mode.
+- [x] Add explicit response, form, and third-party-origin security policy.
+- [x] Add Core Web Vital budgets captured from pre-navigation observers.
+- [x] Add API/all-resource reliability budgets for HTTP errors, transport failures, latency, and third-party request volume.
+- [x] Publish a bilingual Pages site with real Chrome evidence packs and live failing fixtures.
+- [ ] Add visual-regression baselines with explicit update approval and perceptual-difference evidence.
+- [ ] Add route-level link-integrity auditing with safe HEAD/GET boundaries and redirect-chain evidence.
+- [ ] Add shareable policy presets for starter, product, and regulated-team adoption.
+
 ## v1.0 criteria
 
 - Stable report and adapter contracts.

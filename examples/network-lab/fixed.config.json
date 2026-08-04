@@ -1,0 +1,16 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4182/examples/network-lab/fixed.html",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/network-lab-fixed",
+  "network": {
+    "scope": "api",
+    "maxHttpErrors": 0,
+    "maxFailedRequests": 0,
+    "slowRequestMs": 1000,
+    "maxSlowRequests": 0,
+    "maxThirdPartyRequests": 0,
+    "severity": "major"
+  }
+}

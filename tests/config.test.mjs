@@ -82,6 +82,25 @@ test("performance budgets are bounded and carry an explicit severity", () => {
   assert.throws(() => validateProjectConfig({ budgets: { cumulativeLayoutShift: "0.1" } }), /number from 0 to 100/);
 });
 
+test("network reliability budgets are scoped, paired, and bounded", () => {
+  const network = {
+    severity: "critical",
+    scope: "api",
+    maxHttpErrors: 0,
+    maxFailedRequests: 0,
+    slowRequestMs: 750,
+    maxSlowRequests: 2,
+    maxThirdPartyRequests: 4,
+  };
+  assert.deepEqual(validateProjectConfig({ network }).network, network);
+  assert.deepEqual(validateProjectConfig({ network: { maxHttpErrors: 0 } }).network, { severity: "major", scope: "api", maxHttpErrors: 0 });
+  assert.throws(() => validateProjectConfig({ network: { severity: "major" } }), /at least one request limit/);
+  assert.throws(() => validateProjectConfig({ network: { maxSlowRequests: 0 } }), /must be configured together/);
+  assert.throws(() => validateProjectConfig({ network: { slowRequestMs: 500 } }), /must be configured together/);
+  assert.throws(() => validateProjectConfig({ network: { scope: "scripts", maxHttpErrors: 0 } }), /api or all/);
+  assert.throws(() => validateProjectConfig({ network: { maxThirdPartyRequests: -1 } }), /0 to 10000/);
+});
+
 test("security policies are explicit, bounded, and origin-only", () => {
   const security = {
     severity: "major",

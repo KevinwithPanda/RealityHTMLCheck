@@ -4,6 +4,17 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ## [Unreleased]
 
+### Added
+
+- Opt-in API/all-resource network reliability budgets for HTTP errors, transport failures, slow requests, and third-party request volume, with bounded query-free endpoint samples and no response-body retention.
+- Passing/failing network fixtures plus committed real-browser evidence proving a missing API fails at 96/100 while the restored endpoint passes at 100/100.
+- A bilingual GitHub Pages product site that publishes four immutable real-browser evidence packs, live fixtures, repair actions, and a SHA-256-verifiable reference report.
+
+### Changed
+
+- Detector policy fingerprints and `doctor` output now include network reliability policy so removing an API gate cannot masquerade as a verified fix.
+- Generated Markdown metadata uses explicit lists instead of invisible hard-break whitespace, keeping repository quality checks clean across editors and GitHub.
+
 ## [0.4.0] - 2026-08-05
 
 ### Added

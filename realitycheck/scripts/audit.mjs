@@ -390,6 +390,7 @@ function runDoctor(options, loaded) {
   if (options.checks.length) check("Declarative checks", () => `${options.checks.length} validated rule(s); no executable code`);
   if (options.journeys.length) check("Safe user journeys", () => `${options.journeys.length} validated journey(s); same-origin, no form submission`);
   if (options.budgets) check("Performance budgets", () => `${Object.keys(options.budgets).length - 1} configured limit(s)`);
+  if (options.network) check("Network reliability", () => `${Object.keys(options.network).filter((key) => key.startsWith("max")).length} configured ${options.network.scope} request limit(s); no response bodies or query values retained`);
   if (options.security) check("Security baseline", () => `${Object.keys(options.security).length - 1} explicit policy setting(s); no form submission`);
   if (options.waivers.length) check("Governed waivers", () => {
     const now = new Date();
@@ -662,7 +663,22 @@ async function createPage(browser, target, scenarioId, runDirectory, options = {
   });
   if (options.route) await options.route(context);
   const page = await context.newPage();
-  const runtime = { consoleErrors: [], pageErrors: [], failedRequests: [], httpErrors: [] };
+  const runtime = { consoleErrors: [], pageErrors: [], failedRequests: [], httpErrors: [], requests: [] };
+  const requestRecords = new WeakMap();
+  page.on("request", (request) => {
+    if (runtime.requests.length >= 5_000) return;
+    const record = {
+      url: request.url(),
+      method: request.method(),
+      resourceType: request.resourceType(),
+      startedAt: Date.now(),
+      durationMs: null,
+      status: null,
+      failed: false,
+    };
+    runtime.requests.push(record);
+    requestRecords.set(request, record);
+  });
   page.on("console", (message) => {
     if (message.type() === "error" && runtime.consoleErrors.length < 500) runtime.consoleErrors.push(message.text());
   });
@@ -670,13 +686,24 @@ async function createPage(browser, target, scenarioId, runDirectory, options = {
     if (runtime.pageErrors.length < 100) runtime.pageErrors.push(String(error.message || error));
   });
   page.on("requestfailed", (request) => {
+    const record = requestRecords.get(request);
+    if (record) {
+      record.durationMs = Math.max(0, Date.now() - record.startedAt);
+      record.failed = true;
+    }
     if (runtime.failedRequests.length < 1000 && !options.expectedFailure?.(request)) {
-      runtime.failedRequests.push({ url: request.url(), resourceType: request.resourceType(), error: request.failure()?.errorText || "failed" });
+      runtime.failedRequests.push({ url: networkEvidenceUrl(request.url()), resourceType: request.resourceType(), error: request.failure()?.errorText || "failed" });
     }
   });
+  page.on("requestfinished", (request) => {
+    const record = requestRecords.get(request);
+    if (record) record.durationMs = Math.max(0, Date.now() - record.startedAt);
+  });
   page.on("response", (response) => {
+    const record = requestRecords.get(response.request());
+    if (record) record.status = response.status();
     if (runtime.httpErrors.length < 1000 && response.status() >= 400) runtime.httpErrors.push({
-      url: response.url(),
+      url: networkEvidenceUrl(response.url()),
       status: response.status(),
       method: response.request().method(),
       resourceType: response.request().resourceType(),
@@ -953,6 +980,144 @@ async function runPerformanceBudgets(page, budgets) {
   return findings;
 }
 
+const API_RESOURCE_TYPES = new Set(["xhr", "fetch"]);
+
+function networkEvidenceUrl(value) {
+  try {
+    const parsed = new URL(value);
+    parsed.username = "";
+    parsed.password = "";
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.toString();
+  } catch (_) {
+    return "[unparseable URL]";
+  }
+}
+
+function networkSample(record) {
+  const url = networkEvidenceUrl(record.url);
+  let origin = "unknown";
+  try { origin = new URL(url).origin; } catch (_) {}
+  return {
+    url,
+    origin,
+    method: record.method || "GET",
+    resourceType: record.resourceType || "other",
+    ...(Number.isInteger(record.status) ? { status: record.status } : {}),
+    ...(Number.isFinite(record.durationMs) ? { durationMs: record.durationMs } : {}),
+    ...(record.failed ? { failed: true } : {}),
+  };
+}
+
+function runNetworkPolicies(runtime, target, policy) {
+  if (!policy) return [];
+  const documentOrigin = new URL(target).origin;
+  const requests = runtime.requests
+    .filter((item) => policy.scope === "all" || API_RESOURCE_TYPES.has(item.resourceType))
+    .map((item) => ({ ...item, durationMs: item.durationMs ?? Math.max(0, Date.now() - item.startedAt) }));
+  const httpErrors = requests.filter((item) => Number.isInteger(item.status) && item.status >= 400);
+  const failedRequests = requests.filter((item) => item.failed);
+  const slowRequests = policy.slowRequestMs === undefined ? [] : requests.filter((item) => item.durationMs > policy.slowRequestMs);
+  const thirdPartyRequests = requests.filter((item) => {
+    try { return new URL(item.url).origin !== documentOrigin; } catch (_) { return false; }
+  });
+  const findings = [];
+  const addFinding = ({ ruleId, title, titleZh, summary, summaryZh, actual, limit, samples, measurementExtra = {}, fix, fixZh, hints = [], hintsZh = [] }) => {
+    findings.push(finding({
+      ruleId,
+      scenarioId: "baseline",
+      classification: "existing",
+      severity: policy.severity,
+      confidence: "high",
+      title,
+      titleZh,
+      summary,
+      summaryZh,
+      measurements: { scope: policy.scope, actual, limit, ...measurementExtra },
+      evidence: [{ type: "network-policy", policy: ruleId, scope: policy.scope, actual, limit, samples: samples.slice(0, 10).map(networkSample) }, screenshotEvidence("baseline", "Baseline network policy")],
+      steps: ["Open the target in a fresh browser context with an empty cache.", `Observe ${policy.scope === "api" ? "XHR and fetch" : "all"} requests until the page settles, then compare the recorded count with the configured limit.`],
+      stepsZh: ["在缓存为空的新浏览器上下文中打开目标页面。", `观察页面稳定前的${policy.scope === "api" ? " XHR 与 fetch" : "全部"}请求，并将记录数量与配置上限比较。`],
+      fix,
+      fixZh,
+      hints,
+      hintsZh,
+    }));
+  };
+  if (policy.maxHttpErrors !== undefined && httpErrors.length > policy.maxHttpErrors) {
+    const statuses = Object.fromEntries([...new Set(httpErrors.map((item) => item.status))].sort((a, b) => a - b).map((status) => [String(status), httpErrors.filter((item) => item.status === status).length]));
+    addFinding({
+      ruleId: "network-http-error-budget",
+      title: "HTTP error responses exceed the network reliability budget",
+      titleZh: "HTTP 错误响应超过网络可靠性预算",
+      summary: `${httpErrors.length} in-scope request(s) returned HTTP 4xx/5xx responses, above the configured maximum of ${policy.maxHttpErrors}.`,
+      summaryZh: `有 ${httpErrors.length} 个策略范围内的请求返回 HTTP 4xx/5xx，超过配置上限 ${policy.maxHttpErrors}。`,
+      actual: httpErrors.length,
+      limit: policy.maxHttpErrors,
+      samples: httpErrors,
+      measurementExtra: { statuses },
+      fix: "Restore each application-owned endpoint or remove the request intentionally; document an exception instead of hiding a known failure.",
+      fixZh: "恢复每个应用自身的接口，或在确认无用后移除请求；对已知例外应保留记录，不要隐藏失败。",
+      hints: ["Start with 5xx responses and XHR/fetch calls on the critical path."],
+      hintsZh: ["优先处理关键路径中的 5xx 响应和 XHR/fetch 调用。"],
+    });
+  }
+  if (policy.maxFailedRequests !== undefined && failedRequests.length > policy.maxFailedRequests) {
+    addFinding({
+      ruleId: "network-failed-request-budget",
+      title: "Transport failures exceed the network reliability budget",
+      titleZh: "传输失败超过网络可靠性预算",
+      summary: `${failedRequests.length} in-scope request(s) failed before an HTTP response, above the configured maximum of ${policy.maxFailedRequests}.`,
+      summaryZh: `有 ${failedRequests.length} 个策略范围内的请求在收到 HTTP 响应前失败，超过配置上限 ${policy.maxFailedRequests}。`,
+      actual: failedRequests.length,
+      limit: policy.maxFailedRequests,
+      samples: failedRequests,
+      fix: "Correct DNS, TLS, connectivity, cancellation, or application lifecycle failures and preserve a resilient user-visible fallback.",
+      fixZh: "修正 DNS、TLS、连接、中止或应用生命周期故障，并保留对用户可见的可靠降级。",
+      hints: ["Use the sampled resource type and redacted endpoint to locate the first failed dependency."],
+      hintsZh: ["利用样本中的资源类型和脱敏端点定位第一个失败依赖。"],
+    });
+  }
+  if (policy.maxSlowRequests !== undefined && slowRequests.length > policy.maxSlowRequests) {
+    addFinding({
+      ruleId: "network-slow-request-budget",
+      title: "Slow requests exceed the network reliability budget",
+      titleZh: "慢请求超过网络可靠性预算",
+      summary: `${slowRequests.length} in-scope request(s) took longer than ${policy.slowRequestMs} ms, above the configured maximum of ${policy.maxSlowRequests}.`,
+      summaryZh: `有 ${slowRequests.length} 个策略范围内的请求耗时超过 ${policy.slowRequestMs} 毫秒，超过配置上限 ${policy.maxSlowRequests}。`,
+      actual: slowRequests.length,
+      limit: policy.maxSlowRequests,
+      samples: slowRequests.sort((left, right) => right.durationMs - left.durationMs),
+      measurementExtra: { slowRequestMs: policy.slowRequestMs, maximumDurationMs: Math.max(...slowRequests.map((item) => item.durationMs)) },
+      fix: "Reduce server or dependency latency, remove serial request waterfalls, and keep loading feedback for work that cannot complete quickly.",
+      fixZh: "降低服务端或依赖延迟、消除串行请求瀑布，并为无法快速完成的工作保留加载反馈。",
+      hints: ["Use the longest sampled requests to distinguish backend latency from front-end request sequencing."],
+      hintsZh: ["从耗时最长的请求样本判断问题来自后端延迟还是前端请求顺序。"],
+    });
+  }
+  if (policy.maxThirdPartyRequests !== undefined && thirdPartyRequests.length > policy.maxThirdPartyRequests) {
+    const origins = [...new Set(thirdPartyRequests.map((item) => {
+      try { return new URL(item.url).origin; } catch (_) { return "unknown"; }
+    }))].sort();
+    addFinding({
+      ruleId: "network-third-party-request-budget",
+      title: "Third-party request volume exceeds the reliability budget",
+      titleZh: "第三方请求数量超过可靠性预算",
+      summary: `${thirdPartyRequests.length} in-scope request(s) contacted third parties, above the configured maximum of ${policy.maxThirdPartyRequests}.`,
+      summaryZh: `有 ${thirdPartyRequests.length} 个策略范围内的请求联系第三方，超过配置上限 ${policy.maxThirdPartyRequests}。`,
+      actual: thirdPartyRequests.length,
+      limit: policy.maxThirdPartyRequests,
+      samples: thirdPartyRequests,
+      measurementExtra: { origins },
+      fix: "Remove unnecessary third-party calls, consolidate approved dependencies, or load non-critical integrations outside the critical path.",
+      fixZh: "移除不必要的第三方调用、合并已批准依赖，或将非关键集成移出关键路径。",
+      hints: ["Review privacy and availability ownership for every recorded third-party origin."],
+      hintsZh: ["逐一审核报告中第三方来源的隐私与可用性责任。"],
+    });
+  }
+  return findings;
+}
+
 async function runSecurityPolicies(page, response, target, policy) {
   if (!policy) return [];
   const findings = [];
@@ -1070,7 +1235,7 @@ async function runSecurityPolicies(page, response, target, policy) {
   return findings;
 }
 
-async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, security = null) {
+async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, network = null, security = null) {
   const findings = [];
   const results = new Map();
   let targetTitle = "";
@@ -1114,7 +1279,7 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
     }));
   }
   const httpErrors = [...new Map(baseline.runtime.httpErrors.map((item) => [`${item.status}:${item.url}`, item])).values()].slice(0, 5);
-  if (httpErrors.length) {
+  if (httpErrors.length && network?.maxHttpErrors === undefined) {
     findings.push(finding({
       ruleId: "http-error-response", scenarioId: "baseline", classification: "existing", severity: httpErrors.some((item) => item.status >= 500 || ["document", "script", "stylesheet", "xhr", "fetch"].includes(item.resourceType)) ? "major" : "minor", confidence: "high",
       title: "Resources fail during baseline load", titleZh: "基线加载期间有资源请求失败",
@@ -1128,7 +1293,7 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
     }));
   }
   const failedRequests = [...new Map(baseline.runtime.failedRequests.map((item) => [`${item.resourceType}:${item.url}`, item])).values()].slice(0, 5);
-  if (failedRequests.length) {
+  if (failedRequests.length && network?.maxFailedRequests === undefined) {
     findings.push(finding({
       ruleId: "failed-request", scenarioId: "baseline", classification: "existing", severity: failedRequests.some((item) => ["document", "script", "stylesheet", "xhr", "fetch"].includes(item.resourceType)) ? "major" : "minor", confidence: "high",
       title: "Requests fail during baseline load", titleZh: "基线加载期间有请求失败",
@@ -1202,6 +1367,7 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
   }
   if (customChecks.length) findings.push(...await runCustomChecks(baseline.page, customChecks));
   if (budgets) findings.push(...await runPerformanceBudgets(baseline.page, budgets));
+  if (network) findings.push(...runNetworkPolicies(baseline.runtime, finalUrl, network));
   if (security) findings.push(...await runSecurityPolicies(baseline.page, baseline.response, finalUrl, security));
   results.set("baseline", scenarioResult("baseline", findings.length ? "completed-with-findings" : "passed", baseline.durationMs(), findings.length ? ["Baseline runtime findings were recorded."] : [], findings.length ? ["已记录基线运行时问题。"] : []));
   await baseline.context.close();
@@ -1967,7 +2133,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   const contextOptions = options.storageState ? { storageState: options.storageState } : {};
   const pathname = new URL(target).pathname;
   const applicableChecks = options.checks.filter((check) => routeAllowed(pathname, { include: check.include, exclude: check.exclude }));
-  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.security);
+  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.network, options.security);
   if (options.mode === "deep") {
     await runDeepScenarios(browser, target, runDirectory, auditResult.findings, auditResult.results, contextOptions);
   }
@@ -1991,6 +2157,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   if (options.storageState) audit.adapter.capabilities.push("authenticated-storage-state");
   if (applicableChecks.length) audit.adapter.capabilities.push("declarative-custom-checks");
   if (options.budgets) audit.adapter.capabilities.push("performance-budgets");
+  if (options.network) audit.adapter.capabilities.push("network-reliability-budgets");
   if (options.security) audit.adapter.capabilities.push("security-response-and-origin-policy");
   if (journeyResult.scenarios.length) audit.adapter.capabilities.push("safe-declarative-journeys");
   if (options.waivers.length) audit.adapter.capabilities.push("governed-waivers");
@@ -2008,6 +2175,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
     ...(options.storageState ? ["A user-provided Playwright storage state was loaded into isolated contexts; its path and values were not persisted."] : []),
     ...(applicableChecks.length ? [`${applicableChecks.length} declarative custom requirement(s) were evaluated without arbitrary script execution.`] : []),
     ...(options.budgets ? [`${Object.keys(options.budgets).length - 1} project performance budget(s) were evaluated from the browser Performance API.`] : []),
+    ...(options.network ? [`${Object.keys(options.network).filter((key) => key.startsWith("max")).length} explicit network reliability limit(s) were evaluated without persisting response bodies or query values.`] : []),
     ...(options.security ? [`${Object.keys(options.security).length - 1} explicit response, origin, and form security policy setting(s) were evaluated without submitting data.`] : []),
     ...(journeyResult.scenarios.length ? [`${journeyResult.scenarios.length} declarative user journey(s) were executed with same-origin and non-submission safety guards.`] : []),
     ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} finding(s) matched an active governed waiver; evidence remains visible but the finding is excluded from score and gate calculations.`] : []),
@@ -2025,6 +2193,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
         ...(options.storageState ? ["用户提供的 Playwright 登录状态仅加载到隔离上下文中；路径和内容均未写入报告。"] : []),
         ...(applicableChecks.length ? [`已执行 ${applicableChecks.length} 条声明式自定义要求，未运行任意脚本。`] : []),
         ...(options.budgets ? [`已通过浏览器 Performance API 核查 ${Object.keys(options.budgets).length - 1} 项项目性能预算。`] : []),
+        ...(options.network ? [`已在不保存响应正文或查询参数值的前提下核查 ${Object.keys(options.network).filter((key) => key.startsWith("max")).length} 项明确的网络可靠性限制。`] : []),
         ...(options.security ? [`已在不提交数据的前提下核查 ${Object.keys(options.security).length - 1} 项明确的响应、来源与表单安全策略。`] : []),
         ...(journeyResult.scenarios.length ? [`已在同源且禁止提交的安全限制下执行 ${journeyResult.scenarios.length} 个声明式用户旅程。`] : []),
         ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} 个问题命中了有效的可审计豁免；证据仍保留，但不计入评分和门禁。`] : []),

@@ -195,6 +195,29 @@
         { "required": ["domNodes"], "properties": { "domNodes": true } }
       ]
     },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "severity": { "enum": ["critical", "major", "minor"] },
+        "scope": { "enum": ["api", "all"] },
+        "maxHttpErrors": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "maxFailedRequests": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "slowRequestMs": { "type": "integer", "minimum": 1, "maximum": 120000 },
+        "maxSlowRequests": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "maxThirdPartyRequests": { "type": "integer", "minimum": 0, "maximum": 10000 }
+      },
+      "dependentRequired": {
+        "slowRequestMs": ["maxSlowRequests"],
+        "maxSlowRequests": ["slowRequestMs"]
+      },
+      "anyOf": [
+        { "required": ["maxHttpErrors"], "properties": { "maxHttpErrors": true } },
+        { "required": ["maxFailedRequests"], "properties": { "maxFailedRequests": true } },
+        { "required": ["maxSlowRequests"], "properties": { "maxSlowRequests": true } },
+        { "required": ["maxThirdPartyRequests"], "properties": { "maxThirdPartyRequests": true } }
+      ]
+    },
     "security": {
       "type": "object",
       "additionalProperties": false,

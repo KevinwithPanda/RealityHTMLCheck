@@ -1,0 +1,55 @@
+{
+  "items": [
+    {
+      "confidence": "high",
+      "findingId": "RC-55552DF828",
+      "fingerprint": "55552df82815b93921b3548cf9db8a8a5a25baff7d47ff89f2d8f2b86fdd9206",
+      "remediation": {
+        "summary": "Restore each application-owned endpoint or remove the request intentionally; document an exception instead of hiding a known failure.",
+        "technicalHints": [
+          "Start with 5xx responses and XHR/fetch calls on the critical path."
+        ]
+      },
+      "reportAnchor": "report.html#RC-55552DF828",
+      "ruleId": "network-http-error-budget",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "HTTP error responses exceed the network reliability budget",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "恢复每个应用自身的接口，或在确认无用后移除请求；对已知例外应保留记录，不要隐藏失败。",
+            "technicalHints": [
+              "优先处理关键路径中的 5xx 响应和 XHR/fetch 调用。"
+            ]
+          },
+          "title": "HTTP 错误响应超过网络可靠性预算"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    }
+  ],
+  "kind": "repair-plan",
+  "schemaVersion": "1",
+  "source": {
+    "reportPath": "report.json",
+    "runId": "20260804T165903Z-d3b2e3",
+    "target": "http://127.0.0.1:4182/examples/network-lab/broken.html"
+  },
+  "summary": {
+    "critical": 0,
+    "items": 1,
+    "major": 1,
+    "minor": 0,
+    "reviewRequired": 0,
+    "waived": 0
+  },
+  "toolVersion": "0.4.0"
+}

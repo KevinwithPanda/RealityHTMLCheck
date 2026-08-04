@@ -225,6 +225,10 @@ Run only config-validated assertions: existence, visibility, enabled state, acce
 
 Install buffered LCP and layout-shift observers before baseline navigation. After settle, record navigation duration, DOMContentLoaded duration, TTFB, FCP, LCP, CLS, resource request count, transferred KiB when available, and DOM node count. Compare only configured limits. These are lab observations, not field RUM. A zero transfer size or paint value may mean the browser/server omitted timing data; do not infer that the page transferred or painted nothing. Budget changes require product approval and must not be used as an automatic repair.
 
+### Network reliability policies
+
+Register request lifecycle listeners before baseline navigation. Apply the validated `api` or `all` scope consistently to HTTP errors, pre-response failures, duration measurements, and third-party request counts. A slow-request policy requires both its duration threshold and allowed count. Record bounded samples only after removing URL credentials, fragments, and the entire query string; never inspect or persist response bodies. Do not turn a failing endpoint into an ignored endpoint automatically. When a configured maximum replaces the default generic HTTP/failure detector, preserve the generic detector for request classes not governed by that maximum.
+
 ### Safe declarative journeys
 
 Run configured journeys only once from the primary target, in a fresh context. Resolve `startPath` and `goto` paths against the audited origin and enforce the merged route exclusions. A click must match exactly one element and be a same-origin allowed link, semantic tab/disclosure, or non-submit button explicitly marked `data-realitycheck-safe="true"`. Reject destructive labels and all submit controls. Never fill inputs, read form values, or activate login, consent, purchase, delete, publish, send, or logout actions. Capture bounded step traces and screenshots; stop on the first failure so later steps cannot obscure the root transition.

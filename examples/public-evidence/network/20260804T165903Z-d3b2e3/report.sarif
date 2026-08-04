@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "20260804T165903Z-d3b2e3"
+      },
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/network-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "HTTP error responses exceed the network reliability budget: 1 in-scope request(s) returned HTTP 4xx/5xx responses, above the configured maximum of 0."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "55552df82815b93921b3548cf9db8a8a5a25baff7d47ff89f2d8f2b86fdd9206"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-55552DF828",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "network-http-error-budget"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "RealityCheck",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "1 in-scope request(s) returned HTTP 4xx/5xx responses, above the configured maximum of 0."
+              },
+              "help": {
+                "markdown": "Restore each application-owned endpoint or remove the request intentionally; document an exception instead of hiding a known failure.\n\n- Start with 5xx responses and XHR/fetch calls on the critical path.",
+                "text": "Restore each application-owned endpoint or remove the request intentionally; document an exception instead of hiding a known failure.\n\n- Start with 5xx responses and XHR/fetch calls on the critical path."
+              },
+              "id": "network-http-error-budget",
+              "name": "network_http_error_budget",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "HTTP error responses exceed the network reliability budget"
+              }
+            }
+          ],
+          "semanticVersion": "0.4.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}
