@@ -32,6 +32,9 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   const html = readFileSync(resolve(output, "index.html"), "utf8");
   assert.match(html, /<link rel="canonical" href="https:\/\/kevinwithpanda\.github\.io\/RealityHTMLCheck\/">/);
   assert.match(html, /data-language="zh-CN"/);
+  assert.match(html, /init --profile product --base-url/);
+  assert.match(html, /Choose a transparent starting policy/);
+  assert.match(html, /选择一个透明的起始策略/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   const localReferences = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((match) => match[1])
     .filter((value) => !/^(?:https?:|#|mailto:|data:)/.test(value));

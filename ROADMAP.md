@@ -60,7 +60,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add route-level link-integrity auditing with HEAD-only safety boundaries and redirect-chain evidence.
 - [x] Publish a bilingual Pages site with real Chrome evidence packs and live failing fixtures.
 - [ ] Add visual-regression baselines with explicit update approval and perceptual-difference evidence.
-- [ ] Add shareable policy presets for starter, product, and regulated-team adoption.
+- [x] Add shareable validated policy presets for starter, product, and strict release adoption.
 
 ## v1.0 criteria
 

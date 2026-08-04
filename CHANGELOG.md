@@ -10,11 +10,13 @@ All notable changes are documented here. This project follows Semantic Versionin
 - Passing/failing network fixtures plus committed real-browser evidence proving a missing API fails at 96/100 while the restored endpoint passes at 100/100.
 - HEAD-only same-origin link integrity budgets with bounded concurrency/redirects/timeouts, dangerous-route exclusions, query-free failure samples, and paired 96/100 versus 100/100 fixtures.
 - A bilingual GitHub Pages product site that publishes five immutable real-browser evidence packs, live fixtures, repair actions, and a SHA-256-verifiable reference report.
+- Validated `starter`, `product`, and `strict` project profiles, with secret-safe `init --profile ... --base-url ...` generation and a bilingual profile catalog.
 
 ### Changed
 
 - Detector policy fingerprints and `doctor` output now include network reliability and link-integrity policy so removing an API or navigation gate cannot masquerade as a verified fix.
 - Generated Markdown metadata uses explicit lists instead of invisible hard-break whitespace, keeping repository quality checks clean across editors and GitHub.
+- Switching report language now regenerates any visible individual or batch repair task and clears stale-language copy feedback.
 
 ## [0.4.0] - 2026-08-05
 

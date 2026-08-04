@@ -1,6 +1,14 @@
 # Project configuration
 
-`realitycheck.config.json` is the versioned policy for repeatable local and CI audits. Create a safe template with `realitycheck init`, then run `realitycheck doctor` before the first browser audit.
+`realitycheck.config.json` is the versioned policy for repeatable local and CI audits. List transparent starting policies with `realitycheck profiles`, create one with `realitycheck init --profile starter|product|strict --base-url URL`, then run `realitycheck doctor` before the first browser audit.
+
+## Validated starting profiles
+
+- `starter` keeps Quick mode and crawling off while adding a bounded 25-target link check and a forgiving release score.
+- `product` enables Deep mode, a 20-page safe crawl, performance/API/link/security policies, and a 30-day same-policy baseline rule.
+- `strict` tightens budgets, audits all resource requests, requires five reviewed response headers, and permits no active waivers. It is expected to reveal adoption work.
+
+Profiles generate ordinary JSON with no hidden behavior. They never prove legal, regulatory, security, accessibility, or performance compliance. Review every threshold, required header, route boundary, and exclusion for the application before CI enforcement. `--base-url` rejects credentials, query strings, fragments, and non-HTTP(S) protocols so initialization cannot persist URL secrets.
 
 ## Resolution and precedence
 

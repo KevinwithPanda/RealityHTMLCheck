@@ -87,14 +87,25 @@ npm run audit -- http://localhost:3000 --baseline .realitycheck/baseline/report.
 npm run audit -- audit --config realitycheck.config.json
 ```
 
-The second command creates a fresh report plus `verification.json`, bilingual `verification.md`, and a visual `verification.html`. Exit code `1` means the configured quality threshold was met; the reports were still generated successfully.
+The second command creates a fresh report plus `verification.json`, bilingual `verification.md`, and a visual `verification.html`. Exit code `1` means the configured quality threshold was not met; the reports were still generated successfully.
 
 Initialize and diagnose a project without opening a browser:
 
 ```bash
-npx realitycheck init
+npx realitycheck profiles
+npx realitycheck init --profile product --base-url http://localhost:3000
 npx realitycheck doctor
 ```
+
+Three validated presets remove the blank-config problem:
+
+| Profile | Best for | Included policy |
+| --- | --- | --- |
+| `starter` | First audit, personal projects | Quick scenarios, 25 safe link checks, forgiving score gate |
+| `product` | Active product teams | Deep scenarios, bounded crawl, performance, API, links, security, baseline governance |
+| `strict` | Mature release pipelines | Tighter budgets, all-resource reliability, five response headers, zero active waivers |
+
+`init` defaults to `starter`. A preset is a transparent starting file, not a compliance certification: review its limits and safety exclusions before CI adoption.
 
 ## Project-wide audits
 

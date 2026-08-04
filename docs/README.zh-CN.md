@@ -76,9 +76,20 @@ npx realitycheck audit --config realitycheck.config.json
 首次配置或排查环境时可以运行：
 
 ```bash
-npx realitycheck init
+npx realitycheck profiles
+npx realitycheck init --profile product --base-url http://localhost:3000
 npx realitycheck doctor
 ```
+
+三个经过配置校验的预设解决“第一次面对空配置无从下手”的问题：
+
+| 预设 | 适用场景 | 已包含策略 |
+| --- | --- | --- |
+| `starter` | 第一次核查、个人项目 | Quick 场景、25 个安全链接检查、宽松评分门禁 |
+| `product` | 持续迭代的产品团队 | Deep 场景、有限爬取、性能、API、链接、安全和基线治理 |
+| `strict` | 成熟发布流水线 | 更严格预算、全资源可靠性、五项响应头、零有效豁免 |
+
+`init` 默认使用 `starter`。预设只是透明、可编辑的起点，不是合规认证；接入 CI 前仍需审核阈值与安全排除路径。
 
 ## 全站核查与项目规则
 

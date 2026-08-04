@@ -27,6 +27,7 @@ import { loadEvidenceTrustPolicy } from "./evidence-trust.mjs";
 import { writeEvidenceTrustReport } from "./evidence-trust-report.mjs";
 import { buildRiskRegister, writeRiskRegister } from "./risk-register.mjs";
 import { detectorPolicyFingerprint } from "./policy-fingerprint.mjs";
+import { PROFILE_DESCRIPTIONS, buildProjectProfile, formatProfileList } from "./profiles.mjs";
 
 const require = createRequire(import.meta.url);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -45,7 +46,8 @@ function usage() {
 Usage:
   realitycheck <url> [options]
   realitycheck audit <url> [options]
-  realitycheck init [--config PATH]
+  realitycheck init [--profile starter|product|strict] [--base-url URL] [--config PATH]
+  realitycheck profiles
   realitycheck doctor [--config PATH]
   realitycheck validate <FILE|DIRECTORY> [...]
   realitycheck catalog <FILE|DIRECTORY> [...] [--output PATH]
@@ -55,6 +57,8 @@ Usage:
 
 Options:
   --config PATH              Project config (auto-discovers realitycheck.config.json)
+  --profile NAME             Init preset: starter, product, or strict
+  --base-url URL             Init target origin or application root
   --mode quick|deep          Scenario set (default: quick)
   --fail-on LEVEL            critical|major|minor|never (default: major)
   --output PATH              Report root (default: .realitycheck/runs)
@@ -81,6 +85,8 @@ Options:
 Examples:
   realitycheck http://localhost:3000
   realitycheck init
+  realitycheck profiles
+  realitycheck init --profile product --base-url http://localhost:3000
   realitycheck doctor
   realitycheck validate .realitycheck/runs
   realitycheck catalog .realitycheck --output .realitycheck/catalog
@@ -98,7 +104,7 @@ Examples:
 
 function parseArguments(argv) {
   const args = [...argv];
-  const command = new Set(["audit", "init", "doctor", "validate", "catalog", "risk-register", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
+  const command = new Set(["audit", "init", "profiles", "doctor", "validate", "catalog", "risk-register", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
   const options = {
     command,
     target: null,
@@ -117,6 +123,8 @@ function parseArguments(argv) {
     maxDepth: undefined,
     storageState: null,
     force: false,
+    profile: null,
+    baseUrl: null,
     validationPaths: [],
     catalogPaths: [],
     riskRegisterPaths: [],
@@ -156,7 +164,7 @@ function parseArguments(argv) {
       options.force = true;
       continue;
     }
-    if (["--mode", "--fail-on", "--output", "--browser", "--compare", "--baseline", "--config", "--route", "--max-pages", "--max-depth", "--storage-state", "--private-key", "--trusted-key", "--trust-policy", "--max-open-age-days", "--max-open-risks", "--max-recurring-risks"].includes(item)) {
+    if (["--mode", "--fail-on", "--output", "--browser", "--compare", "--baseline", "--config", "--profile", "--base-url", "--route", "--max-pages", "--max-depth", "--storage-state", "--private-key", "--trusted-key", "--trust-policy", "--max-open-age-days", "--max-open-risks", "--max-recurring-risks"].includes(item)) {
       const value = args.shift();
       if (!value) throw new Error(`${item} requires a value`);
       if (item === "--mode") options.mode = value;
@@ -166,6 +174,8 @@ function parseArguments(argv) {
       if (item === "--compare") options.compareReport = value;
       if (item === "--baseline") options.baselineReport = value;
       if (item === "--config") options.config = value;
+      if (item === "--profile") options.profile = value;
+      if (item === "--base-url") options.baseUrl = value;
       if (item === "--route") options.routes.push(value);
       if (item === "--storage-state") options.storageState = value;
       if (item === "--private-key") options.privateKey = value;
@@ -205,6 +215,7 @@ function parseArguments(argv) {
       options.trustReportManifest = item;
       continue;
     }
+    if (command === "profiles") throw new Error(`Unexpected argument: ${item}`);
     if (options.target) throw new Error(`Unexpected argument: ${item}`);
     options.target = item;
   }
@@ -221,6 +232,7 @@ function parseArguments(argv) {
   if (options.trustPolicy && !new Set(["validate", "attest", "trust-report"]).has(command)) throw new Error("--trust-policy is only valid with validate, attest, or trust-report");
   if (options.trustPolicy && options.trustedKeyIds.length) throw new Error("Use either --trust-policy or --trusted-key, not both");
   if ((options.maxOpenAgeDays !== null || options.maxOpenRisks !== null || options.maxRecurringRisks !== null) && command !== "risk-register") throw new Error("risk policy options are only valid with risk-register");
+  if ((options.profile || options.baseUrl) && command !== "init") throw new Error("--profile and --base-url are only valid with init");
   return options;
 }
 
@@ -333,10 +345,12 @@ function initializeProjectConfig(options) {
   const schema = existsSync(resolve(dirname(destination), "realitycheck", "assets", "config.schema.json"))
     ? "./realitycheck/assets/config.schema.json"
     : DEFAULT_PROJECT_CONFIG.$schema;
-  const value = { ...DEFAULT_PROJECT_CONFIG, $schema };
+  const profile = options.profile || "starter";
+  const value = buildProjectProfile(profile, { baseUrl: options.baseUrl || DEFAULT_PROJECT_CONFIG.baseUrl, schema });
   writeFileSync(destination, `${JSON.stringify(value, null, 2)}\n`, "utf8");
   console.log(`Created ${destination}`);
-  console.log("Edit baseUrl and routes, then run: realitycheck audit");
+  console.log(`Profile: ${profile} — ${PROFILE_DESCRIPTIONS[profile].en}`);
+  console.log("Review baseUrl and safety exclusions, then run: realitycheck doctor && realitycheck audit");
 }
 
 function inspectStorageState(path) {
@@ -2411,6 +2425,10 @@ async function main() {
   let loaded;
   try {
     const cli = parseArguments(process.argv.slice(2));
+    if (cli.command === "profiles") {
+      console.log(`RealityCheck project profiles\n\n${formatProfileList()}\n\nCreate one with: realitycheck init --profile product --base-url http://localhost:3000`);
+      return;
+    }
     if (cli.command === "init") {
       initializeProjectConfig(cli);
       return;
