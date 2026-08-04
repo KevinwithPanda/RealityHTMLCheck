@@ -5,7 +5,7 @@
   --line: #dfe3e8;
   --paper: #ffffff;
   --canvas: #f4f6f8;
-  --accent: #e84f2a;
+  --accent: #b33a1b;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
@@ -57,6 +57,7 @@ tbody tr:last-child td { border-bottom: 0; }
     --line: #303a45;
     --paper: #151b22;
     --canvas: #0d1117;
+    --accent: #ff9a80;
   }
   body.fixed .recovery { background: #3d1720; }
   body.fixed .recovery p { color: #ffb3c0; }
