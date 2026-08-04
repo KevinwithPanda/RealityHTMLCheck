@@ -330,6 +330,28 @@ class SkillStructureTests(unittest.TestCase):
         self.assertTrue(broken_config["metadata"]["forbidNoindex"])
         self.assertTrue(broken_config["metadata"]["requireSingleH1"])
 
+    def test_semantic_security_headers_have_paired_private_evidence(self) -> None:
+        fixture = REPOSITORY_ROOT / "examples" / "security-header-lab"
+        broken_config = json.loads((fixture / "broken.config.json").read_text(encoding="utf-8"))
+        fixed_config = json.loads((fixture / "fixed.config.json").read_text(encoding="utf-8"))
+        self.assertEqual(broken_config["security"], fixed_config["security"])
+        self.assertIn("contentSecurityPolicy", broken_config["security"]["headerPolicies"])
+        server = (fixture / "server.mjs").read_text(encoding="utf-8")
+        self.assertIn('"/broken"', server)
+        self.assertIn('"/fixed"', server)
+        for name, expected_score, expected_findings in (("security-headers-broken", 84, 4), ("security-headers-fixed", 100, 0)):
+            root = REPOSITORY_ROOT / "examples" / "public-evidence" / name
+            latest = json.loads((root / "latest.json").read_text(encoding="utf-8"))
+            report = json.loads((root / latest["artifacts"]["json"]).read_text(encoding="utf-8"))
+            semantic = [item for item in report["findings"] if item["ruleId"].startswith("security-header-policy-")]
+            self.assertEqual(report["score"]["overall"], expected_score)
+            self.assertEqual(len(semantic), expected_findings)
+            self.assertTrue(all(item["measurements"]["rawValueRetained"] is False for item in semantic))
+            serialized = json.dumps(report, ensure_ascii=False)
+            self.assertNotIn("default-src 'self'", serialized)
+            self.assertNotIn("frame-ancestors 'none'", serialized)
+            self.assertNotIn("private.example", serialized)
+
     def test_privacy_budget_has_paired_aggregate_only_evidence(self) -> None:
         fixture = REPOSITORY_ROOT / "examples" / "privacy-lab"
         broken = (fixture / "broken.html").read_text(encoding="utf-8")

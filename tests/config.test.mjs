@@ -184,6 +184,13 @@ test("security policies are explicit, bounded, and origin-only", () => {
   const security = {
     severity: "major",
     requiredHeaders: ["content-security-policy", "x-content-type-options"],
+    headerPolicies: {
+      contentSecurityPolicy: { requiredDirectives: ["default-src", "base-uri", "form-action"], forbiddenTokens: ["'unsafe-eval'", "*"] },
+      strictTransportSecurity: { minMaxAgeSeconds: 31536000, requireIncludeSubDomains: true },
+      xContentTypeOptions: { requireNosniff: true },
+      referrerPolicy: { allowedValues: ["no-referrer", "strict-origin-when-cross-origin"] },
+      permissionsPolicy: { disabledFeatures: ["camera", "microphone", "geolocation", "payment", "usb"] },
+    },
     forbidMixedContent: true,
     secureForms: true,
     maxThirdPartyOrigins: 2,
@@ -195,6 +202,11 @@ test("security policies are explicit, bounded, and origin-only", () => {
   assert.throws(() => validateProjectConfig({ security: { forbidMixedContent: false } }), /must be true/);
   assert.throws(() => validateProjectConfig({ security: { requiredHeaders: ["set-cookie"] } }), /unsupported header/);
   assert.throws(() => validateProjectConfig({ security: { allowedThirdPartyOrigins: ["https://cdn.example.com/assets"] } }), /without a path/);
+  assert.throws(() => validateProjectConfig({ security: { headerPolicies: {} } }), /at least one header policy/);
+  assert.throws(() => validateProjectConfig({ security: { headerPolicies: { contentSecurityPolicy: { forbiddenTokens: ["nonce-secret"] } } } }), /unsupported value/);
+  assert.throws(() => validateProjectConfig({ security: { headerPolicies: { strictTransportSecurity: { requirePreload: false } } } }), /must be true/);
+  assert.throws(() => validateProjectConfig({ security: { headerPolicies: { referrerPolicy: { allowedValues: ["everything"] } } } }), /unsupported value/);
+  assert.throws(() => validateProjectConfig({ security: { headerPolicies: { permissionsPolicy: { disabledFeatures: ["ambient-light-sensor"] } } } }), /unsupported value/);
 });
 
 test("browser storage privacy budgets are aggregate-only, bounded, and preserved", () => {

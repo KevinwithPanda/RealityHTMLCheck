@@ -23,6 +23,7 @@ test("npm publication whitelist covers every security and governance runtime sur
     "realitycheck/scripts/issue-drafts.mjs",
     "realitycheck/scripts/release-decision.mjs",
     "realitycheck/scripts/audit-plan.mjs",
+    "realitycheck/scripts/security-headers.mjs",
     "realitycheck/scripts/visual-regression.mjs",
     "realitycheck/scripts/evidence-attestation.mjs",
     "realitycheck/scripts/evidence-trust.mjs",

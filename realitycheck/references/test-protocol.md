@@ -255,7 +255,7 @@ Run configured journeys only once from the primary target, in a fresh context. R
 
 ### Security policy detectors
 
-Run only explicitly configured security policy. Required-header evidence records name/presence/status, not header values. Mixed-content checks apply only to HTTPS documents. Secure-form inspection records bounded method/protocol/origin metadata and whether a password field exists, never its value, and never submits. Third-party budgets and allowlists persist unique origins only. Treat a policy violation as High confidence because the project declared the exact boundary; do not infer comprehensive application security from a passing baseline.
+Run only explicitly configured security policy. Required-header evidence records name/presence/status, not header values. For semantic header rules, parse in memory and retain only recognized CSP directive names and controlled forbidden-token categories, numeric HSTS max-age and boolean flags, exact-nosniff status, a recognized effective referrer enum, or controlled Permissions-Policy feature names and empty-allowlist status. Never retain raw values, CSP origins, nonces, hashes, Permissions-Policy allowlist origins, or unrecognized tokens. Treat HSTS on HTTP as ineffective. Mixed-content checks apply only to HTTPS documents. Secure-form inspection records bounded method/protocol/origin metadata and whether a password field exists, never its value, and never submits. Third-party budgets and allowlists persist unique origins only. Treat a policy violation as High confidence because the project declared the exact boundary; do not infer comprehensive application security from a passing baseline.
 
 ### Aggregate browser storage privacy budgets
 

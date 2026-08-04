@@ -233,6 +233,23 @@ export function buildPolicyReview(beforePath, afterPath, { now = new Date() } = 
     compareStringSets(add, before.security.allowedThirdPartyOrigins, after.security.allowedThirdPartyOrigins, { category: "security", key: "security.allowedThirdPartyOrigins", label: "Allowed third-party origins", labelZh: "允许的第三方来源", additionsStrengthen: false });
     for (const key of ["forbidMixedContent", "secureForms"]) compareBoolean(add, { before: before.security[key] ?? false, after: after.security[key] ?? false, category: "security", key: `security.${key}`, label: `Security rule ${key}`, labelZh: `安全规则 ${key}` });
     compareNumber(add, { before: before.security.maxThirdPartyOrigins ?? null, after: after.security.maxThirdPartyOrigins ?? null, category: "security", key: "security.maxThirdPartyOrigins", label: "Third-party origin limit", labelZh: "第三方来源上限", higherIsStronger: false });
+    const beforeHeaders = before.security.headerPolicies || {};
+    const afterHeaders = after.security.headerPolicies || {};
+    if ((beforeHeaders.contentSecurityPolicy || afterHeaders.contentSecurityPolicy) && comparePolicyPresence(add, beforeHeaders.contentSecurityPolicy, afterHeaders.contentSecurityPolicy, "security-csp", "CSP value", "CSP 值")) {
+      compareStringSets(add, beforeHeaders.contentSecurityPolicy.requiredDirectives, afterHeaders.contentSecurityPolicy.requiredDirectives, { category: "security-csp", key: "security.headerPolicies.contentSecurityPolicy.requiredDirectives", label: "Required CSP directives", labelZh: "必需 CSP 指令" });
+      compareStringSets(add, beforeHeaders.contentSecurityPolicy.forbiddenTokens, afterHeaders.contentSecurityPolicy.forbiddenTokens, { category: "security-csp", key: "security.headerPolicies.contentSecurityPolicy.forbiddenTokens", label: "Forbidden CSP source tokens", labelZh: "禁用 CSP 来源标记" });
+    }
+    if ((beforeHeaders.strictTransportSecurity || afterHeaders.strictTransportSecurity) && comparePolicyPresence(add, beforeHeaders.strictTransportSecurity, afterHeaders.strictTransportSecurity, "security-hsts", "HSTS value", "HSTS 值")) {
+      compareNumber(add, { before: beforeHeaders.strictTransportSecurity.minMaxAgeSeconds ?? null, after: afterHeaders.strictTransportSecurity.minMaxAgeSeconds ?? null, category: "security-hsts", key: "security.headerPolicies.strictTransportSecurity.minMaxAgeSeconds", label: "Minimum HSTS max-age", labelZh: "HSTS 最小 max-age", higherIsStronger: true });
+      for (const key of ["requireIncludeSubDomains", "requirePreload"]) compareBoolean(add, { before: beforeHeaders.strictTransportSecurity[key] ?? false, after: afterHeaders.strictTransportSecurity[key] ?? false, category: "security-hsts", key: `security.headerPolicies.strictTransportSecurity.${key}`, label: `HSTS rule ${key}`, labelZh: `HSTS 规则 ${key}` });
+    }
+    comparePolicyPresence(add, beforeHeaders.xContentTypeOptions, afterHeaders.xContentTypeOptions, "security-nosniff", "nosniff value", "nosniff 值");
+    if ((beforeHeaders.referrerPolicy || afterHeaders.referrerPolicy) && comparePolicyPresence(add, beforeHeaders.referrerPolicy, afterHeaders.referrerPolicy, "security-referrer", "Referrer-Policy value", "Referrer-Policy 值")) {
+      compareStringSets(add, beforeHeaders.referrerPolicy.allowedValues, afterHeaders.referrerPolicy.allowedValues, { category: "security-referrer", key: "security.headerPolicies.referrerPolicy.allowedValues", label: "Allowed referrer policies", labelZh: "允许的 referrer 策略", additionsStrengthen: false });
+    }
+    if ((beforeHeaders.permissionsPolicy || afterHeaders.permissionsPolicy) && comparePolicyPresence(add, beforeHeaders.permissionsPolicy, afterHeaders.permissionsPolicy, "security-permissions", "Permissions-Policy value", "Permissions-Policy 值")) {
+      compareStringSets(add, beforeHeaders.permissionsPolicy.disabledFeatures, afterHeaders.permissionsPolicy.disabledFeatures, { category: "security-permissions", key: "security.headerPolicies.permissionsPolicy.disabledFeatures", label: "Disabled browser features", labelZh: "禁用浏览器功能" });
+    }
     compareSeverity(add, { before: before.security.severity, after: after.security.severity, category: "security", key: "security.severity", label: "Security finding severity", labelZh: "安全问题严重级别", ranking: FINDING_SEVERITY });
   }
 

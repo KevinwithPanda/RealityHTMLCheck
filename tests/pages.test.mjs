@@ -26,6 +26,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "evidence/metadata/latest.html",
     "evidence/visual/latest.html",
     "evidence/security/latest.html",
+    "evidence/security-headers-broken/latest.html",
+    "evidence/security-headers-fixed/latest.html",
     "evidence/privacy/latest.html",
     "evidence/accessibility/latest.html",
     "labs/journey/broken.html",
@@ -101,6 +103,9 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /UNDERSTAND BEFORE EXECUTION/);
   assert.match(html, /Open the 301-scenario plan/);
   assert.match(html, /browser access&nbsp; NONE/);
+  assert.match(html, /SEMANTIC RESPONSE HEADERS/);
+  assert.match(html, /evidence\/security-headers-broken\/latest\.html/);
+  assert.match(html, /evidence\/security-headers-fixed\/latest\.html/);
   assert.match(html, /浏览器存储隐私/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   const localReferences = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((match) => match[1])
@@ -120,6 +125,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(llms, /GitHub issue drafts are local files that are never submitted automatically/);
   assert.match(llms, /labs\/policy-review\/review\/policy-review\.html/);
   assert.match(llms, /labs\/audit-plan\/audit-plan\.html/);
+  assert.match(llms, /evidence\/security-headers-fixed\/latest\.html/);
 });
 
 test("Pages workflow uses the supported deployment artifact path", () => {

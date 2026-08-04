@@ -7,12 +7,13 @@ All notable changes are documented here. This project follows Semantic Versionin
 ### Added
 
 - A browser-free `plan` command that resolves effective project coverage into a schema-validated, fingerprint-bound, bilingual HTML/JSON/Markdown preview with page/scenario ceilings, all detector states, explicit safety and retention boundaries, a copy-ready next command, and a committed 301-execution demonstration. The composite Action now publishes this fail-closed preflight before browser access, and the evidence catalog indexes it alongside run evidence.
+- Opt-in semantic response-header policies for bounded CSP directive/source-token rules, HSTS transport/max-age/subdomain/preload facts, exact `nosniff`, reviewed Referrer-Policy enums, and empty-allowlist requirements for 15 controlled Permissions-Policy features. Raw header values, allowed origins, CSP nonces/hashes, and unknown tokens are discarded; policy-review treats lost or relaxed requirements as structural weakening.
 
 - Search-friendly JSON-LD, a Web manifest, crawler and LLM entry points, visible CI status, and explicit support/community policies without third-party runtime analytics.
 - Opt-in API/all-resource network reliability budgets for HTTP errors, transport failures, slow requests, and third-party request volume, with bounded query-free endpoint samples and no response-body retention.
 - Passing/failing network fixtures plus committed real-browser evidence proving a missing API fails at 96/100 while the restored endpoint passes at 100/100.
 - HEAD-only same-origin link integrity budgets with bounded concurrency/redirects/timeouts, dangerous-route exclusions, query-free failure samples, and paired 96/100 versus 100/100 fixtures.
-- A bilingual GitHub Pages product site that now publishes nine immutable real-browser evidence packs, live fixtures, repair actions, and a SHA-256-verifiable reference report.
+- A bilingual GitHub Pages product site that now publishes eleven immutable real-browser evidence packs, live fixtures, repair actions, and a SHA-256-verifiable reference report.
 - Validated `starter`, `product`, and `strict` project profiles, with secret-safe `init --profile ... --base-url ...` generation and a bilingual profile catalog.
 - Safe journey `press` and `assert-url` steps for keyboard navigation and pathname checkpoints, with activation-key/editable-control guards and query-free traces.
 - Opt-in publishing metadata contracts for title and description length, canonical destinations, viewport, language, indexing, and primary-heading structure, with paired 75/100 versus 100/100 real-browser evidence.

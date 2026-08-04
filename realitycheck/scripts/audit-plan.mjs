@@ -45,7 +45,11 @@ function explicitPageCount(target, routes) {
 
 function settingCount(policy, omitted = ["severity"]) {
   if (!policy) return 0;
-  return Object.keys(policy).filter((key) => !omitted.includes(key) && !key.endsWith("Path")).length;
+  return Object.entries(policy).reduce((total, [key, value]) => {
+    if (omitted.includes(key) || key.endsWith("Path")) return total;
+    if (value && typeof value === "object" && !Array.isArray(value)) return total + settingCount(value, []);
+    return total + 1;
+  }, 0);
 }
 
 function detector(key, label, labelZh, enabled, policySettings, severity, note, noteZh) {

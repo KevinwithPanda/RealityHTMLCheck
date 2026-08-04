@@ -1,0 +1,496 @@
+{
+  "adapter": {
+    "capabilities": [
+      "console",
+      "dom",
+      "isolated-contexts",
+      "network-routing",
+      "screenshots",
+      "viewport",
+      "responsive-viewport-matrix",
+      "security-response-and-origin-policy",
+      "detector-policy-fingerprint"
+    ],
+    "isolation": "fresh-context",
+    "name": "project-playwright"
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major",
+    "policyFingerprint": "sha256:07deff08914f02724ceaafcee9024d26580615adf8a2a22e929083dbf357f37f",
+    "viewports": [
+      {
+        "height": 812,
+        "id": "mobile-375",
+        "touch": true,
+        "width": 375
+      }
+    ]
+  },
+  "findings": [
+    {
+      "classification": "existing",
+      "confidence": "high",
+      "evidence": [
+        {
+          "facts": {
+            "directiveCount": 2,
+            "directiveNames": [
+              "default-src",
+              "script-src"
+            ],
+            "forbiddenTokens": [
+              "'unsafe-eval'"
+            ],
+            "missingDirectives": [
+              "base-uri",
+              "form-action",
+              "frame-ancestors"
+            ]
+          },
+          "header": "content-security-policy",
+          "rawValueRetained": false,
+          "type": "response-header-policy",
+          "violations": [
+            "missing-required-directive",
+            "forbidden-source-token"
+          ]
+        },
+        {
+          "label": "Security header value policy",
+          "path": "screenshots/baseline.png",
+          "type": "screenshot"
+        }
+      ],
+      "fingerprint": "d296a901bc4bd784696b80156703af9a7f17b52509282b0189316fcda761388c",
+      "id": "RC-D296A901BC",
+      "measurements": {
+        "facts": {
+          "directiveCount": 2,
+          "directiveNames": [
+            "default-src",
+            "script-src"
+          ],
+          "forbiddenTokens": [
+            "'unsafe-eval'"
+          ],
+          "missingDirectives": [
+            "base-uri",
+            "form-action",
+            "frame-ancestors"
+          ]
+        },
+        "header": "content-security-policy",
+        "rawValueRetained": false,
+        "violations": [
+          "missing-required-directive",
+          "forbidden-source-token"
+        ]
+      },
+      "remediation": {
+        "summary": "Set a reviewed CSP that contains every required directive and removes each forbidden source token; validate application behavior in staging.",
+        "technicalHints": [
+          "Do not weaken the configured rule or add a permissive placeholder only to clear the gate."
+        ]
+      },
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Evaluate bounded semantic facts from the content-security-policy header without retaining its raw value."
+      ],
+      "ruleId": "security-header-policy-content-security-policy",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "summary": "The final document response failed 2 semantic requirement(s): missing-required-directive, forbidden-source-token. The raw header value was not retained.",
+      "title": "Security header does not satisfy the reviewed value policy: content-security-policy",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "配置经过复核的 CSP，包含所有必需指令并移除每个禁用来源标记；在预发布环境验证应用行为。",
+            "technicalHints": [
+              "不要只为通过门禁而削弱配置规则或添加宽松占位值。"
+            ]
+          },
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "从 content-security-policy 响应头评估有限的语义事实，但不保留原始值。"
+          ],
+          "summary": "最终文档响应未满足 2 项语义要求：missing-required-directive, forbidden-source-token。未保留原始响应头值。",
+          "title": "安全响应头不符合已复核的值策略：content-security-policy"
+        }
+      },
+      "url": "http://127.0.0.1:4193/broken"
+    },
+    {
+      "classification": "existing",
+      "confidence": "high",
+      "evidence": [
+        {
+          "facts": {
+            "nosniff": false
+          },
+          "header": "x-content-type-options",
+          "rawValueRetained": false,
+          "type": "response-header-policy",
+          "violations": [
+            "nosniff-required"
+          ]
+        },
+        {
+          "label": "Security header value policy",
+          "path": "screenshots/baseline.png",
+          "type": "screenshot"
+        }
+      ],
+      "fingerprint": "749eff79daf2af7884f854ad11fcb4acd8427391e8e4ab560bd92bf197a48d12",
+      "id": "RC-749EFF79DA",
+      "measurements": {
+        "facts": {
+          "nosniff": false
+        },
+        "header": "x-content-type-options",
+        "rawValueRetained": false,
+        "violations": [
+          "nosniff-required"
+        ]
+      },
+      "remediation": {
+        "summary": "Set X-Content-Type-Options to exactly nosniff on the final document response.",
+        "technicalHints": [
+          "Do not weaken the configured rule or add a permissive placeholder only to clear the gate."
+        ]
+      },
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Evaluate bounded semantic facts from the x-content-type-options header without retaining its raw value."
+      ],
+      "ruleId": "security-header-policy-x-content-type-options",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "summary": "The final document response failed 1 semantic requirement(s): nosniff-required. The raw header value was not retained.",
+      "title": "Security header does not satisfy the reviewed value policy: x-content-type-options",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "在最终文档响应上将 X-Content-Type-Options 精确设置为 nosniff。",
+            "technicalHints": [
+              "不要只为通过门禁而削弱配置规则或添加宽松占位值。"
+            ]
+          },
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "从 x-content-type-options 响应头评估有限的语义事实，但不保留原始值。"
+          ],
+          "summary": "最终文档响应未满足 1 项语义要求：nosniff-required。未保留原始响应头值。",
+          "title": "安全响应头不符合已复核的值策略：x-content-type-options"
+        }
+      },
+      "url": "http://127.0.0.1:4193/broken"
+    },
+    {
+      "classification": "existing",
+      "confidence": "high",
+      "evidence": [
+        {
+          "facts": {
+            "effectiveValue": "unsafe-url",
+            "recognizedValues": [
+              "unsafe-url"
+            ]
+          },
+          "header": "referrer-policy",
+          "rawValueRetained": false,
+          "type": "response-header-policy",
+          "violations": [
+            "referrer-policy-not-allowed"
+          ]
+        },
+        {
+          "label": "Security header value policy",
+          "path": "screenshots/baseline.png",
+          "type": "screenshot"
+        }
+      ],
+      "fingerprint": "a90bb5980656f39910e930a6feb78fe01b959249109fc9e60de0888c405d522d",
+      "id": "RC-A90BB59806",
+      "measurements": {
+        "facts": {
+          "effectiveValue": "unsafe-url",
+          "recognizedValues": [
+            "unsafe-url"
+          ]
+        },
+        "header": "referrer-policy",
+        "rawValueRetained": false,
+        "violations": [
+          "referrer-policy-not-allowed"
+        ]
+      },
+      "remediation": {
+        "summary": "Set Referrer-Policy to one of the explicitly allowed values after reviewing outbound navigation requirements.",
+        "technicalHints": [
+          "Do not weaken the configured rule or add a permissive placeholder only to clear the gate."
+        ]
+      },
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Evaluate bounded semantic facts from the referrer-policy header without retaining its raw value."
+      ],
+      "ruleId": "security-header-policy-referrer-policy",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "summary": "The final document response failed 1 semantic requirement(s): referrer-policy-not-allowed. The raw header value was not retained.",
+      "title": "Security header does not satisfy the reviewed value policy: referrer-policy",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "复核出站导航需求后，将 Referrer-Policy 设置为明确允许的值之一。",
+            "technicalHints": [
+              "不要只为通过门禁而削弱配置规则或添加宽松占位值。"
+            ]
+          },
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "从 referrer-policy 响应头评估有限的语义事实，但不保留原始值。"
+          ],
+          "summary": "最终文档响应未满足 1 项语义要求：referrer-policy-not-allowed。未保留原始响应头值。",
+          "title": "安全响应头不符合已复核的值策略：referrer-policy"
+        }
+      },
+      "url": "http://127.0.0.1:4193/broken"
+    },
+    {
+      "classification": "existing",
+      "confidence": "high",
+      "evidence": [
+        {
+          "facts": {
+            "declaredFeatures": [
+              "camera",
+              "microphone"
+            ],
+            "disabledFeatures": [
+              "microphone"
+            ],
+            "missingDisabledFeatures": [
+              "camera",
+              "geolocation"
+            ]
+          },
+          "header": "permissions-policy",
+          "rawValueRetained": false,
+          "type": "response-header-policy",
+          "violations": [
+            "feature-not-disabled"
+          ]
+        },
+        {
+          "label": "Security header value policy",
+          "path": "screenshots/baseline.png",
+          "type": "screenshot"
+        }
+      ],
+      "fingerprint": "9dfd5f9c8e4b11e1589775f069a812947527fbb0cf1a3c245758acb247df0e9e",
+      "id": "RC-9DFD5F9C8E",
+      "measurements": {
+        "facts": {
+          "declaredFeatures": [
+            "camera",
+            "microphone"
+          ],
+          "disabledFeatures": [
+            "microphone"
+          ],
+          "missingDisabledFeatures": [
+            "camera",
+            "geolocation"
+          ]
+        },
+        "header": "permissions-policy",
+        "rawValueRetained": false,
+        "violations": [
+          "feature-not-disabled"
+        ]
+      },
+      "remediation": {
+        "summary": "Set every configured high-risk browser feature to an empty allowlist () after reviewing whether this route genuinely needs that capability.",
+        "technicalHints": [
+          "Do not weaken the configured rule or add a permissive placeholder only to clear the gate."
+        ]
+      },
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Evaluate bounded semantic facts from the permissions-policy header without retaining its raw value."
+      ],
+      "ruleId": "security-header-policy-permissions-policy",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "summary": "The final document response failed 1 semantic requirement(s): feature-not-disabled. The raw header value was not retained.",
+      "title": "Security header does not satisfy the reviewed value policy: permissions-policy",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "复核此路由是否确实需要相关能力后，把每个已配置的高风险浏览器功能设置为空允许列表 ()。",
+            "technicalHints": [
+              "不要只为通过门禁而削弱配置规则或添加宽松占位值。"
+            ]
+          },
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "从 permissions-policy 响应头评估有限的语义事实，但不保留原始值。"
+          ],
+          "summary": "最终文档响应未满足 1 项语义要求：feature-not-disabled。未保留原始响应头值。",
+          "title": "安全响应头不符合已复核的值策略：permissions-policy"
+        }
+      },
+      "url": "http://127.0.0.1:4193/broken"
+    }
+  ],
+  "run": {
+    "durationMs": 4502.0,
+    "finishedAt": "2026-08-04T22:20:25.736Z",
+    "id": "20260804T222021Z-c4fc53",
+    "mode": "quick",
+    "startedAt": "2026-08-04T22:20:21.219Z"
+  },
+  "scenarios": [
+    {
+      "durationMs": 613.0,
+      "id": "baseline",
+      "notes": [
+        "Baseline runtime findings were recorded."
+      ],
+      "status": "completed-with-findings",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已记录基线运行时问题。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 547.0,
+      "id": "mobile-375",
+      "notes": [
+        "Evaluated 375×812; touch-target checks were enabled."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已核查 375×812；触控目标检查已启用。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 1075.0,
+      "id": "long-text",
+      "notes": [
+        "1 deterministic text mutations were applied."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已执行 1 次确定性的文本替换。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 963.0,
+      "id": "rtl-arabic",
+      "notes": [
+        "Directionality stress test only; translation quality was not assessed."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "仅进行书写方向压力测试；未评估翻译质量。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 567.0,
+      "id": "image-failure",
+      "notes": [
+        "Expected image request aborts were excluded from failed-request findings."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "预期的图片请求中止未计入普通请求失败问题。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 660.0,
+      "id": "keyboard-tab",
+      "notes": [
+        "No controls were activated or submitted."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未激活或提交任何控件。"
+          ]
+        }
+      }
+    }
+  ],
+  "schemaVersion": "1",
+  "score": {
+    "baselinePenalty": 16.0,
+    "chaosPenalty": 0.0,
+    "counts": {
+      "critical": 0,
+      "info": 0,
+      "major": 4,
+      "minor": 0
+    },
+    "ignoredLowConfidenceFindings": 0,
+    "overall": 84,
+    "scoredFindings": 4,
+    "totalFindings": 4
+  },
+  "target": {
+    "finalUrl": "http://127.0.0.1:4193/broken",
+    "requestedUrl": "http://127.0.0.1:4193/broken",
+    "title": "Semantic security header laboratory"
+  },
+  "threshold": {
+    "coveragePercent": 100.0,
+    "failOn": "major",
+    "met": true,
+    "violations": [
+      {
+        "actual": 4,
+        "code": "severity-threshold",
+        "expected": 0
+      }
+    ]
+  },
+  "toolVersion": "0.4.0",
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "独立核查使用了已安装的系统浏览器（150.0.7871.116）。",
+        "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        "已在 1 个配置视口中核查响应式布局；仅在启用 touch 的视口运行触控目标启发式检查。",
+        "已在不提交数据或保留原始响应头值的前提下核查 5 项明确的响应、语义响应头、来源与表单安全策略。"
+      ]
+    }
+  },
+  "warnings": [
+    "Standalone audit used an already-installed system browser (150.0.7871.116).",
+    "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    "Responsive layout was evaluated in 1 configured viewport(s); touch-target heuristics ran only where touch was enabled.",
+    "5 explicit response, semantic-header, origin, and form security policy setting(s) were evaluated without submitting data or retaining raw header values."
+  ]
+}

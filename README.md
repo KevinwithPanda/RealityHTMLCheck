@@ -258,6 +258,23 @@ Three validated presets remove the blank-config problem:
   },
   "security": {
     "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
+    "headerPolicies": {
+      "contentSecurityPolicy": {
+        "requiredDirectives": ["default-src", "base-uri", "form-action", "frame-ancestors"],
+        "forbiddenTokens": ["'unsafe-eval'", "*", "http:"]
+      },
+      "strictTransportSecurity": {
+        "minMaxAgeSeconds": 31536000,
+        "requireIncludeSubDomains": true
+      },
+      "xContentTypeOptions": { "requireNosniff": true },
+      "referrerPolicy": {
+        "allowedValues": ["no-referrer", "strict-origin-when-cross-origin"]
+      },
+      "permissionsPolicy": {
+        "disabledFeatures": ["camera", "microphone", "geolocation", "payment", "usb"]
+      }
+    },
     "secureForms": true,
     "maxThirdPartyOrigins": 3,
     "allowedThirdPartyOrigins": ["https://cdn.example.com"],
@@ -304,7 +321,7 @@ Visual regression policy captures a deterministic full-page desktop snapshot and
 
 Keep approval and comparison on a consistent browser/OS/font environment, normally the same CI image. A pixel match proves only rendering stability, not that the approved design is usable or correct. Mask only known dynamic regions; never mask an unexplained failure or increase the threshold solely to clear a gate.
 
-Security baselines are opt-in project policy, so a localhost page is not judged against production headers unless the project asks for them. Policies can require reviewed response headers, forbid mixed content, reject insecure password-form paths, cap unique third-party origins, and allowlist exact HTTPS origins. The [`examples/security-lab`](examples/security-lab) fixture demonstrates three missing headers plus a GET password form without ever submitting it.
+Security baselines are opt-in project policy, so a localhost page is not judged against production headers unless the project asks for them. Policies can require response headers, evaluate bounded CSP directives/source-token categories, enforce HSTS max-age/subdomain/preload semantics, require exact `nosniff`, allow only reviewed Referrer-Policy values, require controlled high-risk Permissions-Policy features to use an empty allowlist, forbid mixed content, reject insecure password-form paths, cap unique third-party origins, and allowlist exact HTTPS origins. Semantic evidence retains only directive/feature names, controlled violation codes, numeric max-age, recognized enums, and boolean facts—never the raw header value, allowed origins, CSP nonces, or hashes. A configured HSTS value on an HTTP document fails because browsers ignore it there. Treat these as project release rules, not a complete security assessment; test CSP and feature requirements in staging before enforcement. The reproducible [`examples/security-header-lab`](examples/security-header-lab) pair produces four value-level failures and a 100/100 passing control without leaking the fixture's private allowed origin. The older [`examples/security-lab`](examples/security-lab) fixture separately demonstrates three missing headers plus a GET password form without ever submitting it.
 
 Aggregate browser-storage privacy budgets are also opt-in. They can cap total Cookie count/UTF-8 bytes, third-party Cookie count, and localStorage/sessionStorage entry and byte totals in the clean isolated baseline. Reports keep only aggregate counts, availability, bytes, and limits—never Cookie names or values, Web Storage keys or values, or exception text. If a configured surface cannot be measured, the audit fails visibly instead of treating unknown as zero. The paired [`examples/privacy-lab`](examples/privacy-lab) fixture produces six targeted failures at **76/100**, proves no fixture markers leak into `report.json`, and passes the same limits at **100/100** after the state is bounded. This is a project-defined storage budget, not consent, tracker, retention, or legal-compliance proof; RealityCheck never clears state automatically.
 

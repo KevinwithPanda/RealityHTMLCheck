@@ -35,7 +35,7 @@ copy("examples/audit-plan-lab", "labs/audit-plan");
 copy("examples/reference-run", "labs/reference-run");
 writeFileSync(join(output, ".nojekyll"), "", "utf8");
 
-const latest = ["viewport", "journey", "visual", "network", "links", "metadata", "security", "privacy", "accessibility"].map((kind) => {
+const latest = ["viewport", "journey", "visual", "network", "links", "metadata", "security", "security-headers-broken", "security-headers-fixed", "privacy", "accessibility"].map((kind) => {
   const value = JSON.parse(readFileSync(join(output, "evidence", kind, "latest.json"), "utf8"));
   return `${kind}=${value.score}`;
 });

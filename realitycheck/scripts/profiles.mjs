@@ -91,6 +91,10 @@ const PROFILE_TEMPLATES = Object.freeze({
     security: {
       severity: "major",
       requiredHeaders: ["x-content-type-options", "referrer-policy"],
+      headerPolicies: {
+        xContentTypeOptions: { requireNosniff: true },
+        referrerPolicy: { allowedValues: ["no-referrer", "strict-origin", "strict-origin-when-cross-origin"] },
+      },
       forbidMixedContent: true,
       secureForms: true,
       maxThirdPartyOrigins: 12,
@@ -161,6 +165,16 @@ const PROFILE_TEMPLATES = Object.freeze({
         "referrer-policy",
         "permissions-policy",
       ],
+      headerPolicies: {
+        contentSecurityPolicy: {
+          requiredDirectives: ["default-src", "base-uri", "object-src", "form-action", "frame-ancestors"],
+          forbiddenTokens: ["'unsafe-eval'", "*", "http:"],
+        },
+        strictTransportSecurity: { minMaxAgeSeconds: 31_536_000, requireIncludeSubDomains: true },
+        xContentTypeOptions: { requireNosniff: true },
+        referrerPolicy: { allowedValues: ["no-referrer", "strict-origin", "strict-origin-when-cross-origin"] },
+        permissionsPolicy: { disabledFeatures: ["camera", "microphone", "geolocation", "payment", "usb"] },
+      },
       forbidMixedContent: true,
       secureForms: true,
       maxThirdPartyOrigins: 5,

@@ -1,0 +1,19 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4193/broken",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/security-header-lab/broken",
+  "security": {
+    "severity": "major",
+    "headerPolicies": {
+      "contentSecurityPolicy": {
+        "requiredDirectives": ["default-src", "base-uri", "form-action", "frame-ancestors"],
+        "forbiddenTokens": ["'unsafe-eval'", "*"]
+      },
+      "xContentTypeOptions": { "requireNosniff": true },
+      "referrerPolicy": { "allowedValues": ["no-referrer", "strict-origin-when-cross-origin"] },
+      "permissionsPolicy": { "disabledFeatures": ["camera", "microphone", "geolocation"] }
+    }
+  }
+}

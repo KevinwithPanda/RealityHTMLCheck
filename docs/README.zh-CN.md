@@ -233,6 +233,23 @@ npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
   },
   "security": {
     "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
+    "headerPolicies": {
+      "contentSecurityPolicy": {
+        "requiredDirectives": ["default-src", "base-uri", "form-action", "frame-ancestors"],
+        "forbiddenTokens": ["'unsafe-eval'", "*", "http:"]
+      },
+      "strictTransportSecurity": {
+        "minMaxAgeSeconds": 31536000,
+        "requireIncludeSubDomains": true
+      },
+      "xContentTypeOptions": { "requireNosniff": true },
+      "referrerPolicy": {
+        "allowedValues": ["no-referrer", "strict-origin-when-cross-origin"]
+      },
+      "permissionsPolicy": {
+        "disabledFeatures": ["camera", "microphone", "geolocation", "payment", "usb"]
+      }
+    },
     "secureForms": true,
     "maxThirdPartyOrigins": 3,
     "allowedThirdPartyOrigins": ["https://cdn.example.com"],
@@ -279,7 +296,7 @@ npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
 
 基线批准与后续比较应使用一致的浏览器、操作系统和字体环境，通常放在同一 CI 镜像中。像素一致只能证明渲染稳定，不能证明获批设计本身可用或正确。只 mask 已知动态区域；不要为了通过门禁而 mask 原因不明的失败或提高阈值。
 
-安全基线必须由项目显式配置，因此普通 localhost 不会自动被生产响应头要求误伤。策略可要求安全响应头、禁止混合内容、阻止不安全密码表单、限制第三方来源数量，并只允许精确 HTTPS 来源。[`examples/security-lab`](../examples/security-lab) 会在不提交表单的情况下证明三个缺失响应头和一个 GET 密码表单问题。
+安全基线必须由项目显式配置，因此普通 localhost 不会自动被生产响应头要求误伤。策略可要求响应头，核查有限的 CSP 指令/来源标记类别，强制 HSTS max-age、子域和 preload 语义，要求精确的 `nosniff`，只允许经过复核的 Referrer-Policy 值，并要求受控高风险 Permissions-Policy 功能使用空允许列表；还可禁止混合内容、阻止不安全密码表单、限制第三方来源数量，并只允许精确 HTTPS 来源。语义证据只保留指令/功能名称、受控违规代码、max-age 数字、已识别枚举和布尔事实；绝不保留原始响应头值、允许来源、CSP nonce 或 hash。HTTP 文档即使返回 HSTS 也会失败，因为浏览器会忽略它。它们是项目发布规则，不是完整安全评估；实施 CSP 和功能限制前应在预发布环境验证行为。可复现的 [`examples/security-header-lab`](../examples/security-header-lab) 对照会得到四个值级问题，修复对照达到 100/100，并证明夹具中的私有允许来源没有进入证据。原有 [`examples/security-lab`](../examples/security-lab) 另外证明三个缺失响应头和一个 GET 密码表单问题，全程不提交表单。
 
 浏览器存储聚合隐私预算同样由项目显式启用。它可以限制 Cookie 总数/UTF-8 字节、第三方 Cookie 数量，以及 localStorage/sessionStorage 的条目数和字节总量。报告只保留可用状态、数量、字节和阈值，绝不保留 Cookie 名称/值、Web Storage 键/值或浏览器异常正文；配置的存储面无法测量时会明确失败，不会把未知当作 0。成对的 [`examples/privacy-lab`](../examples/privacy-lab) 会让故障页产生六项针对性问题并得到 **76/100**，同时证明夹具标记没有泄漏到 `report.json`；相同预算下的修复页得到 **100/100**。这只是项目定义的存储预算，不是同意管理、追踪器分类、保留期限、数据流或法律合规证明；RealityCheck 也不会自动清除状态。
 

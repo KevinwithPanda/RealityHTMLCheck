@@ -35,6 +35,7 @@ import { buildPolicyReview, writePolicyReview } from "./policy-review.mjs";
 import { buildIssueDrafts, writeIssueDrafts } from "./issue-drafts.mjs";
 import { buildReleaseDecision, parseRequiredControls, releaseDecisionExitCode, writeReleaseDecision } from "./release-decision.mjs";
 import { buildAuditPlan, writeAuditPlan } from "./audit-plan.mjs";
+import { evaluateSecurityHeaderPolicies, requiredSecurityHeaders } from "./security-headers.mjs";
 
 const require = createRequire(import.meta.url);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -450,6 +451,14 @@ function inspectStorageState(path) {
   return { cookies: value.cookies.length, origins: value.origins.length };
 }
 
+function policySettingCount(policy, omitted = new Set(["severity"])) {
+  return Object.entries(policy || {}).reduce((total, [key, value]) => {
+    if (omitted.has(key) || key.endsWith("Path")) return total;
+    if (value && typeof value === "object" && !Array.isArray(value)) return total + policySettingCount(value, new Set());
+    return total + 1;
+  }, 0);
+}
+
 function runDoctor(options, loaded) {
   const checks = [];
   const check = (name, action) => {
@@ -491,7 +500,7 @@ function runDoctor(options, loaded) {
   if (options.metadata) check("Publishing metadata", () => `${Object.keys(options.metadata).length - 1} explicit title/description/document rule(s); text values are not retained`);
   check("Responsive viewport matrix", () => `${options.viewports.length} bounded viewport(s): ${options.viewports.map((item) => `${item.id}=${item.width}x${item.height}${item.touch ? "/touch" : ""}`).join(", ")}`);
   if (options.visual) check("Visual regression", () => `${(options.visual.maxDiffRatio * 100).toFixed(3)}% changed-pixel limit; ${options.visual.masks.length} mask(s); baseline updates require visual-approve`);
-  if (options.security) check("Security baseline", () => `${Object.keys(options.security).length - 1} explicit policy setting(s); no form submission`);
+  if (options.security) check("Security baseline", () => `${policySettingCount(options.security)} explicit policy setting(s); no form submission or raw semantic header retention`);
   if (options.privacy) check("Browser storage privacy", () => `${Object.keys(options.privacy).length - 1} aggregate cookie/Web Storage budget(s); no names, keys, or values retained`);
   if (options.waivers.length) check("Governed waivers", () => {
     const now = new Date();
@@ -1514,7 +1523,7 @@ async function runSecurityPolicies(page, response, target, policy) {
   if (!policy) return [];
   const findings = [];
   const responseHeaders = response?.headers() || {};
-  for (const header of policy.requiredHeaders || []) {
+  for (const header of requiredSecurityHeaders(policy)) {
     if (responseHeaders[header]) continue;
     findings.push(finding({
       ruleId: `security-header-${header}`, scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
@@ -1528,6 +1537,40 @@ async function runSecurityPolicies(page, response, target, policy) {
       fixZh: `在应用或可信边缘层为该路由配置经审核的 ${header} 策略。`,
       hints: ["Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check."],
       hintsZh: ["在预发布环境验证真实策略；不要只为通过检查而添加宽松占位值。"],
+    }));
+  }
+
+  const headerPolicyFixes = {
+    contentSecurityPolicy: "Set a reviewed CSP that contains every required directive and removes each forbidden source token; validate application behavior in staging.",
+    strictTransportSecurity: "Serve the route over HTTPS and configure the trusted edge with the reviewed max-age and optional includeSubDomains/preload requirements.",
+    xContentTypeOptions: "Set X-Content-Type-Options to exactly nosniff on the final document response.",
+    referrerPolicy: "Set Referrer-Policy to one of the explicitly allowed values after reviewing outbound navigation requirements.",
+    permissionsPolicy: "Set every configured high-risk browser feature to an empty allowlist () after reviewing whether this route genuinely needs that capability.",
+  };
+  const headerPolicyFixesZh = {
+    contentSecurityPolicy: "配置经过复核的 CSP，包含所有必需指令并移除每个禁用来源标记；在预发布环境验证应用行为。",
+    strictTransportSecurity: "通过 HTTPS 提供此路由，并在可信边缘层配置已复核的 max-age 以及可选 includeSubDomains/preload 要求。",
+    xContentTypeOptions: "在最终文档响应上将 X-Content-Type-Options 精确设置为 nosniff。",
+    referrerPolicy: "复核出站导航需求后，将 Referrer-Policy 设置为明确允许的值之一。",
+    permissionsPolicy: "复核此路由是否确实需要相关能力后，把每个已配置的高风险浏览器功能设置为空允许列表 ()。",
+  };
+  for (const result of evaluateSecurityHeaderPolicies(responseHeaders, policy, { documentUrl: target })) {
+    if (!result.present || result.passed) continue;
+    const reasons = result.violations.join(", ");
+    findings.push(finding({
+      ruleId: `security-header-policy-${result.header}`, scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
+      title: `Security header does not satisfy the reviewed value policy: ${result.header}`,
+      titleZh: `安全响应头不符合已复核的值策略：${result.header}`,
+      summary: `The final document response failed ${result.violations.length} semantic requirement(s): ${reasons}. The raw header value was not retained.`,
+      summaryZh: `最终文档响应未满足 ${result.violations.length} 项语义要求：${reasons}。未保留原始响应头值。`,
+      measurements: { header: result.header, violations: result.violations, facts: result.facts, rawValueRetained: false },
+      evidence: [{ type: "response-header-policy", header: result.header, violations: result.violations, facts: result.facts, rawValueRetained: false }, screenshotEvidence("baseline", "Security header value policy")],
+      steps: ["Open the page in a fresh context.", `Evaluate bounded semantic facts from the ${result.header} header without retaining its raw value.`],
+      stepsZh: ["在新的浏览器上下文中打开页面。", `从 ${result.header} 响应头评估有限的语义事实，但不保留原始值。`],
+      fix: headerPolicyFixes[result.key],
+      fixZh: headerPolicyFixesZh[result.key],
+      hints: ["Do not weaken the configured rule or add a permissive placeholder only to clear the gate."],
+      hintsZh: ["不要只为通过门禁而削弱配置规则或添加宽松占位值。"],
     }));
   }
 
@@ -2765,7 +2808,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
     ...(auditResult.linkSummary ? [`Link integrity checked ${auditResult.linkSummary.checked} same-origin target(s) with HEAD only: ${auditResult.linkSummary.failures} failed, ${auditResult.linkSummary.unsupported} did not support HEAD, ${auditResult.linkSummary.excluded} were excluded by safety policy, and ${auditResult.linkSummary.truncated} exceeded the configured cap.`] : []),
     ...(options.metadata ? [`${Object.keys(options.metadata).length - 1} explicit publishing metadata rule(s) were evaluated from counts, lengths, directives, and query-free destinations without retaining title or description text.`] : []),
     ...(auditResult.visualSummary ? [`Visual regression policy finished with ${auditResult.visualSummary.state} state using ${auditResult.visualSummary.measurements.maskedSelectors} declared mask(s); baseline replacement always requires an explicit approval command.`] : []),
-    ...(options.security ? [`${Object.keys(options.security).length - 1} explicit response, origin, and form security policy setting(s) were evaluated without submitting data.`] : []),
+    ...(options.security ? [`${policySettingCount(options.security)} explicit response, semantic-header, origin, and form security policy setting(s) were evaluated without submitting data or retaining raw header values.`] : []),
     ...(options.privacy ? [`${Object.keys(options.privacy).length - 1} aggregate cookie and Web Storage privacy budget(s) were evaluated without retaining cookie names, values, storage keys, or storage values.`] : []),
     ...(journeyResult.scenarios.length ? [`${journeyResult.scenarios.length} declarative user journey(s) were executed with same-origin and non-submission safety guards.`] : []),
     ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} finding(s) matched an active governed waiver; evidence remains visible but the finding is excluded from score and gate calculations.`] : []),
@@ -2788,7 +2831,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
         ...(auditResult.linkSummary ? [`链接完整性仅使用 HEAD 核查了 ${auditResult.linkSummary.checked} 个同源目标：${auditResult.linkSummary.failures} 个失败，${auditResult.linkSummary.unsupported} 个不支持 HEAD，${auditResult.linkSummary.excluded} 个被安全策略排除，${auditResult.linkSummary.truncated} 个超过配置上限。`] : []),
         ...(options.metadata ? [`已通过计数、长度、指令和不含查询值的目标核查 ${Object.keys(options.metadata).length - 1} 项明确的发布元数据规则，未保留标题或描述正文。`] : []),
         ...(auditResult.visualSummary ? [`视觉回归策略以 ${auditResult.visualSummary.state} 状态完成，并使用 ${auditResult.visualSummary.measurements.maskedSelectors} 个声明式 mask；替换基线始终需要显式批准命令。`] : []),
-        ...(options.security ? [`已在不提交数据的前提下核查 ${Object.keys(options.security).length - 1} 项明确的响应、来源与表单安全策略。`] : []),
+        ...(options.security ? [`已在不提交数据或保留原始响应头值的前提下核查 ${policySettingCount(options.security)} 项明确的响应、语义响应头、来源与表单安全策略。`] : []),
         ...(options.privacy ? [`已核查 ${Object.keys(options.privacy).length - 1} 项 Cookie 与 Web Storage 聚合隐私预算，未保留 Cookie 名称、值、存储键或存储值。`] : []),
         ...(journeyResult.scenarios.length ? [`已在同源且禁止提交的安全限制下执行 ${journeyResult.scenarios.length} 个声明式用户旅程。`] : []),
         ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} 个问题命中了有效的可审计豁免；证据仍保留，但不计入评分和门禁。`] : []),

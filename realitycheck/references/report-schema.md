@@ -166,6 +166,8 @@ For regression-only verification, `config.baselinePolicy.maxAgeDays` can add a `
 
 Aggregate privacy findings use the ordinary finding contract with rule IDs prefixed `privacy-`. `measurements` and `privacy-budget` evidence contain only the configured metric, actual/limit values, and an aggregate object with availability, Cookie count/bytes/third-party count, and localStorage/sessionStorage entry/byte totals. Cookie names/values and Web Storage keys/values are never present. A configured but unreadable surface produces `privacy-storage-measurement-unavailable` with bounded surface names rather than an inferred pass.
 
+Semantic response-header findings use rule IDs prefixed `security-header-policy-`. `measurements` and `response-header-policy` evidence carry the header name, controlled violation codes, bounded parsed facts, and `rawValueRetained: false`. CSP facts contain recognized directive names plus configured forbidden-token categories only; HSTS facts contain numeric max-age and booleans; X-Content-Type-Options contains a nosniff boolean; Referrer-Policy contains recognized standard enum values or `unrecognized`; Permissions-Policy contains controlled declared/disabled/missing feature names. Raw header strings, CSP origins, Permissions-Policy allowlist origins, nonces, hashes, and unrecognized token text must never enter the report.
+
 ## Redaction and rendering
 
 The renderer:

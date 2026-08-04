@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
 import { resolveVisualBaselineDirectory } from "./visual-regression.mjs";
+import { SECURITY_HEADER_POLICY_KEYS, SUPPORTED_CSP_DIRECTIVES, SUPPORTED_CSP_FORBIDDEN_TOKENS, SUPPORTED_PERMISSIONS_POLICY_FEATURES, SUPPORTED_REFERRER_POLICIES } from "./security-headers.mjs";
 
 export const CONFIG_FILENAME = "realitycheck.config.json";
 
@@ -62,8 +63,9 @@ const BUDGET_KEYS = new Set([
   "transferKb",
   "domNodes",
 ]);
-const SECURITY_KEYS = new Set(["severity", "requiredHeaders", "forbidMixedContent", "secureForms", "maxThirdPartyOrigins", "allowedThirdPartyOrigins"]);
+const SECURITY_KEYS = new Set(["severity", "requiredHeaders", "headerPolicies", "forbidMixedContent", "secureForms", "maxThirdPartyOrigins", "allowedThirdPartyOrigins"]);
 const SECURITY_HEADERS = new Set(["content-security-policy", "strict-transport-security", "x-content-type-options", "referrer-policy", "permissions-policy"]);
+const HEADER_POLICY_KEYS = new Set(SECURITY_HEADER_POLICY_KEYS);
 const PRIVACY_KEYS = new Set(["severity", "maxCookies", "maxCookieBytes", "maxThirdPartyCookies", "maxLocalStorageEntries", "maxLocalStorageBytes", "maxSessionStorageEntries", "maxSessionStorageBytes"]);
 const NETWORK_KEYS = new Set(["severity", "scope", "maxHttpErrors", "maxFailedRequests", "slowRequestMs", "maxSlowRequests", "maxThirdPartyRequests"]);
 const LINK_POLICY_KEYS = new Set(["severity", "maxFailures", "maxChecked", "timeoutMs"]);
@@ -268,6 +270,70 @@ function validateBudgets(value, source) {
   return normalized;
 }
 
+function validateHeaderPolicies(value, label) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new ConfigError(`${label} must be an object`);
+  assertKnownKeys(value, HEADER_POLICY_KEYS, label);
+  const normalized = {};
+  const enumArray = (candidate, field, allowed, maximum) => {
+    const items = stringArray(candidate, field);
+    if (!items.length || items.length > maximum) throw new ConfigError(`${field} must contain 1 to ${maximum} unique values`);
+    const unsupported = items.find((item) => !allowed.has(item));
+    if (unsupported) throw new ConfigError(`${field} contains unsupported value ${JSON.stringify(unsupported)}`);
+    return items;
+  };
+  if (value.contentSecurityPolicy !== undefined) {
+    const field = `${label}.contentSecurityPolicy`;
+    const candidate = value.contentSecurityPolicy;
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) throw new ConfigError(`${field} must be an object`);
+    assertKnownKeys(candidate, new Set(["requiredDirectives", "forbiddenTokens"]), field);
+    const policy = {};
+    if (candidate.requiredDirectives !== undefined) policy.requiredDirectives = enumArray(candidate.requiredDirectives, `${field}.requiredDirectives`, new Set(SUPPORTED_CSP_DIRECTIVES), 13);
+    if (candidate.forbiddenTokens !== undefined) policy.forbiddenTokens = enumArray(candidate.forbiddenTokens, `${field}.forbiddenTokens`, new Set(SUPPORTED_CSP_FORBIDDEN_TOKENS), 5);
+    if (!Object.keys(policy).length) throw new ConfigError(`${field} must define requiredDirectives or forbiddenTokens`);
+    normalized.contentSecurityPolicy = policy;
+  }
+  if (value.strictTransportSecurity !== undefined) {
+    const field = `${label}.strictTransportSecurity`;
+    const candidate = value.strictTransportSecurity;
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) throw new ConfigError(`${field} must be an object`);
+    assertKnownKeys(candidate, new Set(["minMaxAgeSeconds", "requireIncludeSubDomains", "requirePreload"]), field);
+    const policy = {};
+    if (candidate.minMaxAgeSeconds !== undefined) policy.minMaxAgeSeconds = boundedInteger(candidate.minMaxAgeSeconds, `${field}.minMaxAgeSeconds`, 0, 63_072_000);
+    for (const key of ["requireIncludeSubDomains", "requirePreload"]) {
+      if (candidate[key] !== undefined) {
+        if (candidate[key] !== true) throw new ConfigError(`${field}.${key} must be true when configured`);
+        policy[key] = true;
+      }
+    }
+    if (!Object.keys(policy).length) throw new ConfigError(`${field} must define at least one HSTS requirement`);
+    normalized.strictTransportSecurity = policy;
+  }
+  if (value.xContentTypeOptions !== undefined) {
+    const field = `${label}.xContentTypeOptions`;
+    const candidate = value.xContentTypeOptions;
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) throw new ConfigError(`${field} must be an object`);
+    assertKnownKeys(candidate, new Set(["requireNosniff"]), field);
+    if (candidate.requireNosniff !== true) throw new ConfigError(`${field}.requireNosniff must be true`);
+    normalized.xContentTypeOptions = { requireNosniff: true };
+  }
+  if (value.referrerPolicy !== undefined) {
+    const field = `${label}.referrerPolicy`;
+    const candidate = value.referrerPolicy;
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) throw new ConfigError(`${field} must be an object`);
+    assertKnownKeys(candidate, new Set(["allowedValues"]), field);
+    normalized.referrerPolicy = { allowedValues: enumArray(candidate.allowedValues, `${field}.allowedValues`, new Set(SUPPORTED_REFERRER_POLICIES), 8) };
+  }
+  if (value.permissionsPolicy !== undefined) {
+    const field = `${label}.permissionsPolicy`;
+    const candidate = value.permissionsPolicy;
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) throw new ConfigError(`${field} must be an object`);
+    assertKnownKeys(candidate, new Set(["disabledFeatures"]), field);
+    normalized.permissionsPolicy = { disabledFeatures: enumArray(candidate.disabledFeatures, `${field}.disabledFeatures`, new Set(SUPPORTED_PERMISSIONS_POLICY_FEATURES), 15) };
+  }
+  if (!Object.keys(normalized).length) throw new ConfigError(`${label} must define at least one header policy`);
+  return normalized;
+}
+
 function validateSecurityPolicy(value, source) {
   const label = `${source}.security`;
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new ConfigError(`${label} must be an object`);
@@ -280,6 +346,7 @@ function validateSecurityPolicy(value, source) {
     const unsupported = normalized.requiredHeaders.find((header) => !SECURITY_HEADERS.has(header));
     if (unsupported) throw new ConfigError(`${label}.requiredHeaders contains unsupported header ${JSON.stringify(unsupported)}`);
   }
+  if (value.headerPolicies !== undefined) normalized.headerPolicies = validateHeaderPolicies(value.headerPolicies, `${label}.headerPolicies`);
   for (const key of ["forbidMixedContent", "secureForms"]) {
     if (value[key] !== undefined) {
       if (value[key] !== true) throw new ConfigError(`${label}.${key} must be true when configured`);

@@ -5,8 +5,8 @@
 ## Validated starting profiles
 
 - `starter` keeps Quick mode, one 375x812 viewport, and crawling off while adding a bounded 25-target link check, essential title/viewport/language rules, and a forgiving release score.
-- `product` enables Deep mode, 360x800 phone plus 768x1024 tablet checkpoints, a 20-page safe crawl, performance/API/link/publishing/security/browser-storage privacy policies, and a 30-day same-policy baseline rule.
-- `strict` checks 320x700 and 390x844 phones plus a 768x1024 tablet, tightens performance and aggregate browser-storage budgets, audits all resource requests, requires five reviewed response headers, and permits no active waivers. It is expected to reveal adoption work.
+- `product` enables Deep mode, 360x800 phone plus 768x1024 tablet checkpoints, a 20-page safe crawl, performance/API/link/publishing/security/browser-storage privacy policies, exact nosniff and reviewed referrer semantics, and a 30-day same-policy baseline rule.
+- `strict` checks 320x700 and 390x844 phones plus a 768x1024 tablet, tightens performance and aggregate browser-storage budgets, audits all resource requests, requires five reviewed response headers plus CSP/HSTS/nosniff/referrer semantics, and permits no active waivers. It is expected to reveal adoption work.
 
 Profiles generate ordinary JSON with no hidden behavior. They never prove legal, regulatory, security, accessibility, or performance compliance. Review every threshold, required header, route boundary, and exclusion for the application before CI enforcement. `--base-url` rejects credentials, query strings, fragments, and non-HTTP(S) protocols so initialization cannot persist URL secrets.
 
@@ -251,6 +251,16 @@ Security checks are opt-in because localhost and production delivery policies di
 {
   "security": {
     "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
+    "headerPolicies": {
+      "contentSecurityPolicy": {
+        "requiredDirectives": ["default-src", "base-uri", "form-action", "frame-ancestors"],
+        "forbiddenTokens": ["'unsafe-eval'", "*", "http:"]
+      },
+      "strictTransportSecurity": { "minMaxAgeSeconds": 31536000, "requireIncludeSubDomains": true },
+      "xContentTypeOptions": { "requireNosniff": true },
+      "referrerPolicy": { "allowedValues": ["no-referrer", "strict-origin-when-cross-origin"] },
+      "permissionsPolicy": { "disabledFeatures": ["camera", "microphone", "geolocation", "payment", "usb"] }
+    },
     "forbidMixedContent": true,
     "secureForms": true,
     "maxThirdPartyOrigins": 3,
@@ -260,7 +270,9 @@ Security checks are opt-in because localhost and production delivery policies di
 }
 ```
 
-Supported response headers are `content-security-policy`, `strict-transport-security`, `x-content-type-options`, `referrer-policy`, and `permissions-policy`. Header checks record presence only, not values. `secureForms` inspects password fields, form methods, and resolved action protocols without reading or submitting field values; loopback HTTP remains trusted except that passwords sent through GET are still reported. Third-party policy stores only unique origins, never resource paths or query parameters. Allowed origins must be exact HTTPS origins without credentials, paths, queries, or fragments.
+Supported required response headers are `content-security-policy`, `strict-transport-security`, `x-content-type-options`, `referrer-policy`, and `permissions-policy`. `headerPolicies` adds bounded semantic checks: CSP can require reviewed directive names and forbid the controlled tokens `'unsafe-inline'`, `'unsafe-eval'`, `*`, `data:`, and `http:`; HSTS can require a max-age from 0 to 63,072,000 seconds plus `includeSubDomains` and `preload`; X-Content-Type-Options can require exact `nosniff`; Referrer-Policy can allow one or more standard policy enums; and Permissions-Policy can require controlled high-risk features such as camera, microphone, geolocation, payment, or USB to use the empty allowlist `()`. The schema accepts 15 reviewed feature names. A semantic policy implicitly requires its response header, so it does not need to be duplicated in `requiredHeaders`. HSTS on HTTP fails even if the header is present because browsers ignore it there.
+
+Header evidence never retains raw values, CSP source origins, nonces, hashes, or Permissions-Policy allowlist origins. It stores only recognized directive/feature names, controlled violation codes/tokens, a numeric max-age, the effective recognized referrer enum, and boolean facts. Test application behavior in staging before enforcing CSP or disabling a browser capability; do not weaken policy just to clear the gate. `secureForms` inspects password fields, form methods, and resolved action protocols without reading or submitting field values; loopback HTTP remains trusted except that passwords sent through GET are still reported. Third-party policy stores only unique origins, never resource paths or query parameters. Allowed origins must be exact HTTPS origins without credentials, paths, queries, or fragments. These project rules are not a complete security assessment or compliance claim.
 
 ## Aggregate browser storage privacy budgets
 

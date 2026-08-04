@@ -73,6 +73,30 @@ test("the published aggregate privacy evidence verifies every committed output",
   assert.equal(report.valid, true, report.errors.join("\n"));
 });
 
+test("published semantic response-header evidence proves failure and recovery without raw values", () => {
+  const expected = [
+    ["security-headers-broken", 84, 4],
+    ["security-headers-fixed", 100, 0],
+  ];
+  for (const [kind, score, semanticFindings] of expected) {
+    const root = resolve("examples/public-evidence", kind);
+    const latest = JSON.parse(readFileSync(resolve(root, "latest.json"), "utf8"));
+    const [manifest, reportResult] = validateArtifactFiles([
+      resolve(root, latest.artifacts.integrityManifest),
+      resolve(root, latest.artifacts.json),
+    ]);
+    assert.equal(manifest.valid, true, manifest.errors.join("\n"));
+    assert.equal(reportResult.valid, true, reportResult.errors.join("\n"));
+    const report = JSON.parse(readFileSync(resolve(root, latest.artifacts.json), "utf8"));
+    assert.equal(report.score.overall, score);
+    assert.equal(report.findings.filter((item) => item.ruleId.startsWith("security-header-policy-")).length, semanticFindings);
+    const serialized = JSON.stringify(report);
+    assert.doesNotMatch(serialized, /default-src 'self'|base-uri 'none'|frame-ancestors 'none'/);
+    assert.doesNotMatch(serialized, /private\.example/);
+    assert.equal(report.findings.filter((item) => item.ruleId.startsWith("security-header-policy-")).every((item) => item.measurements.rawValueRetained === false), true);
+  }
+});
+
 test("committed interactive HTML surfaces contain parseable inline scripts", () => {
   for (const path of ["examples/reference-run/report.html", "examples/index.html", "examples/issue-drafts-lab/github-issue-drafts.html", "examples/release-decision-lab/release-decision.html", "examples/audit-plan-lab/audit-plan.html"]) {
     const source = readFileSync(resolve(path), "utf8");
@@ -127,6 +151,14 @@ test("responsive viewport fixture policies satisfy the project policy schema", (
 test("aggregate browser storage privacy fixtures satisfy the project policy schema", () => {
   for (const name of ["broken.config.json", "fixed.config.json"]) {
     const [result] = validateArtifactFiles([resolve(`examples/privacy-lab/${name}`)]);
+    assert.equal(result.kind, "config");
+    assert.equal(result.valid, true, `${name}: ${result.errors.join("\n")}`);
+  }
+});
+
+test("semantic response-header fixtures satisfy the project policy schema", () => {
+  for (const name of ["broken.config.json", "fixed.config.json"]) {
+    const [result] = validateArtifactFiles([resolve(`examples/security-header-lab/${name}`)]);
     assert.equal(result.kind, "config");
     assert.equal(result.valid, true, `${name}: ${result.errors.join("\n")}`);
   }

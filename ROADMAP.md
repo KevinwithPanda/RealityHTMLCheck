@@ -37,6 +37,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add user-defined critical controls and safe declarative checks.
 - [x] Add auditable, expiring known-risk waivers that preserve evidence while temporarily excluding findings from score and gates.
 - [x] Add a local evidence catalog across page, site, verification, and trend artifacts, including CI job summaries.
+- [x] Add privacy-preserving semantic CSP, HSTS, nosniff, Referrer-Policy, and Permissions-Policy release rules.
 - [x] Add explainable numeric release policies that cannot be bypassed by baseline comparison.
 - [x] Add deterministic rule-and-route ownership carried from findings into evidence, repair handoff, and catalog search.
 - [x] Add stable, schema-validated latest-run entry points without sacrificing immutable timestamped history.

@@ -39,7 +39,7 @@
       "Responsive viewport matrix auditing",
       "Visual regression evidence",
       "Accessibility and performance checks",
-      "API, link, metadata, security, and aggregate browser storage privacy checks",
+      "API, link, metadata, semantic response-header security, and aggregate browser storage privacy checks",
       "Browser-free bilingual audit plan previews",
       "Bilingual repair plans and GitHub issue drafts",
       "Policy anti-weakening review",
@@ -93,7 +93,7 @@ repair     repair-plan.json</code></pre>
     <section class="metrics wrap" aria-label="Product metrics">
       <article><strong>13+</strong><span data-en="isolated stress scenarios" data-zh-cn="个隔离压力场景">isolated stress scenarios</span></article>
       <article><strong>9</strong><span data-en="performance budget metrics" data-zh-cn="项性能预算指标">performance budget metrics</span></article>
-      <article><strong>9</strong><span data-en="public real-browser evidence packs" data-zh-cn="份公开真实浏览器证据包">public real-browser evidence packs</span></article>
+      <article><strong>11</strong><span data-en="public real-browser evidence packs" data-zh-cn="份公开真实浏览器证据包">public real-browser evidence packs</span></article>
       <article><strong>0</strong><span data-en="remote assets in reports" data-zh-cn="报告中的远程资源">remote assets in reports</span></article>
     </section>
 
@@ -109,6 +109,7 @@ repair     repair-plan.json</code></pre>
         <article class="evidence-card"><span class="tag security" data-en="SECURITY POLICY" data-zh-cn="安全策略">SECURITY POLICY</span><strong>84</strong><h3 data-en="Missing headers and an unsafe password form" data-zh-cn="缺少响应头与不安全密码表单">Missing headers and an unsafe password form</h3><p data-en="Three required headers and a GET credential path become separate actionable findings." data-zh-cn="三个必需响应头和 GET 凭据路径分别成为可执行问题。">Three required headers and a GET credential path become separate actionable findings.</p><div class="card-actions"><a href="evidence/security/latest.html" data-en="Open report →" data-zh-cn="打开报告 →">Open report →</a><a href="labs/security/index.html" data-en="Open fixture" data-zh-cn="打开故障页">Open fixture</a></div></article>
         <article class="evidence-card"><span class="tag privacy" data-en="BROWSER STORAGE PRIVACY" data-zh-cn="浏览器存储隐私">BROWSER STORAGE PRIVACY</span><strong>76</strong><h3 data-en="Six aggregate storage budgets fail without leaking state" data-zh-cn="六项聚合存储预算失败，但不泄漏状态">Six aggregate storage budgets fail without leaking state</h3><p data-en="Cookie, localStorage, and sessionStorage counts and UTF-8 bytes become repairable findings while names, keys, and values stay out of evidence; the paired fix reaches 100/100." data-zh-cn="Cookie、localStorage 和 sessionStorage 的数量与 UTF-8 字节成为可修复问题，名称、键和值不进入证据；修复对照达到 100/100。">Cookie, localStorage, and sessionStorage counts and UTF-8 bytes become repairable findings while names, keys, and values stay out of evidence; the paired fix reaches 100/100.</p><div class="card-actions"><a href="evidence/privacy/latest.html" data-en="Open report →" data-zh-cn="打开报告 →">Open report →</a><a href="labs/privacy/broken.html" data-en="Open fixture" data-zh-cn="打开故障页">Open fixture</a></div></article>
         <article class="evidence-card"><span class="tag accessibility" data-en="DEEP ACCESSIBILITY" data-zh-cn="深度可访问性">DEEP ACCESSIBILITY</span><strong>69</strong><h3 data-en="Baseline semantics plus bundled axe-core" data-zh-cn="基线语义检查加内置 axe-core">Baseline semantics plus bundled axe-core</h3><p data-en="Five conservative checks and five axe rules are recorded with bounded node evidence." data-zh-cn="五项保守检查与五条 axe 规则均保留有边界的节点证据。">Five conservative checks and five axe rules are recorded with bounded node evidence.</p><div class="card-actions"><a href="evidence/accessibility/latest.html" data-en="Open report →" data-zh-cn="打开报告 →">Open report →</a><a href="labs/accessibility/broken.html" data-en="Open fixture" data-zh-cn="打开故障页">Open fixture</a></div></article>
+        <article class="evidence-card"><span class="tag security" data-en="SEMANTIC RESPONSE HEADERS" data-zh-cn="响应头语义">SEMANTIC RESPONSE HEADERS</span><strong>84→100</strong><h3 data-en="The header exists, but its policy is still unsafe" data-zh-cn="响应头虽然存在，策略仍不安全">The header exists, but its policy is still unsafe</h3><p data-en="Four value-level findings prove unsafe CSP, nosniff, referrer, and browser-feature policies; the paired run passes without retaining raw values or allowlist origins." data-zh-cn="四个值级问题证明 CSP、nosniff、referrer 和浏览器功能策略不安全；修复对照在不保留原始值或允许来源的情况下通过。">Four value-level findings prove unsafe CSP, nosniff, referrer, and browser-feature policies; the paired run passes without retaining raw values or allowlist origins.</p><div class="card-actions"><a href="evidence/security-headers-broken/latest.html" data-en="Open 84/100 evidence →" data-zh-cn="打开 84/100 证据 →">Open 84/100 evidence →</a><a href="evidence/security-headers-fixed/latest.html" data-en="Open 100/100 proof" data-zh-cn="打开 100/100 对照">Open 100/100 proof</a></div></article>
       </div>
     </section>
 

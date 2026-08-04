@@ -43,6 +43,7 @@ jobs:
           node --check realitycheck/scripts/issue-drafts.mjs
           node --check realitycheck/scripts/release-decision.mjs
           node --check realitycheck/scripts/audit-plan.mjs
+          node --check realitycheck/scripts/security-headers.mjs
 
       - name: Verify package contents
         run: npm pack --dry-run
@@ -150,6 +151,40 @@ jobs:
           html = Path(".realitycheck/ci-release-decision/release-decision.html").read_text(encoding="utf-8")
           assert "NO AUTOMATIC DEPLOYMENT" in html
           assert "data-language=\"zh-CN\"" in html
+          PY
+
+      - name: Prove semantic response-header failure and recovery
+        shell: bash
+        run: |
+          node examples/security-header-lab/server.mjs 4193 > "$RUNNER_TEMP/realitycheck-security-header-lab.log" 2>&1 &
+          lab_pid=$!
+          trap 'kill "$lab_pid" 2>/dev/null || true' EXIT
+          curl --fail --silent --show-error --retry 20 --retry-delay 1 http://127.0.0.1:4193/fixed > /dev/null
+          set +e
+          node realitycheck/scripts/audit.mjs audit \
+            --config examples/security-header-lab/broken.config.json \
+            --browser "$(command -v google-chrome)"
+          broken_status=$?
+          set -e
+          test "$broken_status" -eq 1
+          node realitycheck/scripts/audit.mjs audit \
+            --config examples/security-header-lab/fixed.config.json \
+            --browser "$(command -v google-chrome)"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for name, score, count in (("broken", 84, 4), ("fixed", 100, 0)):
+              root = Path(".realitycheck/security-header-lab") / name
+              latest = json.loads((root / "latest.json").read_text(encoding="utf-8"))
+              report = json.loads((root / latest["artifacts"]["json"]).read_text(encoding="utf-8"))
+              semantic = [item for item in report["findings"] if item["ruleId"].startswith("security-header-policy-")]
+              assert report["score"]["overall"] == score, report["score"]
+              assert len(semantic) == count, semantic
+              assert all(item["measurements"]["rawValueRetained"] is False for item in semantic)
+              serialized = json.dumps(report)
+              assert "default-src 'self'" not in serialized
+              assert "frame-ancestors 'none'" not in serialized
+              assert "private.example" not in serialized
           PY
 
       - name: Prove the zero-configuration bundled demo
