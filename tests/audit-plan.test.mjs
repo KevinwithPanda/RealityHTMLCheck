@@ -74,6 +74,8 @@ test("audit plan explains effective coverage without copying private config deta
     assert.equal(plan.execution.scenarioExecutionsMax, 43);
     assert.equal(plan.summary.enabledDetectors, 11);
     assert.equal(plan.id, computeAuditPlanId(plan));
+    assert.equal(plan.target.inspected, false);
+    assert.deepEqual(plan.safety.map((item) => item.id), ["preview-only", "same-origin", "no-submit", "reviewed-repair"]);
     assert.ok(plan.detectors.find((item) => item.key === "privacy")?.enabled);
     assert.ok(plan.warnings.some((item) => /4 cookie record/.test(item)));
 

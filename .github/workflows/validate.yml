@@ -64,7 +64,12 @@ jobs:
           assert plan["summary"]["scenariosPerPage"] == 15, plan
           assert plan["summary"]["scenarioExecutionsMax"] == 301, plan
           assert plan["summary"]["enabledDetectors"] == 12, plan
-          assert plan["safety"]["browserAccessed"] is False, plan
+          # `safety` is deliberately a bilingual, extensible list rather than a
+          # boolean bag. Prove the semantic contract by ID and use the target's
+          # schema-bound `inspected` flag for the browser-free guarantee.
+          safety_by_id = {item["id"]: item for item in plan["safety"]}
+          assert {"preview-only", "same-origin", "no-submit", "reviewed-repair"} <= safety_by_id.keys(), plan
+          assert plan["target"]["inspected"] is False, plan
           assert "data-testid" not in json.dumps(plan), plan
           assert Path(".realitycheck/ci-audit-plan/audit-plan.html").is_file()
           assert Path(".realitycheck/ci-audit-plan/audit-plan.zh-CN.md").is_file()
