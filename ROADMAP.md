@@ -65,6 +65,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add explicit publishing metadata contracts with privacy-bounded evidence and paired release fixtures.
 - [x] Add a one-command bundled real-browser demo that needs no application server or project config.
 - [x] Add latest-target GitHub job summaries and bounded, injection-safe workflow annotations.
+- [x] Replace the single fixed mobile checkpoint with a bounded, policy-fingerprinted responsive viewport matrix and paired real-browser fixtures.
 
 ## v1.0 criteria
 
@@ -77,7 +78,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 ## Good first issues
 
 - Add a positive RTL fixture that must not produce a finding.
-- Add a responsive version of the broken demo for detector regression comparison.
+- Publish more reviewed breakpoint fixtures for foldables and landscape layouts without expanding the default runtime blindly.
 - Improve Markdown rendering for screenshot galleries.
 - Add JSON Schema tests for example reports.
 - Document integration with an existing Playwright project.

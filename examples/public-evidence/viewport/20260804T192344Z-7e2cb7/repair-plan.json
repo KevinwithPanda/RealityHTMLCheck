@@ -1,0 +1,56 @@
+{
+  "items": [
+    {
+      "confidence": "high",
+      "findingId": "RC-C735CB3F02",
+      "fingerprint": "c735cb3f02420d18bdb18055f5eb0eba47e326754333bc752bf42bd8d1a407d8",
+      "remediation": {
+        "summary": "Keep the control in normal responsive flow at this breakpoint.",
+        "technicalHints": [
+          "Remove fixed minimum widths and stack actions below headings when space is constrained."
+        ]
+      },
+      "reportAnchor": "report.html#RC-C735CB3F02",
+      "ruleId": "offscreen-critical-control",
+      "scenarioId": "phone-320",
+      "severity": "major",
+      "title": "Review release is outside the phone-320 viewport",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "在该断点中让控件保持在正常的响应式布局流内。",
+            "technicalHints": [
+              "移除固定最小宽度，并在空间不足时把操作按钮排列到标题下方。"
+            ]
+          },
+          "title": "“Review release”位于 phone-320 视口之外"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "phone-320"
+        ]
+      }
+    }
+  ],
+  "kind": "repair-plan",
+  "schemaVersion": "1",
+  "source": {
+    "reportPath": "report.json",
+    "runId": "20260804T192344Z-7e2cb7",
+    "target": "http://127.0.0.1:4182/examples/viewport-lab/broken.html"
+  },
+  "summary": {
+    "critical": 0,
+    "items": 1,
+    "major": 1,
+    "minor": 0,
+    "reviewRequired": 0,
+    "waived": 0
+  },
+  "toolVersion": "0.4.0"
+}

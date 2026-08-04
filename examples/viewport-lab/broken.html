@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>Viewport Matrix Lab · Intentional Narrow-Phone Failure</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="broken">
+    <main class="shell">
+      <p class="eyebrow">Responsive matrix laboratory</p>
+      <h1>One narrow breakpoint, one real release risk.</h1>
+      <p class="lede">This fixture stays healthy at 375px and 390px, but intentionally hides the release action at 320px.</p>
+      <section class="release-card" aria-labelledby="release-title">
+        <div>
+          <h2 id="release-title">Production release</h2>
+          <p>Configuration and rollback checks are ready for review.</p>
+        </div>
+        <button class="primary" data-testid="release-action" type="button">Review release</button>
+      </section>
+    </main>
+  </body>
+</html>

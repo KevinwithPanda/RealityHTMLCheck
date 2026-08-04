@@ -144,6 +144,51 @@ jobs:
           PY
           node realitycheck/scripts/audit.mjs validate "$before_report" "$after_report" "$verification"
 
+      - name: Prove the configurable responsive viewport matrix
+        shell: bash
+        run: |
+          python -m http.server 4184 --bind 127.0.0.1 --directory examples/viewport-lab >/tmp/realitycheck-viewport.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..50}; do
+            if curl --fail --silent http://127.0.0.1:4184/broken.html >/dev/null; then break; fi
+            sleep 0.1
+          done
+          set +e
+          npm run audit -- --config examples/viewport-lab/broken.config.json \
+            --browser "$(command -v google-chrome)"
+          broken_status=$?
+          set -e
+          test "$broken_status" -eq 1
+          npm run audit -- --config examples/viewport-lab/fixed.config.json \
+            --browser "$(command -v google-chrome)"
+          broken_report="$(find .realitycheck/viewport-lab-broken -name report.json -print -quit)"
+          fixed_report="$(find .realitycheck/viewport-lab-fixed -name report.json -print -quit)"
+          test -n "$broken_report"
+          test -n "$fixed_report"
+          python - "$broken_report" "$fixed_report" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          broken = json.load(open(sys.argv[1], encoding="utf-8"))
+          fixed = json.load(open(sys.argv[2], encoding="utf-8"))
+          assert broken["score"]["overall"] == 92, broken
+          assert fixed["score"]["overall"] == 100, fixed
+          assert len(broken["findings"]) == 1, broken
+          finding = broken["findings"][0]
+          assert finding["ruleId"] == "offscreen-critical-control", finding
+          assert finding["scenarioId"] == "phone-320", finding
+          assert finding["measurements"]["viewportWidth"] == 320, finding
+          states = {item["id"]: item["status"] for item in broken["scenarios"]}
+          assert states["phone-320"] == "completed-with-findings", states
+          assert states["phone-390"] == "passed", states
+          assert states["tablet-768"] == "passed", states
+          screenshots = Path(sys.argv[1]).parent / "screenshots"
+          assert all((screenshots / f"{name}.png").is_file() for name in ("phone-320", "phone-390", "tablet-768"))
+          PY
+          node realitycheck/scripts/audit.mjs validate "$broken_report" "$fixed_report"
+
       - name: Prove safe multi-page discovery and site reporting
         shell: bash
         run: |

@@ -451,6 +451,7 @@ function runDoctor(options, loaded) {
   if (options.network) check("Network reliability", () => `${Object.keys(options.network).filter((key) => key.startsWith("max")).length} configured ${options.network.scope} request limit(s); no response bodies or query values retained`);
   if (options.links) check("Link integrity", () => `HEAD-only checks capped at ${options.links.maxChecked} same-origin links; ${options.links.maxFailures} failure(s) allowed`);
   if (options.metadata) check("Publishing metadata", () => `${Object.keys(options.metadata).length - 1} explicit title/description/document rule(s); text values are not retained`);
+  check("Responsive viewport matrix", () => `${options.viewports.length} bounded viewport(s): ${options.viewports.map((item) => `${item.id}=${item.width}x${item.height}${item.touch ? "/touch" : ""}`).join(", ")}`);
   if (options.visual) check("Visual regression", () => `${(options.visual.maxDiffRatio * 100).toFixed(3)}% changed-pixel limit; ${options.visual.masks.length} mask(s); baseline updates require visual-approve`);
   if (options.security) check("Security baseline", () => `${Object.keys(options.security).length - 1} explicit policy setting(s); no form submission`);
   if (options.waivers.length) check("Governed waivers", () => {
@@ -1587,15 +1588,18 @@ async function runSecurityPolicies(page, response, target, policy) {
   return findings;
 }
 
-async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, network = null, links = null, metadataPolicy = null, visual = null, security = null, crawl = { include: ["/**"], exclude: [] }) {
+async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, network = null, links = null, metadataPolicy = null, visual = null, security = null, viewports = DEFAULT_PROJECT_CONFIG.viewports, crawl = { include: ["/**"], exclude: [] }) {
   const findings = [];
   const results = new Map();
   let targetTitle = "";
   let finalUrl = target;
   let linkSummary = null;
   let visualSummary = null;
+  const quickTotal = 5 + viewports.length;
+  let quickStep = 0;
+  const logQuick = (label) => console.log(`  ${String(++quickStep).padStart(2, " ")}/${quickTotal} ${label}`);
 
-  console.log("  1/6  Baseline");
+  logQuick("Baseline");
   const baseline = await createPage(browser, target, "baseline", runDirectory, contextOptions);
   targetTitle = await baseline.page.title();
   finalUrl = baseline.page.url();
@@ -1737,61 +1741,67 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
   results.set("baseline", scenarioResult("baseline", findings.length ? "completed-with-findings" : "passed", baseline.durationMs(), findings.length ? ["Baseline runtime findings were recorded."] : [], findings.length ? ["已记录基线运行时问题。"] : []));
   await baseline.context.close();
 
-  console.log("  2/6  Mobile 375px");
-  const mobile = await createPage(browser, target, "mobile-375", runDirectory, { ...contextOptions, viewport: { width: 375, height: 812 } });
-  const mobileLayout = await inspectLayout(mobile.page);
-  const mobileStart = findings.length;
-  const offscreenControls = mobileLayout.controls.filter((item) => item.offscreen && baselineControls.has(item.selector) && !baselineControls.get(item.selector).offscreen).slice(0, 3);
-  for (const control of offscreenControls) {
-    findings.push(finding({
-      ruleId: "offscreen-critical-control", scenarioId: "mobile-375", classification: "new", severity: "major", confidence: "high",
-      title: `${control.name || "A control"} is outside the mobile viewport`, titleZh: `${control.name || "关键控件"}位于手机视口之外`,
-      summary: `A control available at desktop width is fully outside the 375px viewport.`, summaryZh: "桌面端可用的控件在 375px 手机视口中完全不可见。",
-      selector: control.selector,
-      measurements: { viewportWidth: 375, documentScrollWidth: mobileLayout.documentScrollWidth, overflowPixels: mobileLayout.overflowPixels, boundingBox: control.rect },
-      evidence: [{ type: "dom", selector: control.selector, boundingBox: control.rect }, screenshotEvidence("mobile-375", "375px mobile viewport")],
-      steps: ["Open the page with a 375x812 viewport.", `Locate ${control.name || control.selector} without horizontal scrolling.`],
-      stepsZh: ["使用 375×812 的视口打开页面。", `在不进行横向滚动的情况下查找 ${control.name || control.selector}。`],
-      fix: "Keep the control in normal responsive flow at the mobile breakpoint.", fixZh: "在手机断点中让控件保持在正常的响应式布局流内。",
-      hints: ["Remove fixed minimum widths and stack actions below headings when space is constrained."], hintsZh: ["移除固定最小宽度，并在空间不足时把操作按钮排列到标题下方。"],
-    }));
+  for (const viewport of viewports) {
+    const dimensions = `${viewport.width}×${viewport.height}`;
+    logQuick(`${viewport.id} (${dimensions}${viewport.touch ? ", touch" : ""})`);
+    const responsive = await createPage(browser, target, viewport.id, runDirectory, { ...contextOptions, viewport: { width: viewport.width, height: viewport.height } });
+    try {
+      const layout = await inspectLayout(responsive.page);
+      const viewportStart = findings.length;
+      const offscreenControls = layout.controls.filter((item) => item.offscreen && baselineControls.has(item.selector) && !baselineControls.get(item.selector).offscreen).slice(0, 3);
+      for (const control of offscreenControls) {
+        findings.push(finding({
+          ruleId: "offscreen-critical-control", scenarioId: viewport.id, classification: "new", severity: "major", confidence: "high",
+          title: `${control.name || "A control"} is outside the ${viewport.id} viewport`, titleZh: `${control.name ? `“${control.name}”` : "关键控件"}位于 ${viewport.id} 视口之外`,
+          summary: `A control available at desktop width is fully outside the ${viewport.width}px viewport.`, summaryZh: `桌面端可用的控件在 ${viewport.width}px 视口中完全不可见。`,
+          selector: control.selector,
+          measurements: { viewportId: viewport.id, viewportWidth: viewport.width, viewportHeight: viewport.height, touch: viewport.touch, documentScrollWidth: layout.documentScrollWidth, overflowPixels: layout.overflowPixels, boundingBox: control.rect },
+          evidence: [{ type: "dom", selector: control.selector, boundingBox: control.rect }, screenshotEvidence(viewport.id, `${dimensions} responsive viewport`)],
+          steps: [`Open the page with the ${viewport.id} ${dimensions} viewport.`, `Locate ${control.name || control.selector} without horizontal scrolling.`],
+          stepsZh: [`使用 ${viewport.id}（${dimensions}）视口打开页面。`, `在不进行横向滚动的情况下查找 ${control.name || control.selector}。`],
+          fix: "Keep the control in normal responsive flow at this breakpoint.", fixZh: "在该断点中让控件保持在正常的响应式布局流内。",
+          hints: ["Remove fixed minimum widths and stack actions below headings when space is constrained."], hintsZh: ["移除固定最小宽度，并在空间不足时把操作按钮排列到标题下方。"],
+        }));
+      }
+      if (layout.overflowPixels > 2 && offscreenControls.length === 0) {
+        const culprit = layout.culprits[0];
+        findings.push(finding({
+          ruleId: "document-horizontal-overflow", scenarioId: viewport.id, classification: baselineLayout.overflowPixels > 2 ? "worsened" : "new", severity: layout.overflowPixels > Math.max(80, Math.round(viewport.width * 0.25)) ? "major" : "minor", confidence: "high",
+          title: `The document overflows the ${viewport.id} viewport`, titleZh: `页面在 ${viewport.id} 视口中产生横向溢出`,
+          summary: `The document is ${layout.overflowPixels}px wider than the ${viewport.width}px viewport.`, summaryZh: `页面比 ${viewport.width}px 视口宽 ${layout.overflowPixels}px。`,
+          selector: culprit?.selector,
+          measurements: { viewportId: viewport.id, viewportWidth: viewport.width, viewportHeight: viewport.height, touch: viewport.touch, documentScrollWidth: layout.documentScrollWidth, overflowPixels: layout.overflowPixels },
+          evidence: [{ type: "dom", culprits: layout.culprits }, screenshotEvidence(viewport.id, `${dimensions} responsive viewport`)],
+          steps: [`Open the page with the ${viewport.id} ${dimensions} viewport.`, "Compare document scroll width with the viewport width."],
+          stepsZh: [`使用 ${viewport.id}（${dimensions}）视口打开页面。`, "比较文档滚动宽度和视口宽度。"],
+          fix: "Remove the fixed-width constraint that expands the page beyond the configured viewport.", fixZh: "移除导致页面超出配置视口的固定宽度约束。",
+        }));
+      }
+      const smallTargets = viewport.touch ? layout.controls.filter((item) =>
+        (["button", "input", "select", "textarea"].includes(item.tag) || item.role === "button")
+        && (item.rect.width < 24 || item.rect.height < 24)
+      ).slice(0, 3) : [];
+      for (const control of smallTargets) {
+        findings.push(finding({
+          ruleId: "minimum-interactive-size", scenarioId: viewport.id, classification: "new", severity: "minor", confidence: "medium",
+          title: "An interactive target is smaller than 24×24 CSS pixels", titleZh: "交互目标小于 24×24 CSS 像素",
+          summary: `The ${control.rect.width}×${control.rect.height}px control is difficult to activate accurately in the configured touch viewport.`, summaryZh: `该控件尺寸为 ${control.rect.width}×${control.rect.height}px，在配置的触控视口中难以准确操作。`,
+          selector: control.selector,
+          measurements: { viewportId: viewport.id, viewportWidth: viewport.width, viewportHeight: viewport.height, touch: true, minimumWidth: 24, minimumHeight: 24, boundingBox: control.rect },
+          evidence: [{ type: "dom", selector: control.selector, boundingBox: control.rect }, screenshotEvidence(viewport.id, `${dimensions} small touch target`)],
+          steps: [`Open the page with the ${viewport.id} ${dimensions} viewport.`, `Measure the rendered target size of ${control.selector}.`],
+          stepsZh: [`使用 ${viewport.id}（${dimensions}）视口打开页面。`, `测量 ${control.selector} 的渲染目标尺寸。`],
+          fix: "Increase the rendered hit area to at least 24×24 CSS pixels without shrinking adjacent spacing.", fixZh: "将实际点击区域扩大到至少 24×24 CSS 像素，同时保留相邻目标间距。",
+          hints: ["Padding can enlarge the hit area without changing the icon itself."], hintsZh: ["可以通过内边距扩大点击区域，而不必放大图标本身。"],
+        }));
+      }
+      results.set(viewport.id, scenarioResult(viewport.id, findings.length > viewportStart ? "completed-with-findings" : "passed", responsive.durationMs(), [`Evaluated ${dimensions}; touch-target checks were ${viewport.touch ? "enabled" : "disabled"}.`], [`已核查 ${dimensions}；触控目标检查${viewport.touch ? "已启用" : "已禁用"}。`]));
+    } finally {
+      await responsive.context.close();
+    }
   }
-  if (mobileLayout.overflowPixels > 2 && offscreenControls.length === 0) {
-    const culprit = mobileLayout.culprits[0];
-    findings.push(finding({
-      ruleId: "document-horizontal-overflow", scenarioId: "mobile-375", classification: baselineLayout.overflowPixels > 2 ? "worsened" : "new", severity: mobileLayout.overflowPixels > 93 ? "major" : "minor", confidence: "high",
-      title: "The document overflows the mobile viewport", titleZh: "页面在手机视口中产生横向溢出",
-      summary: `The document is ${mobileLayout.overflowPixels}px wider than the 375px viewport.`, summaryZh: `页面比 375px 手机视口宽 ${mobileLayout.overflowPixels}px。`,
-      selector: culprit?.selector,
-      measurements: { viewportWidth: 375, documentScrollWidth: mobileLayout.documentScrollWidth, overflowPixels: mobileLayout.overflowPixels },
-      evidence: [{ type: "dom", culprits: mobileLayout.culprits }, screenshotEvidence("mobile-375", "375px mobile viewport")],
-      steps: ["Open the page with a 375x812 viewport.", "Compare document scroll width with the viewport width."],
-      stepsZh: ["使用 375×812 的视口打开页面。", "比较文档滚动宽度和视口宽度。"],
-      fix: "Remove the fixed-width constraint that expands the page beyond the viewport.", fixZh: "移除导致页面超出视口的固定宽度约束。",
-    }));
-  }
-  const smallTargets = mobileLayout.controls.filter((item) =>
-    (["button", "input", "select", "textarea"].includes(item.tag) || item.role === "button")
-    && (item.rect.width < 24 || item.rect.height < 24)
-  ).slice(0, 3);
-  for (const control of smallTargets) {
-    findings.push(finding({
-      ruleId: "minimum-interactive-size", scenarioId: "mobile-375", classification: "new", severity: "minor", confidence: "medium",
-      title: "An interactive target is smaller than 24×24 CSS pixels", titleZh: "交互目标小于 24×24 CSS 像素",
-      summary: `The ${control.rect.width}×${control.rect.height}px control is difficult to activate accurately on a narrow touch viewport.`, summaryZh: `该控件尺寸为 ${control.rect.width}×${control.rect.height}px，在狭窄触控视口中难以准确操作。`,
-      selector: control.selector,
-      measurements: { minimumWidth: 24, minimumHeight: 24, boundingBox: control.rect },
-      evidence: [{ type: "dom", selector: control.selector, boundingBox: control.rect }, screenshotEvidence("mobile-375", "Small mobile interaction target")],
-      steps: ["Open the page with a 375×812 viewport.", `Measure the rendered target size of ${control.selector}.`],
-      stepsZh: ["使用 375×812 视口打开页面。", `测量 ${control.selector} 的渲染目标尺寸。`],
-      fix: "Increase the rendered hit area to at least 24×24 CSS pixels without shrinking adjacent spacing.", fixZh: "将实际点击区域扩大到至少 24×24 CSS 像素，同时保留相邻目标间距。",
-      hints: ["Padding can enlarge the hit area without changing the icon itself."], hintsZh: ["可以通过内边距扩大点击区域，而不必放大图标本身。"],
-    }));
-  }
-  results.set("mobile-375", scenarioResult("mobile-375", findings.length > mobileStart ? "completed-with-findings" : "passed", mobile.durationMs()));
-  await mobile.context.close();
 
-  console.log("  3/6  Long text");
+  logQuick("Long text");
   const longText = await createPage(browser, target, "long-text", runDirectory, contextOptions);
   const mutationCount = await longText.page.evaluate((fixtures) => {
     const priority = [...document.querySelectorAll("[data-testid],button,a,label,th,td,h1,h2,h3,strong,.badge,.status")];
@@ -1827,7 +1837,7 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
   results.set("long-text", scenarioResult("long-text", findings.length > longStart ? "completed-with-findings" : "passed", longText.durationMs(), [`${mutationCount} deterministic text mutations were applied.`], [`已执行 ${mutationCount} 次确定性的文本替换。`]));
   await longText.context.close();
 
-  console.log("  4/6  RTL Arabic");
+  logQuick("RTL Arabic");
   const rtl = await createPage(browser, target, "rtl-arabic", runDirectory, contextOptions);
   await rtl.page.evaluate(() => {
     document.documentElement.lang = "ar";
@@ -1880,7 +1890,7 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
   results.set("rtl-arabic", scenarioResult("rtl-arabic", findings.length > rtlStart ? "completed-with-findings" : "passed", rtl.durationMs(), ["Directionality stress test only; translation quality was not assessed."], ["仅进行书写方向压力测试；未评估翻译质量。"]));
   await rtl.context.close();
 
-  console.log("  5/6  Image failure");
+  logQuick("Image failure");
   const imageFailure = await createPage(browser, target, "image-failure", runDirectory, {
     ...contextOptions,
     route: async (context) => context.route("**/*", async (route) => route.request().resourceType() === "image" ? route.abort("failed") : route.continue()),
@@ -1905,7 +1915,7 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
   results.set("image-failure", scenarioResult("image-failure", findings.length > imageStart ? "completed-with-findings" : "passed", imageFailure.durationMs(), ["Expected image request aborts were excluded from failed-request findings."], ["预期的图片请求中止未计入普通请求失败问题。"]));
   await imageFailure.context.close();
 
-  console.log("  6/6  Keyboard Tab");
+  logQuick("Keyboard Tab");
   const keyboard = await createPage(browser, target, "keyboard-tab", runDirectory, contextOptions);
   const focusSequence = [];
   for (let index = 0; index < 30; index += 1) {
@@ -1965,11 +1975,14 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
   return { findings, results, targetTitle, finalUrl, baselineLayout, linkSummary, visualSummary };
 }
 
-async function runDeepScenarios(browser, target, runDirectory, findings, results, contextOptions = {}) {
-  console.log("  7/13 Page zoom 200% (unsupported)");
+async function runDeepScenarios(browser, target, runDirectory, findings, results, contextOptions = {}, quickScenarioCount = 6) {
+  const deepTotal = quickScenarioCount + 7;
+  let deepStep = quickScenarioCount;
+  const logDeep = (label) => console.log(`  ${String(++deepStep).padStart(2, " ")}/${deepTotal} ${label}`);
+  logDeep("Page zoom 200% (unsupported)");
   results.set("page-zoom-200", scenarioResult("page-zoom-200", "unsupported", 0, ["Real page zoom is not exposed by the standalone adapter."], ["独立适配器目前无法可靠控制真实页面缩放。"]));
 
-  console.log("  8/13 Reduced motion");
+  logDeep("Reduced motion");
   const reduced = await createPage(browser, target, "reduced-motion", runDirectory, { ...contextOptions, reducedMotion: "reduce" });
   const persistentAnimations = await reduced.page.evaluate(() => {
     const selectorFor = (element) => {
@@ -2023,7 +2036,7 @@ async function runDeepScenarios(browser, target, runDirectory, findings, results
   results.set("reduced-motion", scenarioResult("reduced-motion", persistentAnimations.length ? "completed-with-findings" : "passed", reduced.durationMs(), [`Observed ${persistentAnimations.length} persistent non-progress animation(s).`], [`观察到 ${persistentAnimations.length} 个持续运行的非进度动画。`]));
   await reduced.context.close();
 
-  console.log("  9/13 Dark color scheme");
+  logDeep("Dark color scheme");
   const dark = await createPage(browser, target, "dark-scheme", runDirectory, { ...contextOptions, colorScheme: "dark" });
   const darkInspection = await dark.page.evaluate(() => {
     const hasDarkRule = () => {
@@ -2102,7 +2115,7 @@ async function runDeepScenarios(browser, target, runDirectory, findings, results
   results.set("dark-scheme", scenarioResult("dark-scheme", darkStatus, dark.durationMs(), darkInspection.supportsDark ? ["A declared dark color-scheme rule was evaluated."] : ["No declared prefers-color-scheme: dark rule was found."], darkInspection.supportsDark ? ["已核查页面声明的深色模式规则。"] : ["未发现页面声明 prefers-color-scheme: dark 规则。"]));
   await dark.context.close();
 
-  console.log(" 10/13 Slow API");
+  logDeep("Slow API");
   let delayedRequests = 0;
   let pendingDelayedRequests = 0;
   const slow = await createPage(browser, target, "slow-api", runDirectory, {
@@ -2165,7 +2178,7 @@ async function runDeepScenarios(browser, target, runDirectory, findings, results
   results.set("slow-api", scenarioResult("slow-api", slowStatus, slow.durationMs(), delayedRequests ? [`Delayed ${delayedRequests} same-origin API request(s); compared loading and recovered checkpoints.`] : ["No safe same-origin API request was observed."], delayedRequests ? [`延迟了 ${delayedRequests} 个同源 API 请求，并比较了加载与恢复检查点。`] : ["没有观察到可安全延迟的同源 API 请求。"]));
   await slow.context.close();
 
-  console.log(" 11/13 API error recovery");
+  logDeep("API error recovery");
   let errorResponses = 0;
   const apiError = await createPage(browser, target, "api-error", runDirectory, {
     ...contextOptions,
@@ -2213,7 +2226,7 @@ async function runDeepScenarios(browser, target, runDirectory, findings, results
   results.set("api-error", scenarioResult("api-error", errorResponses ? (errorState.hasErrorFeedback ? "passed" : "completed-with-findings") : "skipped", apiError.durationMs(), errorResponses ? [`Returned 503 for ${errorResponses} safe same-origin API request(s).`] : ["No safe same-origin API request was observed."], errorResponses ? [`让 ${errorResponses} 个安全的同源 API 请求返回 503。`] : ["没有观察到可安全变更的同源 API 请求。"]));
   await apiError.context.close();
 
-  console.log(" 12/13 Empty data");
+  logDeep("Empty data");
   let transformedResponses = 0;
   const empty = await createPage(browser, target, "empty-data", runDirectory, {
     ...contextOptions,
@@ -2251,7 +2264,7 @@ async function runDeepScenarios(browser, target, runDirectory, findings, results
   results.set("empty-data", scenarioResult("empty-data", transformedResponses ? (findings.some((item) => item.scenarioId === "empty-data") ? "completed-with-findings" : "passed") : "skipped", empty.durationMs(), transformedResponses ? [`Transformed ${transformedResponses} safe JSON response(s).`] : ["No safe JSON array response was observed."], transformedResponses ? [`已转换 ${transformedResponses} 个安全 JSON 响应。`] : ["没有观察到可安全转换的 JSON 数组响应。"]));
   await empty.context.close();
 
-  console.log(" 13/13 axe-core");
+  logDeep("axe-core");
   const axeStarted = Date.now();
   const axe = await createPage(browser, target, "axe", runDirectory, contextOptions);
   const axeStart = findings.length;
@@ -2552,9 +2565,9 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   const contextOptions = options.storageState ? { storageState: options.storageState } : {};
   const pathname = new URL(target).pathname;
   const applicableChecks = options.checks.filter((check) => routeAllowed(pathname, { include: check.include, exclude: check.exclude }));
-  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.network, options.links, options.metadata, options.visual, options.security, options.crawl);
+  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.network, options.links, options.metadata, options.visual, options.security, options.viewports, options.crawl);
   if (options.mode === "deep") {
-    await runDeepScenarios(browser, target, runDirectory, auditResult.findings, auditResult.results, contextOptions);
+    await runDeepScenarios(browser, target, runDirectory, auditResult.findings, auditResult.results, contextOptions, 5 + options.viewports.length);
   }
   let journeyResult = { findings: [], scenarios: [] };
   if (options.journeys.length && target === options.target) {
@@ -2567,11 +2580,13 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   const audit = JSON.parse(readFileSync(inputPath, "utf8"));
   if (options.qualityGate) audit.config.qualityGate = options.qualityGate;
   if (options.baselinePolicy) audit.config.baselinePolicy = options.baselinePolicy;
+  audit.config.viewports = options.viewports;
   audit.config.policyFingerprint = detectorPolicyFingerprint(options);
   audit.target.finalUrl = auditResult.finalUrl;
   audit.target.title = auditResult.targetTitle;
   audit.adapter.isolation = "fresh-context";
   audit.adapter.capabilities = ["console", "dom", "isolated-contexts", "network-routing", "screenshots", "viewport"];
+  audit.adapter.capabilities.push("responsive-viewport-matrix");
   if (options.mode === "deep") audit.adapter.capabilities.push("axe-core-accessibility");
   if (options.storageState) audit.adapter.capabilities.push("authenticated-storage-state");
   if (applicableChecks.length) audit.adapter.capabilities.push("declarative-custom-checks");
@@ -2587,12 +2602,15 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   if (options.owners.length) audit.adapter.capabilities.push("finding-ownership");
   if (options.baselinePolicy) audit.adapter.capabilities.push("baseline-governance-policy");
   audit.adapter.capabilities.push("detector-policy-fingerprint");
-  audit.scenarios = audit.scenarios.map((item) => auditResult.results.get(item.id) || scenarioResult(item.id, "unsupported", 0, ["The standalone adapter did not implement this scenario."], ["独立适配器尚未实现此场景。"]));
+  const scenarioIds = ["baseline", ...options.viewports.map((item) => item.id), "long-text", "rtl-arabic", "image-failure", "keyboard-tab"];
+  if (options.mode === "deep") scenarioIds.push("page-zoom-200", "reduced-motion", "dark-scheme", "slow-api", "api-error", "empty-data", "axe");
+  audit.scenarios = scenarioIds.map((id) => auditResult.results.get(id) || scenarioResult(id, "unsupported", 0, ["The standalone adapter did not implement this scenario."], ["独立适配器尚未实现此场景。"]));
   audit.scenarios.push(...journeyResult.scenarios);
   audit.findings = auditResult.findings;
   audit.warnings = [
     `Standalone audit used an already-installed system browser (${browserVersion}).`,
     "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    `Responsive layout was evaluated in ${options.viewports.length} configured viewport(s); touch-target heuristics ran only where touch was enabled.`,
     ...(options.mode === "deep" ? ["Bundled axe-core checks supplement scenario testing but cannot establish complete WCAG conformance."] : []),
     ...(options.storageState ? ["A user-provided Playwright storage state was loaded into isolated contexts; its path and values were not persisted."] : []),
     ...(applicableChecks.length ? [`${applicableChecks.length} declarative custom requirement(s) were evaluated without arbitrary script execution.`] : []),
@@ -2614,6 +2632,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
       warnings: [
         `独立核查使用了已安装的系统浏览器（${browserVersion}）。`,
         "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        `已在 ${options.viewports.length} 个配置视口中核查响应式布局；仅在启用 touch 的视口运行触控目标启发式检查。`,
         ...(options.mode === "deep" ? ["内置 axe-core 检查用于补充场景测试，但不能证明完整的 WCAG 合规。"] : []),
         ...(options.storageState ? ["用户提供的 Playwright 登录状态仅加载到隔离上下文中；路径和内容均未写入报告。"] : []),
         ...(applicableChecks.length ? [`已执行 ${applicableChecks.length} 条声明式自定义要求，未运行任意脚本。`] : []),

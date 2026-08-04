@@ -26,9 +26,10 @@ copy("examples/metadata-lab", "labs/metadata");
 copy("examples/visual-regression-lab", "labs/visual");
 copy("examples/security-lab", "labs/security");
 copy("examples/accessibility-lab", "labs/accessibility");
+copy("examples/viewport-lab", "labs/viewport");
 writeFileSync(join(output, ".nojekyll"), "", "utf8");
 
-const latest = ["journey", "visual", "network", "links", "metadata", "security", "accessibility"].map((kind) => {
+const latest = ["viewport", "journey", "visual", "network", "links", "metadata", "security", "accessibility"].map((kind) => {
   const value = JSON.parse(readFileSync(join(output, "evidence", kind, "latest.json"), "utf8"));
   return `${kind}=${value.score}`;
 });

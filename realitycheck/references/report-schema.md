@@ -11,7 +11,7 @@
 | `run` | object | ID, mode, timestamps, and duration. |
 | `target` | object | Requested/final URL and optional title. |
 | `adapter` | object | Name, isolation level, and probed capabilities. |
-| `config` | object | `allowRemote`, `failOn`, and optional numeric `qualityGate` / `baselinePolicy` policy. |
+| `config` | object | `allowRemote`, `failOn`, optional normalized `viewports`, and numeric `qualityGate` / `baselinePolicy` policy. |
 | `scenarios` | array | One terminal result per requested scenario. |
 | `findings` | array | Baseline-aware, evidence-backed findings. |
 | `warnings` | string array | Coverage, isolation, settle, or redaction warnings. |
@@ -31,6 +31,8 @@ Required fields:
 ```
 
 Allowed statuses are `passed`, `completed-with-findings`, `skipped`, `unsupported`, and `failed`.
+
+When present, `config.viewports` preserves the exact normalized responsive policy used by the run. Each entry has a unique `id`, integer CSS-pixel `width` and `height`, and explicit boolean `touch`. Its ID must correspond to one scenario and its screenshot name. This makes policy drift, per-breakpoint attribution, and later verification inspectable without inferring dimensions from finding prose.
 
 ## Finding
 

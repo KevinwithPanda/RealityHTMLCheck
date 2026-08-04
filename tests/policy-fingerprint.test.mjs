@@ -23,6 +23,7 @@ test("detector policy fingerprint is order-independent but changes with behavior
   assert.equal(first, reordered);
   assert.match(first, /^sha256:[a-f0-9]{64}$/);
   assert.notEqual(first, detectorPolicyFingerprint({ mode: "deep", checks: [], budgets: null }));
+  assert.notEqual(detectorPolicyFingerprint({ mode: "quick", viewports: [{ id: "mobile-375", width: 375, height: 812, touch: true }] }), detectorPolicyFingerprint({ mode: "quick", viewports: [{ id: "phone-320", width: 320, height: 700, touch: true }] }));
   assert.notEqual(first, detectorPolicyFingerprint({ mode: "quick", checks: [], budgets: { requests: 81, severity: "major" } }));
   assert.notEqual(first, detectorPolicyFingerprint({ mode: "quick", checks: [], journeys: [{ id: "smoke", startPath: "/", severity: "major", steps: [{ action: "assert", selector: "main", assertion: "exists" }] }], budgets: { requests: 80, navigationMs: 2000, severity: "major" } }));
   const arrowJourney = { mode: "quick", journeys: [{ id: "tabs", startPath: "/", severity: "major", steps: [{ action: "press", selector: "[role=tab]", key: "ArrowRight" }, { action: "assert-url", path: "/settings" }] }] };

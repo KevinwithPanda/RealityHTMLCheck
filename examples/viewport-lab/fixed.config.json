@@ -1,0 +1,12 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4184/fixed.html",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/viewport-lab-fixed",
+  "viewports": [
+    { "id": "phone-320", "width": 320, "height": 700, "touch": true },
+    { "id": "phone-390", "width": 390, "height": 844, "touch": true },
+    { "id": "tablet-768", "width": 768, "height": 1024, "touch": true }
+  ]
+}

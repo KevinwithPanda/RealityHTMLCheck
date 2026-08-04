@@ -4,9 +4,9 @@
 
 ## Validated starting profiles
 
-- `starter` keeps Quick mode and crawling off while adding a bounded 25-target link check, essential title/viewport/language rules, and a forgiving release score.
-- `product` enables Deep mode, a 20-page safe crawl, performance/API/link/publishing/security policies, and a 30-day same-policy baseline rule.
-- `strict` tightens budgets and metadata ranges, audits all resource requests, requires five reviewed response headers, and permits no active waivers. It is expected to reveal adoption work.
+- `starter` keeps Quick mode, one 375x812 viewport, and crawling off while adding a bounded 25-target link check, essential title/viewport/language rules, and a forgiving release score.
+- `product` enables Deep mode, 360x800 phone plus 768x1024 tablet checkpoints, a 20-page safe crawl, performance/API/link/publishing/security policies, and a 30-day same-policy baseline rule.
+- `strict` checks 320x700 and 390x844 phones plus a 768x1024 tablet, tightens budgets and metadata ranges, audits all resource requests, requires five reviewed response headers, and permits no active waivers. It is expected to reveal adoption work.
 
 Profiles generate ordinary JSON with no hidden behavior. They never prove legal, regulatory, security, accessibility, or performance compliance. Review every threshold, required header, route boundary, and exclusion for the application before CI enforcement. `--base-url` rejects credentials, query strings, fragments, and non-HTTP(S) protocols so initialization cannot persist URL secrets.
 
@@ -17,6 +17,22 @@ Profiles generate ordinary JSON with no hidden behavior. They never prove legal,
 - CLI values override config values.
 - Paths written in the config (`output`) resolve beside the config file; paths supplied on the CLI resolve from the current working directory.
 - `baseUrl` must be HTTP(S). Public or unresolved hosts still require explicit authorization and `--allow-remote`.
+
+## Responsive viewport matrix
+
+`viewports` defines one to six isolated responsive checkpoints. IDs must be unique lowercase slugs, dimensions must be unique, width is bounded to 240-2560 CSS pixels, and height to 320-2560. IDs cannot collide with built-in or journey scenario names.
+
+```json
+{
+  "viewports": [
+    { "id": "phone-320", "width": 320, "height": 700, "touch": true },
+    { "id": "phone-390", "width": 390, "height": 844, "touch": true },
+    { "id": "tablet-768", "width": 768, "height": 1024, "touch": true }
+  ]
+}
+```
+
+Each checkpoint gets a fresh context, a scenario with the same ID, and `screenshots/<id>.png`. It compares layout against the desktop baseline, reports newly unreachable controls and horizontal overflow, and runs the conservative 24x24 target-size heuristic only when `touch` is true. `touch` does not emulate a mobile user agent, branded device, or gestures. When omitted, the matrix defaults to `mobile-375` at 375x812 with touch-target checks enabled. Viewport membership, IDs, dimensions, and touch settings are included in the detector-policy fingerprint; list ordering is canonicalized so harmless reordering does not create drift.
 
 ## Routes and safe discovery
 

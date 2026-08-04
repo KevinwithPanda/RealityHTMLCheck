@@ -108,9 +108,9 @@ npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
 
 | 预设 | 适用场景 | 已包含策略 |
 | --- | --- | --- |
-| `starter` | 第一次核查、个人项目 | Quick 场景、25 个安全链接、基础元数据、宽松评分门禁 |
-| `product` | 持续迭代的产品团队 | Deep 场景、有限爬取、性能、API、链接、发布元数据、安全和基线治理 |
-| `strict` | 成熟发布流水线 | 更严格预算与元数据、全资源可靠性、五项响应头、零有效豁免 |
+| `starter` | 第一次核查、个人项目 | Quick 场景、一个 375px 视口、25 个安全链接、基础元数据和宽松门禁 |
+| `product` | 持续迭代的产品团队 | Deep 场景、360px 手机 + 768px 平板、有限爬取、性能、API、元数据、安全和治理 |
+| `strict` | 成熟发布流水线 | 320px + 390px 手机与 768px 平板、更严格预算、全资源可靠性和零有效豁免 |
 
 `init` 默认使用 `starter`。预设只是透明、可编辑的起点，不是合规认证；接入 CI 前仍需审核阈值与安全排除路径。
 
@@ -124,6 +124,11 @@ npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
   "baseUrl": "http://127.0.0.1:3000/",
   "mode": "quick",
   "failOn": "major",
+  "viewports": [
+    { "id": "phone-320", "width": 320, "height": 700, "touch": true },
+    { "id": "phone-390", "width": 390, "height": 844, "touch": true },
+    { "id": "tablet-768", "width": 768, "height": 1024, "touch": true }
+  ],
   "qualityGate": {
     "minimumScore": 90,
     "minimumCoveragePercent": 90,
@@ -234,6 +239,10 @@ npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
 }
 ```
 
+`viewports` 可配置 1～6 个名称与尺寸都唯一的核查点。每个尺寸都在独立浏览器上下文中运行，生成自己的场景状态与截图，并测量横向溢出、桌面可见但在该尺寸不可达的控件；当 `touch` 为 `true` 时，还会启用严重小于 24px 的触控目标检查。该标记只控制目标尺寸启发式，不会冒充某个品牌设备、移动 UA 或手势环境。不配置时继续使用原来的 `mobile-375`。
+
+成对的 [`examples/viewport-lab`](../examples/viewport-lab) 直接证明了价值：固定 375px 会漏掉这个缺陷，而 320px/390px/768px 矩阵只在 320px 找到发布按钮不可达的一个 Major（**92/100**）；修复页全部通过并得到 **100/100**。
+
 爬虫只跟随同源页面链接，会去掉查询参数和片段，不点击控件、不提交表单，并默认拒绝退出、购买、删除与 OAuth 等危险路径。每个页面都在隔离浏览器上下文中执行；单页运行失败不会抹掉其他页面的证据。
 
 自定义检查仅允许声明式断言：`exists`、`visible`、`enabled`、`accessible-name`、`attribute`、`count`、`no-horizontal-overflow`、`minimum-size`，并可用路由 glob 限定范围。声明式旅程可以跨同源导航、标签页、折叠面板、仅导航用途的键盘操作和路径断言复用这些规则，每一步都有截图；运行器会拒绝表单提交、激活/文本输入键、可编辑的按键目标、危险文案、排除路由、匹配多个元素的点击和未明确标记的业务按钮。URL 断言不会保留查询或片段值，任意 JavaScript 都会被拒绝。可直接运行 [`examples/journey-lab`](../examples/journey-lab) 的成功与失败配置。
@@ -273,7 +282,7 @@ npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
 | 场景 | Quick | 核查目标 |
 | --- | :---: | --- |
 | Baseline | 是 | 运行时/资源问题、语义、自定义规则、核心体验/网络/链接预算和配置的安全策略 |
-| 375px 手机 | 是 | 离屏操作、固定宽度和页面横向溢出 |
+| 配置的响应式视口（默认 375×812） | 是 | 特定断点的离屏操作、固定宽度、横向溢出和严重触控目标损失 |
 | 长文本 | 是 | 中文、emoji、无空格长串造成的新截断或恶化 |
 | RTL 阿拉伯语 | 是 | 物理方向 CSS 和对齐假设 |
 | 图片失败 | 是 | 替代文本缺失和媒体失败韧性 |
@@ -285,6 +294,8 @@ npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
 | 空数据 | Deep | 安全 JSON 数组变为空后的空状态 |
 | 200% 页面缩放 | Deep | 仅在适配器支持真实缩放时运行 |
 | axe-core | Deep | 内置 WCAG A/AA 与最佳实践规则，每条最多保留 5 个证据节点 |
+
+Quick 场景总数为“5 + 配置视口数”。每个视口都单独归因，而不是合并成模糊的“手机端问题”；场景仍会明确记录通过、发现问题、跳过、不支持或失败。
 
 ## 可操作报告
 
@@ -342,7 +353,7 @@ python -m http.server 4173 --bind 127.0.0.1 --directory examples/demo-broken
 npm run audit -- http://127.0.0.1:4173 --fail-on never
 ```
 
-两种 Demo 都故意包含固定宽度、手机端操作不可达、长文本截断、图片替代文本缺失、控制台错误和弱焦点样式；可编辑夹具还支持更深的空数据对照。Quick 的六个真实浏览器场景通常可在数秒内完成，并输出截图和修复交接产物。
+两种 Demo 都故意包含固定宽度、手机端操作不可达、长文本截断、图片替代文本缺失、控制台错误和弱焦点样式；可编辑夹具还支持更深的空数据对照。默认 Quick 会运行六个真实浏览器场景；自定义矩阵会为每个审核过的视口增加独立场景、截图和修复交接产物。
 
 [`examples/demo-fixed`](../examples/demo-fixed) 包含对应的应用层修复。CI 会让故障版和修正版使用同一个网址，分别执行全新的真实浏览器核查；只要旧问题仍能复现，或出现新增/未验证问题，流程就失败。v0.2 开发时的本地证明结果为：评分从 **69 提升到 100**，**7 个已解决、0 个仍存在、0 个新增、0 个未验证**。
 

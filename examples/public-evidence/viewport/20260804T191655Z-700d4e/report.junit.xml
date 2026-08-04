@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="RealityCheck Viewport Matrix Lab · Intentional Narrow-Phone Failure" tests="8" time="6.481" timestamp="2026-08-04T19:16:55.984Z" failures="1" errors="0" skipped="0">
+  <properties>
+    <property name="realitycheck.runId" value="20260804T191655Z-700d4e" />
+    <property name="realitycheck.score" value="92" />
+    <property name="realitycheck.failOn" value="major" />
+    <property name="realitycheck.target" value="http://127.0.0.1:4182/examples/viewport-lab/broken.html" />
+  </properties>
+  <testcase classname="RealityCheck.browser" name="baseline" time="0.641" />
+  <testcase classname="RealityCheck.browser" name="phone-320" time="0.584">
+    <failure message="1 finding(s) met the major threshold" type="RealityCheckQualityGate">RC-C735CB3F02 [major] Review release is outside the phone-320 viewport</failure>
+    <system-out>RC-C735CB3F02 [major/high] Review release is outside the phone-320 viewport</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="phone-390" time="0.678" />
+  <testcase classname="RealityCheck.browser" name="tablet-768" time="0.734" />
+  <testcase classname="RealityCheck.browser" name="long-text" time="1.157" />
+  <testcase classname="RealityCheck.browser" name="rtl-arabic" time="1.095" />
+  <testcase classname="RealityCheck.browser" name="image-failure" time="0.688" />
+  <testcase classname="RealityCheck.browser" name="keyboard-tab" time="0.800" />
+</testsuite>

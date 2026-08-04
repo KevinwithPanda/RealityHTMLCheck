@@ -9,13 +9,14 @@ All notable changes are documented here. This project follows Semantic Versionin
 - Opt-in API/all-resource network reliability budgets for HTTP errors, transport failures, slow requests, and third-party request volume, with bounded query-free endpoint samples and no response-body retention.
 - Passing/failing network fixtures plus committed real-browser evidence proving a missing API fails at 96/100 while the restored endpoint passes at 100/100.
 - HEAD-only same-origin link integrity budgets with bounded concurrency/redirects/timeouts, dangerous-route exclusions, query-free failure samples, and paired 96/100 versus 100/100 fixtures.
-- A bilingual GitHub Pages product site that publishes five immutable real-browser evidence packs, live fixtures, repair actions, and a SHA-256-verifiable reference report.
+- A bilingual GitHub Pages product site that now publishes eight immutable real-browser evidence packs, live fixtures, repair actions, and a SHA-256-verifiable reference report.
 - Validated `starter`, `product`, and `strict` project profiles, with secret-safe `init --profile ... --base-url ...` generation and a bilingual profile catalog.
 - Safe journey `press` and `assert-url` steps for keyboard navigation and pathname checkpoints, with activation-key/editable-control guards and query-free traces.
 - Opt-in publishing metadata contracts for title and description length, canonical destinations, viewport, language, indexing, and primary-heading structure, with paired 75/100 versus 100/100 real-browser evidence.
 - Pathname-keyed visual regression baselines with bounded pixel thresholds, declarative dynamic-region masks, SHA-256 approval indexes, explicit first approval and replacement commands, and self-contained current/approved/diff evidence.
 - A zero-configuration `demo` command with a finite read-only loopback server, bundled broken fixture, automatic teardown, real-browser evidence, and an expected-failure success contract for first-run evaluation.
 - Latest-target GitHub job summaries and bounded Error/Warning/Notice workflow annotations with bilingual output, query removal, waiver handling, stale-run suppression, and hostile command-text neutralization.
+- A bounded one-to-six responsive viewport matrix with isolated contexts, per-breakpoint screenshots and attribution, profile-specific phone/tablet coverage, policy fingerprinting, and paired 92/100 versus 100/100 real-browser fixtures.
 
 ### Changed
 
@@ -25,6 +26,7 @@ All notable changes are documented here. This project follows Semantic Versionin
 - Failed journey assertions now keep one measured trace record instead of adding a second duplicate failure entry.
 - Public detector evidence retains metadata counts, lengths, directives, and query-free canonical structure instead of title or description copy.
 - Visual baselines can no longer change as a side effect of auditing; an existing different baseline requires `visual-approve --replace-baseline`, while ordinary audits remain read-only.
+- Quick scenario counts and progress now adapt to the configured viewport matrix while preserving the original 375x812 default.
 
 ## [0.4.0] - 2026-08-05
 

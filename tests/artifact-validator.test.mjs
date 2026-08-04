@@ -36,6 +36,13 @@ test("the published reference evidence manifest verifies every committed output"
   assert.equal(result.valid, true, result.errors.join("\n"));
 });
 
+test("the published responsive matrix evidence verifies every committed output", () => {
+  const latest = JSON.parse(readFileSync(resolve("examples/public-evidence/viewport/latest.json"), "utf8"));
+  const [result] = validateArtifactFiles([resolve("examples/public-evidence/viewport", latest.artifacts.integrityManifest)]);
+  assert.equal(result.kind, "evidence-manifest");
+  assert.equal(result.valid, true, result.errors.join("\n"));
+});
+
 test("committed interactive HTML surfaces contain parseable inline scripts", () => {
   for (const path of ["examples/reference-run/report.html", "examples/index.html"]) {
     const source = readFileSync(resolve(path), "utf8");
@@ -74,6 +81,14 @@ test("publishing metadata fixtures satisfy the project policy schema", () => {
 test("visual regression fixture policies satisfy the project policy schema", () => {
   for (const name of ["realitycheck.config.json", "ci.config.json"]) {
     const [result] = validateArtifactFiles([resolve(`examples/visual-regression-lab/${name}`)]);
+    assert.equal(result.kind, "config");
+    assert.equal(result.valid, true, `${name}: ${result.errors.join("\n")}`);
+  }
+});
+
+test("responsive viewport fixture policies satisfy the project policy schema", () => {
+  for (const name of ["broken.config.json", "fixed.config.json"]) {
+    const [result] = validateArtifactFiles([resolve(`examples/viewport-lab/${name}`)]);
     assert.equal(result.kind, "config");
     assert.equal(result.valid, true, `${name}: ${result.errors.join("\n")}`);
   }

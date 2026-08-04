@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "20260804T191655Z-700d4e"
+      },
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "[data-testid=\"release-action\"]"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/viewport-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Review release is outside the phone-320 viewport: A control available at desktop width is fully outside the 320px viewport."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "c735cb3f02420d18bdb18055f5eb0eba47e326754333bc752bf42bd8d1a407d8"
+          },
+          "properties": {
+            "classification": "new",
+            "confidence": "high",
+            "findingId": "RC-C735CB3F02",
+            "scenarioId": "phone-320",
+            "severity": "major"
+          },
+          "ruleId": "offscreen-critical-control"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "RealityCheck",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "A control available at desktop width is fully outside the 320px viewport."
+              },
+              "help": {
+                "markdown": "Keep the control in normal responsive flow at this breakpoint.\n\n- Remove fixed minimum widths and stack actions below headings when space is constrained.",
+                "text": "Keep the control in normal responsive flow at this breakpoint.\n\n- Remove fixed minimum widths and stack actions below headings when space is constrained."
+              },
+              "id": "offscreen-critical-control",
+              "name": "offscreen_critical_control",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "phone-320"
+                ]
+              },
+              "shortDescription": {
+                "text": "Review release is outside the phone-320 viewport"
+              }
+            }
+          ],
+          "semanticVersion": "0.4.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

@@ -305,6 +305,28 @@ class SkillStructureTests(unittest.TestCase):
         self.assertTrue(broken_config["metadata"]["forbidNoindex"])
         self.assertTrue(broken_config["metadata"]["requireSingleH1"])
 
+    def test_viewport_matrix_fixture_exposes_only_the_narrow_breakpoint(self) -> None:
+        fixture = REPOSITORY_ROOT / "examples" / "viewport-lab"
+        broken = (fixture / "broken.html").read_text(encoding="utf-8")
+        fixed = (fixture / "fixed.html").read_text(encoding="utf-8")
+        styles = (fixture / "styles.css").read_text(encoding="utf-8")
+        broken_config = json.loads((fixture / "broken.config.json").read_text(encoding="utf-8"))
+        fixed_config = json.loads((fixture / "fixed.config.json").read_text(encoding="utf-8"))
+        expected = [
+            {"id": "phone-320", "width": 320, "height": 700, "touch": True},
+            {"id": "phone-390", "width": 390, "height": 844, "touch": True},
+            {"id": "tablet-768", "width": 768, "height": 1024, "touch": True},
+        ]
+        self.assertEqual(broken_config["viewports"], expected)
+        self.assertEqual(fixed_config["viewports"], expected)
+        self.assertIn('data-testid="release-action"', broken)
+        self.assertIn('data-testid="release-action"', fixed)
+        self.assertIn('<body class="broken">', broken)
+        self.assertIn('<body class="fixed">', fixed)
+        self.assertIn("@media (max-width: 340px)", styles)
+        self.assertIn(".broken .primary", styles)
+        self.assertNotIn("mobile-375", json.dumps(expected))
+
     def test_visual_regression_fixture_has_reviewed_baseline_and_dynamic_mask(self) -> None:
         fixture = REPOSITORY_ROOT / "examples" / "visual-regression-lab"
         approved = (fixture / "approved" / "index.html").read_text(encoding="utf-8")
@@ -442,6 +464,21 @@ class ReportCliTests(unittest.TestCase):
             self.assertEqual(audit["scenarios"][0]["id"], "baseline")
             self.assertEqual(len(audit["scenarios"]), 6)
             self.assertNotIn("source-secret", str(input_path))
+
+    def test_render_preserves_a_normalized_responsive_viewport_matrix(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            input_path, audit = self.initialize(Path(temporary_directory) / "runs")
+            self.finish_scenarios(audit)
+            audit["config"]["viewports"] = [
+                {"id": "phone-320", "width": 320, "height": 700, "touch": True},
+                {"id": "tablet-768", "width": 768, "height": 1024, "touch": False},
+            ]
+            self.write_audit(input_path, audit)
+
+            rendered = self.run_cli("render", str(input_path))
+            self.assertEqual(rendered.returncode, 0, rendered.stderr)
+            report = json.loads((input_path.parent / "report.json").read_text(encoding="utf-8"))
+            self.assertEqual(report["config"]["viewports"], audit["config"]["viewports"])
 
     def test_remote_target_requires_explicit_authorization(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

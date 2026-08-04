@@ -14,7 +14,7 @@
 
 - Test only a developer-controlled or explicitly authorized target.
 - Use a fresh browser context per scenario when available. Otherwise use a fresh tab and clean navigation, disclose reduced isolation, and skip unsafe network mutations.
-- Keep scenario order stable: baseline, mobile, long text, RTL, image failure, keyboard, then optional deep scenarios.
+- Keep scenario order stable: baseline, configured responsive viewports, long text, RTL, image failure, keyboard, then optional deep scenarios.
 - Use a fixed seed. The default is `42`.
 - Never click or submit a business action. Keyboard testing sends only `Tab` and `Shift+Tab`.
 - Bound every DOM scan to 2,000 elements, every text mutation to 80 nodes, console events to 500, and network records to 1,000.
@@ -62,19 +62,19 @@ Stop the run if the baseline cannot navigate or render meaningful content. Authe
 
 ## 3. Quick scenarios
 
-### `mobile-375`
+### Responsive viewport matrix
 
-Purpose: expose narrow-screen overflow, fixed-width layouts, clipped text, and unreachable controls.
+Purpose: expose breakpoint-specific overflow, fixed-width layouts, clipped text, unreachable controls, and severe touch-target loss.
 
-Required setup:
+Run each validated project viewport as an independently named scenario in its own fresh context. When no matrix is configured, use the backward-compatible default:
 
 ```text
 viewport: 375x812
 screen: 375x812 when supported
-touch/mobile emulation: optional and recorded
+touch-target heuristic: enabled
 ```
 
-Do not impersonate a branded phone. Run layout detectors and capture the actual viewport dimensions. Mark unsupported if the adapter cannot change the viewport; do not simulate mobile by adding CSS classes.
+Capture a screenshot and terminal status for every configured viewport, even if another size fails. Compare each responsive layout with the desktop baseline. `touch` enables the conservative target-size detector; it does not imply device, user-agent, screen, or gesture emulation. Do not impersonate a branded phone. Mark an individual checkpoint unsupported if the adapter cannot apply its dimensions; do not simulate responsiveness by adding CSS classes.
 
 ### `long-text`
 
@@ -215,7 +215,7 @@ Never persist full headers or response bodies.
 - Report a missing root document language or empty browser title as Minor / High confidence.
 - Aggregate duplicate non-empty document IDs into one Minor / High-confidence finding.
 - Report visible adjacent heading levels that skip an intermediate level as Minor / Medium confidence; nested component boundaries and document outlines still need human review.
-- At the 375px checkpoint, report visible interactive targets smaller than 24×24 CSS pixels as Minor / Medium confidence. This floor catches severe usability loss; it is deliberately lower than common design-system recommendations to reduce false positives.
+- At every configured checkpoint with `touch: true`, report visible interactive targets smaller than 24x24 CSS pixels as Minor / Medium confidence. This floor catches severe usability loss; it is deliberately lower than common design-system recommendations to reduce false positives.
 
 ### Declarative project checks
 

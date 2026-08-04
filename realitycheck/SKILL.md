@@ -51,7 +51,7 @@ Stop before navigation if ownership or remote authorization is unclear. Do not u
    - no adapter: stop and give the smallest explicit setup step. Do not silently download a browser.
    Before treating the bundled adapter as unavailable, resolve the Codex workspace dependency runtime when that capability exists. If it returns an absolute Node executable and a bundled `node_modules` directory, invoke that Node directly and expose only that dependency directory through `NODE_PATH` for the audit command. Do not require the user to edit their system PATH.
 4. Probe the target once. Report connection, TLS, authentication, or build failures as preflight failures rather than product findings.
-5. Prefer a discovered `realitycheck.config.json` when present. Validate its routes, crawl boundaries, custom checks, journeys, performance budgets, network reliability limits, link-integrity policy, publishing metadata policy, visual-regression policy, security policy, and output location before navigation. CLI values override config values. When the user explicitly asks to set up policy, use `profiles` plus `init --profile starter|product|strict`; explain that presets are editable starting points rather than compliance claims. Do not create a config during an audit-only request.
+5. Prefer a discovered `realitycheck.config.json` when present. Validate its responsive viewport matrix, routes, crawl boundaries, custom checks, journeys, performance budgets, network reliability limits, link-integrity policy, publishing metadata policy, visual-regression policy, security policy, and output location before navigation. CLI values override config values. When the user explicitly asks to set up policy, use `profiles` plus `init --profile starter|product|strict`; explain that presets are editable starting points rather than compliance claims. Do not create a config during an audit-only request.
 6. For the bundled adapter, run one command from the target repository and skip the manual run-input steps below:
 
    ```bash
@@ -75,6 +75,7 @@ Use the emitted `audit-input.json` path for the rest of the run.
 ## Apply project scope safely
 
 - Use explicit `routes` for a small known surface, or bounded `crawl.enabled` discovery for a larger site. Crawl only same-origin links, strip queries and fragments, ignore asset URLs, obey include/exclude globs, and never click or submit anything.
+- Run each configured responsive viewport in a fresh context with its own scenario ID and screenshot. Compare it with the desktop baseline, and enable the conservative target-size detector only when that entry has `touch: true`. Do not claim that this flag emulates a branded device, mobile user agent, or gestures. Preserve the default `mobile-375` when no matrix is declared.
 - Preserve the default exclusions for logout, signout, delete, remove, unsubscribe, purchase, checkout, and OAuth paths unless the user has a documented safe test environment and explicitly requests a narrower exception.
 - Cap discovery at the configured `maxPages` and `maxDepth`. Audit each page in fresh contexts and keep completed page evidence when another page fails.
 - Load authenticated Playwright storage state only when the user supplies it or the project already documents it. Never persist its path, cookies, origins, headers, or token values.

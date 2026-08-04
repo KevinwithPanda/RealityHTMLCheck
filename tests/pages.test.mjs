@@ -15,6 +15,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "styles.css",
     "assets/icon.svg",
     "reference/report.html",
+    "evidence/viewport/latest.html",
     "evidence/journey/latest.html",
     "evidence/links/latest.html",
     "evidence/network/latest.html",
@@ -23,6 +24,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "evidence/security/latest.html",
     "evidence/accessibility/latest.html",
     "labs/journey/broken.html",
+    "labs/viewport/broken.html",
+    "labs/viewport/fixed.html",
     "labs/links/broken.html",
     "labs/links/fixed.html",
     "labs/network/broken.html",
@@ -52,6 +55,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /七项发布信号却失败/);
   assert.match(html, /VISUAL REGRESSION/);
   assert.match(html, /18\.920% 像素变化/);
+  assert.match(html, /375px passes; the release action vanishes at 320px/);
+  assert.match(html, /375px 正常，320px 发布按钮却消失/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   const localReferences = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((match) => match[1])
     .filter((value) => !/^(?:https?:|#|mailto:|data:)/.test(value));

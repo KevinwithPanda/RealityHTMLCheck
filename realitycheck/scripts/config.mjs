@@ -5,6 +5,10 @@ import { resolveVisualBaselineDirectory } from "./visual-regression.mjs";
 
 export const CONFIG_FILENAME = "realitycheck.config.json";
 
+export const DEFAULT_VIEWPORTS = Object.freeze([
+  Object.freeze({ id: "mobile-375", width: 375, height: 812, touch: true }),
+]);
+
 export const DEFAULT_PROJECT_CONFIG = Object.freeze({
   $schema: "./node_modules/realitycheck-web-audit/realitycheck/assets/config.schema.json",
   baseUrl: "http://127.0.0.1:3000",
@@ -12,6 +16,7 @@ export const DEFAULT_PROJECT_CONFIG = Object.freeze({
   failOn: "major",
   output: ".realitycheck/runs",
   routes: [],
+  viewports: DEFAULT_VIEWPORTS,
   crawl: {
     enabled: false,
     maxPages: 10,
@@ -34,7 +39,9 @@ export const DEFAULT_PROJECT_CONFIG = Object.freeze({
   owners: [],
 });
 
-const TOP_LEVEL_KEYS = new Set(["$schema", "baseUrl", "mode", "failOn", "output", "routes", "crawl", "checks", "journeys", "budgets", "network", "links", "metadata", "visual", "security", "waivers", "qualityGate", "baselinePolicy", "owners"]);
+const TOP_LEVEL_KEYS = new Set(["$schema", "baseUrl", "mode", "failOn", "output", "routes", "viewports", "crawl", "checks", "journeys", "budgets", "network", "links", "metadata", "visual", "security", "waivers", "qualityGate", "baselinePolicy", "owners"]);
+const VIEWPORT_KEYS = new Set(["id", "width", "height", "touch"]);
+const RESERVED_VIEWPORT_IDS = new Set(["baseline", "long-text", "rtl-arabic", "image-failure", "keyboard-tab", "page-zoom-200", "reduced-motion", "dark-scheme", "slow-api", "api-error", "empty-data", "axe"]);
 const CRAWL_KEYS = new Set(["enabled", "maxPages", "maxDepth", "include", "exclude"]);
 const CHECK_KEYS = new Set(["id", "selector", "assertion", "severity", "title", "titleZh", "remediation", "remediationZh", "include", "exclude", "options"]);
 const CHECK_OPTION_KEYS = new Set(["min", "max", "attribute", "equals", "contains", "minWidth", "minHeight"]);
@@ -93,6 +100,28 @@ function boundedNumber(value, label, minimum, maximum) {
     throw new ConfigError(`${label} must be a number from ${minimum} to ${maximum}`);
   }
   return value;
+}
+
+function validateViewports(value, source) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 6) throw new ConfigError(`${source}.viewports must contain 1 to 6 entries`);
+  const ids = new Set();
+  const dimensions = new Set();
+  return value.map((raw, index) => {
+    const label = `${source}.viewports[${index}]`;
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new ConfigError(`${label} must be an object`);
+    assertKnownKeys(raw, VIEWPORT_KEYS, label);
+    if (typeof raw.id !== "string" || !/^[a-z][a-z0-9-]{1,31}$/.test(raw.id)) throw new ConfigError(`${label}.id must match ^[a-z][a-z0-9-]{1,31}$`);
+    if (RESERVED_VIEWPORT_IDS.has(raw.id) || raw.id.startsWith("journey-")) throw new ConfigError(`${label}.id collides with a built-in scenario`);
+    if (ids.has(raw.id)) throw new ConfigError(`${source}.viewports contains duplicate id ${JSON.stringify(raw.id)}`);
+    ids.add(raw.id);
+    const width = boundedInteger(raw.width, `${label}.width`, 240, 2560);
+    const height = boundedInteger(raw.height, `${label}.height`, 320, 2560);
+    const dimensionKey = `${width}x${height}`;
+    if (dimensions.has(dimensionKey)) throw new ConfigError(`${source}.viewports contains duplicate dimensions ${dimensionKey}`);
+    dimensions.add(dimensionKey);
+    if (raw.touch !== undefined && typeof raw.touch !== "boolean") throw new ConfigError(`${label}.touch must be a boolean`);
+    return { id: raw.id, width, height, touch: raw.touch ?? width <= 1024 };
+  });
 }
 
 function validateCustomChecks(value, source) {
@@ -463,6 +492,7 @@ export function validateProjectConfig(value, source = CONFIG_FILENAME) {
     normalized.output = value.output.trim();
   }
   if (value.routes !== undefined) normalized.routes = stringArray(value.routes, `${source}.routes`);
+  if (value.viewports !== undefined) normalized.viewports = validateViewports(value.viewports, source);
   if (value.checks !== undefined) normalized.checks = validateCustomChecks(value.checks, source);
   if (value.journeys !== undefined) normalized.journeys = validateJourneys(value.journeys, source);
   if (value.budgets !== undefined) normalized.budgets = validateBudgets(value.budgets, source);
@@ -545,6 +575,7 @@ export function mergeProjectOptions(cli, loaded) {
     failOn: cli.failOn ?? project.failOn ?? DEFAULT_PROJECT_CONFIG.failOn,
     output: resolveFrom(outputBase, outputValue),
     routes,
+    viewports: structuredClone(project.viewports || DEFAULT_VIEWPORTS),
     crawl,
     checks: project.checks || [],
     journeys: project.journeys || [],

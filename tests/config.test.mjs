@@ -42,6 +42,25 @@ test("release policy gates are explicit, bounded, and preserved", () => {
   assert.deepEqual(merged.qualityGate, qualityGate);
 });
 
+test("responsive viewport matrices are bounded, unique, and default safely", () => {
+  const viewports = [
+    { id: "phone-320", width: 320, height: 700, touch: true },
+    { id: "tablet-768", width: 768, height: 1024, touch: false },
+  ];
+  assert.deepEqual(validateProjectConfig({ viewports }).viewports, viewports);
+  assert.deepEqual(validateProjectConfig({ viewports: [{ id: "phone-390", width: 390, height: 844 }] }).viewports, [{ id: "phone-390", width: 390, height: 844, touch: true }]);
+  assert.throws(() => validateProjectConfig({ viewports: [] }), /1 to 6/);
+  assert.throws(() => validateProjectConfig({ viewports: Array.from({ length: 7 }, (_, index) => ({ id: `phone-${index}`, width: 300 + index, height: 700 })) }), /1 to 6/);
+  assert.throws(() => validateProjectConfig({ viewports: [{ id: "baseline", width: 320, height: 700 }] }), /collides/);
+  assert.throws(() => validateProjectConfig({ viewports: [{ id: "phone-320", width: 239, height: 700 }] }), /240 to 2560/);
+  assert.throws(() => validateProjectConfig({ viewports: [{ id: "phone-320", width: 320, height: 700 }, { id: "phone-320", width: 390, height: 844 }] }), /duplicate id/);
+  assert.throws(() => validateProjectConfig({ viewports: [{ id: "phone-320", width: 320, height: 700 }, { id: "narrow-phone", width: 320, height: 700 }] }), /duplicate dimensions/);
+  const mergedDefault = mergeProjectOptions({ routes: [] }, { path: null, directory: process.cwd(), cwd: process.cwd(), config: {} });
+  assert.deepEqual(mergedDefault.viewports, [{ id: "mobile-375", width: 375, height: 812, touch: true }]);
+  const mergedCustom = mergeProjectOptions({ routes: [] }, { path: null, directory: process.cwd(), cwd: process.cwd(), config: { viewports } });
+  assert.deepEqual(mergedCustom.viewports, viewports);
+});
+
 test("regression baselines can have an explicit bounded freshness policy", () => {
   assert.throws(() => validateProjectConfig({ baselinePolicy: {} }), /at least one/);
   assert.throws(() => validateProjectConfig({ baselinePolicy: { maxAgeDays: 0 } }), /1 to 3650/);

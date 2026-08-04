@@ -40,6 +40,7 @@ const PROFILE_TEMPLATES = Object.freeze({
   starter: {
     ...COMMON,
     mode: "quick",
+    viewports: [{ id: "mobile-375", width: 375, height: 812, touch: true }],
     crawl: { enabled: false, maxPages: 10, maxDepth: 2, include: ["/**"], exclude: SAFE_EXCLUDES },
     links: { severity: "major", maxFailures: 0, maxChecked: 25, timeoutMs: 5_000 },
     metadata: { severity: "major", titleMinLength: 1, titleMaxLength: 120, requireViewport: true, requireLang: true },
@@ -48,6 +49,10 @@ const PROFILE_TEMPLATES = Object.freeze({
   product: {
     ...COMMON,
     mode: "deep",
+    viewports: [
+      { id: "phone-360", width: 360, height: 800, touch: true },
+      { id: "tablet-768", width: 768, height: 1024, touch: true },
+    ],
     crawl: { enabled: true, maxPages: 20, maxDepth: 2, include: ["/**"], exclude: SAFE_EXCLUDES },
     budgets: {
       severity: "major",
@@ -96,6 +101,11 @@ const PROFILE_TEMPLATES = Object.freeze({
   strict: {
     ...COMMON,
     mode: "deep",
+    viewports: [
+      { id: "phone-320", width: 320, height: 700, touch: true },
+      { id: "phone-390", width: 390, height: 844, touch: true },
+      { id: "tablet-768", width: 768, height: 1024, touch: true },
+    ],
     failOn: "minor",
     crawl: { enabled: true, maxPages: 50, maxDepth: 3, include: ["/**"], exclude: SAFE_EXCLUDES },
     budgets: {

@@ -1,0 +1,261 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "run": {
+    "id": "20260804T191655Z-700d4e",
+    "mode": "quick",
+    "startedAt": "2026-08-04T19:16:55.984Z",
+    "finishedAt": "2026-08-04T19:17:02.477Z",
+    "durationMs": 6481
+  },
+  "target": {
+    "requestedUrl": "http://127.0.0.1:4182/examples/viewport-lab/broken.html",
+    "finalUrl": "http://127.0.0.1:4182/examples/viewport-lab/broken.html",
+    "title": "Viewport Matrix Lab · Intentional Narrow-Phone Failure"
+  },
+  "adapter": {
+    "name": "project-playwright",
+    "isolation": "fresh-context",
+    "capabilities": [
+      "console",
+      "dom",
+      "isolated-contexts",
+      "network-routing",
+      "screenshots",
+      "viewport",
+      "responsive-viewport-matrix",
+      "detector-policy-fingerprint"
+    ]
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major",
+    "viewports": [
+      {
+        "id": "phone-320",
+        "width": 320,
+        "height": 700,
+        "touch": true
+      },
+      {
+        "id": "phone-390",
+        "width": 390,
+        "height": 844,
+        "touch": true
+      },
+      {
+        "id": "tablet-768",
+        "width": 768,
+        "height": 1024,
+        "touch": true
+      }
+    ],
+    "policyFingerprint": "sha256:48ef0c83327e05b2f57b1eb858fc1d209767e6b408e8182b63cfe441759fa169"
+  },
+  "scenarios": [
+    {
+      "id": "baseline",
+      "status": "passed",
+      "durationMs": 641,
+      "notes": [],
+      "translations": {
+        "zh-CN": {
+          "notes": []
+        }
+      }
+    },
+    {
+      "id": "phone-320",
+      "status": "completed-with-findings",
+      "durationMs": 584,
+      "notes": [
+        "Evaluated 320×700; touch-target checks were enabled."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已核查 320×700；触控目标检查已启用。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "phone-390",
+      "status": "passed",
+      "durationMs": 678,
+      "notes": [
+        "Evaluated 390×844; touch-target checks were enabled."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已核查 390×844；触控目标检查已启用。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "tablet-768",
+      "status": "passed",
+      "durationMs": 734,
+      "notes": [
+        "Evaluated 768×1024; touch-target checks were enabled."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已核查 768×1024；触控目标检查已启用。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "long-text",
+      "status": "passed",
+      "durationMs": 1157,
+      "notes": [
+        "3 deterministic text mutations were applied."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已执行 3 次确定性的文本替换。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "rtl-arabic",
+      "status": "passed",
+      "durationMs": 1095,
+      "notes": [
+        "Directionality stress test only; translation quality was not assessed."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "仅进行书写方向压力测试；未评估翻译质量。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "image-failure",
+      "status": "passed",
+      "durationMs": 688,
+      "notes": [
+        "Expected image request aborts were excluded from failed-request findings."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "预期的图片请求中止未计入普通请求失败问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "keyboard-tab",
+      "status": "passed",
+      "durationMs": 800,
+      "notes": [
+        "No controls were activated or submitted."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未激活或提交任何控件。"
+          ]
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "offscreen-critical-control",
+      "scenarioId": "phone-320",
+      "classification": "new",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Review release is outside the phone-320 viewport",
+      "summary": "A control available at desktop width is fully outside the 320px viewport.",
+      "url": "http://127.0.0.1:4182/examples/viewport-lab/broken.html",
+      "measurements": {
+        "viewportId": "phone-320",
+        "viewportWidth": 320,
+        "viewportHeight": 700,
+        "touch": true,
+        "documentScrollWidth": 320,
+        "overflowPixels": 0,
+        "boundingBox": {
+          "x": 403,
+          "y": 509,
+          "width": 156,
+          "height": 44,
+          "right": 559,
+          "bottom": 553
+        }
+      },
+      "evidence": [
+        {
+          "type": "dom",
+          "selector": "[data-testid=\"release-action\"]",
+          "boundingBox": {
+            "x": 403,
+            "y": 509,
+            "width": 156,
+            "height": 44,
+            "right": 559,
+            "bottom": 553
+          }
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/phone-320.png",
+          "label": "320×700 responsive viewport"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page with the phone-320 320×700 viewport.",
+        "Locate Review release without horizontal scrolling."
+      ],
+      "remediation": {
+        "summary": "Keep the control in normal responsive flow at this breakpoint.",
+        "technicalHints": [
+          "Remove fixed minimum widths and stack actions below headings when space is constrained."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "Review release位于 phone-320 视口之外",
+          "summary": "桌面端可用的控件在 320px 视口中完全不可见。",
+          "reproductionSteps": [
+            "使用 phone-320（320×700）视口打开页面。",
+            "在不进行横向滚动的情况下查找 Review release。"
+          ],
+          "remediation": {
+            "summary": "在该断点中让控件保持在正常的响应式布局流内。",
+            "technicalHints": [
+              "移除固定最小宽度，并在空间不足时把操作按钮排列到标题下方。"
+            ]
+          }
+        }
+      },
+      "selector": "[data-testid=\"release-action\"]"
+    }
+  ],
+  "warnings": [
+    "Standalone audit used an already-installed system browser (150.0.7871.116).",
+    "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    "Responsive layout was evaluated in 3 configured viewport(s); touch-target heuristics ran only where touch was enabled."
+  ],
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "独立核查使用了已安装的系统浏览器（150.0.7871.116）。",
+        "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        "已在 3 个配置视口中核查响应式布局；仅在启用 touch 的视口运行触控目标启发式检查。"
+      ]
+    }
+  }
+}

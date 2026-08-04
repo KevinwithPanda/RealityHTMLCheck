@@ -124,9 +124,9 @@ Three validated presets remove the blank-config problem:
 
 | Profile | Best for | Included policy |
 | --- | --- | --- |
-| `starter` | First audit, personal projects | Quick scenarios, 25 safe links, essential metadata, forgiving score gate |
-| `product` | Active product teams | Deep scenarios, crawl, performance, API, links, publishing metadata, security, baseline governance |
-| `strict` | Mature release pipelines | Tighter budgets and metadata, all-resource reliability, five response headers, zero active waivers |
+| `starter` | First audit, personal projects | Quick scenarios, one 375px viewport, 25 safe links, essential metadata, forgiving score gate |
+| `product` | Active product teams | Deep scenarios, 360px phone + 768px tablet, crawl, performance, API, links, metadata, security, governance |
+| `strict` | Mature release pipelines | 320px + 390px phones and 768px tablet, tighter budgets, all-resource reliability, zero active waivers |
 
 `init` defaults to `starter`. A preset is a transparent starting file, not a compliance certification: review its limits and safety exclusions before CI adoption.
 
@@ -140,6 +140,11 @@ Three validated presets remove the blank-config problem:
   "baseUrl": "http://127.0.0.1:3000/",
   "mode": "quick",
   "failOn": "major",
+  "viewports": [
+    { "id": "phone-320", "width": 320, "height": 700, "touch": true },
+    { "id": "phone-390", "width": 390, "height": 844, "touch": true },
+    { "id": "tablet-768", "width": 768, "height": 1024, "touch": true }
+  ],
   "qualityGate": {
     "minimumScore": 90,
     "minimumCoveragePercent": 90,
@@ -250,6 +255,10 @@ Three validated presets remove the blank-config problem:
 }
 ```
 
+`viewports` accepts one to six uniquely named checkpoints. Every checkpoint runs in its own clean browser context, produces its own scenario result and screenshot, and measures overflow, desktop-visible controls that become unreachable, and—when `touch` is true—severe sub-24px targets. The flag enables the target-size heuristic; it does not impersonate a branded device, mobile user agent, or gesture environment. Omitting the matrix preserves the original `mobile-375` checkpoint.
+
+The paired [`examples/viewport-lab`](examples/viewport-lab) fixture demonstrates why this matters: a fixed 375px run misses the defect, while the configured 320px/390px/768px matrix finds exactly one Major loss of the release action at 320px (**92/100**). The repaired page passes every checkpoint at **100/100**.
+
 The crawler only follows same-origin page links, strips query strings and fragments, never clicks controls or submits forms, and rejects common logout, purchase, delete, and OAuth routes by default. Each page runs in isolated browser contexts. One page failure does not erase evidence from the others.
 
 Custom checks are declarative—`exists`, `visible`, `enabled`, `accessible-name`, `attribute`, `count`, `no-horizontal-overflow`, or `minimum-size`—and may be restricted by route globs. Declarative journeys reuse these assertions across safe same-origin navigation, tabs, disclosures, navigation-only keyboard presses, and pathname checkpoints; every step gets a screenshot. The runner refuses form submission, activation/text-entry keys, editable press targets, destructive labels, excluded routes, ambiguous click selectors, and unmarked business buttons. URL assertions never persist query or fragment values. Arbitrary JavaScript is deliberately rejected. See the passing and failing [`examples/journey-lab`](examples/journey-lab) configurations.
@@ -289,7 +298,7 @@ A multi-page run adds `site-report.json`, `site-report.md`, and a bilingual `sit
 | Scenario | Quick | What it proves |
 | --- | :---: | --- |
 | Baseline | Yes | Runtime/resource defects, semantics, custom rules, Core Web Vital/network/link budgets, and configured security policy |
-| 375px mobile | Yes | Offscreen actions, fixed widths, and document overflow |
+| Configured responsive viewports (default: 375×812) | Yes | Breakpoint-specific offscreen actions, fixed widths, overflow, and severe touch-target loss |
 | Long text | Yes | New or worsened clipping under CJK, emoji, and unbroken strings |
 | RTL Arabic | Yes | Physical-direction CSS and alignment assumptions |
 | Image failure | Yes | Missing alternatives and media-failure resilience |
@@ -302,7 +311,7 @@ A multi-page run adds `site-report.json`, `site-report.md`, and a bilingual `sit
 | 200% page zoom | Deep | Runs only when the adapter exposes real page zoom |
 | axe-core | Deep | Bundled WCAG A/AA and best-practice rules, capped at five evidence nodes per rule |
 
-Quick mode targets a useful first result in under a minute for a small stable page. Every scenario has an explicit terminal status, including unsupported and skipped coverage.
+Quick mode targets a useful first result in under a minute for a small stable page. Its scenario count is `5 + configured viewport count`; every viewport is independently attributable rather than collapsed into a generic mobile result. Every scenario has an explicit terminal status, including unsupported and skipped coverage.
 
 ## The report is actionable
 
@@ -376,7 +385,7 @@ python -m http.server 4173 --bind 127.0.0.1 --directory examples/demo-broken
 npm run audit -- http://127.0.0.1:4173 --fail-on never
 ```
 
-Both demos deliberately contain a fixed-width shell, mobile-only loss of access, long-text clipping, a missing image alternative, a console error, and weak focus visibility. The editable fixture also supports the deeper empty-data comparison. A typical local Quick run completes six real-browser scenarios in seconds and produces screenshots plus repair handoff artifacts.
+Both demos deliberately contain a fixed-width shell, mobile-only loss of access, long-text clipping, a missing image alternative, a console error, and weak focus visibility. The editable fixture also supports the deeper empty-data comparison. A default Quick run completes six real-browser scenarios; configured matrices add one isolated scenario per reviewed viewport and produce matching screenshots plus repair handoff artifacts.
 
 [`examples/demo-fixed`](examples/demo-fixed) contains the corresponding application-level repairs. CI serves the broken and fixed fixtures at the same URL, runs two fresh real-browser audits, and fails unless the before findings stop reproducing without new or unverified findings. On the local proof run used during v0.2 development, the score moved from **69 to 100**, with **7 resolved, 0 remaining, 0 new, and 0 unverified**.
 

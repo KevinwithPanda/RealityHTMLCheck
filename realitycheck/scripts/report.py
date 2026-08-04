@@ -869,6 +869,38 @@ def normalize_report(value: Any, *, require_terminal: bool) -> dict[str, Any]:
     if not isinstance(allow_remote, bool):
         raise ReportError("config.allowRemote must be a boolean")
     fail_on = require_enum(config.get("failOn"), "config.failOn", FAIL_THRESHOLDS)
+    viewports: list[dict[str, Any]] = []
+    if config.get("viewports") is not None:
+        raw_viewports = require_list(config.get("viewports"), "config.viewports")
+        if not 1 <= len(raw_viewports) <= 6:
+            raise ReportError("config.viewports must contain 1 to 6 entries")
+        viewport_ids: set[str] = set()
+        viewport_dimensions: set[tuple[int, int]] = set()
+        for index, raw_viewport in enumerate(raw_viewports):
+            viewport = require_object(raw_viewport, f"config.viewports[{index}]")
+            unknown_viewport_keys = set(viewport) - {"id", "width", "height", "touch"}
+            if unknown_viewport_keys:
+                raise ReportError(f"config.viewports[{index}] contains unknown property {sorted(unknown_viewport_keys)[0]}")
+            viewport_id = require_string(viewport.get("id"), f"config.viewports[{index}].id")
+            if not re.fullmatch(r"[a-z][a-z0-9-]{1,31}", viewport_id):
+                raise ReportError(f"config.viewports[{index}].id is invalid")
+            if viewport_id in viewport_ids:
+                raise ReportError(f"duplicate viewport id: {viewport_id}")
+            viewport_ids.add(viewport_id)
+            width = viewport.get("width")
+            height = viewport.get("height")
+            touch = viewport.get("touch")
+            if isinstance(width, bool) or not isinstance(width, int) or not 240 <= width <= 2560:
+                raise ReportError(f"config.viewports[{index}].width must be an integer from 240 to 2560")
+            if isinstance(height, bool) or not isinstance(height, int) or not 320 <= height <= 2560:
+                raise ReportError(f"config.viewports[{index}].height must be an integer from 320 to 2560")
+            if not isinstance(touch, bool):
+                raise ReportError(f"config.viewports[{index}].touch must be a boolean")
+            dimensions = (width, height)
+            if dimensions in viewport_dimensions:
+                raise ReportError(f"duplicate viewport dimensions: {width}x{height}")
+            viewport_dimensions.add(dimensions)
+            viewports.append({"id": viewport_id, "width": width, "height": height, "touch": touch})
     quality_gate: dict[str, int] = {}
     if config.get("qualityGate") is not None:
         raw_quality_gate = require_object(config.get("qualityGate"), "config.qualityGate")
@@ -1044,6 +1076,8 @@ def normalize_report(value: Any, *, require_terminal: bool) -> dict[str, Any]:
         normalized["translations"] = report_translations
     if quality_gate:
         normalized["config"]["qualityGate"] = quality_gate
+    if viewports:
+        normalized["config"]["viewports"] = viewports
     if baseline_policy:
         normalized["config"]["baselinePolicy"] = baseline_policy
     if policy_fingerprint:
