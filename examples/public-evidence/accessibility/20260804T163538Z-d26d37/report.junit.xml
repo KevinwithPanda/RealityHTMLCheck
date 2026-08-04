@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="RealityCheck http://127.0.0.1:4182/examples/accessibility-lab/broken.html" tests="13" time="11.014" timestamp="2026-08-04T16:35:38.077Z" failures="2" errors="0" skipped="5">
+  <properties>
+    <property name="realitycheck.runId" value="20260804T163538Z-d26d37" />
+    <property name="realitycheck.score" value="69" />
+    <property name="realitycheck.failOn" value="major" />
+    <property name="realitycheck.target" value="http://127.0.0.1:4182/examples/accessibility-lab/broken.html" />
+  </properties>
+  <testcase classname="RealityCheck.browser" name="baseline" time="1.034">
+    <failure message="1 finding(s) met the major threshold" type="RealityCheckQualityGate">RC-2467435352 [major] An interactive control has no accessible name</failure>
+    <system-out>RC-2467435352 [major/medium] An interactive control has no accessible name
+RC-32F9E9CDA5 [minor/high] The document does not declare its language
+RC-D7DABBAD48 [minor/high] The document has no page title
+RC-BF257020C1 [minor/high] The document contains duplicate element IDs
+RC-D5EA851B96 [minor/medium] Visible heading levels skip part of the hierarchy</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="mobile-375" time="0.649" />
+  <testcase classname="RealityCheck.browser" name="long-text" time="1.180" />
+  <testcase classname="RealityCheck.browser" name="rtl-arabic" time="1.474" />
+  <testcase classname="RealityCheck.browser" name="image-failure" time="0.911" />
+  <testcase classname="RealityCheck.browser" name="keyboard-tab" time="0.901" />
+  <testcase classname="RealityCheck.browser" name="page-zoom-200" time="0.000">
+    <skipped message="unsupported">Real page zoom is not exposed by the standalone adapter.</skipped>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="reduced-motion" time="0.669" />
+  <testcase classname="RealityCheck.browser" name="dark-scheme" time="0.804">
+    <skipped message="skipped">No declared prefers-color-scheme: dark rule was found.</skipped>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="slow-api" time="0.842">
+    <skipped message="skipped">No safe same-origin API request was observed.</skipped>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="api-error" time="0.823">
+    <skipped message="skipped">No safe same-origin API request was observed.</skipped>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="empty-data" time="0.797">
+    <skipped message="skipped">No safe JSON array response was observed.</skipped>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="axe" time="0.792">
+    <failure message="4 finding(s) met the major threshold" type="RealityCheckQualityGate">RC-DD7B086A3B [critical] Buttons must have discernible text
+RC-6BE52B2D95 [major] Elements must meet minimum color contrast ratio thresholds
+RC-AFEF454665 [major] Documents must have &lt;title&gt; element to aid in navigation
+RC-26D6D6BE2D [major] &lt;html&gt; element must have a lang attribute</failure>
+    <system-out>RC-DD7B086A3B [critical/high] Buttons must have discernible text
+RC-6BE52B2D95 [major/high] Elements must meet minimum color contrast ratio thresholds
+RC-AFEF454665 [major/high] Documents must have &lt;title&gt; element to aid in navigation
+RC-26D6D6BE2D [major/high] &lt;html&gt; element must have a lang attribute
+RC-FD6828C986 [minor/high] Heading levels should only increase by one</system-out>
+  </testcase>
+</testsuite>

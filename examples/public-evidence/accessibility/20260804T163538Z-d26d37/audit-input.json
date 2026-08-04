@@ -1,0 +1,903 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "run": {
+    "id": "20260804T163538Z-d26d37",
+    "mode": "deep",
+    "startedAt": "2026-08-04T16:35:38.077Z",
+    "finishedAt": "2026-08-04T16:35:49.111Z",
+    "durationMs": 11014
+  },
+  "target": {
+    "requestedUrl": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html",
+    "finalUrl": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html",
+    "title": ""
+  },
+  "adapter": {
+    "name": "project-playwright",
+    "isolation": "fresh-context",
+    "capabilities": [
+      "console",
+      "dom",
+      "isolated-contexts",
+      "network-routing",
+      "screenshots",
+      "viewport",
+      "axe-core-accessibility",
+      "detector-policy-fingerprint"
+    ]
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major",
+    "policyFingerprint": "sha256:576b55f0b1873b3c1a66ed01f47865ac549d92d541d4f0e4ed66db42efd9d383"
+  },
+  "scenarios": [
+    {
+      "id": "baseline",
+      "status": "completed-with-findings",
+      "durationMs": 1034,
+      "notes": [
+        "Baseline runtime findings were recorded."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已记录基线运行时问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "mobile-375",
+      "status": "passed",
+      "durationMs": 649,
+      "notes": [],
+      "translations": {
+        "zh-CN": {
+          "notes": []
+        }
+      }
+    },
+    {
+      "id": "long-text",
+      "status": "passed",
+      "durationMs": 1180,
+      "notes": [
+        "3 deterministic text mutations were applied."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已执行 3 次确定性的文本替换。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "rtl-arabic",
+      "status": "passed",
+      "durationMs": 1474,
+      "notes": [
+        "Directionality stress test only; translation quality was not assessed."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "仅进行书写方向压力测试；未评估翻译质量。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "image-failure",
+      "status": "passed",
+      "durationMs": 911,
+      "notes": [
+        "Expected image request aborts were excluded from failed-request findings."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "预期的图片请求中止未计入普通请求失败问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "keyboard-tab",
+      "status": "passed",
+      "durationMs": 901,
+      "notes": [
+        "No controls were activated or submitted."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未激活或提交任何控件。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "page-zoom-200",
+      "status": "unsupported",
+      "durationMs": 0,
+      "notes": [
+        "Real page zoom is not exposed by the standalone adapter."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "独立适配器目前无法可靠控制真实页面缩放。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "reduced-motion",
+      "status": "passed",
+      "durationMs": 669,
+      "notes": [
+        "Observed 0 persistent non-progress animation(s)."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "观察到 0 个持续运行的非进度动画。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "dark-scheme",
+      "status": "skipped",
+      "durationMs": 804,
+      "notes": [
+        "No declared prefers-color-scheme: dark rule was found."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未发现页面声明 prefers-color-scheme: dark 规则。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "slow-api",
+      "status": "skipped",
+      "durationMs": 842,
+      "notes": [
+        "No safe same-origin API request was observed."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "没有观察到可安全延迟的同源 API 请求。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "api-error",
+      "status": "skipped",
+      "durationMs": 823,
+      "notes": [
+        "No safe same-origin API request was observed."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "没有观察到可安全变更的同源 API 请求。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "empty-data",
+      "status": "skipped",
+      "durationMs": 797,
+      "notes": [
+        "No safe JSON array response was observed."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "没有观察到可安全转换的 JSON 数组响应。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "axe",
+      "status": "completed-with-findings",
+      "durationMs": 792,
+      "notes": [
+        "Bundled axe-core evaluated WCAG A/AA and best-practice rules; 5 violation rule(s) were recorded with at most five sampled nodes each. Automated scanning does not establish WCAG conformance."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "内置 axe-core 已核查 WCAG A/AA 与最佳实践规则；记录 5 条违规规则，每条最多抽样五个节点。自动扫描不能证明 WCAG 合规。"
+          ]
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "control-accessible-name",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "medium",
+      "title": "An interactive control has no accessible name",
+      "summary": "The visible control exposes no label through native text, an associated label, alt text, title, aria-label, or aria-labelledby.",
+      "url": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html",
+      "measurements": {
+        "tag": "button",
+        "role": null,
+        "hasAccessibleName": false,
+        "boundingBox": {
+          "x": 1192,
+          "y": 223,
+          "width": 48,
+          "height": 48,
+          "right": 1240,
+          "bottom": 271
+        }
+      },
+      "evidence": [
+        {
+          "type": "dom",
+          "selector": "button.icon-button",
+          "hasAccessibleName": false,
+          "boundingBox": {
+            "x": 1192,
+            "y": 223,
+            "width": 48,
+            "height": 48,
+            "right": 1240,
+            "bottom": 271
+          }
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Unnamed interactive control"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a clean browser context.",
+        "Inspect the accessible name exposed by button.icon-button."
+      ],
+      "remediation": {
+        "summary": "Give the control a concise programmatic name using visible text or native labeling first.",
+        "technicalHints": [
+          "Prefer a native <label>, button text, or alt text before adding ARIA."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "交互控件没有可访问名称",
+          "summary": "该可见控件没有通过原生文本、关联标签、alt、title、aria-label 或 aria-labelledby 提供名称。",
+          "reproductionSteps": [
+            "在干净的浏览器上下文中打开页面。",
+            "检查 button.icon-button 暴露的可访问名称。"
+          ],
+          "remediation": {
+            "summary": "优先使用可见文本或原生标签，为控件提供简洁的程序化名称。",
+            "technicalHints": [
+              "优先使用原生 <label>、按钮文本或 alt，再考虑 ARIA。"
+            ]
+          }
+        }
+      },
+      "selector": "button.icon-button"
+    },
+    {
+      "ruleId": "document-language-missing",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The document does not declare its language",
+      "summary": "The root html element has no non-empty lang attribute, so assistive technology cannot reliably select pronunciation rules.",
+      "url": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html",
+      "measurements": {
+        "language": ""
+      },
+      "evidence": [
+        {
+          "type": "dom",
+          "selector": "html",
+          "attribute": "lang",
+          "value": ""
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Document language metadata"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a clean browser context.",
+        "Inspect the lang attribute on the root html element."
+      ],
+      "remediation": {
+        "summary": "Declare the page's primary BCP 47 language tag on the root html element.",
+        "technicalHints": [
+          "Use a specific tag such as en, zh-CN, or ar and update it when the document language changes."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "文档没有声明语言",
+          "summary": "根 html 元素没有非空 lang 属性，辅助技术无法可靠选择发音规则。",
+          "reproductionSteps": [
+            "在干净的浏览器上下文中打开页面。",
+            "检查根 html 元素的 lang 属性。"
+          ],
+          "remediation": {
+            "summary": "在根 html 元素上声明页面主要语言的 BCP 47 标签。",
+            "technicalHints": [
+              "使用 en、zh-CN 或 ar 等明确标签，并在文档语言变化时同步更新。"
+            ]
+          }
+        }
+      },
+      "selector": "html"
+    },
+    {
+      "ruleId": "document-title-missing",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The document has no page title",
+      "summary": "The browser title is empty, which makes tabs, history, and assistive navigation difficult to distinguish.",
+      "url": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html",
+      "measurements": {
+        "titleLength": 0
+      },
+      "evidence": [
+        {
+          "type": "dom",
+          "selector": "title",
+          "textLength": 0
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Document title metadata"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a clean browser context.",
+        "Inspect document.title after the page settles."
+      ],
+      "remediation": {
+        "summary": "Add a concise, route-specific title that identifies the page and product.",
+        "technicalHints": []
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "文档没有页面标题",
+          "summary": "浏览器标题为空，用户难以在标签页、历史记录和辅助导航中区分页面。",
+          "reproductionSteps": [
+            "在干净的浏览器上下文中打开页面。",
+            "页面稳定后检查 document.title。"
+          ],
+          "remediation": {
+            "summary": "添加简洁、与路由对应的标题，明确页面和产品。",
+            "technicalHints": []
+          }
+        }
+      },
+      "selector": "title"
+    },
+    {
+      "ruleId": "duplicate-element-id",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The document contains duplicate element IDs",
+      "summary": "1 duplicated ID value(s) can make labels, fragments, and DOM references resolve to the wrong element.",
+      "url": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html",
+      "measurements": {
+        "duplicates": [
+          {
+            "id": "metric",
+            "count": 2
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "type": "dom",
+          "duplicates": [
+            {
+              "id": "metric",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Duplicate document IDs"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a clean browser context.",
+        "Count every non-empty id value and identify values used more than once."
+      ],
+      "remediation": {
+        "summary": "Give every document ID a unique stable value and update all label, fragment, and ARIA references.",
+        "technicalHints": []
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "文档包含重复的元素 ID",
+          "summary": "检测到 1 个重复 ID 值，可能让标签、片段和 DOM 引用指向错误元素。",
+          "reproductionSteps": [
+            "在干净的浏览器上下文中打开页面。",
+            "统计所有非空 id，并找出使用超过一次的值。"
+          ],
+          "remediation": {
+            "summary": "为每个文档 ID 设置唯一且稳定的值，并同步更新标签、片段和 ARIA 引用。",
+            "technicalHints": []
+          }
+        }
+      },
+      "selector": "#metric"
+    },
+    {
+      "ruleId": "heading-level-skip",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "minor",
+      "confidence": "medium",
+      "title": "Visible heading levels skip part of the hierarchy",
+      "summary": "A level 1 heading is followed by level 3, which may obscure the document structure.",
+      "url": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html",
+      "measurements": {
+        "skips": [
+          {
+            "previous": {
+              "selector": "body > main > section:nth-of-type(1) > div > h1",
+              "level": 1,
+              "text": "Small metadata defects have wide impact."
+            },
+            "current": {
+              "selector": "#section-title",
+              "level": 3,
+              "text": "Workspace signals"
+            }
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "type": "dom",
+          "headingSkips": [
+            {
+              "previous": {
+                "selector": "body > main > section:nth-of-type(1) > div > h1",
+                "level": 1,
+                "text": "Small metadata defects have wide impact."
+              },
+              "current": {
+                "selector": "#section-title",
+                "level": 3,
+                "text": "Workspace signals"
+              }
+            }
+          ]
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Visible heading hierarchy"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a clean browser context.",
+        "Read visible h1–h6 elements in DOM order and compare adjacent levels."
+      ],
+      "remediation": {
+        "summary": "Use heading levels to represent the document outline without skipping an intermediate level.",
+        "technicalHints": [
+          "Change visual size with CSS rather than choosing a heading level for appearance."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "可见标题层级出现跳级",
+          "summary": "1 级标题后直接出现 3 级标题，可能让文档结构难以理解。",
+          "reproductionSteps": [
+            "在干净的浏览器上下文中打开页面。",
+            "按 DOM 顺序读取可见 h1–h6，并比较相邻层级。"
+          ],
+          "remediation": {
+            "summary": "使用标题层级表达文档结构，不要跳过中间层级。",
+            "technicalHints": [
+              "通过 CSS 调整视觉字号，不要为了外观选择标题层级。"
+            ]
+          }
+        }
+      },
+      "selector": "#section-title"
+    },
+    {
+      "ruleId": "axe-button-name",
+      "scenarioId": "axe",
+      "classification": "existing",
+      "severity": "critical",
+      "confidence": "high",
+      "title": "Buttons must have discernible text",
+      "summary": "Ensure buttons have discernible text Axe-core matched 1 node(s) with critical impact.",
+      "url": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html",
+      "measurements": {
+        "axeRule": "button-name",
+        "impact": "critical",
+        "nodeCount": 1,
+        "sampledNodes": 1,
+        "tags": [
+          "cat.name-role-value",
+          "wcag2a",
+          "wcag412",
+          "section508",
+          "section508.22.a",
+          "TTv5",
+          "TT6.a",
+          "EN-301-549",
+          "EN-9.4.1.2",
+          "ACT",
+          "RGAAv4",
+          "RGAA-11.9.1"
+        ]
+      },
+      "evidence": [
+        {
+          "type": "axe-node",
+          "target": [
+            "button"
+          ],
+          "impact": "critical",
+          "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/axe.png",
+          "label": "Axe-core accessibility scan"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh browser context.",
+        "Run the bundled axe-core button-name rule and inspect the sampled targets."
+      ],
+      "remediation": {
+        "summary": "Buttons must have discernible text",
+        "technicalHints": [
+          "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+          "Rule guidance: https://dequeuniversity.com/rules/axe/4.12/button-name?application=axeAPI"
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "axe 可访问性问题：Buttons must have discernible text",
+          "summary": "Ensure buttons have discernible text axe-core 匹配到 1 个节点，影响级别为致命。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "运行内置 axe-core 的 button-name 规则并检查抽样目标。"
+          ],
+          "remediation": {
+            "summary": "根据 button-name 规则修复抽样节点，并使用辅助技术进行人工验证。",
+            "technicalHints": [
+              "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "规则说明：https://dequeuniversity.com/rules/axe/4.12/button-name?application=axeAPI"
+            ]
+          }
+        }
+      },
+      "selector": "button"
+    },
+    {
+      "ruleId": "axe-color-contrast",
+      "scenarioId": "axe",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Elements must meet minimum color contrast ratio thresholds",
+      "summary": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds Axe-core matched 1 node(s) with serious impact.",
+      "url": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html",
+      "measurements": {
+        "axeRule": "color-contrast",
+        "impact": "serious",
+        "nodeCount": 1,
+        "sampledNodes": 1,
+        "tags": [
+          "cat.color",
+          "wcag2aa",
+          "wcag143",
+          "TTv5",
+          "TT13.c",
+          "EN-301-549",
+          "EN-9.1.4.3",
+          "ACT",
+          "RGAAv4",
+          "RGAA-3.2.1"
+        ]
+      },
+      "evidence": [
+        {
+          "type": "axe-node",
+          "target": [
+            ".eyebrow"
+          ],
+          "impact": "serious",
+          "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.49 (foreground color: #e74f2b, background color: #f4f6f8, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1"
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/axe.png",
+          "label": "Axe-core accessibility scan"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh browser context.",
+        "Run the bundled axe-core color-contrast rule and inspect the sampled targets."
+      ],
+      "remediation": {
+        "summary": "Elements must meet minimum color contrast ratio thresholds",
+        "technicalHints": [
+          "Fix any of the following:\n  Element has insufficient color contrast of 3.49 (foreground color: #e74f2b, background color: #f4f6f8, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+          "Rule guidance: https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "axe 可访问性问题：Elements must meet minimum color contrast ratio thresholds",
+          "summary": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds axe-core 匹配到 1 个节点，影响级别为严重。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "运行内置 axe-core 的 color-contrast 规则并检查抽样目标。"
+          ],
+          "remediation": {
+            "summary": "根据 color-contrast 规则修复抽样节点，并使用辅助技术进行人工验证。",
+            "technicalHints": [
+              "Fix any of the following:\n  Element has insufficient color contrast of 3.49 (foreground color: #e74f2b, background color: #f4f6f8, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+              "规则说明：https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+            ]
+          }
+        }
+      },
+      "selector": ".eyebrow"
+    },
+    {
+      "ruleId": "axe-document-title",
+      "scenarioId": "axe",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Documents must have <title> element to aid in navigation",
+      "summary": "Ensure each HTML document contains a non-empty <title> element Axe-core matched 1 node(s) with serious impact.",
+      "url": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html",
+      "measurements": {
+        "axeRule": "document-title",
+        "impact": "serious",
+        "nodeCount": 1,
+        "sampledNodes": 1,
+        "tags": [
+          "cat.text-alternatives",
+          "wcag2a",
+          "wcag242",
+          "TTv5",
+          "TT12.a",
+          "EN-301-549",
+          "EN-9.2.4.2",
+          "ACT",
+          "RGAAv4",
+          "RGAA-8.5.1"
+        ]
+      },
+      "evidence": [
+        {
+          "type": "axe-node",
+          "target": [
+            "html"
+          ],
+          "impact": "serious",
+          "failureSummary": "Fix any of the following:\n  Document does not have a non-empty <title> element"
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/axe.png",
+          "label": "Axe-core accessibility scan"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh browser context.",
+        "Run the bundled axe-core document-title rule and inspect the sampled targets."
+      ],
+      "remediation": {
+        "summary": "Documents must have <title> element to aid in navigation",
+        "technicalHints": [
+          "Fix any of the following:\n  Document does not have a non-empty <title> element",
+          "Rule guidance: https://dequeuniversity.com/rules/axe/4.12/document-title?application=axeAPI"
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "axe 可访问性问题：Documents must have <title> element to aid in navigation",
+          "summary": "Ensure each HTML document contains a non-empty <title> element axe-core 匹配到 1 个节点，影响级别为严重。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "运行内置 axe-core 的 document-title 规则并检查抽样目标。"
+          ],
+          "remediation": {
+            "summary": "根据 document-title 规则修复抽样节点，并使用辅助技术进行人工验证。",
+            "technicalHints": [
+              "Fix any of the following:\n  Document does not have a non-empty <title> element",
+              "规则说明：https://dequeuniversity.com/rules/axe/4.12/document-title?application=axeAPI"
+            ]
+          }
+        }
+      },
+      "selector": "html"
+    },
+    {
+      "ruleId": "axe-heading-order",
+      "scenarioId": "axe",
+      "classification": "existing",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "Heading levels should only increase by one",
+      "summary": "Ensure the order of headings is semantically correct Axe-core matched 1 node(s) with moderate impact.",
+      "url": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html",
+      "measurements": {
+        "axeRule": "heading-order",
+        "impact": "moderate",
+        "nodeCount": 1,
+        "sampledNodes": 1,
+        "tags": [
+          "cat.semantics",
+          "best-practice"
+        ]
+      },
+      "evidence": [
+        {
+          "type": "axe-node",
+          "target": [
+            "#section-title"
+          ],
+          "impact": "moderate",
+          "failureSummary": "Fix any of the following:\n  Heading order invalid"
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/axe.png",
+          "label": "Axe-core accessibility scan"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh browser context.",
+        "Run the bundled axe-core heading-order rule and inspect the sampled targets."
+      ],
+      "remediation": {
+        "summary": "Heading levels should only increase by one",
+        "technicalHints": [
+          "Fix any of the following:\n  Heading order invalid",
+          "Rule guidance: https://dequeuniversity.com/rules/axe/4.12/heading-order?application=axeAPI"
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "axe 可访问性问题：Heading levels should only increase by one",
+          "summary": "Ensure the order of headings is semantically correct axe-core 匹配到 1 个节点，影响级别为中等。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "运行内置 axe-core 的 heading-order 规则并检查抽样目标。"
+          ],
+          "remediation": {
+            "summary": "根据 heading-order 规则修复抽样节点，并使用辅助技术进行人工验证。",
+            "technicalHints": [
+              "Fix any of the following:\n  Heading order invalid",
+              "规则说明：https://dequeuniversity.com/rules/axe/4.12/heading-order?application=axeAPI"
+            ]
+          }
+        }
+      },
+      "selector": "#section-title"
+    },
+    {
+      "ruleId": "axe-html-has-lang",
+      "scenarioId": "axe",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "<html> element must have a lang attribute",
+      "summary": "Ensure every HTML document has a lang attribute Axe-core matched 1 node(s) with serious impact.",
+      "url": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html",
+      "measurements": {
+        "axeRule": "html-has-lang",
+        "impact": "serious",
+        "nodeCount": 1,
+        "sampledNodes": 1,
+        "tags": [
+          "cat.language",
+          "wcag2a",
+          "wcag311",
+          "TTv5",
+          "TT11.a",
+          "EN-301-549",
+          "EN-9.3.1.1",
+          "ACT",
+          "RGAAv4",
+          "RGAA-8.3.1"
+        ]
+      },
+      "evidence": [
+        {
+          "type": "axe-node",
+          "target": [
+            "html"
+          ],
+          "impact": "serious",
+          "failureSummary": "Fix any of the following:\n  The <html> element does not have a lang attribute"
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/axe.png",
+          "label": "Axe-core accessibility scan"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh browser context.",
+        "Run the bundled axe-core html-has-lang rule and inspect the sampled targets."
+      ],
+      "remediation": {
+        "summary": "<html> element must have a lang attribute",
+        "technicalHints": [
+          "Fix any of the following:\n  The <html> element does not have a lang attribute",
+          "Rule guidance: https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI"
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "axe 可访问性问题：<html> element must have a lang attribute",
+          "summary": "Ensure every HTML document has a lang attribute axe-core 匹配到 1 个节点，影响级别为严重。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "运行内置 axe-core 的 html-has-lang 规则并检查抽样目标。"
+          ],
+          "remediation": {
+            "summary": "根据 html-has-lang 规则修复抽样节点，并使用辅助技术进行人工验证。",
+            "technicalHints": [
+              "Fix any of the following:\n  The <html> element does not have a lang attribute",
+              "规则说明：https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI"
+            ]
+          }
+        }
+      },
+      "selector": "html"
+    }
+  ],
+  "warnings": [
+    "Standalone audit used an already-installed system browser (150.0.7871.116).",
+    "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    "Bundled axe-core checks supplement scenario testing but cannot establish complete WCAG conformance."
+  ],
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "独立核查使用了已安装的系统浏览器（150.0.7871.116）。",
+        "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        "内置 axe-core 检查用于补充场景测试，但不能证明完整的 WCAG 合规。"
+      ]
+    }
+  }
+}

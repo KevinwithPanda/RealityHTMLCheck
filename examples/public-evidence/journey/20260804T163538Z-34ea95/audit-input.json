@@ -1,0 +1,231 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "run": {
+    "id": "20260804T163538Z-34ea95",
+    "mode": "quick",
+    "startedAt": "2026-08-04T16:35:38.059Z",
+    "finishedAt": "2026-08-04T16:35:45.268Z",
+    "durationMs": 7191
+  },
+  "target": {
+    "requestedUrl": "http://127.0.0.1:4182/examples/journey-lab/broken.html",
+    "finalUrl": "http://127.0.0.1:4182/examples/journey-lab/broken.html",
+    "title": "Broken Journey Lab · RealityCheck"
+  },
+  "adapter": {
+    "name": "project-playwright",
+    "isolation": "fresh-context",
+    "capabilities": [
+      "console",
+      "dom",
+      "isolated-contexts",
+      "network-routing",
+      "screenshots",
+      "viewport",
+      "safe-declarative-journeys",
+      "detector-policy-fingerprint"
+    ]
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major",
+    "policyFingerprint": "sha256:06ca4a781b852236c3bfd28d9a236331a7a3668e312fd4569f5a0a5f23b067ea"
+  },
+  "scenarios": [
+    {
+      "id": "baseline",
+      "status": "passed",
+      "durationMs": 814,
+      "notes": [],
+      "translations": {
+        "zh-CN": {
+          "notes": []
+        }
+      }
+    },
+    {
+      "id": "mobile-375",
+      "status": "passed",
+      "durationMs": 665,
+      "notes": [],
+      "translations": {
+        "zh-CN": {
+          "notes": []
+        }
+      }
+    },
+    {
+      "id": "long-text",
+      "status": "passed",
+      "durationMs": 1300,
+      "notes": [
+        "8 deterministic text mutations were applied."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已执行 8 次确定性的文本替换。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "rtl-arabic",
+      "status": "passed",
+      "durationMs": 1303,
+      "notes": [
+        "Directionality stress test only; translation quality was not assessed."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "仅进行书写方向压力测试；未评估翻译质量。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "image-failure",
+      "status": "passed",
+      "durationMs": 742,
+      "notes": [
+        "Expected image request aborts were excluded from failed-request findings."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "预期的图片请求中止未计入普通请求失败问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "keyboard-tab",
+      "status": "passed",
+      "durationMs": 984,
+      "notes": [
+        "No controls were activated or submitted."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未激活或提交任何控件。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "journey-settings-notifications",
+      "status": "completed-with-findings",
+      "durationMs": 1294,
+      "notes": [
+        "Stopped safely at step 2; no form was submitted."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已在第 2 步安全停止；未提交任何表单。"
+          ]
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "journey-settings-notifications",
+      "scenarioId": "journey-settings-notifications",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "User journey failed: Settings notifications remain usable",
+      "summary": "Step 2 (assert) did not complete: Assertion visible failed for #notifications",
+      "url": "http://127.0.0.1:4182/examples/journey-lab/broken.html",
+      "measurements": {
+        "completedSteps": 1,
+        "totalSteps": 2,
+        "failedStep": 2,
+        "failedAction": "assert",
+        "finalPath": "/examples/journey-lab/broken.html"
+      },
+      "evidence": [
+        {
+          "type": "journey-trace",
+          "steps": [
+            {
+              "step": 1,
+              "action": "click",
+              "selector": "[role=tab][aria-controls=notifications]",
+              "element": "button",
+              "passed": true
+            },
+            {
+              "step": 2,
+              "action": "assert",
+              "selector": "#notifications",
+              "assertion": "visible",
+              "count": 0,
+              "visibleCount": 0,
+              "passed": false
+            },
+            {
+              "step": 2,
+              "action": "assert",
+              "selector": "#notifications",
+              "reason": "Assertion visible failed for #notifications",
+              "passed": false
+            }
+          ]
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/journey-settings-notifications-failure.png",
+          "label": "Journey failure checkpoint"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the journey at /examples/journey-lab/broken.html in a fresh isolated context.",
+        "1. click [role=tab][aria-controls=notifications].",
+        "2. assert #notifications (visible)."
+      ],
+      "remediation": {
+        "summary": "Restore the first failed application state or transition; keep the journey assertion unchanged and rerun the entire journey.",
+        "technicalHints": [
+          "Use the step trace and failure screenshot to distinguish a missing state from a blocked transition."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "用户旅程未通过：设置通知流程保持可用",
+          "summary": "第 2 步（assert）未完成：Assertion visible failed for #notifications",
+          "reproductionSteps": [
+            "在新的隔离上下文中从 /examples/journey-lab/broken.html 打开旅程。",
+            "1. 执行 click [role=tab][aria-controls=notifications]。",
+            "2. 执行 assert #notifications（visible）。"
+          ],
+          "remediation": {
+            "summary": "修复第一个失败的应用状态或转换；保持旅程断言不变，并重新运行完整旅程。",
+            "technicalHints": [
+              "利用步骤轨迹和失败截图区分状态缺失与转换受阻。"
+            ]
+          }
+        }
+      },
+      "selector": "#notifications"
+    }
+  ],
+  "warnings": [
+    "Standalone audit used an already-installed system browser (150.0.7871.116).",
+    "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    "1 declarative user journey(s) were executed with same-origin and non-submission safety guards."
+  ],
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "独立核查使用了已安装的系统浏览器（150.0.7871.116）。",
+        "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        "已在同源且禁止提交的安全限制下执行 1 个声明式用户旅程。"
+      ]
+    }
+  }
+}

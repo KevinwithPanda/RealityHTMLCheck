@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="RealityCheck Security Policy Lab · RealityCheck" tests="6" time="5.282" timestamp="2026-08-04T16:35:38.058Z" failures="1" errors="0" skipped="0">
+  <properties>
+    <property name="realitycheck.runId" value="20260804T163538Z-b0b154" />
+    <property name="realitycheck.score" value="84" />
+    <property name="realitycheck.failOn" value="major" />
+    <property name="realitycheck.target" value="http://127.0.0.1:4182/examples/security-lab/index.html" />
+  </properties>
+  <testcase classname="RealityCheck.browser" name="baseline" time="0.720">
+    <failure message="4 finding(s) met the major threshold" type="RealityCheckQualityGate">RC-D424F2C1C9 [major] Required security header is missing: content-security-policy
+RC-DCC68313A4 [major] Required security header is missing: referrer-policy
+RC-3A8DEE4287 [major] Required security header is missing: x-content-type-options
+RC-50F5B5802D [major] A sensitive form uses an insecure submission path</failure>
+    <system-out>RC-D424F2C1C9 [major/high] Required security header is missing: content-security-policy
+RC-DCC68313A4 [major/high] Required security header is missing: referrer-policy
+RC-3A8DEE4287 [major/high] Required security header is missing: x-content-type-options
+RC-50F5B5802D [major/high] A sensitive form uses an insecure submission path</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="mobile-375" time="0.618" />
+  <testcase classname="RealityCheck.browser" name="long-text" time="1.143" />
+  <testcase classname="RealityCheck.browser" name="rtl-arabic" time="1.216" />
+  <testcase classname="RealityCheck.browser" name="image-failure" time="0.677" />
+  <testcase classname="RealityCheck.browser" name="keyboard-tab" time="0.822" />
+</testsuite>

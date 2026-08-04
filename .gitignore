@@ -6,5 +6,6 @@ realitycheck_codex_bundle.zip
 .pytest_cache/
 .venv/
 node_modules/
+_site/
 *.tgz
 npm-debug.log*

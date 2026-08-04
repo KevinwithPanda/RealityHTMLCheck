@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "20260804T163538Z-b0b154"
+      },
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/security-lab/index.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Required security header is missing: content-security-policy: The final document response did not include the project-required content-security-policy header."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "d424f2c1c9874ea411d135b7a9a949ba55962c522d77d93b191aa97aedde40ab"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-D424F2C1C9",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "security-header-content-security-policy"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/security-lab/index.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Required security header is missing: referrer-policy: The final document response did not include the project-required referrer-policy header."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "dcc68313a481a808d7f665ba278f73cd49b6128732b1352b992502c09ea17b1d"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-DCC68313A4",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "security-header-referrer-policy"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/security-lab/index.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Required security header is missing: x-content-type-options: The final document response did not include the project-required x-content-type-options header."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "3a8dee4287bb9a8cced86b58bd29f88e20fa047816e980eaac962bb85cabb57c"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-3A8DEE4287",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "security-header-x-content-type-options"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/security-lab/index.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "A sensitive form uses an insecure submission path: 1 form(s) could expose credentials through GET or an insecure transport."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "50f5b5802d1cbadcef7d938afe2e9afd46d1c27591df269c76462ebd3adccec5"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-50F5B5802D",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "security-insecure-form"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "RealityCheck",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The final document response did not include the project-required content-security-policy header."
+              },
+              "help": {
+                "markdown": "Configure the application or trusted edge to emit a reviewed content-security-policy policy on this route.\n\n- Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check.",
+                "text": "Configure the application or trusted edge to emit a reviewed content-security-policy policy on this route.\n\n- Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check."
+              },
+              "id": "security-header-content-security-policy",
+              "name": "security_header_content_security_policy",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Required security header is missing: content-security-policy"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The final document response did not include the project-required referrer-policy header."
+              },
+              "help": {
+                "markdown": "Configure the application or trusted edge to emit a reviewed referrer-policy policy on this route.\n\n- Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check.",
+                "text": "Configure the application or trusted edge to emit a reviewed referrer-policy policy on this route.\n\n- Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check."
+              },
+              "id": "security-header-referrer-policy",
+              "name": "security_header_referrer_policy",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Required security header is missing: referrer-policy"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The final document response did not include the project-required x-content-type-options header."
+              },
+              "help": {
+                "markdown": "Configure the application or trusted edge to emit a reviewed x-content-type-options policy on this route.\n\n- Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check.",
+                "text": "Configure the application or trusted edge to emit a reviewed x-content-type-options policy on this route.\n\n- Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check."
+              },
+              "id": "security-header-x-content-type-options",
+              "name": "security_header_x_content_type_options",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Required security header is missing: x-content-type-options"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "1 form(s) could expose credentials through GET or an insecure transport."
+              },
+              "help": {
+                "markdown": "Use POST for credentials and submit only to a reviewed HTTPS endpoint.",
+                "text": "Use POST for credentials and submit only to a reviewed HTTPS endpoint."
+              },
+              "id": "security-insecure-form",
+              "name": "security_insecure_form",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "A sensitive form uses an insecure submission path"
+              }
+            }
+          ],
+          "semanticVersion": "0.4.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

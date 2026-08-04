@@ -1,11 +1,11 @@
 # RealityCheck report
 
-**Score:** 78/100  
-**Target:** `http://127.0.0.1:4173/`  
-**Mode:** quick  
-**Adapter:** project-playwright (fresh-context)  
-**Run:** `reference-demo-v0.4.0`
-**Threshold:** major - FAILED
+- **Score:** 78/100
+- **Target:** `http://127.0.0.1:4173/`
+- **Mode:** quick
+- **Adapter:** project-playwright (fresh-context)
+- **Run:** `reference-demo-v0.4.0`
+- **Threshold:** major - FAILED
 
 > Automated checks cover only the recorded scenarios and cannot prove the absence of bugs or complete WCAG compliance.
 

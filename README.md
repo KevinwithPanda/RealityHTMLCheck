@@ -8,6 +8,7 @@
 </p>
 
 <p align="center">
+  <a href="https://kevinwithpanda.github.io/RealityHTMLCheck/"><strong>Live demo</strong></a> ·
   <a href="docs/README.zh-CN.md">中文</a> ·
   <a href="#one-prompt">One prompt</a> ·
   <a href="examples/index.html">Demo center</a> ·

@@ -9,6 +9,7 @@
   "scripts": {
     "audit": "node realitycheck/scripts/audit.mjs audit",
     "demo": "node realitycheck/scripts/audit.mjs audit http://127.0.0.1:4173 --fail-on major",
+    "site:build": "node scripts/build-pages.mjs",
     "test": "python -m unittest discover -s tests -v && node --test tests/*.test.mjs",
     "test:python": "python -m unittest discover -s tests -v",
     "test:node": "node --test tests/*.test.mjs"

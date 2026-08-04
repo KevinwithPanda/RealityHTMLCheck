@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "kind": "evidence-manifest",
+  "generatedAt": "2026-08-04T16:46:39.917Z",
+  "source": {
+    "artifactKind": "page-audit",
+    "runId": "20260804T163538Z-34ea95",
+    "target": "http://127.0.0.1:4182/examples/journey-lab/broken.html"
+  },
+  "algorithm": "sha256",
+  "summary": {
+    "files": 17,
+    "bytes": 437368
+  },
+  "files": [
+    {
+      "path": "audit-input.json",
+      "bytes": 6859,
+      "sha256": "d7b992a8a2c6bab874f0d6127e6e39cb82384210c314a9d9dbb05fe69d7b0a0a",
+      "mediaType": "application/json"
+    },
+    {
+      "path": "repair-plan.json",
+      "bytes": 1844,
+      "sha256": "7235317417fbc3a5141001be8235f5cdea436a864fc74d4bf2ef526736f11ea7",
+      "mediaType": "application/json"
+    },
+    {
+      "path": "repair-plan.md",
+      "bytes": 1061,
+      "sha256": "b8586b18fb52e61a848694fd24734564546a6813ddd71d8357dc88753bc170c0",
+      "mediaType": "text/markdown"
+    },
+    {
+      "path": "report.html",
+      "bytes": 44944,
+      "sha256": "dd4f5d91270a0382eb9746d272b967d0289aeb047b0c686d88f26224b31f4f63",
+      "mediaType": "text/html"
+    },
+    {
+      "path": "report.json",
+      "bytes": 7481,
+      "sha256": "04cdba2b086078ef28bd0cc526e8e199f31cbfbe534a9e1906b465f4f32ec5df",
+      "mediaType": "application/json"
+    },
+    {
+      "path": "report.junit.xml",
+      "bytes": 1422,
+      "sha256": "8c1c16b7084cd0cd6985fb20bcb85efd825b2dc1981d44a5132407837cc43153",
+      "mediaType": "application/xml"
+    },
+    {
+      "path": "report.md",
+      "bytes": 3279,
+      "sha256": "c660c8fa19460693a81579ac05e5499db8ee66b7d7fb54c3907fde6ccca37c3a",
+      "mediaType": "text/markdown"
+    },
+    {
+      "path": "report.sarif",
+      "bytes": 2828,
+      "sha256": "113d16758ee9ad004cb68c2dfc66fb3c07116bb4c0bb0a9d9852b1680d56cdb8",
+      "mediaType": "application/sarif+json"
+    },
+    {
+      "path": "screenshots/baseline.png",
+      "bytes": 40041,
+      "sha256": "6b18e3ccf0935f31f986c2b9a0ddc2f0d15678530fccdedb32ad1c1b1d14768b",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/image-failure.png",
+      "bytes": 40041,
+      "sha256": "6b18e3ccf0935f31f986c2b9a0ddc2f0d15678530fccdedb32ad1c1b1d14768b",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/journey-settings-notifications-failure.png",
+      "bytes": 34265,
+      "sha256": "d4bdc47bdbd09aae13f7f564b1d45e82f2fc5fb073a28306e606885628213a34",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/journey-settings-notifications-start.png",
+      "bytes": 40041,
+      "sha256": "6b18e3ccf0935f31f986c2b9a0ddc2f0d15678530fccdedb32ad1c1b1d14768b",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/journey-settings-notifications-step-1.png",
+      "bytes": 34265,
+      "sha256": "d4bdc47bdbd09aae13f7f564b1d45e82f2fc5fb073a28306e606885628213a34",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/keyboard-tab.png",
+      "bytes": 40261,
+      "sha256": "8ecfe1a5fd4cf174d767d12b09837551d9a76261f1e1143b940e536c173c5434",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/long-text.png",
+      "bytes": 78138,
+      "sha256": "812eefb64daa8af253b9745588399e973350892969f9f4d18cc702a371db2059",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/mobile-375.png",
+      "bytes": 28870,
+      "sha256": "0363930799a0b708ad3cfead90c05cdf1e8409ff627d9bd01ad10f98e44acd3f",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/rtl-arabic.png",
+      "bytes": 31728,
+      "sha256": "7442d9fcdf351652fd1df919e63558ba69dfd8ee9dfd0fc7375b11f0edf296f8",
+      "mediaType": "image/png"
+    }
+  ]
+}

@@ -6,7 +6,7 @@ RealityCheck 是面向 Codex 的本地 Web 核查 skill，也提供可独立运�
 
 当前版本：`v0.4.0 Beta`。未执行的场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
 
-可直接打开包含 15 个真实入口的[演示中心](../examples/index.html)：除了参考报告、全站夹具与 Deep 修复证明，还能查看稳定最新入口、100 份产物目录、68 次运行的风险台账、失败组合门禁，以及可信/拒绝两类签名决策。
+无需安装即可打开[在线演示站](https://kevinwithpanda.github.io/RealityHTMLCheck/)，直接体验用户旅程、安全策略和 Deep 可访问性三份真实 Chrome 证据；仓库内的[演示中心](../examples/index.html)还包含全站夹具、修复证明、产物目录、风险台账、组合门禁和签名决策。
 
 ## 一句话使用
 

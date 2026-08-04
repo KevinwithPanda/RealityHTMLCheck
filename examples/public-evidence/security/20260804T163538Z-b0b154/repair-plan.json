@@ -1,0 +1,156 @@
+{
+  "items": [
+    {
+      "confidence": "high",
+      "findingId": "RC-D424F2C1C9",
+      "fingerprint": "d424f2c1c9874ea411d135b7a9a949ba55962c522d77d93b191aa97aedde40ab",
+      "remediation": {
+        "summary": "Configure the application or trusted edge to emit a reviewed content-security-policy policy on this route.",
+        "technicalHints": [
+          "Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check."
+        ]
+      },
+      "reportAnchor": "report.html#RC-D424F2C1C9",
+      "ruleId": "security-header-content-security-policy",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "Required security header is missing: content-security-policy",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "在应用或可信边缘层为该路由配置经审核的 content-security-policy 策略。",
+            "technicalHints": [
+              "在预发布环境验证真实策略；不要只为通过检查而添加宽松占位值。"
+            ]
+          },
+          "title": "缺少必需的安全响应头：content-security-policy"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-DCC68313A4",
+      "fingerprint": "dcc68313a481a808d7f665ba278f73cd49b6128732b1352b992502c09ea17b1d",
+      "remediation": {
+        "summary": "Configure the application or trusted edge to emit a reviewed referrer-policy policy on this route.",
+        "technicalHints": [
+          "Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check."
+        ]
+      },
+      "reportAnchor": "report.html#RC-DCC68313A4",
+      "ruleId": "security-header-referrer-policy",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "Required security header is missing: referrer-policy",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "在应用或可信边缘层为该路由配置经审核的 referrer-policy 策略。",
+            "technicalHints": [
+              "在预发布环境验证真实策略；不要只为通过检查而添加宽松占位值。"
+            ]
+          },
+          "title": "缺少必需的安全响应头：referrer-policy"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-3A8DEE4287",
+      "fingerprint": "3a8dee4287bb9a8cced86b58bd29f88e20fa047816e980eaac962bb85cabb57c",
+      "remediation": {
+        "summary": "Configure the application or trusted edge to emit a reviewed x-content-type-options policy on this route.",
+        "technicalHints": [
+          "Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check."
+        ]
+      },
+      "reportAnchor": "report.html#RC-3A8DEE4287",
+      "ruleId": "security-header-x-content-type-options",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "Required security header is missing: x-content-type-options",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "在应用或可信边缘层为该路由配置经审核的 x-content-type-options 策略。",
+            "technicalHints": [
+              "在预发布环境验证真实策略；不要只为通过检查而添加宽松占位值。"
+            ]
+          },
+          "title": "缺少必需的安全响应头：x-content-type-options"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-50F5B5802D",
+      "fingerprint": "50f5b5802d1cbadcef7d938afe2e9afd46d1c27591df269c76462ebd3adccec5",
+      "remediation": {
+        "summary": "Use POST for credentials and submit only to a reviewed HTTPS endpoint.",
+        "technicalHints": []
+      },
+      "reportAnchor": "report.html#RC-50F5B5802D",
+      "ruleId": "security-insecure-form",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "A sensitive form uses an insecure submission path",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "凭据使用 POST，并且只提交到经审核的 HTTPS 端点。",
+            "technicalHints": []
+          },
+          "title": "敏感表单使用了不安全的提交路径"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    }
+  ],
+  "kind": "repair-plan",
+  "schemaVersion": "1",
+  "source": {
+    "reportPath": "report.json",
+    "runId": "20260804T163538Z-b0b154",
+    "target": "http://127.0.0.1:4182/examples/security-lab/index.html"
+  },
+  "summary": {
+    "critical": 0,
+    "items": 4,
+    "major": 4,
+    "minor": 0,
+    "reviewRequired": 0,
+    "waived": 0
+  },
+  "toolVersion": "0.4.0"
+}

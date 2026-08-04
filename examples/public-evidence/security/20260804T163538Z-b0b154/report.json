@@ -1,0 +1,398 @@
+{
+  "adapter": {
+    "capabilities": [
+      "console",
+      "dom",
+      "isolated-contexts",
+      "network-routing",
+      "screenshots",
+      "viewport",
+      "security-response-and-origin-policy",
+      "detector-policy-fingerprint"
+    ],
+    "isolation": "fresh-context",
+    "name": "project-playwright"
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major",
+    "policyFingerprint": "sha256:c8461cf971a9089626fbbeb2ed00a9ced0dac9057f67b0932ee97d350ffb7f96"
+  },
+  "findings": [
+    {
+      "classification": "existing",
+      "confidence": "high",
+      "evidence": [
+        {
+          "header": "content-security-policy",
+          "present": false,
+          "status": 200,
+          "type": "response-policy"
+        },
+        {
+          "label": "Security response policy",
+          "path": "screenshots/baseline.png",
+          "type": "screenshot"
+        }
+      ],
+      "fingerprint": "d424f2c1c9874ea411d135b7a9a949ba55962c522d77d93b191aa97aedde40ab",
+      "id": "RC-D424F2C1C9",
+      "measurements": {
+        "header": "content-security-policy",
+        "present": false,
+        "responseStatus": 200
+      },
+      "remediation": {
+        "summary": "Configure the application or trusted edge to emit a reviewed content-security-policy policy on this route.",
+        "technicalHints": [
+          "Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check."
+        ]
+      },
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Inspect the final document response for the content-security-policy header."
+      ],
+      "ruleId": "security-header-content-security-policy",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "summary": "The final document response did not include the project-required content-security-policy header.",
+      "title": "Required security header is missing: content-security-policy",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "在应用或可信边缘层为该路由配置经审核的 content-security-policy 策略。",
+            "technicalHints": [
+              "在预发布环境验证真实策略；不要只为通过检查而添加宽松占位值。"
+            ]
+          },
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "检查最终文档响应是否包含 content-security-policy 响应头。"
+          ],
+          "summary": "最终文档响应没有包含项目要求的 content-security-policy 响应头。",
+          "title": "缺少必需的安全响应头：content-security-policy"
+        }
+      },
+      "url": "http://127.0.0.1:4182/examples/security-lab/index.html"
+    },
+    {
+      "classification": "existing",
+      "confidence": "high",
+      "evidence": [
+        {
+          "header": "x-content-type-options",
+          "present": false,
+          "status": 200,
+          "type": "response-policy"
+        },
+        {
+          "label": "Security response policy",
+          "path": "screenshots/baseline.png",
+          "type": "screenshot"
+        }
+      ],
+      "fingerprint": "3a8dee4287bb9a8cced86b58bd29f88e20fa047816e980eaac962bb85cabb57c",
+      "id": "RC-3A8DEE4287",
+      "measurements": {
+        "header": "x-content-type-options",
+        "present": false,
+        "responseStatus": 200
+      },
+      "remediation": {
+        "summary": "Configure the application or trusted edge to emit a reviewed x-content-type-options policy on this route.",
+        "technicalHints": [
+          "Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check."
+        ]
+      },
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Inspect the final document response for the x-content-type-options header."
+      ],
+      "ruleId": "security-header-x-content-type-options",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "summary": "The final document response did not include the project-required x-content-type-options header.",
+      "title": "Required security header is missing: x-content-type-options",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "在应用或可信边缘层为该路由配置经审核的 x-content-type-options 策略。",
+            "technicalHints": [
+              "在预发布环境验证真实策略；不要只为通过检查而添加宽松占位值。"
+            ]
+          },
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "检查最终文档响应是否包含 x-content-type-options 响应头。"
+          ],
+          "summary": "最终文档响应没有包含项目要求的 x-content-type-options 响应头。",
+          "title": "缺少必需的安全响应头：x-content-type-options"
+        }
+      },
+      "url": "http://127.0.0.1:4182/examples/security-lab/index.html"
+    },
+    {
+      "classification": "existing",
+      "confidence": "high",
+      "evidence": [
+        {
+          "header": "referrer-policy",
+          "present": false,
+          "status": 200,
+          "type": "response-policy"
+        },
+        {
+          "label": "Security response policy",
+          "path": "screenshots/baseline.png",
+          "type": "screenshot"
+        }
+      ],
+      "fingerprint": "dcc68313a481a808d7f665ba278f73cd49b6128732b1352b992502c09ea17b1d",
+      "id": "RC-DCC68313A4",
+      "measurements": {
+        "header": "referrer-policy",
+        "present": false,
+        "responseStatus": 200
+      },
+      "remediation": {
+        "summary": "Configure the application or trusted edge to emit a reviewed referrer-policy policy on this route.",
+        "technicalHints": [
+          "Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check."
+        ]
+      },
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Inspect the final document response for the referrer-policy header."
+      ],
+      "ruleId": "security-header-referrer-policy",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "summary": "The final document response did not include the project-required referrer-policy header.",
+      "title": "Required security header is missing: referrer-policy",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "在应用或可信边缘层为该路由配置经审核的 referrer-policy 策略。",
+            "technicalHints": [
+              "在预发布环境验证真实策略；不要只为通过检查而添加宽松占位值。"
+            ]
+          },
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "检查最终文档响应是否包含 referrer-policy 响应头。"
+          ],
+          "summary": "最终文档响应没有包含项目要求的 referrer-policy 响应头。",
+          "title": "缺少必需的安全响应头：referrer-policy"
+        }
+      },
+      "url": "http://127.0.0.1:4182/examples/security-lab/index.html"
+    },
+    {
+      "classification": "existing",
+      "confidence": "high",
+      "evidence": [
+        {
+          "forms": [
+            {
+              "actionOrigin": "http://127.0.0.1:4182",
+              "actionProtocol": "http:",
+              "hasPassword": "[REDACTED]",
+              "index": 0,
+              "method": "get"
+            }
+          ],
+          "policy": "secure-forms",
+          "type": "security-posture"
+        },
+        {
+          "label": "Secure form policy",
+          "path": "screenshots/baseline.png",
+          "type": "screenshot"
+        }
+      ],
+      "fingerprint": "50f5b5802d1cbadcef7d938afe2e9afd46d1c27591df269c76462ebd3adccec5",
+      "id": "RC-50F5B5802D",
+      "measurements": {
+        "forms": [
+          {
+            "actionOrigin": "http://127.0.0.1:4182",
+            "actionProtocol": "http:",
+            "hasPassword": "[REDACTED]",
+            "index": 0,
+            "method": "get"
+          }
+        ]
+      },
+      "remediation": {
+        "summary": "Use POST for credentials and submit only to a reviewed HTTPS endpoint.",
+        "technicalHints": []
+      },
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Inspect password fields, form methods, and resolved action protocols without submitting anything."
+      ],
+      "ruleId": "security-insecure-form",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "summary": "1 form(s) could expose credentials through GET or an insecure transport.",
+      "title": "A sensitive form uses an insecure submission path",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "凭据使用 POST，并且只提交到经审核的 HTTPS 端点。",
+            "technicalHints": []
+          },
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "在不提交任何内容的前提下检查密码字段、表单方法和解析后的 action 协议。"
+          ],
+          "summary": "1 个表单可能通过 GET 或不安全传输暴露凭据。",
+          "title": "敏感表单使用了不安全的提交路径"
+        }
+      },
+      "url": "http://127.0.0.1:4182/examples/security-lab/index.html"
+    }
+  ],
+  "run": {
+    "durationMs": 5282.0,
+    "finishedAt": "2026-08-04T16:35:43.360Z",
+    "id": "20260804T163538Z-b0b154",
+    "mode": "quick",
+    "startedAt": "2026-08-04T16:35:38.058Z"
+  },
+  "scenarios": [
+    {
+      "durationMs": 720.0,
+      "id": "baseline",
+      "notes": [
+        "Baseline runtime findings were recorded."
+      ],
+      "status": "completed-with-findings",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已记录基线运行时问题。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 618.0,
+      "id": "mobile-375",
+      "notes": [],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": []
+        }
+      }
+    },
+    {
+      "durationMs": 1143.0,
+      "id": "long-text",
+      "notes": [
+        "2 deterministic text mutations were applied."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已执行 2 次确定性的文本替换。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 1216.0,
+      "id": "rtl-arabic",
+      "notes": [
+        "Directionality stress test only; translation quality was not assessed."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "仅进行书写方向压力测试；未评估翻译质量。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 677.0,
+      "id": "image-failure",
+      "notes": [
+        "Expected image request aborts were excluded from failed-request findings."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "预期的图片请求中止未计入普通请求失败问题。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 822.0,
+      "id": "keyboard-tab",
+      "notes": [
+        "No controls were activated or submitted."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未激活或提交任何控件。"
+          ]
+        }
+      }
+    }
+  ],
+  "schemaVersion": "1",
+  "score": {
+    "baselinePenalty": 16.0,
+    "chaosPenalty": 0.0,
+    "counts": {
+      "critical": 0,
+      "info": 0,
+      "major": 4,
+      "minor": 0
+    },
+    "ignoredLowConfidenceFindings": 0,
+    "overall": 84,
+    "scoredFindings": 4,
+    "totalFindings": 4
+  },
+  "target": {
+    "finalUrl": "http://127.0.0.1:4182/examples/security-lab/index.html",
+    "requestedUrl": "http://127.0.0.1:4182/examples/security-lab/index.html",
+    "title": "Security Policy Lab · RealityCheck"
+  },
+  "threshold": {
+    "coveragePercent": 100.0,
+    "failOn": "major",
+    "met": true,
+    "violations": [
+      {
+        "actual": 4,
+        "code": "severity-threshold",
+        "expected": 0
+      }
+    ]
+  },
+  "toolVersion": "0.4.0",
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "独立核查使用了已安装的系统浏览器（150.0.7871.116）。",
+        "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        "已在不提交数据的前提下核查 5 项明确的响应、来源与表单安全策略。"
+      ]
+    }
+  },
+  "warnings": [
+    "Standalone audit used an already-installed system browser (150.0.7871.116).",
+    "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    "5 explicit response, origin, and form security policy setting(s) were evaluated without submitting data."
+  ]
+}

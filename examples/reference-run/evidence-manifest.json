@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "toolVersion": "0.4.0",
   "kind": "evidence-manifest",
-  "generatedAt": "2026-08-04T16:32:33.327Z",
+  "generatedAt": "2026-08-04T16:46:39.899Z",
   "source": {
     "artifactKind": "page-audit",
     "runId": "reference-demo-v0.4.0",
@@ -11,7 +11,7 @@
   "algorithm": "sha256",
   "summary": {
     "files": 8,
-    "bytes": 126514
+    "bytes": 126534
   },
   "files": [
     {
@@ -28,8 +28,8 @@
     },
     {
       "path": "repair-plan.md",
-      "bytes": 3498,
-      "sha256": "a80de3f19a88b82b7a5615d40675d3d79a97b19cfc6a3cba11b33eb473b1c3be",
+      "bytes": 3514,
+      "sha256": "f5ff3ac238ca9b6b2430d08139a8c94317e297a9f41fbc79e270be52a0be0e45",
       "mediaType": "text/markdown"
     },
     {
@@ -52,8 +52,8 @@
     },
     {
       "path": "report.md",
-      "bytes": 6735,
-      "sha256": "2d0a5427b9e1bbd19f9144f94935b8d40215cc878603d6d00a2aad36070f89ea",
+      "bytes": 6739,
+      "sha256": "fbccfb735a7647960728951d0f78e8445307a9f7e64fb0411ce2922883d13c8b",
       "mediaType": "text/markdown"
     },
     {

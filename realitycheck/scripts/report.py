@@ -1760,12 +1760,12 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines = [
         "# RealityCheck report",
         "",
-        f"**Score:** {score['overall']}/100  ",
-        f"**Target:** `{md_code(report['target']['finalUrl'])}`  ",
-        f"**Mode:** {md_text(report['run']['mode'])}  ",
-        f"**Adapter:** {md_text(report['adapter']['name'])} ({md_text(report['adapter']['isolation'])})  ",
-        f"**Run:** `{md_code(report['run']['id'])}`  ",
-        f"**Threshold:** {md_text(threshold['failOn'])} - {md_text('FAILED' if threshold['met'] else 'PASSED')}",
+        f"- **Score:** {score['overall']}/100",
+        f"- **Target:** `{md_code(report['target']['finalUrl'])}`",
+        f"- **Mode:** {md_text(report['run']['mode'])}",
+        f"- **Adapter:** {md_text(report['adapter']['name'])} ({md_text(report['adapter']['isolation'])})",
+        f"- **Run:** `{md_code(report['run']['id'])}`",
+        f"- **Threshold:** {md_text(threshold['failOn'])} - {md_text('FAILED' if threshold['met'] else 'PASSED')}",
         "",
         "> Automated checks cover only the recorded scenarios and cannot prove the absence of bugs or complete WCAG compliance.",
         "",
@@ -2117,9 +2117,9 @@ def render_repair_plan_markdown(plan: dict[str, Any]) -> str:
     lines = [
         "# RealityCheck repair plan",
         "",
-        f"Source run: `{md_code(plan['source']['runId'])}`  ",
-        f"Target: `{md_code(plan['source']['target'])}`  ",
-        f"Items: **{summary['items']}** · Critical: **{summary['critical']}** · Major: **{summary['major']}** · Minor: **{summary['minor']}** · Waived: **{summary['waived']}** · Review required: **{summary['reviewRequired']}**",
+        f"- Source run: `{md_code(plan['source']['runId'])}`",
+        f"- Target: `{md_code(plan['source']['target'])}`",
+        f"- Items: **{summary['items']}** · Critical: **{summary['critical']}** · Major: **{summary['major']}** · Minor: **{summary['minor']}** · Waived: **{summary['waived']}** · Review required: **{summary['reviewRequired']}**",
         "",
         "> This is a bounded handoff plan, not proof of a fix. Preserve the source report, change application code only with explicit authorization, and generate new before/after evidence.",
         "",
@@ -2131,9 +2131,9 @@ def render_repair_plan_markdown(plan: dict[str, Any]) -> str:
         lines += [
             f"## [ ] {md_text(item['findingId'])} — {md_text(item['title'])}",
             "",
-            f"**{md_text(item['severity'].upper())}** · {md_text(item['confidence'])} confidence · rule `{md_code(item['ruleId'])}`  ",
-            f"Evidence: [{md_text(item['reportAnchor'])}]({item['reportAnchor']})  ",
-            f"Required scenarios: {scenarios}",
+            f"- **{md_text(item['severity'].upper())}** · {md_text(item['confidence'])} confidence · rule `{md_code(item['ruleId'])}`",
+            f"- Evidence: [{md_text(item['reportAnchor'])}]({item['reportAnchor']})",
+            f"- Required scenarios: {scenarios}",
             "",
             md_text(item["remediation"]["summary"]),
         ]
@@ -2387,10 +2387,10 @@ def render_comparison_markdown(comparison: dict[str, Any]) -> str:
     lines = [
         "# RealityCheck verification",
         "",
-        f"**Score:** {before['score']}/100 → {after['score']}/100 ({comparison['scoreDelta']:+d})  ",
-        f"**Runs:** `{before['runId']}` → `{after['runId']}`  ",
-        f"**Detector context:** `{before.get('mode', 'unknown')}` / `{before.get('toolVersion', 'unknown')}` → `{after.get('mode', 'unknown')}` / `{after.get('toolVersion', 'unknown')}`  ",
-        f"**Result:** {'PASSED' if not comparison['threshold']['met'] else 'FAILED'} at `{comparison['threshold']['failOn']}`",
+        f"- **Score:** {before['score']}/100 → {after['score']}/100 ({comparison['scoreDelta']:+d})",
+        f"- **Runs:** `{before['runId']}` → `{after['runId']}`",
+        f"- **Detector context:** `{before.get('mode', 'unknown')}` / `{before.get('toolVersion', 'unknown')}` → `{after.get('mode', 'unknown')}` / `{after.get('toolVersion', 'unknown')}`",
+        f"- **Result:** {'PASSED' if not comparison['threshold']['met'] else 'FAILED'} at `{comparison['threshold']['failOn']}`",
         *(
             [f"**Baseline age:** {comparison['threshold']['baselineAgeDays']:g} day(s), maximum {comparison['threshold']['maximumBaselineAgeDays']} day(s)"]
             if "baselineAgeDays" in comparison["threshold"]

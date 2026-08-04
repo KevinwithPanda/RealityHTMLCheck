@@ -1,0 +1,377 @@
+{
+  "items": [
+    {
+      "confidence": "high",
+      "findingId": "RC-DD7B086A3B",
+      "fingerprint": "dd7b086a3b13550fdbd37b5d7f9dd0f2cc16d55896e086f4d32abefc21b968ca",
+      "remediation": {
+        "summary": "Buttons must have discernible text",
+        "technicalHints": [
+          "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+          "Rule guidance: https://dequeuniversity.com/rules/axe/4.12/button-name?application=axeAPI"
+        ]
+      },
+      "reportAnchor": "report.html#RC-DD7B086A3B",
+      "ruleId": "axe-button-name",
+      "scenarioId": "axe",
+      "severity": "critical",
+      "title": "Buttons must have discernible text",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "根据 button-name 规则修复抽样节点，并使用辅助技术进行人工验证。",
+            "technicalHints": [
+              "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "规则说明：https://dequeuniversity.com/rules/axe/4.12/button-name?application=axeAPI"
+            ]
+          },
+          "title": "axe 可访问性问题：Buttons must have discernible text"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "axe"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-6BE52B2D95",
+      "fingerprint": "6be52b2d95078351519845ddcaa543b753aa08d605f5cb89602c54faa3d5483d",
+      "remediation": {
+        "summary": "Elements must meet minimum color contrast ratio thresholds",
+        "technicalHints": [
+          "Fix any of the following:\n  Element has insufficient color contrast of 3.49 (foreground color: #e74f2b, background color: #f4f6f8, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+          "Rule guidance: https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+        ]
+      },
+      "reportAnchor": "report.html#RC-6BE52B2D95",
+      "ruleId": "axe-color-contrast",
+      "scenarioId": "axe",
+      "severity": "major",
+      "title": "Elements must meet minimum color contrast ratio thresholds",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "根据 color-contrast 规则修复抽样节点，并使用辅助技术进行人工验证。",
+            "technicalHints": [
+              "Fix any of the following:\n  Element has insufficient color contrast of 3.49 (foreground color: #e74f2b, background color: #f4f6f8, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+              "规则说明：https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+            ]
+          },
+          "title": "axe 可访问性问题：Elements must meet minimum color contrast ratio thresholds"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "axe"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-AFEF454665",
+      "fingerprint": "afef4546655795bd63412659c6b7d48f441be4dbf5e97af5d8dc1ddfafc4ac16",
+      "remediation": {
+        "summary": "Documents must have <title> element to aid in navigation",
+        "technicalHints": [
+          "Fix any of the following:\n  Document does not have a non-empty <title> element",
+          "Rule guidance: https://dequeuniversity.com/rules/axe/4.12/document-title?application=axeAPI"
+        ]
+      },
+      "reportAnchor": "report.html#RC-AFEF454665",
+      "ruleId": "axe-document-title",
+      "scenarioId": "axe",
+      "severity": "major",
+      "title": "Documents must have <title> element to aid in navigation",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "根据 document-title 规则修复抽样节点，并使用辅助技术进行人工验证。",
+            "technicalHints": [
+              "Fix any of the following:\n  Document does not have a non-empty <title> element",
+              "规则说明：https://dequeuniversity.com/rules/axe/4.12/document-title?application=axeAPI"
+            ]
+          },
+          "title": "axe 可访问性问题：Documents must have <title> element to aid in navigation"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "axe"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-26D6D6BE2D",
+      "fingerprint": "26d6d6be2dc77bff65c4585612c914e961cb9e42ed4506879f142464440759df",
+      "remediation": {
+        "summary": "<html> element must have a lang attribute",
+        "technicalHints": [
+          "Fix any of the following:\n  The <html> element does not have a lang attribute",
+          "Rule guidance: https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI"
+        ]
+      },
+      "reportAnchor": "report.html#RC-26D6D6BE2D",
+      "ruleId": "axe-html-has-lang",
+      "scenarioId": "axe",
+      "severity": "major",
+      "title": "<html> element must have a lang attribute",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "根据 html-has-lang 规则修复抽样节点，并使用辅助技术进行人工验证。",
+            "technicalHints": [
+              "Fix any of the following:\n  The <html> element does not have a lang attribute",
+              "规则说明：https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI"
+            ]
+          },
+          "title": "axe 可访问性问题：<html> element must have a lang attribute"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "axe"
+        ]
+      }
+    },
+    {
+      "confidence": "medium",
+      "findingId": "RC-2467435352",
+      "fingerprint": "24674353526df99c4527439208aeafd0a4a2c00d73fd18dd7bc2600b3eabfd85",
+      "remediation": {
+        "summary": "Give the control a concise programmatic name using visible text or native labeling first.",
+        "technicalHints": [
+          "Prefer a native <label>, button text, or alt text before adding ARIA."
+        ]
+      },
+      "reportAnchor": "report.html#RC-2467435352",
+      "ruleId": "control-accessible-name",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "An interactive control has no accessible name",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "优先使用可见文本或原生标签，为控件提供简洁的程序化名称。",
+            "technicalHints": [
+              "优先使用原生 <label>、按钮文本或 alt，再考虑 ARIA。"
+            ]
+          },
+          "title": "交互控件没有可访问名称"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-FD6828C986",
+      "fingerprint": "fd6828c9863ad8992de4cd9508e07a80d258cc597d00390a0c4ed292a4b068cd",
+      "remediation": {
+        "summary": "Heading levels should only increase by one",
+        "technicalHints": [
+          "Fix any of the following:\n  Heading order invalid",
+          "Rule guidance: https://dequeuniversity.com/rules/axe/4.12/heading-order?application=axeAPI"
+        ]
+      },
+      "reportAnchor": "report.html#RC-FD6828C986",
+      "ruleId": "axe-heading-order",
+      "scenarioId": "axe",
+      "severity": "minor",
+      "title": "Heading levels should only increase by one",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "根据 heading-order 规则修复抽样节点，并使用辅助技术进行人工验证。",
+            "technicalHints": [
+              "Fix any of the following:\n  Heading order invalid",
+              "规则说明：https://dequeuniversity.com/rules/axe/4.12/heading-order?application=axeAPI"
+            ]
+          },
+          "title": "axe 可访问性问题：Heading levels should only increase by one"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline",
+          "axe"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-32F9E9CDA5",
+      "fingerprint": "32f9e9cda504a5abdad6e5bf1204d8d6d67365baccca88aa8a98f80c1c4a39a7",
+      "remediation": {
+        "summary": "Declare the page's primary BCP 47 language tag on the root html element.",
+        "technicalHints": [
+          "Use a specific tag such as en, zh-CN, or ar and update it when the document language changes."
+        ]
+      },
+      "reportAnchor": "report.html#RC-32F9E9CDA5",
+      "ruleId": "document-language-missing",
+      "scenarioId": "baseline",
+      "severity": "minor",
+      "title": "The document does not declare its language",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "在根 html 元素上声明页面主要语言的 BCP 47 标签。",
+            "technicalHints": [
+              "使用 en、zh-CN 或 ar 等明确标签，并在文档语言变化时同步更新。"
+            ]
+          },
+          "title": "文档没有声明语言"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-D7DABBAD48",
+      "fingerprint": "d7dabbad4852c4095aab863e9c58ff96d15f0dfe5a922dd786b196b214d91adb",
+      "remediation": {
+        "summary": "Add a concise, route-specific title that identifies the page and product.",
+        "technicalHints": []
+      },
+      "reportAnchor": "report.html#RC-D7DABBAD48",
+      "ruleId": "document-title-missing",
+      "scenarioId": "baseline",
+      "severity": "minor",
+      "title": "The document has no page title",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "添加简洁、与路由对应的标题，明确页面和产品。",
+            "technicalHints": []
+          },
+          "title": "文档没有页面标题"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-BF257020C1",
+      "fingerprint": "bf257020c14491334cabeebc9c3d37d529fde8d4d8ea668efcfea9f49cf24fd7",
+      "remediation": {
+        "summary": "Give every document ID a unique stable value and update all label, fragment, and ARIA references.",
+        "technicalHints": []
+      },
+      "reportAnchor": "report.html#RC-BF257020C1",
+      "ruleId": "duplicate-element-id",
+      "scenarioId": "baseline",
+      "severity": "minor",
+      "title": "The document contains duplicate element IDs",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "为每个文档 ID 设置唯一且稳定的值，并同步更新标签、片段和 ARIA 引用。",
+            "technicalHints": []
+          },
+          "title": "文档包含重复的元素 ID"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "medium",
+      "findingId": "RC-D5EA851B96",
+      "fingerprint": "d5ea851b96bf085fa409ab5bf1748799b396613dd557e88bca02c7efa186bd08",
+      "remediation": {
+        "summary": "Use heading levels to represent the document outline without skipping an intermediate level.",
+        "technicalHints": [
+          "Change visual size with CSS rather than choosing a heading level for appearance."
+        ]
+      },
+      "reportAnchor": "report.html#RC-D5EA851B96",
+      "ruleId": "heading-level-skip",
+      "scenarioId": "baseline",
+      "severity": "minor",
+      "title": "Visible heading levels skip part of the hierarchy",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "使用标题层级表达文档结构，不要跳过中间层级。",
+            "technicalHints": [
+              "通过 CSS 调整视觉字号，不要为了外观选择标题层级。"
+            ]
+          },
+          "title": "可见标题层级出现跳级"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    }
+  ],
+  "kind": "repair-plan",
+  "schemaVersion": "1",
+  "source": {
+    "reportPath": "report.json",
+    "runId": "20260804T163538Z-d26d37",
+    "target": "http://127.0.0.1:4182/examples/accessibility-lab/broken.html"
+  },
+  "summary": {
+    "critical": 1,
+    "items": 10,
+    "major": 4,
+    "minor": 5,
+    "reviewRequired": 0,
+    "waived": 0
+  },
+  "toolVersion": "0.4.0"
+}
