@@ -1,0 +1,19 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4180/examples/metadata-lab/fixed.html",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/metadata-lab-fixed",
+  "metadata": {
+    "severity": "major",
+    "titleMinLength": 10,
+    "titleMaxLength": 70,
+    "descriptionMinLength": 50,
+    "descriptionMaxLength": 180,
+    "requireCanonical": true,
+    "requireViewport": true,
+    "requireLang": true,
+    "forbidNoindex": true,
+    "requireSingleH1": true
+  }
+}

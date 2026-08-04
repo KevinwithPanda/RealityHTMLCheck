@@ -116,6 +116,27 @@ test("link integrity policy is HEAD-only, bounded, and explicit", () => {
   assert.throws(() => validateProjectConfig({ links: { maxFailures: 0, method: "GET" } }), /unknown property/);
 });
 
+test("publishing metadata policy is explicit, bounded, and text-free", () => {
+  const metadata = {
+    severity: "major",
+    titleMinLength: 5,
+    titleMaxLength: 70,
+    descriptionMinLength: 50,
+    descriptionMaxLength: 180,
+    requireCanonical: true,
+    requireViewport: true,
+    requireLang: true,
+    forbidNoindex: true,
+    requireSingleH1: true,
+  };
+  assert.deepEqual(validateProjectConfig({ metadata }).metadata, metadata);
+  assert.throws(() => validateProjectConfig({ metadata: {} }), /at least one metadata rule/);
+  assert.throws(() => validateProjectConfig({ metadata: { requireCanonical: false } }), /must be true/);
+  assert.throws(() => validateProjectConfig({ metadata: { titleMinLength: 80, titleMaxLength: 70 } }), /cannot exceed/);
+  assert.throws(() => validateProjectConfig({ metadata: { descriptionMinLength: -1 } }), /0 to 1000/);
+  assert.throws(() => validateProjectConfig({ metadata: { title: "secret page copy" } }), /unknown property/);
+});
+
 test("security policies are explicit, bounded, and origin-only", () => {
   const security = {
     severity: "major",

@@ -1,6 +1,6 @@
 ---
 name: realitycheck
-description: Audit, safely crawl, stress-test, fix, and verify a developer-controlled web application with deterministic real-browser scenarios, safe user journeys, API/network reliability and link-integrity limits, security policy, Core Web Vital budgets, bundled axe-core, and evidence-based HTML, Markdown, JSON, SARIF, JUnit, site, trend, and before/after reports. Use when Codex needs to QA, break, reality-check, harden, or repair a localhost or authorized web UI; test mobile layout, long text, RTL, image failures, keyboard access, user preferences, workflow states, slow or failed APIs, broken links, third-party request volume, empty data, runtime errors, security headers/forms/origins, performance, or accessibility; prove a selected fix with the same detector; compare or baseline runs; or enforce a report threshold in CI. The user may provide a URL or simply ask to check the current app.
+description: Audit, safely crawl, stress-test, fix, and verify a developer-controlled web application with deterministic real-browser scenarios, safe user journeys, API/network reliability and link-integrity limits, publishing metadata and security policy, Core Web Vital budgets, bundled axe-core, and evidence-based HTML, Markdown, JSON, SARIF, JUnit, site, trend, and before/after reports. Use when Codex needs to QA, break, reality-check, harden, or repair a localhost or authorized web UI; test mobile layout, long text, RTL, image failures, keyboard access, user preferences, workflow states, slow or failed APIs, broken links, title/description/canonical/viewport/language/indexing/heading contracts, third-party request volume, empty data, runtime errors, security headers/forms/origins, performance, or accessibility; prove a selected fix with the same detector; compare or baseline runs; or enforce a report threshold in CI. The user may provide a URL or simply ask to check the current app.
 ---
 
 # RealityCheck
@@ -36,7 +36,7 @@ Stop before navigation if ownership or remote authorization is unclear. Do not u
 - For every audit, read [references/test-protocol.md](references/test-protocol.md) completely.
 - Read [references/browser-adapters.md](references/browser-adapters.md) when selecting, invoking, or recovering a browser adapter.
 - Read [references/report-schema.md](references/report-schema.md) before filling the run input or consuming `report.json`.
-- Read [references/project-config.md](references/project-config.md) when a project config is present or the user asks for multi-page, authenticated, custom-rule, performance, network-reliability, link-integrity, security-policy, or governed-waiver auditing.
+- Read [references/project-config.md](references/project-config.md) when a project config is present or the user asks for multi-page, authenticated, custom-rule, performance, network-reliability, link-integrity, publishing-metadata, security-policy, or governed-waiver auditing.
 - Execute `scripts/report.py --help` when report command syntax is needed; do not reimplement its scoring, redaction, validation, or report rendering logic.
 
 ## Preflight the target
@@ -50,7 +50,7 @@ Stop before navigation if ownership or remote authorization is unclear. Do not u
    - no adapter: stop and give the smallest explicit setup step. Do not silently download a browser.
    Before treating the bundled adapter as unavailable, resolve the Codex workspace dependency runtime when that capability exists. If it returns an absolute Node executable and a bundled `node_modules` directory, invoke that Node directly and expose only that dependency directory through `NODE_PATH` for the audit command. Do not require the user to edit their system PATH.
 4. Probe the target once. Report connection, TLS, authentication, or build failures as preflight failures rather than product findings.
-5. Prefer a discovered `realitycheck.config.json` when present. Validate its routes, crawl boundaries, custom checks, journeys, performance budgets, network reliability limits, link-integrity policy, security policy, and output location before navigation. CLI values override config values. When the user explicitly asks to set up policy, use `profiles` plus `init --profile starter|product|strict`; explain that presets are editable starting points rather than compliance claims. Do not create a config during an audit-only request.
+5. Prefer a discovered `realitycheck.config.json` when present. Validate its routes, crawl boundaries, custom checks, journeys, performance budgets, network reliability limits, link-integrity policy, publishing metadata policy, security policy, and output location before navigation. CLI values override config values. When the user explicitly asks to set up policy, use `profiles` plus `init --profile starter|product|strict`; explain that presets are editable starting points rather than compliance claims. Do not create a config during an audit-only request.
 6. For the bundled adapter, run one command from the target repository and skip the manual run-input steps below:
 
    ```bash

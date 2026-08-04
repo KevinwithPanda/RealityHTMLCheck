@@ -1,0 +1,420 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "20260804T180133Z-00ac02"
+      },
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "link[rel~=\"canonical\"]"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/metadata-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Canonical link is missing, duplicated, or invalid: Found 0 canonical link(s); policy requires exactly one valid HTTP(S) destination."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "51d4cb4d14b3be635436732befa259b96ac1c3e03ca25b0aad576adbdb375060"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-51D4CB4D14",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "metadata-canonical"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "meta[name=\"description\"]"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/metadata-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Meta description does not meet the publishing policy: Found 0 description element(s) with a first length of 0; expected exactly one and 50–180 characters."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "fc9b00b542ca40a5b89371b444fd009bb220be117efed73c09080da5ad109d60"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-FC9B00B542",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "metadata-description-length"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "h1"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/metadata-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Page does not expose exactly one primary heading: Found 2 h1 element(s); publishing policy requires exactly one."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "de543a763eafa73004962921df1ace4e378a09b7fd698ff555bdb6f0e68610ef"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-DE543A763E",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "metadata-h1-count"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "meta[name=\"robots\"]"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/metadata-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Page is marked noindex against publishing policy: A robots directive contains noindex on a route configured for indexable publication."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "bf5823bdc5de281d1869a5cf635353a805287b7e8bfef1eb0798b9689348733f"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-BF5823BDC5",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "metadata-robots-noindex"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "title"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/metadata-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Document title does not meet the publishing policy: Found 1 title element(s) with a rendered length of 1; expected exactly one and 10–70 characters."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "4ca707b13d62458f10615a1c52ff22ba72d01da531cc4b32a073c24e4e28d609"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-4CA707B13D",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "metadata-title-length"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "meta[name=\"viewport\"]"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/metadata-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Responsive viewport metadata is missing or ambiguous: Found 0 viewport declaration(s); exactly one width=device-width declaration is required."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "12b8e2c4b7dd6b8a137ed02738821d6f2df9c44fa80e57bf9de6ec2fa4fa33c1"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-12B8E2C4B7",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "metadata-viewport"
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "html"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4182/examples/metadata-lab/broken.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "The document does not declare its language: The root html element has no non-empty lang attribute, so assistive technology cannot reliably select pronunciation rules."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "1121ca3b1fc24733f2b458b80d56cbb3d1ccfebf3e8a4bf9b708d9488af5d604"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-1121CA3B1F",
+            "scenarioId": "baseline",
+            "severity": "minor"
+          },
+          "ruleId": "document-language-missing"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "RealityCheck",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "fullDescription": {
+                "text": "The root html element has no non-empty lang attribute, so assistive technology cannot reliably select pronunciation rules."
+              },
+              "help": {
+                "markdown": "Declare the page's primary BCP 47 language tag on the root html element.\n\n- Use a specific tag such as en, zh-CN, or ar and update it when the document language changes.",
+                "text": "Declare the page's primary BCP 47 language tag on the root html element.\n\n- Use a specific tag such as en, zh-CN, or ar and update it when the document language changes."
+              },
+              "id": "document-language-missing",
+              "name": "document_language_missing",
+              "properties": {
+                "severity": "minor",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "The document does not declare its language"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "Found 0 canonical link(s); policy requires exactly one valid HTTP(S) destination."
+              },
+              "help": {
+                "markdown": "Emit exactly one reviewed absolute canonical URL for this document.",
+                "text": "Emit exactly one reviewed absolute canonical URL for this document."
+              },
+              "id": "metadata-canonical",
+              "name": "metadata_canonical",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Canonical link is missing, duplicated, or invalid"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "Found 0 description element(s) with a first length of 0; expected exactly one and 50–180 characters."
+              },
+              "help": {
+                "markdown": "Add one accurate, page-specific meta description within the configured range; do not stuff keywords.",
+                "text": "Add one accurate, page-specific meta description within the configured range; do not stuff keywords."
+              },
+              "id": "metadata-description-length",
+              "name": "metadata_description_length",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Meta description does not meet the publishing policy"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "Found 2 h1 element(s); publishing policy requires exactly one."
+              },
+              "help": {
+                "markdown": "Keep one page-specific h1 and demote or consolidate competing top-level headings without hiding content.",
+                "text": "Keep one page-specific h1 and demote or consolidate competing top-level headings without hiding content."
+              },
+              "id": "metadata-h1-count",
+              "name": "metadata_h1_count",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Page does not expose exactly one primary heading"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "A robots directive contains noindex on a route configured for indexable publication."
+              },
+              "help": {
+                "markdown": "Remove noindex only after confirming this route is intended for public indexing and no equivalent header blocks it.",
+                "text": "Remove noindex only after confirming this route is intended for public indexing and no equivalent header blocks it."
+              },
+              "id": "metadata-robots-noindex",
+              "name": "metadata_robots_noindex",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Page is marked noindex against publishing policy"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "Found 1 title element(s) with a rendered length of 1; expected exactly one and 10–70 characters."
+              },
+              "help": {
+                "markdown": "Provide one concise, page-specific title within the configured length range.",
+                "text": "Provide one concise, page-specific title within the configured length range."
+              },
+              "id": "metadata-title-length",
+              "name": "metadata_title_length",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Document title does not meet the publishing policy"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "Found 0 viewport declaration(s); exactly one width=device-width declaration is required."
+              },
+              "help": {
+                "markdown": "Provide one reviewed viewport declaration that includes width=device-width.",
+                "text": "Provide one reviewed viewport declaration that includes width=device-width."
+              },
+              "id": "metadata-viewport",
+              "name": "metadata_viewport",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Responsive viewport metadata is missing or ambiguous"
+              }
+            }
+          ],
+          "semanticVersion": "0.4.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

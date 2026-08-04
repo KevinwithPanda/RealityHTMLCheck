@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="RealityCheck X" tests="6" time="5.307" timestamp="2026-08-04T18:01:33.976Z" failures="1" errors="0" skipped="0">
+  <properties>
+    <property name="realitycheck.runId" value="20260804T180133Z-00ac02" />
+    <property name="realitycheck.score" value="75" />
+    <property name="realitycheck.failOn" value="major" />
+    <property name="realitycheck.target" value="http://127.0.0.1:4182/examples/metadata-lab/broken.html" />
+  </properties>
+  <testcase classname="RealityCheck.browser" name="baseline" time="0.602">
+    <failure message="6 finding(s) met the major threshold" type="RealityCheckQualityGate">RC-51D4CB4D14 [major] Canonical link is missing, duplicated, or invalid
+RC-FC9B00B542 [major] Meta description does not meet the publishing policy
+RC-DE543A763E [major] Page does not expose exactly one primary heading
+RC-BF5823BDC5 [major] Page is marked noindex against publishing policy
+RC-4CA707B13D [major] Document title does not meet the publishing policy
+RC-12B8E2C4B7 [major] Responsive viewport metadata is missing or ambiguous</failure>
+    <system-out>RC-51D4CB4D14 [major/high] Canonical link is missing, duplicated, or invalid
+RC-FC9B00B542 [major/high] Meta description does not meet the publishing policy
+RC-DE543A763E [major/high] Page does not expose exactly one primary heading
+RC-BF5823BDC5 [major/high] Page is marked noindex against publishing policy
+RC-4CA707B13D [major/high] Document title does not meet the publishing policy
+RC-12B8E2C4B7 [major/high] Responsive viewport metadata is missing or ambiguous
+RC-1121CA3B1F [minor/high] The document does not declare its language</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="mobile-375" time="0.569" />
+  <testcase classname="RealityCheck.browser" name="long-text" time="1.166" />
+  <testcase classname="RealityCheck.browser" name="rtl-arabic" time="1.070" />
+  <testcase classname="RealityCheck.browser" name="image-failure" time="0.830" />
+  <testcase classname="RealityCheck.browser" name="keyboard-tab" time="0.991" />
+</testsuite>

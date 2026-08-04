@@ -245,6 +245,33 @@
         "timeoutMs": { "type": "integer", "minimum": 500, "maximum": 15000 }
       }
     },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "severity": { "enum": ["critical", "major", "minor"] },
+        "titleMinLength": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "titleMaxLength": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "descriptionMinLength": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "descriptionMaxLength": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "requireCanonical": { "const": true },
+        "requireViewport": { "const": true },
+        "requireLang": { "const": true },
+        "forbidNoindex": { "const": true },
+        "requireSingleH1": { "const": true }
+      },
+      "anyOf": [
+        { "required": ["titleMinLength"], "properties": { "titleMinLength": true } },
+        { "required": ["titleMaxLength"], "properties": { "titleMaxLength": true } },
+        { "required": ["descriptionMinLength"], "properties": { "descriptionMinLength": true } },
+        { "required": ["descriptionMaxLength"], "properties": { "descriptionMaxLength": true } },
+        { "required": ["requireCanonical"], "properties": { "requireCanonical": true } },
+        { "required": ["requireViewport"], "properties": { "requireViewport": true } },
+        { "required": ["requireLang"], "properties": { "requireLang": true } },
+        { "required": ["forbidNoindex"], "properties": { "forbidNoindex": true } },
+        { "required": ["requireSingleH1"], "properties": { "requireSingleH1": true } }
+      ]
+    },
     "security": {
       "type": "object",
       "additionalProperties": false,

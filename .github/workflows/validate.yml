@@ -271,6 +271,59 @@ jobs:
           PY
           node realitycheck/scripts/audit.mjs validate "$broken_report" "$fixed_report"
 
+      - name: Prove publishing metadata policy without retaining page copy
+        shell: bash
+        run: |
+          python -m http.server 4180 --bind 127.0.0.1 --directory . >/tmp/realitycheck-metadata.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..50}; do
+            if curl --fail --silent http://127.0.0.1:4180/examples/metadata-lab/broken.html >/dev/null; then break; fi
+            sleep 0.1
+          done
+          set +e
+          npm run audit -- http://127.0.0.1:4180/examples/metadata-lab/broken.html \
+            --config examples/metadata-lab/broken.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-metadata-broken \
+            --fail-on major
+          broken_status=$?
+          set -e
+          test "$broken_status" -eq 1
+          npm run audit -- http://127.0.0.1:4180/examples/metadata-lab/fixed.html \
+            --config examples/metadata-lab/fixed.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-metadata-fixed \
+            --fail-on major
+          broken_report="$(find .realitycheck/ci-metadata-broken -name report.json -print -quit)"
+          fixed_report="$(find .realitycheck/ci-metadata-fixed -name report.json -print -quit)"
+          python - "$broken_report" "$fixed_report" <<'PY'
+          import json
+          import sys
+          broken = json.load(open(sys.argv[1], encoding="utf-8"))
+          fixed = json.load(open(sys.argv[2], encoding="utf-8"))
+          expected = {
+              "document-language-missing",
+              "metadata-title-length",
+              "metadata-description-length",
+              "metadata-canonical",
+              "metadata-viewport",
+              "metadata-robots-noindex",
+              "metadata-h1-count",
+          }
+          assert {finding["ruleId"] for finding in broken["findings"]} == expected, broken
+          metadata_findings = [finding for finding in broken["findings"] if finding["ruleId"].startswith("metadata-")]
+          for finding in metadata_findings:
+              detector = finding["evidence"][0]
+              serialized = json.dumps(detector, sort_keys=True)
+              assert detector["type"] == "metadata-policy", detector
+              assert "content" not in detector and "titleText" not in detector and "descriptionText" not in detector, detector
+              assert "?" not in serialized and "#" not in serialized, detector
+          assert broken["score"]["overall"] == 75, broken
+          assert fixed["score"]["overall"] == 100 and not fixed["findings"], fixed
+          PY
+          node realitycheck/scripts/audit.mjs validate "$broken_report" "$fixed_report"
+
       - name: Prove authenticated auditing without storage-state leakage
         shell: bash
         run: |
@@ -401,6 +454,8 @@ jobs:
             .realitycheck/ci-journey-fixed
             .realitycheck/ci-links-broken
             .realitycheck/ci-links-fixed
+            .realitycheck/ci-metadata-broken
+            .realitycheck/ci-metadata-fixed
             .realitycheck/ci-auth-anonymous
             .realitycheck/ci-authenticated
             .realitycheck/ci-accessibility-broken

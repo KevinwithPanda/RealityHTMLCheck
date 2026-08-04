@@ -32,7 +32,7 @@ export const DEFAULT_PROJECT_CONFIG = Object.freeze({
   owners: [],
 });
 
-const TOP_LEVEL_KEYS = new Set(["$schema", "baseUrl", "mode", "failOn", "output", "routes", "crawl", "checks", "journeys", "budgets", "network", "links", "security", "waivers", "qualityGate", "baselinePolicy", "owners"]);
+const TOP_LEVEL_KEYS = new Set(["$schema", "baseUrl", "mode", "failOn", "output", "routes", "crawl", "checks", "journeys", "budgets", "network", "links", "metadata", "security", "waivers", "qualityGate", "baselinePolicy", "owners"]);
 const CRAWL_KEYS = new Set(["enabled", "maxPages", "maxDepth", "include", "exclude"]);
 const CHECK_KEYS = new Set(["id", "selector", "assertion", "severity", "title", "titleZh", "remediation", "remediationZh", "include", "exclude", "options"]);
 const CHECK_OPTION_KEYS = new Set(["min", "max", "attribute", "equals", "contains", "minWidth", "minHeight"]);
@@ -57,6 +57,7 @@ const SECURITY_KEYS = new Set(["severity", "requiredHeaders", "forbidMixedConten
 const SECURITY_HEADERS = new Set(["content-security-policy", "strict-transport-security", "x-content-type-options", "referrer-policy", "permissions-policy"]);
 const NETWORK_KEYS = new Set(["severity", "scope", "maxHttpErrors", "maxFailedRequests", "slowRequestMs", "maxSlowRequests", "maxThirdPartyRequests"]);
 const LINK_POLICY_KEYS = new Set(["severity", "maxFailures", "maxChecked", "timeoutMs"]);
+const METADATA_POLICY_KEYS = new Set(["severity", "titleMinLength", "titleMaxLength", "descriptionMinLength", "descriptionMaxLength", "requireCanonical", "requireViewport", "requireLang", "forbidNoindex", "requireSingleH1"]);
 const WAIVER_KEYS = new Set(["id", "ruleId", "selector", "reason", "owner", "expires", "include", "exclude"]);
 const QUALITY_GATE_KEYS = new Set(["minimumScore", "minimumCoveragePercent", "maxWaivedFindings"]);
 const BASELINE_POLICY_KEYS = new Set(["maxAgeDays", "requireSamePolicy"]);
@@ -304,6 +305,27 @@ function validateLinkPolicy(value, source) {
   return normalized;
 }
 
+function validateMetadataPolicy(value, source) {
+  const label = `${source}.metadata`;
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new ConfigError(`${label} must be an object`);
+  assertKnownKeys(value, METADATA_POLICY_KEYS, label);
+  const normalized = { severity: value.severity ?? "major" };
+  if (!new Set(["critical", "major", "minor"]).has(normalized.severity)) throw new ConfigError(`${label}.severity is not supported`);
+  for (const key of ["titleMinLength", "titleMaxLength", "descriptionMinLength", "descriptionMaxLength"]) {
+    if (value[key] !== undefined) normalized[key] = boundedInteger(value[key], `${label}.${key}`, 0, 1_000);
+  }
+  for (const key of ["requireCanonical", "requireViewport", "requireLang", "forbidNoindex", "requireSingleH1"]) {
+    if (value[key] !== undefined) {
+      if (value[key] !== true) throw new ConfigError(`${label}.${key} must be true when configured`);
+      normalized[key] = true;
+    }
+  }
+  if (normalized.titleMinLength !== undefined && normalized.titleMaxLength !== undefined && normalized.titleMinLength > normalized.titleMaxLength) throw new ConfigError(`${label}.titleMinLength cannot exceed titleMaxLength`);
+  if (normalized.descriptionMinLength !== undefined && normalized.descriptionMaxLength !== undefined && normalized.descriptionMinLength > normalized.descriptionMaxLength) throw new ConfigError(`${label}.descriptionMinLength cannot exceed descriptionMaxLength`);
+  if (Object.keys(normalized).length === 1) throw new ConfigError(`${label} must define at least one metadata rule`);
+  return normalized;
+}
+
 function validateWaivers(value, source) {
   if (!Array.isArray(value)) throw new ConfigError(`${source}.waivers must be an array`);
   if (value.length > 100) throw new ConfigError(`${source}.waivers cannot contain more than 100 entries`);
@@ -422,6 +444,7 @@ export function validateProjectConfig(value, source = CONFIG_FILENAME) {
   if (value.budgets !== undefined) normalized.budgets = validateBudgets(value.budgets, source);
   if (value.network !== undefined) normalized.network = validateNetworkPolicy(value.network, source);
   if (value.links !== undefined) normalized.links = validateLinkPolicy(value.links, source);
+  if (value.metadata !== undefined) normalized.metadata = validateMetadataPolicy(value.metadata, source);
   if (value.security !== undefined) normalized.security = validateSecurityPolicy(value.security, source);
   if (value.waivers !== undefined) normalized.waivers = validateWaivers(value.waivers, source);
   if (value.qualityGate !== undefined) normalized.qualityGate = validateQualityGate(value.qualityGate, source);
@@ -503,6 +526,7 @@ export function mergeProjectOptions(cli, loaded) {
     budgets: project.budgets || null,
     network: project.network || null,
     links: project.links || null,
+    metadata: project.metadata || null,
     security: project.security || null,
     waivers: project.waivers || [],
     qualityGate: project.qualityGate || null,

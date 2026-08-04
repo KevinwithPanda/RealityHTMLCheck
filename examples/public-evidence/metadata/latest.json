@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "kind": "latest-run",
+  "updatedAt": "2026-08-04T18:01:42.884Z",
+  "artifactKind": "page-audit",
+  "runId": "20260804T180133Z-00ac02",
+  "target": "http://127.0.0.1:4182/examples/metadata-lab/broken.html",
+  "state": "failed",
+  "score": 75,
+  "artifacts": {
+    "html": "20260804T180133Z-00ac02/report.html",
+    "json": "20260804T180133Z-00ac02/report.json",
+    "repairPlanJson": "20260804T180133Z-00ac02/repair-plan.json",
+    "repairPlanMarkdown": "20260804T180133Z-00ac02/repair-plan.md",
+    "integrityManifest": "20260804T180133Z-00ac02/evidence-manifest.json"
+  }
+}

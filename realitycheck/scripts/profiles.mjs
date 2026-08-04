@@ -13,12 +13,12 @@ export const PROFILE_NAMES = Object.freeze(["starter", "product", "strict"]);
 
 export const PROFILE_DESCRIPTIONS = Object.freeze({
   starter: {
-    en: "A fast first audit with safe link checks and a forgiving score gate.",
-    zh: "快速完成第一次核查，包含安全链接检查和宽松评分门禁。",
+    en: "A fast first audit with safe links, essential metadata, and a forgiving score gate.",
+    zh: "快速完成第一次核查，包含安全链接、基础元数据和宽松评分门禁。",
   },
   product: {
-    en: "A balanced product-team policy with deep scenarios, bounded crawl, performance, API, links, and security.",
-    zh: "面向产品团队的均衡策略，覆盖深度场景、有限爬取、性能、API、链接与安全。",
+    en: "A balanced product-team policy with deep scenarios, crawl, performance, APIs, links, metadata, and security.",
+    zh: "面向产品团队的均衡策略，覆盖深度场景、有限爬取、性能、API、链接、元数据与安全。",
   },
   strict: {
     en: "A demanding release policy for mature delivery pipelines; findings are expected during adoption.",
@@ -42,6 +42,7 @@ const PROFILE_TEMPLATES = Object.freeze({
     mode: "quick",
     crawl: { enabled: false, maxPages: 10, maxDepth: 2, include: ["/**"], exclude: SAFE_EXCLUDES },
     links: { severity: "major", maxFailures: 0, maxChecked: 25, timeoutMs: 5_000 },
+    metadata: { severity: "major", titleMinLength: 1, titleMaxLength: 120, requireViewport: true, requireLang: true },
     qualityGate: { minimumScore: 80, minimumCoveragePercent: 80, maxWaivedFindings: 5 },
   },
   product: {
@@ -70,6 +71,18 @@ const PROFILE_TEMPLATES = Object.freeze({
       maxThirdPartyRequests: 20,
     },
     links: { severity: "major", maxFailures: 0, maxChecked: 75, timeoutMs: 5_000 },
+    metadata: {
+      severity: "major",
+      titleMinLength: 5,
+      titleMaxLength: 70,
+      descriptionMinLength: 50,
+      descriptionMaxLength: 180,
+      requireCanonical: true,
+      requireViewport: true,
+      requireLang: true,
+      forbidNoindex: true,
+      requireSingleH1: true,
+    },
     security: {
       severity: "major",
       requiredHeaders: ["x-content-type-options", "referrer-policy"],
@@ -107,6 +120,18 @@ const PROFILE_TEMPLATES = Object.freeze({
       maxThirdPartyRequests: 10,
     },
     links: { severity: "major", maxFailures: 0, maxChecked: 100, timeoutMs: 5_000 },
+    metadata: {
+      severity: "major",
+      titleMinLength: 10,
+      titleMaxLength: 65,
+      descriptionMinLength: 70,
+      descriptionMaxLength: 170,
+      requireCanonical: true,
+      requireViewport: true,
+      requireLang: true,
+      forbidNoindex: true,
+      requireSingleH1: true,
+    },
     security: {
       severity: "major",
       requiredHeaders: [

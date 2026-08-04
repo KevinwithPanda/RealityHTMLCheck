@@ -1,0 +1,498 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "run": {
+    "id": "20260804T180133Z-00ac02",
+    "mode": "quick",
+    "startedAt": "2026-08-04T18:01:33.976Z",
+    "finishedAt": "2026-08-04T18:01:39.298Z",
+    "durationMs": 5307
+  },
+  "target": {
+    "requestedUrl": "http://127.0.0.1:4182/examples/metadata-lab/broken.html",
+    "finalUrl": "http://127.0.0.1:4182/examples/metadata-lab/broken.html",
+    "title": "X"
+  },
+  "adapter": {
+    "name": "project-playwright",
+    "isolation": "fresh-context",
+    "capabilities": [
+      "console",
+      "dom",
+      "isolated-contexts",
+      "network-routing",
+      "screenshots",
+      "viewport",
+      "publishing-metadata-policy",
+      "detector-policy-fingerprint"
+    ]
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major",
+    "policyFingerprint": "sha256:28b3b799df702c15aaf2f0a896a0e53c643c2621246281ad94f0021932d7c9a8"
+  },
+  "scenarios": [
+    {
+      "id": "baseline",
+      "status": "completed-with-findings",
+      "durationMs": 602,
+      "notes": [
+        "Baseline runtime findings were recorded."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已记录基线运行时问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "mobile-375",
+      "status": "passed",
+      "durationMs": 569,
+      "notes": [],
+      "translations": {
+        "zh-CN": {
+          "notes": []
+        }
+      }
+    },
+    {
+      "id": "long-text",
+      "status": "passed",
+      "durationMs": 1166,
+      "notes": [
+        "4 deterministic text mutations were applied."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已执行 4 次确定性的文本替换。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "rtl-arabic",
+      "status": "passed",
+      "durationMs": 1070,
+      "notes": [
+        "Directionality stress test only; translation quality was not assessed."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "仅进行书写方向压力测试；未评估翻译质量。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "image-failure",
+      "status": "passed",
+      "durationMs": 830,
+      "notes": [
+        "Expected image request aborts were excluded from failed-request findings."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "预期的图片请求中止未计入普通请求失败问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "keyboard-tab",
+      "status": "passed",
+      "durationMs": 991,
+      "notes": [
+        "No controls were activated or submitted."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未激活或提交任何控件。"
+          ]
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "document-language-missing",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "minor",
+      "confidence": "high",
+      "title": "The document does not declare its language",
+      "summary": "The root html element has no non-empty lang attribute, so assistive technology cannot reliably select pronunciation rules.",
+      "url": "http://127.0.0.1:4182/examples/metadata-lab/broken.html",
+      "measurements": {
+        "language": ""
+      },
+      "evidence": [
+        {
+          "type": "dom",
+          "selector": "html",
+          "attribute": "lang",
+          "value": ""
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Document language metadata"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a clean browser context.",
+        "Inspect the lang attribute on the root html element."
+      ],
+      "remediation": {
+        "summary": "Declare the page's primary BCP 47 language tag on the root html element.",
+        "technicalHints": [
+          "Use a specific tag such as en, zh-CN, or ar and update it when the document language changes."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "文档没有声明语言",
+          "summary": "根 html 元素没有非空 lang 属性，辅助技术无法可靠选择发音规则。",
+          "reproductionSteps": [
+            "在干净的浏览器上下文中打开页面。",
+            "检查根 html 元素的 lang 属性。"
+          ],
+          "remediation": {
+            "summary": "在根 html 元素上声明页面主要语言的 BCP 47 标签。",
+            "technicalHints": [
+              "使用 en、zh-CN 或 ar 等明确标签，并在文档语言变化时同步更新。"
+            ]
+          }
+        }
+      },
+      "selector": "html"
+    },
+    {
+      "ruleId": "metadata-title-length",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Document title does not meet the publishing policy",
+      "summary": "Found 1 title element(s) with a rendered length of 1; expected exactly one and 10–70 characters.",
+      "url": "http://127.0.0.1:4182/examples/metadata-lab/broken.html",
+      "measurements": {
+        "count": 1,
+        "length": 1,
+        "minimum": 10,
+        "maximum": 70
+      },
+      "evidence": [
+        {
+          "type": "metadata-policy",
+          "policy": "title length",
+          "count": 1,
+          "length": 1,
+          "minimum": 10,
+          "maximum": 70
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Document metadata policy"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Inspect the document title length state without retaining title or description text."
+      ],
+      "remediation": {
+        "summary": "Provide one concise, page-specific title within the configured length range.",
+        "technicalHints": []
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "文档标题不符合发布策略",
+          "summary": "发现 1 个 title 元素，渲染长度为 1；策略要求恰好一个且长度为 10–70 个字符。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "检查文档的 title length 状态，但不保留标题或描述正文。"
+          ],
+          "remediation": {
+            "summary": "提供一个简洁且针对当前页面的标题，并满足配置的长度范围。",
+            "technicalHints": []
+          }
+        }
+      },
+      "selector": "title"
+    },
+    {
+      "ruleId": "metadata-description-length",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Meta description does not meet the publishing policy",
+      "summary": "Found 0 description element(s) with a first length of 0; expected exactly one and 50–180 characters.",
+      "url": "http://127.0.0.1:4182/examples/metadata-lab/broken.html",
+      "measurements": {
+        "count": 0,
+        "length": 0,
+        "minimum": 50,
+        "maximum": 180
+      },
+      "evidence": [
+        {
+          "type": "metadata-policy",
+          "policy": "meta description length",
+          "count": 0,
+          "length": 0,
+          "minimum": 50,
+          "maximum": 180
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Document metadata policy"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Inspect the document meta description length state without retaining title or description text."
+      ],
+      "remediation": {
+        "summary": "Add one accurate, page-specific meta description within the configured range; do not stuff keywords.",
+        "technicalHints": []
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "Meta description 不符合发布策略",
+          "summary": "发现 0 个 description 元素，第一个长度为 0；策略要求恰好一个且长度为 50–180 个字符。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "检查文档的 meta description length 状态，但不保留标题或描述正文。"
+          ],
+          "remediation": {
+            "summary": "添加一个准确且针对当前页面的 meta description，并满足长度范围；不要堆砌关键词。",
+            "technicalHints": []
+          }
+        }
+      },
+      "selector": "meta[name=\"description\"]"
+    },
+    {
+      "ruleId": "metadata-canonical",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Canonical link is missing, duplicated, or invalid",
+      "summary": "Found 0 canonical link(s); policy requires exactly one valid HTTP(S) destination.",
+      "url": "http://127.0.0.1:4182/examples/metadata-lab/broken.html",
+      "measurements": {
+        "count": 0,
+        "destinations": []
+      },
+      "evidence": [
+        {
+          "type": "metadata-policy",
+          "policy": "canonical link",
+          "count": 0,
+          "destinations": []
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Document metadata policy"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Inspect the document canonical link state without retaining title or description text."
+      ],
+      "remediation": {
+        "summary": "Emit exactly one reviewed absolute canonical URL for this document.",
+        "technicalHints": []
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "Canonical 链接缺失、重复或无效",
+          "summary": "发现 0 个 canonical 链接；策略要求恰好一个有效的 HTTP(S) 目标。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "检查文档的 canonical link 状态，但不保留标题或描述正文。"
+          ],
+          "remediation": {
+            "summary": "为当前文档输出恰好一个经过审核的绝对 canonical URL。",
+            "technicalHints": []
+          }
+        }
+      },
+      "selector": "link[rel~=\"canonical\"]"
+    },
+    {
+      "ruleId": "metadata-viewport",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Responsive viewport metadata is missing or ambiguous",
+      "summary": "Found 0 viewport declaration(s); exactly one width=device-width declaration is required.",
+      "url": "http://127.0.0.1:4182/examples/metadata-lab/broken.html",
+      "measurements": {
+        "count": 0,
+        "deviceWidth": false
+      },
+      "evidence": [
+        {
+          "type": "metadata-policy",
+          "policy": "viewport declaration",
+          "count": 0,
+          "deviceWidth": false
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Document metadata policy"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Inspect the document viewport declaration state without retaining title or description text."
+      ],
+      "remediation": {
+        "summary": "Provide one reviewed viewport declaration that includes width=device-width.",
+        "technicalHints": []
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "响应式 viewport 元数据缺失或不明确",
+          "summary": "发现 0 个 viewport 声明；策略要求恰好一个 width=device-width 声明。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "检查文档的 viewport declaration 状态，但不保留标题或描述正文。"
+          ],
+          "remediation": {
+            "summary": "提供一个包含 width=device-width 的、经过审核的 viewport 声明。",
+            "technicalHints": []
+          }
+        }
+      },
+      "selector": "meta[name=\"viewport\"]"
+    },
+    {
+      "ruleId": "metadata-robots-noindex",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Page is marked noindex against publishing policy",
+      "summary": "A robots directive contains noindex on a route configured for indexable publication.",
+      "url": "http://127.0.0.1:4182/examples/metadata-lab/broken.html",
+      "measurements": {
+        "declarations": 1,
+        "noindex": true
+      },
+      "evidence": [
+        {
+          "type": "metadata-policy",
+          "policy": "robots indexing directive",
+          "declarations": 1,
+          "noindex": true
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Document metadata policy"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Inspect the document robots indexing directive state without retaining title or description text."
+      ],
+      "remediation": {
+        "summary": "Remove noindex only after confirming this route is intended for public indexing and no equivalent header blocks it.",
+        "technicalHints": []
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "页面的 noindex 标记违反发布策略",
+          "summary": "配置为可索引发布的路由包含 robots noindex 指令。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "检查文档的 robots indexing directive 状态，但不保留标题或描述正文。"
+          ],
+          "remediation": {
+            "summary": "确认该路由确实用于公开索引且没有等效响应头阻止后，再移除 noindex。",
+            "technicalHints": []
+          }
+        }
+      },
+      "selector": "meta[name=\"robots\"]"
+    },
+    {
+      "ruleId": "metadata-h1-count",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Page does not expose exactly one primary heading",
+      "summary": "Found 2 h1 element(s); publishing policy requires exactly one.",
+      "url": "http://127.0.0.1:4182/examples/metadata-lab/broken.html",
+      "measurements": {
+        "h1": 2
+      },
+      "evidence": [
+        {
+          "type": "metadata-policy",
+          "policy": "primary heading count",
+          "h1": 2
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/baseline.png",
+          "label": "Document metadata policy"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the page in a fresh context.",
+        "Inspect the document primary heading count state without retaining title or description text."
+      ],
+      "remediation": {
+        "summary": "Keep one page-specific h1 and demote or consolidate competing top-level headings without hiding content.",
+        "technicalHints": []
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "页面没有恰好一个主标题",
+          "summary": "发现 2 个 h1 元素；发布策略要求恰好一个。",
+          "reproductionSteps": [
+            "在新的浏览器上下文中打开页面。",
+            "检查文档的 primary heading count 状态，但不保留标题或描述正文。"
+          ],
+          "remediation": {
+            "summary": "保留一个针对当前页面的 h1，并在不隐藏内容的前提下降级或合并其他顶级标题。",
+            "technicalHints": []
+          }
+        }
+      },
+      "selector": "h1"
+    }
+  ],
+  "warnings": [
+    "Standalone audit used an already-installed system browser (150.0.7871.116).",
+    "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    "9 explicit publishing metadata rule(s) were evaluated from counts, lengths, directives, and query-free destinations without retaining title or description text."
+  ],
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "独立核查使用了已安装的系统浏览器（150.0.7871.116）。",
+        "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        "已通过计数、长度、指令和不含查询值的目标核查 9 项明确的发布元数据规则，未保留标题或描述正文。"
+      ]
+    }
+  }
+}

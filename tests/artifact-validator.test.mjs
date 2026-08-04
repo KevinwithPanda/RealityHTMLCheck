@@ -63,6 +63,14 @@ test("keyboard and URL journey steps satisfy the project policy schema", () => {
   assert.equal(result.valid, true, result.errors.join("\n"));
 });
 
+test("publishing metadata fixtures satisfy the project policy schema", () => {
+  for (const name of ["broken.config.json", "fixed.config.json"]) {
+    const [result] = validateArtifactFiles([resolve(`examples/metadata-lab/${name}`)]);
+    assert.equal(result.kind, "config");
+    assert.equal(result.valid, true, `${name}: ${result.errors.join("\n")}`);
+  }
+});
+
 test("validation reports precise paths for incompatible artifacts", () => {
   const directory = mkdtempSync(join(tmpdir(), "realitycheck-validation-"));
   try {

@@ -62,6 +62,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Publish a bilingual Pages site with real Chrome evidence packs and live failing fixtures.
 - [ ] Add visual-regression baselines with explicit update approval and perceptual-difference evidence.
 - [x] Add shareable validated policy presets for starter, product, and strict release adoption.
+- [x] Add explicit publishing metadata contracts with privacy-bounded evidence and paired release fixtures.
 
 ## v1.0 criteria
 

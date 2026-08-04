@@ -30,6 +30,8 @@
     "accessibility",
     "api-testing",
     "link-checker",
+    "metadata-audit",
+    "seo-audit",
     "web-performance",
     "security-testing",
     "responsive",

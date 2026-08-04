@@ -101,9 +101,9 @@ Three validated presets remove the blank-config problem:
 
 | Profile | Best for | Included policy |
 | --- | --- | --- |
-| `starter` | First audit, personal projects | Quick scenarios, 25 safe link checks, forgiving score gate |
-| `product` | Active product teams | Deep scenarios, bounded crawl, performance, API, links, security, baseline governance |
-| `strict` | Mature release pipelines | Tighter budgets, all-resource reliability, five response headers, zero active waivers |
+| `starter` | First audit, personal projects | Quick scenarios, 25 safe links, essential metadata, forgiving score gate |
+| `product` | Active product teams | Deep scenarios, crawl, performance, API, links, publishing metadata, security, baseline governance |
+| `strict` | Mature release pipelines | Tighter budgets and metadata, all-resource reliability, five response headers, zero active waivers |
 
 `init` defaults to `starter`. A preset is a transparent starting file, not a compliance certification: review its limits and safety exclusions before CI adoption.
 
@@ -188,6 +188,18 @@ Three validated presets remove the blank-config problem:
     "timeoutMs": 5000,
     "severity": "major"
   },
+  "metadata": {
+    "titleMinLength": 10,
+    "titleMaxLength": 70,
+    "descriptionMinLength": 50,
+    "descriptionMaxLength": 180,
+    "requireCanonical": true,
+    "requireViewport": true,
+    "requireLang": true,
+    "forbidNoindex": true,
+    "requireSingleH1": true,
+    "severity": "major"
+  },
   "security": {
     "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
     "secureForms": true,
@@ -215,6 +227,8 @@ Custom checks are declarative—`exists`, `visible`, `enabled`, `accessible-name
 Network reliability policy can independently govern API-only or all-resource traffic: cap HTTP errors, transport failures, slow requests, and third-party request volume. Evidence includes bounded endpoint samples with credentials, fragments, and query values removed; response bodies are never retained. The paired [`examples/network-lab`](examples/network-lab) fixtures fail at **96/100** for one missing API and pass at **100/100** after the endpoint is restored.
 
 Link integrity policy checks a bounded set of same-origin anchors with `HEAD` only. It never activates links or downloads response bodies, follows at most five same-origin redirects, and reuses the crawler's logout/purchase/delete/OAuth exclusions. The paired [`examples/link-lab`](examples/link-lab) fixtures prove one missing guide fails at **96/100**, the repaired page passes at **100/100**, and query values never enter evidence.
+
+Publishing metadata policy is opt-in and project-defined. It can require one title and description within reviewed length ranges, one absolute canonical URL, a responsive viewport, a valid document language, an indexable robots directive, and exactly one primary heading. Detector evidence stores counts, lengths, directives, and canonical origin/pathname only—not title or description copy, canonical queries, or fragments. The paired [`examples/metadata-lab`](examples/metadata-lab) fixtures produce seven explainable failures at **75/100** and a repaired **100/100** page.
 
 Security baselines are opt-in project policy, so a localhost page is not judged against production headers unless the project asks for them. Policies can require reviewed response headers, forbid mixed content, reject insecure password-form paths, cap unique third-party origins, and allowlist exact HTTPS origins. The [`examples/security-lab`](examples/security-lab) fixture demonstrates three missing headers plus a GET password form without ever submitting it.
 

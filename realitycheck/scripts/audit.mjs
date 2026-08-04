@@ -406,6 +406,7 @@ function runDoctor(options, loaded) {
   if (options.budgets) check("Performance budgets", () => `${Object.keys(options.budgets).length - 1} configured limit(s)`);
   if (options.network) check("Network reliability", () => `${Object.keys(options.network).filter((key) => key.startsWith("max")).length} configured ${options.network.scope} request limit(s); no response bodies or query values retained`);
   if (options.links) check("Link integrity", () => `HEAD-only checks capped at ${options.links.maxChecked} same-origin links; ${options.links.maxFailures} failure(s) allowed`);
+  if (options.metadata) check("Publishing metadata", () => `${Object.keys(options.metadata).length - 1} explicit title/description/document rule(s); text values are not retained`);
   if (options.security) check("Security baseline", () => `${Object.keys(options.security).length - 1} explicit policy setting(s); no form submission`);
   if (options.waivers.length) check("Governed waivers", () => {
     const now = new Date();
@@ -1245,6 +1246,133 @@ async function runLinkIntegrityPolicy(page, context, target, policy, crawl) {
   };
 }
 
+async function runMetadataPolicy(page, target, policy) {
+  if (!policy) return [];
+  const inspection = await page.evaluate(() => {
+    const codePoints = (value) => Array.from((value || "").trim()).length;
+    const titleNodes = [...document.querySelectorAll("head > title")];
+    const descriptionNodes = [...document.querySelectorAll('head > meta[name="description" i]')];
+    const canonicalNodes = [...document.querySelectorAll('head > link[rel~="canonical" i]')];
+    const viewportNodes = [...document.querySelectorAll('head > meta[name="viewport" i]')];
+    const robotsNodes = [...document.querySelectorAll('head > meta[name="robots" i],head > meta[name="googlebot" i],head > meta[name="bingbot" i]')];
+    const canonical = canonicalNodes.map((node) => {
+      try {
+        const raw = node.getAttribute("href") || "";
+        const url = new URL(raw, location.href);
+        const absolute = /^[A-Za-z][A-Za-z0-9+.-]*:/.test(raw);
+        return { valid: absolute && ["http:", "https:"].includes(url.protocol), absolute, origin: url.origin, pathname: url.pathname };
+      } catch (_) {
+        return { valid: false, absolute: false, origin: null, pathname: null };
+      }
+    });
+    const robotTokens = robotsNodes.flatMap((node) => (node.getAttribute("content") || "").toLowerCase().split(/[\s,]+/).filter(Boolean));
+    const lang = (document.documentElement.getAttribute("lang") || "").trim();
+    return {
+      title: { count: titleNodes.length, length: codePoints(document.title) },
+      description: { count: descriptionNodes.length, lengths: descriptionNodes.slice(0, 5).map((node) => codePoints(node.getAttribute("content") || "")) },
+      canonical,
+      viewport: { count: viewportNodes.length, deviceWidth: viewportNodes.some((node) => /(?:^|,)\s*width\s*=\s*device-width(?:\s*,|$)/i.test(node.getAttribute("content") || "")) },
+      language: { present: Boolean(lang), valid: /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(lang), tag: lang.slice(0, 40) || null },
+      robots: { declarations: robotsNodes.length, noindex: robotTokens.includes("noindex") },
+      headings: { h1: document.querySelectorAll("h1").length },
+    };
+  });
+  const findings = [];
+  const add = ({ ruleId, selector, title, titleZh, summary, summaryZh, measurements, policyName, fix, fixZh }) => findings.push(finding({
+    ruleId,
+    scenarioId: "baseline",
+    classification: "existing",
+    severity: policy.severity,
+    confidence: "high",
+    title,
+    titleZh,
+    summary,
+    summaryZh,
+    selector,
+    measurements,
+    evidence: [{ type: "metadata-policy", policy: policyName, ...measurements }, screenshotEvidence("baseline", "Document metadata policy")],
+    steps: ["Open the page in a fresh context.", `Inspect the document ${policyName} state without retaining title or description text.`],
+    stepsZh: ["在新的浏览器上下文中打开页面。", `检查文档的 ${policyName} 状态，但不保留标题或描述正文。`],
+    fix,
+    fixZh,
+  }));
+
+  if (policy.titleMinLength !== undefined || policy.titleMaxLength !== undefined) {
+    const minimum = policy.titleMinLength ?? 0;
+    const maximum = policy.titleMaxLength ?? 1_000;
+    if (inspection.title.count !== 1 || inspection.title.length < minimum || inspection.title.length > maximum) add({
+      ruleId: "metadata-title-length", selector: "title", policyName: "title length",
+      title: "Document title does not meet the publishing policy", titleZh: "文档标题不符合发布策略",
+      summary: `Found ${inspection.title.count} title element(s) with a rendered length of ${inspection.title.length}; expected exactly one and ${minimum}–${maximum} characters.`,
+      summaryZh: `发现 ${inspection.title.count} 个 title 元素，渲染长度为 ${inspection.title.length}；策略要求恰好一个且长度为 ${minimum}–${maximum} 个字符。`,
+      measurements: { ...inspection.title, minimum, maximum },
+      fix: "Provide one concise, page-specific title within the configured length range.",
+      fixZh: "提供一个简洁且针对当前页面的标题，并满足配置的长度范围。",
+    });
+  }
+  if (policy.descriptionMinLength !== undefined || policy.descriptionMaxLength !== undefined) {
+    const minimum = policy.descriptionMinLength ?? 0;
+    const maximum = policy.descriptionMaxLength ?? 1_000;
+    const length = inspection.description.lengths[0] ?? 0;
+    if (inspection.description.count !== 1 || length < minimum || length > maximum) add({
+      ruleId: "metadata-description-length", selector: 'meta[name="description"]', policyName: "meta description length",
+      title: "Meta description does not meet the publishing policy", titleZh: "Meta description 不符合发布策略",
+      summary: `Found ${inspection.description.count} description element(s) with a first length of ${length}; expected exactly one and ${minimum}–${maximum} characters.`,
+      summaryZh: `发现 ${inspection.description.count} 个 description 元素，第一个长度为 ${length}；策略要求恰好一个且长度为 ${minimum}–${maximum} 个字符。`,
+      measurements: { count: inspection.description.count, length, minimum, maximum },
+      fix: "Add one accurate, page-specific meta description within the configured range; do not stuff keywords.",
+      fixZh: "添加一个准确且针对当前页面的 meta description，并满足长度范围；不要堆砌关键词。",
+    });
+  }
+  if (policy.requireCanonical && (inspection.canonical.length !== 1 || !inspection.canonical[0]?.valid)) add({
+    ruleId: "metadata-canonical", selector: 'link[rel~="canonical"]', policyName: "canonical link",
+    title: "Canonical link is missing, duplicated, or invalid", titleZh: "Canonical 链接缺失、重复或无效",
+    summary: `Found ${inspection.canonical.length} canonical link(s); policy requires exactly one valid HTTP(S) destination.`,
+    summaryZh: `发现 ${inspection.canonical.length} 个 canonical 链接；策略要求恰好一个有效的 HTTP(S) 目标。`,
+    measurements: { count: inspection.canonical.length, destinations: inspection.canonical.slice(0, 5) },
+    fix: "Emit exactly one reviewed absolute canonical URL for this document.",
+    fixZh: "为当前文档输出恰好一个经过审核的绝对 canonical URL。",
+  });
+  if (policy.requireViewport && (inspection.viewport.count !== 1 || !inspection.viewport.deviceWidth)) add({
+    ruleId: "metadata-viewport", selector: 'meta[name="viewport"]', policyName: "viewport declaration",
+    title: "Responsive viewport metadata is missing or ambiguous", titleZh: "响应式 viewport 元数据缺失或不明确",
+    summary: `Found ${inspection.viewport.count} viewport declaration(s); exactly one width=device-width declaration is required.`,
+    summaryZh: `发现 ${inspection.viewport.count} 个 viewport 声明；策略要求恰好一个 width=device-width 声明。`,
+    measurements: inspection.viewport,
+    fix: "Provide one reviewed viewport declaration that includes width=device-width.",
+    fixZh: "提供一个包含 width=device-width 的、经过审核的 viewport 声明。",
+  });
+  if (policy.requireLang && inspection.language.present && !inspection.language.valid) add({
+    ruleId: "metadata-language", selector: "html", policyName: "document language",
+    title: "Document language tag is invalid", titleZh: "文档语言标签无效",
+    summary: "The html lang value is present but does not match the bounded BCP 47 tag shape.",
+    summaryZh: "html lang 值已提供，但不符合有边界的 BCP 47 标签格式。",
+    measurements: inspection.language,
+    fix: "Set html lang to the primary BCP 47 language tag for the rendered page.",
+    fixZh: "把 html lang 设置为渲染页面主要语言对应的 BCP 47 标签。",
+  });
+  if (policy.forbidNoindex && inspection.robots.noindex) add({
+    ruleId: "metadata-robots-noindex", selector: 'meta[name="robots"]', policyName: "robots indexing directive",
+    title: "Page is marked noindex against publishing policy", titleZh: "页面的 noindex 标记违反发布策略",
+    summary: "A robots directive contains noindex on a route configured for indexable publication.",
+    summaryZh: "配置为可索引发布的路由包含 robots noindex 指令。",
+    measurements: inspection.robots,
+    fix: "Remove noindex only after confirming this route is intended for public indexing and no equivalent header blocks it.",
+    fixZh: "确认该路由确实用于公开索引且没有等效响应头阻止后，再移除 noindex。",
+  });
+  if (policy.requireSingleH1 && inspection.headings.h1 !== 1) add({
+    ruleId: "metadata-h1-count", selector: "h1", policyName: "primary heading count",
+    title: "Page does not expose exactly one primary heading", titleZh: "页面没有恰好一个主标题",
+    summary: `Found ${inspection.headings.h1} h1 element(s); publishing policy requires exactly one.`,
+    summaryZh: `发现 ${inspection.headings.h1} 个 h1 元素；发布策略要求恰好一个。`,
+    measurements: inspection.headings,
+    fix: "Keep one page-specific h1 and demote or consolidate competing top-level headings without hiding content.",
+    fixZh: "保留一个针对当前页面的 h1，并在不隐藏内容的前提下降级或合并其他顶级标题。",
+  });
+  for (const item of findings) item.url = target;
+  return findings;
+}
+
 async function runSecurityPolicies(page, response, target, policy) {
   if (!policy) return [];
   const findings = [];
@@ -1362,7 +1490,7 @@ async function runSecurityPolicies(page, response, target, policy) {
   return findings;
 }
 
-async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, network = null, links = null, security = null, crawl = { include: ["/**"], exclude: [] }) {
+async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, network = null, links = null, metadataPolicy = null, security = null, crawl = { include: ["/**"], exclude: [] }) {
   const findings = [];
   const results = new Map();
   let targetTitle = "";
@@ -1501,6 +1629,7 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
     linkSummary = linkResult.summary;
     findings.push(...linkResult.findings);
   }
+  if (metadataPolicy) findings.push(...await runMetadataPolicy(baseline.page, finalUrl, metadataPolicy));
   if (security) findings.push(...await runSecurityPolicies(baseline.page, baseline.response, finalUrl, security));
   results.set("baseline", scenarioResult("baseline", findings.length ? "completed-with-findings" : "passed", baseline.durationMs(), findings.length ? ["Baseline runtime findings were recorded."] : [], findings.length ? ["已记录基线运行时问题。"] : []));
   await baseline.context.close();
@@ -2320,7 +2449,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   const contextOptions = options.storageState ? { storageState: options.storageState } : {};
   const pathname = new URL(target).pathname;
   const applicableChecks = options.checks.filter((check) => routeAllowed(pathname, { include: check.include, exclude: check.exclude }));
-  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.network, options.links, options.security, options.crawl);
+  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.network, options.links, options.metadata, options.security, options.crawl);
   if (options.mode === "deep") {
     await runDeepScenarios(browser, target, runDirectory, auditResult.findings, auditResult.results, contextOptions);
   }
@@ -2346,6 +2475,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   if (options.budgets) audit.adapter.capabilities.push("performance-budgets");
   if (options.network) audit.adapter.capabilities.push("network-reliability-budgets");
   if (options.links) audit.adapter.capabilities.push("bounded-head-link-integrity");
+  if (options.metadata) audit.adapter.capabilities.push("publishing-metadata-policy");
   if (options.security) audit.adapter.capabilities.push("security-response-and-origin-policy");
   if (journeyResult.scenarios.length) audit.adapter.capabilities.push("safe-declarative-journeys");
   if (options.waivers.length) audit.adapter.capabilities.push("governed-waivers");
@@ -2365,6 +2495,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
     ...(options.budgets ? [`${Object.keys(options.budgets).length - 1} project performance budget(s) were evaluated from the browser Performance API.`] : []),
     ...(options.network ? [`${Object.keys(options.network).filter((key) => key.startsWith("max")).length} explicit network reliability limit(s) were evaluated without persisting response bodies or query values.`] : []),
     ...(auditResult.linkSummary ? [`Link integrity checked ${auditResult.linkSummary.checked} same-origin target(s) with HEAD only: ${auditResult.linkSummary.failures} failed, ${auditResult.linkSummary.unsupported} did not support HEAD, ${auditResult.linkSummary.excluded} were excluded by safety policy, and ${auditResult.linkSummary.truncated} exceeded the configured cap.`] : []),
+    ...(options.metadata ? [`${Object.keys(options.metadata).length - 1} explicit publishing metadata rule(s) were evaluated from counts, lengths, directives, and query-free destinations without retaining title or description text.`] : []),
     ...(options.security ? [`${Object.keys(options.security).length - 1} explicit response, origin, and form security policy setting(s) were evaluated without submitting data.`] : []),
     ...(journeyResult.scenarios.length ? [`${journeyResult.scenarios.length} declarative user journey(s) were executed with same-origin and non-submission safety guards.`] : []),
     ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} finding(s) matched an active governed waiver; evidence remains visible but the finding is excluded from score and gate calculations.`] : []),
@@ -2384,6 +2515,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
         ...(options.budgets ? [`已通过浏览器 Performance API 核查 ${Object.keys(options.budgets).length - 1} 项项目性能预算。`] : []),
         ...(options.network ? [`已在不保存响应正文或查询参数值的前提下核查 ${Object.keys(options.network).filter((key) => key.startsWith("max")).length} 项明确的网络可靠性限制。`] : []),
         ...(auditResult.linkSummary ? [`链接完整性仅使用 HEAD 核查了 ${auditResult.linkSummary.checked} 个同源目标：${auditResult.linkSummary.failures} 个失败，${auditResult.linkSummary.unsupported} 个不支持 HEAD，${auditResult.linkSummary.excluded} 个被安全策略排除，${auditResult.linkSummary.truncated} 个超过配置上限。`] : []),
+        ...(options.metadata ? [`已通过计数、长度、指令和不含查询值的目标核查 ${Object.keys(options.metadata).length - 1} 项明确的发布元数据规则，未保留标题或描述正文。`] : []),
         ...(options.security ? [`已在不提交数据的前提下核查 ${Object.keys(options.security).length - 1} 项明确的响应、来源与表单安全策略。`] : []),
         ...(journeyResult.scenarios.length ? [`已在同源且禁止提交的安全限制下执行 ${journeyResult.scenarios.length} 个声明式用户旅程。`] : []),
         ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} 个问题命中了有效的可审计豁免；证据仍保留，但不计入评分和门禁。`] : []),

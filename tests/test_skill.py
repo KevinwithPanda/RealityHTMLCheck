@@ -265,6 +265,25 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn('event.key === "ArrowRight"', script)
         self.assertNotIn('event.key === "Enter"', script)
 
+    def test_metadata_policy_has_paired_private_evidence_fixtures(self) -> None:
+        fixture = REPOSITORY_ROOT / "examples" / "metadata-lab"
+        broken = (fixture / "broken.html").read_text(encoding="utf-8")
+        fixed = (fixture / "fixed.html").read_text(encoding="utf-8")
+        broken_config = json.loads((fixture / "broken.config.json").read_text(encoding="utf-8"))
+        fixed_config = json.loads((fixture / "fixed.config.json").read_text(encoding="utf-8"))
+        self.assertNotIn('<html lang=', broken)
+        self.assertIn('<meta name="robots" content="noindex, nofollow">', broken)
+        self.assertEqual(broken.count("<h1"), 2)
+        self.assertIn('<html lang="en">', fixed)
+        self.assertIn('<meta name="viewport" content="width=device-width,initial-scale=1">', fixed)
+        self.assertIn('<link rel="canonical" href="https://docs.example.test/guides/release-readiness">', fixed)
+        self.assertEqual(fixed.count("<h1"), 1)
+        self.assertIn("<svg", fixed)
+        self.assertEqual(fixed.count("<title>"), 2)
+        self.assertEqual(broken_config["metadata"], fixed_config["metadata"])
+        self.assertTrue(broken_config["metadata"]["forbidNoindex"])
+        self.assertTrue(broken_config["metadata"]["requireSingleH1"])
+
     def test_governed_waiver_fixture_is_explicit_and_keeps_the_control_missing(self) -> None:
         fixture = REPOSITORY_ROOT / "examples" / "waiver-lab"
         page = (fixture / "index.html").read_text(encoding="utf-8")

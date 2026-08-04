@@ -22,11 +22,12 @@ copy("examples/reference-run", "reference");
 copy("examples/journey-lab", "labs/journey");
 copy("examples/link-lab", "labs/links");
 copy("examples/network-lab", "labs/network");
+copy("examples/metadata-lab", "labs/metadata");
 copy("examples/security-lab", "labs/security");
 copy("examples/accessibility-lab", "labs/accessibility");
 writeFileSync(join(output, ".nojekyll"), "", "utf8");
 
-const latest = ["journey", "network", "links", "security", "accessibility"].map((kind) => {
+const latest = ["journey", "network", "links", "metadata", "security", "accessibility"].map((kind) => {
   const value = JSON.parse(readFileSync(join(output, "evidence", kind, "latest.json"), "utf8"));
   return `${kind}=${value.score}`;
 });

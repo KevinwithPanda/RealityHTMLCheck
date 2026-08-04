@@ -85,9 +85,9 @@ npx realitycheck doctor
 
 | 预设 | 适用场景 | 已包含策略 |
 | --- | --- | --- |
-| `starter` | 第一次核查、个人项目 | Quick 场景、25 个安全链接检查、宽松评分门禁 |
-| `product` | 持续迭代的产品团队 | Deep 场景、有限爬取、性能、API、链接、安全和基线治理 |
-| `strict` | 成熟发布流水线 | 更严格预算、全资源可靠性、五项响应头、零有效豁免 |
+| `starter` | 第一次核查、个人项目 | Quick 场景、25 个安全链接、基础元数据、宽松评分门禁 |
+| `product` | 持续迭代的产品团队 | Deep 场景、有限爬取、性能、API、链接、发布元数据、安全和基线治理 |
+| `strict` | 成熟发布流水线 | 更严格预算与元数据、全资源可靠性、五项响应头、零有效豁免 |
 
 `init` 默认使用 `starter`。预设只是透明、可编辑的起点，不是合规认证；接入 CI 前仍需审核阈值与安全排除路径。
 
@@ -172,6 +172,18 @@ npx realitycheck doctor
     "timeoutMs": 5000,
     "severity": "major"
   },
+  "metadata": {
+    "titleMinLength": 10,
+    "titleMaxLength": 70,
+    "descriptionMinLength": 50,
+    "descriptionMaxLength": 180,
+    "requireCanonical": true,
+    "requireViewport": true,
+    "requireLang": true,
+    "forbidNoindex": true,
+    "requireSingleH1": true,
+    "severity": "major"
+  },
   "security": {
     "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
     "secureForms": true,
@@ -199,6 +211,8 @@ npx realitycheck doctor
 网络可靠性策略可以独立约束“仅 API”或“全部资源”流量：限制 HTTP 错误、传输失败、慢请求及第三方请求数量。证据只保留有上限且已移除凭据、片段和查询参数值的端点样本，绝不保存响应正文。成对的 [`examples/network-lab`](../examples/network-lab) 会让缺失一个 API 的页面得到 **96/100**，恢复接口后得到 **100/100**。
 
 链接完整性策略只通过 `HEAD` 核查有上限的同源锚点，不激活链接、不下载响应正文，最多跟随五次同源重定向，并复用爬虫对退出、购买、删除和 OAuth 路径的排除规则。成对的 [`examples/link-lab`](../examples/link-lab) 证明缺失指南时得到 **96/100**，修复后得到 **100/100**，查询参数值不会进入证据。
+
+发布元数据策略由项目显式启用，可以要求标题和描述处于审核过的长度范围、唯一绝对 canonical、响应式 viewport、有效文档语言、允许索引的 robots 指令，以及恰好一个主标题。检测证据只保存计数、长度、指令与 canonical 的来源/路径，不保存标题或描述正文，也不保留 canonical 查询参数和片段。成对的 [`examples/metadata-lab`](../examples/metadata-lab) 会让故障页得到七项可解释问题和 **75/100**，修复页得到 **100/100**。
 
 安全基线必须由项目显式配置，因此普通 localhost 不会自动被生产响应头要求误伤。策略可要求安全响应头、禁止混合内容、阻止不安全密码表单、限制第三方来源数量，并只允许精确 HTTPS 来源。[`examples/security-lab`](../examples/security-lab) 会在不提交表单的情况下证明三个缺失响应头和一个 GET 密码表单问题。
 

@@ -18,9 +18,11 @@ test("starter, product, and strict profiles are valid independent project polici
   profiles.forEach((profile) => validateProjectConfig(profile, "generated profile"));
   assert.equal(profiles[0].mode, "quick");
   assert.equal(profiles[0].links.maxChecked, 25);
+  assert.equal(profiles[0].metadata.requireViewport, true);
   assert.equal(profiles[1].mode, "deep");
   assert.equal(profiles[1].crawl.enabled, true);
   assert.equal(profiles[1].qualityGate.minimumScore, 90);
+  assert.equal(profiles[1].metadata.requireCanonical, true);
   assert.equal(profiles[2].failOn, "minor");
   assert.equal(profiles[2].qualityGate.maxWaivedFindings, 0);
   const temporary = mkdtempSync(join(tmpdir(), "realitycheck-profile-schema-"));

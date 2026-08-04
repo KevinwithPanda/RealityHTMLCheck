@@ -4,9 +4,9 @@
 
 ## Validated starting profiles
 
-- `starter` keeps Quick mode and crawling off while adding a bounded 25-target link check and a forgiving release score.
-- `product` enables Deep mode, a 20-page safe crawl, performance/API/link/security policies, and a 30-day same-policy baseline rule.
-- `strict` tightens budgets, audits all resource requests, requires five reviewed response headers, and permits no active waivers. It is expected to reveal adoption work.
+- `starter` keeps Quick mode and crawling off while adding a bounded 25-target link check, essential title/viewport/language rules, and a forgiving release score.
+- `product` enables Deep mode, a 20-page safe crawl, performance/API/link/publishing/security policies, and a 30-day same-policy baseline rule.
+- `strict` tightens budgets and metadata ranges, audits all resource requests, requires five reviewed response headers, and permits no active waivers. It is expected to reveal adoption work.
 
 Profiles generate ordinary JSON with no hidden behavior. They never prove legal, regulatory, security, accessibility, or performance compliance. Review every threshold, required header, route boundary, and exclusion for the application before CI enforcement. `--base-url` rejects credentials, query strings, fragments, and non-HTTP(S) protocols so initialization cannot persist URL secrets.
 
@@ -168,6 +168,31 @@ Link policy runs after the clean baseline settles. It collects anchors without a
 
 `maxFailures` is required and accepts 0 to 100. `maxChecked` defaults to 50 and is capped at 100; `timeoutMs` defaults to 5000 and accepts 500 to 15000. The checker removes credentials, queries, and fragments, deduplicates targets, and runs at most five requests concurrently. It follows no more than five redirects, stops before leaving the audited origin, and applies the merged crawl include/exclude policy to both initial and redirected paths. A redirect to an external origin is a failure; a route excluded for logout, purchase, deletion, unsubscribe, checkout, or OAuth is skipped without being contacted. `HEAD` 405/501 is reported as unsupported rather than broken. No GET fallback exists, so link checking cannot download a linked document or trigger a GET-only business action.
 
+## Publishing metadata contract
+
+Metadata checks are opt-in release rules evaluated in the clean baseline. Define at least one rule; `severity` defaults to `major`.
+
+```json
+{
+  "metadata": {
+    "titleMinLength": 10,
+    "titleMaxLength": 70,
+    "descriptionMinLength": 50,
+    "descriptionMaxLength": 180,
+    "requireCanonical": true,
+    "requireViewport": true,
+    "requireLang": true,
+    "forbidNoindex": true,
+    "requireSingleH1": true,
+    "severity": "major"
+  }
+}
+```
+
+Length limits accept 0 to 1000 and each configured minimum must not exceed its maximum. Title and description rules require exactly one matching element as well as an in-range rendered length. `requireCanonical` requires one absolute HTTP(S) destination; `requireViewport` requires one declaration containing `width=device-width`; `requireLang` accepts a non-empty BCP 47-shaped root language; `forbidNoindex` flags an explicit robots noindex directive; and `requireSingleH1` requires exactly one primary heading.
+
+Detector evidence stores counts, lengths, booleans, and query-free canonical origin/pathname fields. It never retains title or description copy. The normal report target still includes the browser document title, so do not describe the entire report as title-free. A missing language uses the existing `document-language-missing` detector rather than creating a duplicate metadata finding. These checks enforce a declared publishing contract; they do not prove SEO performance, indexing, content quality, or accessibility conformance. Removing `noindex` always requires a human decision that the route is intended for public indexing.
+
 ## Security baseline
 
 Security checks are opt-in because localhost and production delivery policies differ. Define at least one policy; `severity` defaults to `major`.
@@ -263,7 +288,7 @@ An optional `baselinePolicy` prevents a regression-only `--baseline` from preser
 }
 ```
 
-`maxAgeDays` is an integer from 1 to 3650. Age is measured from the baseline run's `finishedAt` to the new run's `startedAt`, so copying a file does not make old evidence fresh. `requireSamePolicy` compares SHA-256 fingerprints derived from tool version, scenario mode, declarative checks, journeys, performance budgets, network reliability limits, link policy, and security policy; property/list ordering is canonicalized, and raw selectors or policy content are not copied into the report. Missing or different fingerprints produce `policy-drift` instead of a false resolution. At least one policy must be active. These gates are enforced only for `--baseline`; `--compare` remains an unrestricted historical analysis tool.
+`maxAgeDays` is an integer from 1 to 3650. Age is measured from the baseline run's `finishedAt` to the new run's `startedAt`, so copying a file does not make old evidence fresh. `requireSamePolicy` compares SHA-256 fingerprints derived from tool version, scenario mode, declarative checks, journeys, performance budgets, network reliability limits, link policy, publishing metadata policy, and security policy; property/list ordering is canonicalized, and raw selectors or policy content are not copied into the report. Missing or different fingerprints produce `policy-drift` instead of a false resolution. At least one policy must be active. These gates are enforced only for `--baseline`; `--compare` remains an unrestricted historical analysis tool.
 
 ## Authenticated pages
 
