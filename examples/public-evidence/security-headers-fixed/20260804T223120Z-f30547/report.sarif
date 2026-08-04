@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "20260804T223120Z-f30547"
+      },
+      "results": [],
+      "tool": {
+        "driver": {
+          "name": "RealityCheck",
+          "rules": [],
+          "semanticVersion": "0.4.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

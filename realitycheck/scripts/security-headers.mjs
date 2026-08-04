@@ -54,7 +54,7 @@ function hstsFacts(value, policy) {
   if (policy.minMaxAgeSeconds !== undefined && (maxAgeSeconds === null || maxAgeSeconds < policy.minMaxAgeSeconds)) violations.push("max-age-too-short");
   if (policy.requireIncludeSubDomains && !includeSubDomains) violations.push("include-subdomains-missing");
   if (policy.requirePreload && !preload) violations.push("preload-missing");
-  return { facts: { maxAgeSeconds, includeSubDomains, preload }, violations };
+  return { facts: { maxAgeSeconds, requiredMinMaxAgeSeconds: policy.minMaxAgeSeconds ?? null, includeSubDomains, preload }, violations };
 }
 
 function contentTypeFacts(value) {
@@ -67,7 +67,7 @@ function referrerFacts(value, policy) {
   const effectiveValue = recognized.at(-1) || null;
   const allowed = new Set(policy.allowedValues || []);
   return {
-    facts: { effectiveValue: effectiveValue || "unrecognized", recognizedValues: [...new Set(recognized)] },
+    facts: { effectiveValue: effectiveValue || "unrecognized", recognizedValues: [...new Set(recognized)], allowedValues: [...allowed].sort() },
     violations: effectiveValue && allowed.has(effectiveValue) ? [] : ["referrer-policy-not-allowed"],
   };
 }
@@ -115,4 +115,42 @@ export function evaluateSecurityHeaderPolicies(headers, policy = {}, { documentU
     }
     return { key, header, present: true, passed: evaluation.violations.length === 0, ...evaluation };
   });
+}
+
+function joined(values) {
+  return (values || []).join(", ");
+}
+
+export function describeSecurityHeaderViolations(result, language = "en") {
+  const zh = language === "zh-CN";
+  const facts = result?.facts || {};
+  return (result?.violations || []).map((code) => {
+    if (code === "missing-header") return zh ? `缺少 ${result.header} 响应头` : `the ${result.header} header is missing`;
+    if (code === "missing-required-directive") return zh ? `缺少必需的 CSP 指令：${joined(facts.missingDirectives)}` : `required CSP directives are missing: ${joined(facts.missingDirectives)}`;
+    if (code === "forbidden-source-token") return zh ? `使用了禁用的 CSP 来源标记：${joined(facts.forbiddenTokens)}` : `forbidden CSP source tokens are present: ${joined(facts.forbiddenTokens)}`;
+    if (code === "https-required") return zh ? "文档不是通过 HTTPS 提供，浏览器会忽略 HSTS" : "the document is not served over HTTPS, so the browser ignores HSTS";
+    if (code === "max-age-too-short") return zh ? `HSTS max-age 为 ${facts.maxAgeSeconds ?? "无效"} 秒，低于要求的 ${facts.requiredMinMaxAgeSeconds ?? "已配置"} 秒` : `HSTS max-age is ${facts.maxAgeSeconds ?? "invalid"} seconds, below the required ${facts.requiredMinMaxAgeSeconds ?? "configured"} seconds`;
+    if (code === "include-subdomains-missing") return zh ? "HSTS 缺少 includeSubDomains" : "HSTS is missing includeSubDomains";
+    if (code === "preload-missing") return zh ? "HSTS 缺少 preload" : "HSTS is missing preload";
+    if (code === "nosniff-required") return zh ? "X-Content-Type-Options 不是精确的 nosniff" : "X-Content-Type-Options is not exactly nosniff";
+    if (code === "referrer-policy-not-allowed") return zh ? `有效 Referrer-Policy 为 ${facts.effectiveValue || "未识别"}，允许值为：${joined(facts.allowedValues)}` : `the effective Referrer-Policy is ${facts.effectiveValue || "unrecognized"}; allowed values are: ${joined(facts.allowedValues)}`;
+    if (code === "feature-not-disabled") return zh ? `这些浏览器功能没有使用空允许列表：${joined(facts.missingDisabledFeatures)}` : `these browser features do not use an empty allowlist: ${joined(facts.missingDisabledFeatures)}`;
+    return zh ? `未识别的受控违规类别：${code}` : `unrecognized controlled violation category: ${code}`;
+  });
+}
+
+export function suggestSecurityHeaderFix(result, language = "en") {
+  const zh = language === "zh-CN";
+  const facts = result?.facts || {};
+  if (result?.key === "contentSecurityPolicy") {
+    const additions = facts.missingDirectives?.length ? (zh ? `加入必需指令 ${joined(facts.missingDirectives)}` : `add the required directives ${joined(facts.missingDirectives)}`) : null;
+    const removals = facts.forbiddenTokens?.length ? (zh ? `移除禁用来源标记 ${joined(facts.forbiddenTokens)}` : `remove the forbidden source tokens ${joined(facts.forbiddenTokens)}`) : null;
+    const action = [additions, removals].filter(Boolean).join(zh ? "；" : "; ");
+    return zh ? `配置经过复核的 CSP：${action}。在预发布环境验证应用行为，不要复制宽松占位策略。` : `Configure a reviewed CSP: ${action}. Validate application behavior in staging instead of copying a permissive placeholder.`;
+  }
+  if (result?.key === "strictTransportSecurity") return zh ? `通过 HTTPS 提供此路由，并在可信边缘层把 HSTS max-age 设置为至少 ${facts.requiredMinMaxAgeSeconds ?? "策略要求的"} 秒，同时补齐策略要求的 includeSubDomains/preload。` : `Serve this route over HTTPS and set HSTS max-age to at least ${facts.requiredMinMaxAgeSeconds ?? "the policy-required"} seconds at the trusted edge, including the required includeSubDomains/preload flags.`;
+  if (result?.key === "xContentTypeOptions") return zh ? "在最终文档响应上将 X-Content-Type-Options 精确设置为 nosniff。" : "Set X-Content-Type-Options to exactly nosniff on the final document response.";
+  if (result?.key === "referrerPolicy") return zh ? `复核出站导航后，将 Referrer-Policy 设置为以下允许值之一：${joined(facts.allowedValues)}。` : `After reviewing outbound navigation, set Referrer-Policy to one of these allowed values: ${joined(facts.allowedValues)}.`;
+  if (result?.key === "permissionsPolicy") return zh ? `确认业务不需要后，把这些功能设置为空允许列表 ()：${joined(facts.missingDisabledFeatures)}。` : `After confirming the route does not need them, set these features to the empty allowlist (): ${joined(facts.missingDisabledFeatures)}.`;
+  return zh ? `配置经过复核的 ${result?.header || "安全"} 响应头策略。` : `Configure a reviewed ${result?.header || "security"} response-header policy.`;
 }

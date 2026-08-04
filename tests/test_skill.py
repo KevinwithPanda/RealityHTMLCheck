@@ -351,6 +351,11 @@ class SkillStructureTests(unittest.TestCase):
             self.assertNotIn("default-src 'self'", serialized)
             self.assertNotIn("frame-ancestors 'none'", serialized)
             self.assertNotIn("private.example", serialized)
+            if name == "security-headers-broken":
+                permissions = next(item for item in semantic if item["ruleId"].endswith("permissions-policy"))
+                csp = next(item for item in semantic if item["ruleId"].endswith("content-security-policy"))
+                self.assertIn("camera, geolocation", permissions["summary"])
+                self.assertIn("base-uri, form-action, frame-ancestors", csp["remediation"]["summary"])
 
     def test_privacy_budget_has_paired_aggregate_only_evidence(self) -> None:
         fixture = REPOSITORY_ROOT / "examples" / "privacy-lab"

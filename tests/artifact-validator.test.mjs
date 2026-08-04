@@ -89,11 +89,16 @@ test("published semantic response-header evidence proves failure and recovery wi
     assert.equal(reportResult.valid, true, reportResult.errors.join("\n"));
     const report = JSON.parse(readFileSync(resolve(root, latest.artifacts.json), "utf8"));
     assert.equal(report.score.overall, score);
-    assert.equal(report.findings.filter((item) => item.ruleId.startsWith("security-header-policy-")).length, semanticFindings);
+    const semantic = report.findings.filter((item) => item.ruleId.startsWith("security-header-policy-"));
+    assert.equal(semantic.length, semanticFindings);
     const serialized = JSON.stringify(report);
     assert.doesNotMatch(serialized, /default-src 'self'|base-uri 'none'|frame-ancestors 'none'/);
     assert.doesNotMatch(serialized, /private\.example/);
-    assert.equal(report.findings.filter((item) => item.ruleId.startsWith("security-header-policy-")).every((item) => item.measurements.rawValueRetained === false), true);
+    assert.equal(semantic.every((item) => item.measurements.rawValueRetained === false), true);
+    if (kind === "security-headers-broken") {
+      assert.match(semantic.find((item) => item.ruleId.endsWith("permissions-policy")).summary, /camera, geolocation/);
+      assert.match(semantic.find((item) => item.ruleId.endsWith("content-security-policy")).remediation.summary, /base-uri, form-action, frame-ancestors/);
+    }
   }
 });
 

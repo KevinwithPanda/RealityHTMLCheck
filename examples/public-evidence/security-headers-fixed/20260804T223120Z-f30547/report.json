@@ -1,0 +1,169 @@
+{
+  "adapter": {
+    "capabilities": [
+      "console",
+      "dom",
+      "isolated-contexts",
+      "network-routing",
+      "screenshots",
+      "viewport",
+      "responsive-viewport-matrix",
+      "security-response-and-origin-policy",
+      "detector-policy-fingerprint"
+    ],
+    "isolation": "fresh-context",
+    "name": "project-playwright"
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major",
+    "policyFingerprint": "sha256:07deff08914f02724ceaafcee9024d26580615adf8a2a22e929083dbf357f37f",
+    "viewports": [
+      {
+        "height": 812,
+        "id": "mobile-375",
+        "touch": true,
+        "width": 375
+      }
+    ]
+  },
+  "findings": [],
+  "run": {
+    "durationMs": 4578.0,
+    "finishedAt": "2026-08-04T22:31:25.154Z",
+    "id": "20260804T223120Z-f30547",
+    "mode": "quick",
+    "startedAt": "2026-08-04T22:31:20.559Z"
+  },
+  "scenarios": [
+    {
+      "durationMs": 632.0,
+      "id": "baseline",
+      "notes": [],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": []
+        }
+      }
+    },
+    {
+      "durationMs": 597.0,
+      "id": "mobile-375",
+      "notes": [
+        "Evaluated 375×812; touch-target checks were enabled."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已核查 375×812；触控目标检查已启用。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 996.0,
+      "id": "long-text",
+      "notes": [
+        "1 deterministic text mutations were applied."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已执行 1 次确定性的文本替换。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 998.0,
+      "id": "rtl-arabic",
+      "notes": [
+        "Directionality stress test only; translation quality was not assessed."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "仅进行书写方向压力测试；未评估翻译质量。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 607.0,
+      "id": "image-failure",
+      "notes": [
+        "Expected image request aborts were excluded from failed-request findings."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "预期的图片请求中止未计入普通请求失败问题。"
+          ]
+        }
+      }
+    },
+    {
+      "durationMs": 654.0,
+      "id": "keyboard-tab",
+      "notes": [
+        "No controls were activated or submitted."
+      ],
+      "status": "passed",
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未激活或提交任何控件。"
+          ]
+        }
+      }
+    }
+  ],
+  "schemaVersion": "1",
+  "score": {
+    "baselinePenalty": 0.0,
+    "chaosPenalty": 0.0,
+    "counts": {
+      "critical": 0,
+      "info": 0,
+      "major": 0,
+      "minor": 0
+    },
+    "ignoredLowConfidenceFindings": 0,
+    "overall": 100,
+    "scoredFindings": 0,
+    "totalFindings": 0
+  },
+  "target": {
+    "finalUrl": "http://127.0.0.1:4193/fixed",
+    "requestedUrl": "http://127.0.0.1:4193/fixed",
+    "title": "Semantic security header laboratory"
+  },
+  "threshold": {
+    "coveragePercent": 100.0,
+    "failOn": "major",
+    "met": false,
+    "violations": []
+  },
+  "toolVersion": "0.4.0",
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "独立核查使用了已安装的系统浏览器（150.0.7871.116）。",
+        "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        "已在 1 个配置视口中核查响应式布局；仅在启用 touch 的视口运行触控目标启发式检查。",
+        "已在不提交数据或保留原始响应头值的前提下核查 5 项明确的响应、语义响应头、来源与表单安全策略。"
+      ]
+    }
+  },
+  "warnings": [
+    "Standalone audit used an already-installed system browser (150.0.7871.116).",
+    "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    "Responsive layout was evaluated in 1 configured viewport(s); touch-target heuristics ran only where touch was enabled.",
+    "5 explicit response, semantic-header, origin, and form security policy setting(s) were evaluated without submitting data or retaining raw header values."
+  ]
+}

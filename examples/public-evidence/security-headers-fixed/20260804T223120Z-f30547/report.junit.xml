@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="RealityCheck Semantic security header laboratory" tests="6" time="4.578" timestamp="2026-08-04T22:31:20.559Z" failures="0" errors="0" skipped="0">
+  <properties>
+    <property name="realitycheck.runId" value="20260804T223120Z-f30547" />
+    <property name="realitycheck.score" value="100" />
+    <property name="realitycheck.failOn" value="major" />
+    <property name="realitycheck.target" value="http://127.0.0.1:4193/fixed" />
+  </properties>
+  <testcase classname="RealityCheck.browser" name="baseline" time="0.632" />
+  <testcase classname="RealityCheck.browser" name="mobile-375" time="0.597" />
+  <testcase classname="RealityCheck.browser" name="long-text" time="0.996" />
+  <testcase classname="RealityCheck.browser" name="rtl-arabic" time="0.998" />
+  <testcase classname="RealityCheck.browser" name="image-failure" time="0.607" />
+  <testcase classname="RealityCheck.browser" name="keyboard-tab" time="0.654" />
+</testsuite>

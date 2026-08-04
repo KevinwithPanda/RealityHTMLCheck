@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="RealityCheck Semantic security header laboratory" tests="6" time="4.503" timestamp="2026-08-04T22:31:14.885Z" failures="1" errors="0" skipped="0">
+  <properties>
+    <property name="realitycheck.runId" value="20260804T223114Z-732697" />
+    <property name="realitycheck.score" value="84" />
+    <property name="realitycheck.failOn" value="major" />
+    <property name="realitycheck.target" value="http://127.0.0.1:4193/broken" />
+  </properties>
+  <testcase classname="RealityCheck.browser" name="baseline" time="0.583">
+    <failure message="4 finding(s) met the major threshold" type="RealityCheckQualityGate">RC-D296A901BC [major] Security header does not satisfy the reviewed value policy: content-security-policy
+RC-9DFD5F9C8E [major] Security header does not satisfy the reviewed value policy: permissions-policy
+RC-A90BB59806 [major] Security header does not satisfy the reviewed value policy: referrer-policy
+RC-749EFF79DA [major] Security header does not satisfy the reviewed value policy: x-content-type-options</failure>
+    <system-out>RC-D296A901BC [major/high] Security header does not satisfy the reviewed value policy: content-security-policy
+RC-9DFD5F9C8E [major/high] Security header does not satisfy the reviewed value policy: permissions-policy
+RC-A90BB59806 [major/high] Security header does not satisfy the reviewed value policy: referrer-policy
+RC-749EFF79DA [major/high] Security header does not satisfy the reviewed value policy: x-content-type-options</system-out>
+  </testcase>
+  <testcase classname="RealityCheck.browser" name="mobile-375" time="0.570" />
+  <testcase classname="RealityCheck.browser" name="long-text" time="1.005" />
+  <testcase classname="RealityCheck.browser" name="rtl-arabic" time="1.001" />
+  <testcase classname="RealityCheck.browser" name="image-failure" time="0.603" />
+  <testcase classname="RealityCheck.browser" name="keyboard-tab" time="0.663" />
+</testsuite>

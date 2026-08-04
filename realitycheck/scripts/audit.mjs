@@ -35,7 +35,7 @@ import { buildPolicyReview, writePolicyReview } from "./policy-review.mjs";
 import { buildIssueDrafts, writeIssueDrafts } from "./issue-drafts.mjs";
 import { buildReleaseDecision, parseRequiredControls, releaseDecisionExitCode, writeReleaseDecision } from "./release-decision.mjs";
 import { buildAuditPlan, writeAuditPlan } from "./audit-plan.mjs";
-import { evaluateSecurityHeaderPolicies, requiredSecurityHeaders } from "./security-headers.mjs";
+import { describeSecurityHeaderViolations, evaluateSecurityHeaderPolicies, requiredSecurityHeaders, suggestSecurityHeaderFix } from "./security-headers.mjs";
 
 const require = createRequire(import.meta.url);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -1540,35 +1540,22 @@ async function runSecurityPolicies(page, response, target, policy) {
     }));
   }
 
-  const headerPolicyFixes = {
-    contentSecurityPolicy: "Set a reviewed CSP that contains every required directive and removes each forbidden source token; validate application behavior in staging.",
-    strictTransportSecurity: "Serve the route over HTTPS and configure the trusted edge with the reviewed max-age and optional includeSubDomains/preload requirements.",
-    xContentTypeOptions: "Set X-Content-Type-Options to exactly nosniff on the final document response.",
-    referrerPolicy: "Set Referrer-Policy to one of the explicitly allowed values after reviewing outbound navigation requirements.",
-    permissionsPolicy: "Set every configured high-risk browser feature to an empty allowlist () after reviewing whether this route genuinely needs that capability.",
-  };
-  const headerPolicyFixesZh = {
-    contentSecurityPolicy: "配置经过复核的 CSP，包含所有必需指令并移除每个禁用来源标记；在预发布环境验证应用行为。",
-    strictTransportSecurity: "通过 HTTPS 提供此路由，并在可信边缘层配置已复核的 max-age 以及可选 includeSubDomains/preload 要求。",
-    xContentTypeOptions: "在最终文档响应上将 X-Content-Type-Options 精确设置为 nosniff。",
-    referrerPolicy: "复核出站导航需求后，将 Referrer-Policy 设置为明确允许的值之一。",
-    permissionsPolicy: "复核此路由是否确实需要相关能力后，把每个已配置的高风险浏览器功能设置为空允许列表 ()。",
-  };
   for (const result of evaluateSecurityHeaderPolicies(responseHeaders, policy, { documentUrl: target })) {
     if (!result.present || result.passed) continue;
-    const reasons = result.violations.join(", ");
+    const reasons = describeSecurityHeaderViolations(result).join("; ");
+    const reasonsZh = describeSecurityHeaderViolations(result, "zh-CN").join("；");
     findings.push(finding({
       ruleId: `security-header-policy-${result.header}`, scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
       title: `Security header does not satisfy the reviewed value policy: ${result.header}`,
       titleZh: `安全响应头不符合已复核的值策略：${result.header}`,
       summary: `The final document response failed ${result.violations.length} semantic requirement(s): ${reasons}. The raw header value was not retained.`,
-      summaryZh: `最终文档响应未满足 ${result.violations.length} 项语义要求：${reasons}。未保留原始响应头值。`,
+      summaryZh: `最终文档响应未满足 ${result.violations.length} 项语义要求：${reasonsZh}。未保留原始响应头值。`,
       measurements: { header: result.header, violations: result.violations, facts: result.facts, rawValueRetained: false },
       evidence: [{ type: "response-header-policy", header: result.header, violations: result.violations, facts: result.facts, rawValueRetained: false }, screenshotEvidence("baseline", "Security header value policy")],
       steps: ["Open the page in a fresh context.", `Evaluate bounded semantic facts from the ${result.header} header without retaining its raw value.`],
       stepsZh: ["在新的浏览器上下文中打开页面。", `从 ${result.header} 响应头评估有限的语义事实，但不保留原始值。`],
-      fix: headerPolicyFixes[result.key],
-      fixZh: headerPolicyFixesZh[result.key],
+      fix: suggestSecurityHeaderFix(result),
+      fixZh: suggestSecurityHeaderFix(result, "zh-CN"),
       hints: ["Do not weaken the configured rule or add a permissive placeholder only to clear the gate."],
       hintsZh: ["不要只为通过门禁而削弱配置规则或添加宽松占位值。"],
     }));

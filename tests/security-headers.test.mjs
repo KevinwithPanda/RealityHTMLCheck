@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { evaluateSecurityHeaderPolicies, requiredSecurityHeaders } from "../realitycheck/scripts/security-headers.mjs";
+import { describeSecurityHeaderViolations, evaluateSecurityHeaderPolicies, requiredSecurityHeaders, suggestSecurityHeaderFix } from "../realitycheck/scripts/security-headers.mjs";
 
 const policy = {
   requiredHeaders: ["permissions-policy"],
@@ -30,13 +30,17 @@ test("semantic security header policies expose bounded facts without retaining r
   assert.deepEqual(csp.facts.missingDirectives, ["base-uri", "form-action"]);
   assert.deepEqual(csp.facts.forbiddenTokens, ["'unsafe-eval'", "*"]);
   const hsts = checks.find((item) => item.key === "strictTransportSecurity");
-  assert.deepEqual(hsts.facts, { maxAgeSeconds: 300, includeSubDomains: true, preload: false, documentHttps: true });
+  assert.deepEqual(hsts.facts, { maxAgeSeconds: 300, requiredMinMaxAgeSeconds: 31536000, includeSubDomains: true, preload: false, documentHttps: true });
   assert.deepEqual(hsts.violations, ["max-age-too-short", "preload-missing"]);
   assert.deepEqual(checks.find((item) => item.key === "xContentTypeOptions").violations, ["nosniff-required"]);
   assert.deepEqual(checks.find((item) => item.key === "referrerPolicy").violations, ["referrer-policy-not-allowed"]);
   const permissions = checks.find((item) => item.key === "permissionsPolicy");
   assert.deepEqual(permissions.violations, ["feature-not-disabled"]);
   assert.deepEqual(permissions.facts, { declaredFeatures: ["camera", "microphone"], disabledFeatures: ["microphone"], missingDisabledFeatures: ["camera", "geolocation"] });
+  assert.match(describeSecurityHeaderViolations(csp).join(" "), /base-uri, form-action/);
+  assert.match(describeSecurityHeaderViolations(permissions, "zh-CN").join(" "), /camera, geolocation/);
+  assert.match(suggestSecurityHeaderFix(permissions), /camera, geolocation/);
+  assert.match(suggestSecurityHeaderFix(checks.find((item) => item.key === "referrerPolicy"), "zh-CN"), /no-referrer/);
   assert.doesNotMatch(JSON.stringify(checks), /private\.example|token-value|default-src https/);
 });
 
