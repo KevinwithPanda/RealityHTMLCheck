@@ -272,6 +272,23 @@
         { "required": ["requireSingleH1"], "properties": { "requireSingleH1": true } }
       ]
     },
+    "visual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baselineDirectory", "maxDiffRatio"],
+      "properties": {
+        "severity": { "enum": ["critical", "major", "minor"] },
+        "baselineDirectory": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "maxDiffRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "pixelThreshold": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "masks": {
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      }
+    },
     "security": {
       "type": "object",
       "additionalProperties": false,

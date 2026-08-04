@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "kind": "latest-run",
+  "updatedAt": "2026-08-04T18:34:22.043Z",
+  "artifactKind": "page-audit",
+  "runId": "20260804T183414Z-db76fb",
+  "target": "http://127.0.0.1:4183/index.html",
+  "state": "failed",
+  "score": 96,
+  "artifacts": {
+    "html": "20260804T183414Z-db76fb/report.html",
+    "json": "20260804T183414Z-db76fb/report.json",
+    "repairPlanJson": "20260804T183414Z-db76fb/repair-plan.json",
+    "repairPlanMarkdown": "20260804T183414Z-db76fb/repair-plan.md",
+    "integrityManifest": "20260804T183414Z-db76fb/evidence-manifest.json"
+  }
+}

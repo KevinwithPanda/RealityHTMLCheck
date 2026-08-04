@@ -27,6 +27,8 @@
     "codex",
     "playwright",
     "visual-testing",
+    "visual-regression",
+    "screenshot-testing",
     "accessibility",
     "api-testing",
     "link-checker",

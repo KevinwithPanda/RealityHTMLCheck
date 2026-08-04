@@ -13,7 +13,8 @@ function canonicalize(value) {
   return value;
 }
 
-export function detectorPolicyFingerprint({ mode, checks = [], journeys = [], budgets = null, network = null, links = null, metadata = null, security = null, toolVersion = TOOL_VERSION }) {
-  const policy = canonicalize({ toolVersion, mode, checks, journeys, budgets, network, links, metadata, security });
+export function detectorPolicyFingerprint({ mode, checks = [], journeys = [], budgets = null, network = null, links = null, metadata = null, visual = null, security = null, toolVersion = TOOL_VERSION }) {
+  const visualPolicy = visual ? Object.fromEntries(Object.entries(visual).filter(([key]) => key !== "baselineDirectoryPath")) : null;
+  const policy = canonicalize({ toolVersion, mode, checks, journeys, budgets, network, links, metadata, visual: visualPolicy, security });
   return `sha256:${createHash("sha256").update(JSON.stringify(policy)).digest("hex")}`;
 }

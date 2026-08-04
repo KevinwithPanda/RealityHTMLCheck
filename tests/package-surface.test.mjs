@@ -17,6 +17,7 @@ test("npm publication whitelist covers every security and governance runtime sur
   const required = [
     "realitycheck/SKILL.md",
     "realitycheck/scripts/audit.mjs",
+    "realitycheck/scripts/visual-regression.mjs",
     "realitycheck/scripts/evidence-attestation.mjs",
     "realitycheck/scripts/evidence-trust.mjs",
     "realitycheck/scripts/evidence-trust-report.mjs",

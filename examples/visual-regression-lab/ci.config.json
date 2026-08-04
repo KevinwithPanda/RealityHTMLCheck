@@ -1,0 +1,14 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4181/index.html",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/ci-visual",
+  "visual": {
+    "baselineDirectory": ".ci-baselines",
+    "maxDiffRatio": 0.002,
+    "pixelThreshold": 28,
+    "masks": [".current-time"],
+    "severity": "major"
+  }
+}

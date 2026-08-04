@@ -1,0 +1,55 @@
+{
+  "items": [
+    {
+      "confidence": "high",
+      "findingId": "RC-F9DFD0AFA5",
+      "fingerprint": "f9dfd0afa50da15a109ead1ad0b4c390f4a947e8b6f8274f968693ee250ddcf5",
+      "remediation": {
+        "summary": "Repair the unintended application-owned rendering change and rerun the audit. If the change is intentional, review it and explicitly replace the baseline with visual-approve --replace-baseline.",
+        "technicalHints": [
+          "Do not raise the threshold or overwrite the baseline solely to clear the gate."
+        ]
+      },
+      "reportAnchor": "report.html#RC-F9DFD0AFA5",
+      "ruleId": "visual-regression-threshold",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "Current rendering differs from the approved visual baseline",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "修复非预期且由应用造成的渲染变化后重新核查；若变化确属预期，应先人工复核，再通过 visual-approve --replace-baseline 显式替换基线。",
+            "technicalHints": [
+              "不要只为通过门禁而提高阈值或覆盖基线。"
+            ]
+          },
+          "title": "当前渲染结果与已批准视觉基线不一致"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    }
+  ],
+  "kind": "repair-plan",
+  "schemaVersion": "1",
+  "source": {
+    "reportPath": "report.json",
+    "runId": "20260804T182536Z-ab941b",
+    "target": "http://127.0.0.1:4183/index.html"
+  },
+  "summary": {
+    "critical": 0,
+    "items": 1,
+    "major": 1,
+    "minor": 0,
+    "reviewRequired": 0,
+    "waived": 0
+  },
+  "toolVersion": "0.4.0"
+}

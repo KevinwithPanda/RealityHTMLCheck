@@ -79,6 +79,7 @@ npx realitycheck audit --config realitycheck.config.json
 npx realitycheck profiles
 npx realitycheck init --profile product --base-url http://localhost:3000
 npx realitycheck doctor
+npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
 ```
 
 三个经过配置校验的预设解决“第一次面对空配置无从下手”的问题：
@@ -184,6 +185,13 @@ npx realitycheck doctor
     "requireSingleH1": true,
     "severity": "major"
   },
+  "visual": {
+    "baselineDirectory": ".realitycheck/visual-baselines",
+    "maxDiffRatio": 0.002,
+    "pixelThreshold": 28,
+    "masks": [".current-time", "[data-dynamic]"],
+    "severity": "major"
+  },
   "security": {
     "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
     "secureForms": true,
@@ -213,6 +221,10 @@ npx realitycheck doctor
 链接完整性策略只通过 `HEAD` 核查有上限的同源锚点，不激活链接、不下载响应正文，最多跟随五次同源重定向，并复用爬虫对退出、购买、删除和 OAuth 路径的排除规则。成对的 [`examples/link-lab`](../examples/link-lab) 证明缺失指南时得到 **96/100**，修复后得到 **100/100**，查询参数值不会进入证据。
 
 发布元数据策略由项目显式启用，可以要求标题和描述处于审核过的长度范围、唯一绝对 canonical、响应式 viewport、有效文档语言、允许索引的 robots 指令，以及恰好一个主标题。检测证据只保存计数、长度、指令与 canonical 的来源/路径，不保存标题或描述正文，也不保留 canonical 查询参数和片段。成对的 [`examples/metadata-lab`](../examples/metadata-lab) 会让故障页得到七项可解释问题和 **75/100**，修复页得到 **100/100**。
+
+视觉回归策略会捕获确定性的桌面全页快照，并与按 URL 路径命名的已批准 PNG 比较。`maxDiffRatio` 限制在逐通道 `pixelThreshold` 处理后发生变化的像素比例；最多 20 个声明式 CSS `masks` 可排除已经审核过的动态区域。缺少基线时门禁会明确失败并生成 `visual-current.png`。人工复核后，`visual-approve <report.json>` 会记录 PNG、SHA-256 摘要、来源运行和批准时间。若已存在不同基线，除非审核者显式添加 `--replace-baseline`，否则绝不会覆盖。出现回归时，报告会同时保留当前图、批准图和洋红差异图。[`examples/visual-regression-lab`](../examples/visual-regression-lab) 在时间戳被 mask 后稳定得到 **100/100**，当 **18.920%** 像素变化时得到 **96/100**。
+
+基线批准与后续比较应使用一致的浏览器、操作系统和字体环境，通常放在同一 CI 镜像中。像素一致只能证明渲染稳定，不能证明获批设计本身可用或正确。只 mask 已知动态区域；不要为了通过门禁而 mask 原因不明的失败或提高阈值。
 
 安全基线必须由项目显式配置，因此普通 localhost 不会自动被生产响应头要求误伤。策略可要求安全响应头、禁止混合内容、阻止不安全密码表单、限制第三方来源数量，并只允许精确 HTTPS 来源。[`examples/security-lab`](../examples/security-lab) 会在不提交表单的情况下证明三个缺失响应头和一个 GET 密码表单问题。
 

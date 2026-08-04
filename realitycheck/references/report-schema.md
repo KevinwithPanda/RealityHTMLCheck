@@ -101,6 +101,8 @@ Waived findings remain part of `findings`, severity counts, screenshots, Markdow
 Fingerprints use rule ID, scenario ID, normalized URL path, and normalized selector. Measurements are intentionally excluded so a detector keeps the same identity when pixel values change between runs.
 Finding IDs and fingerprints must be unique within a report. Aggregate repeated runtime messages or measurements into one finding rather than emitting duplicate cards.
 
+Visual policy findings use the ordinary finding contract. `visual-baseline-missing` references `screenshots/visual-current.png`; `visual-regression-threshold` additionally references `visual-approved.png` and `visual-diff.png`. Measurements record current/baseline dimensions, whether dimensions match, changed and total pixels, exact ratio and allowed ratio, per-channel threshold, and mask count. Baseline filesystem paths, mask selector text, URL queries, and fragments are not copied into the report. The evidence manifest hashes each emitted visual file like every other screenshot.
+
 ## English and Chinese content
 
 English remains the canonical language for machine-readable fields and all enum values. `target`, each scenario, and each finding may include a `translations.zh-CN` object. The top-level translation object contains localized warnings.
@@ -140,7 +142,7 @@ Low-confidence, resolved, and actively waived findings never trigger the CI thre
 
 When `config.qualityGate` is present, the renderer also evaluates `minimumScore`, `minimumCoveragePercent`, and `maxWaivedFindings`. `threshold.coveragePercent` records successfully completed scenarios as a percentage. `threshold.violations` contains zero or more `{code, actual, expected}` objects for `severity-threshold`, `minimum-score`, `minimum-coverage`, or `max-waived-findings`; `threshold.met` is true when any condition fails. Comparison and baseline verification preserve these numeric policy conditions.
 
-For regression-only verification, `config.baselinePolicy.maxAgeDays` can add a `baseline-age` violation. `requireSamePolicy` compares optional `config.policyFingerprint` values and adds `policy-drift` when missing or different, preventing detector removal/configuration changes from producing false resolutions. The fingerprint covers tool version, scenario mode, declarative checks, journeys, performance budgets, network reliability limits, link policy, publishing metadata policy, and security policy after canonical ordering; it does not expose their raw content. Verification records baseline ages and before/after fingerprints even when checks pass. Strict historical comparison does not enforce baseline governance.
+For regression-only verification, `config.baselinePolicy.maxAgeDays` can add a `baseline-age` violation. `requireSamePolicy` compares optional `config.policyFingerprint` values and adds `policy-drift` when missing or different, preventing detector removal/configuration changes from producing false resolutions. The fingerprint covers tool version, scenario mode, declarative checks, journeys, performance budgets, network reliability limits, link policy, publishing metadata policy, visual policy, and security policy after canonical ordering; it excludes the derived machine-local visual baseline path and does not expose raw policy content. Verification records baseline ages and before/after fingerprints even when checks pass. Strict historical comparison does not enforce baseline governance.
 
 ## Redaction and rendering
 

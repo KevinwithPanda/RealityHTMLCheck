@@ -193,6 +193,34 @@ Length limits accept 0 to 1000 and each configured minimum must not exceed its m
 
 Detector evidence stores counts, lengths, booleans, and query-free canonical origin/pathname fields. It never retains title or description copy. The normal report target still includes the browser document title, so do not describe the entire report as title-free. A missing language uses the existing `document-language-missing` detector rather than creating a duplicate metadata finding. These checks enforce a declared publishing contract; they do not prove SEO performance, indexing, content quality, or accessibility conformance. Removing `noindex` always requires a human decision that the route is intended for public indexing.
 
+## Explicit visual regression baselines
+
+Visual policy captures a second deterministic full-page baseline snapshot with animations disabled and caret hidden, then compares it with an explicitly approved PNG for the exact URL pathname. The directory must be a relative child path of the config directory; absolute paths, parent traversal, and symbolic-link traversal are rejected.
+
+```json
+{
+  "visual": {
+    "baselineDirectory": ".realitycheck/visual-baselines",
+    "maxDiffRatio": 0.002,
+    "pixelThreshold": 28,
+    "masks": [".current-time", "[data-dynamic]"],
+    "severity": "major"
+  }
+}
+```
+
+`maxDiffRatio` is required and accepts 0 to 1; `0.002` means at most 0.2% of pixels may change. `pixelThreshold` defaults to 32 and accepts 0 to 255; a pixel changes when any RGBA channel differs by more than that value. Up to 20 unique CSS selectors may be listed in `masks`; matching areas receive the same fixed magenta mask in both images. Invalid selectors make the explicit check unusable instead of silently disabling a mask. Screenshots are limited to 12 MiB and 20 million decoded pixels per image.
+
+The first audit produces `visual-baseline-missing` plus `screenshots/visual-current.png`. After reviewing that image, explicitly approve it:
+
+```bash
+realitycheck visual-approve .realitycheck/runs/RUN/report.json --config realitycheck.config.json
+```
+
+Approval records a pathname-keyed PNG plus `visual-baseline-index.json` containing SHA-256, source run ID, and approval time. Host, port, query, and fragment do not affect the key, so the same route can move between local and staging origins without persisting URL secrets. If another PNG already exists, the command is idempotent only when bytes match; a different image is rejected until the reviewer deliberately adds `--replace-baseline`. Ordinary `audit`, `fix`, and comparison flows never update baselines.
+
+A threshold failure emits `visual-current.png`, `visual-approved.png`, and `visual-diff.png` with changed pixels in magenta. Keep the approval and comparison environment consistent across browser version, operating system, installed fonts, device scale, and viewport. This is a bounded exact-pixel detector with a per-channel tolerance, not a perceptual model. Passing proves rendering stability against the approved image, not that the approved design is correct, usable, accessible, or responsive. Mask only reviewed dynamic regions and never increase thresholds or approve a regression solely to make CI green.
+
 ## Security baseline
 
 Security checks are opt-in because localhost and production delivery policies differ. Define at least one policy; `severity` defaults to `major`.
@@ -288,7 +316,7 @@ An optional `baselinePolicy` prevents a regression-only `--baseline` from preser
 }
 ```
 
-`maxAgeDays` is an integer from 1 to 3650. Age is measured from the baseline run's `finishedAt` to the new run's `startedAt`, so copying a file does not make old evidence fresh. `requireSamePolicy` compares SHA-256 fingerprints derived from tool version, scenario mode, declarative checks, journeys, performance budgets, network reliability limits, link policy, publishing metadata policy, and security policy; property/list ordering is canonicalized, and raw selectors or policy content are not copied into the report. Missing or different fingerprints produce `policy-drift` instead of a false resolution. At least one policy must be active. These gates are enforced only for `--baseline`; `--compare` remains an unrestricted historical analysis tool.
+`maxAgeDays` is an integer from 1 to 3650. Age is measured from the baseline run's `finishedAt` to the new run's `startedAt`, so copying a file does not make old evidence fresh. `requireSamePolicy` compares SHA-256 fingerprints derived from tool version, scenario mode, declarative checks, journeys, performance budgets, network reliability limits, link policy, publishing metadata policy, visual policy, and security policy; property/list ordering is canonicalized, derived machine-local baseline paths are excluded, and raw selectors or policy content are not copied into the report. Missing or different fingerprints produce `policy-drift` instead of a false resolution. At least one policy must be active. These gates are enforced only for `--baseline`; `--compare` remains an unrestricted historical analysis tool.
 
 ## Authenticated pages
 

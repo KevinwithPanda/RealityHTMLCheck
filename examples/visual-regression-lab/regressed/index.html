@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Regressed account overview</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header><a class="brand" href="#top">Northstar</a><span class="current-time" aria-label="Dynamic timestamp">loading</span></header>
+    <section class="hero" id="top">
+      <div><p class="eyebrow">Account health</p><h1>Your workspace is ready.</h1><p class="lede">A reviewed release surface with a deliberately changing timestamp masked from pixel comparison.</p><a class="action" href="#details">View details</a></div>
+      <aside aria-label="Workspace score"><span>Readiness</span><strong>94</strong><small>All core systems operational</small></aside>
+    </section>
+    <section class="details" id="details"><article><span>Projects</span><strong>12</strong></article><article><span>Members</span><strong>38</strong></article><article><span>Availability</span><strong>99.98%</strong></article></section>
+  </main>
+  <script>document.querySelector(".current-time").textContent = new Date().toISOString();</script>
+</body>
+</html>

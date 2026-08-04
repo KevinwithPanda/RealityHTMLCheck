@@ -95,6 +95,7 @@ Initialize and diagnose a project without opening a browser:
 npx realitycheck profiles
 npx realitycheck init --profile product --base-url http://localhost:3000
 npx realitycheck doctor
+npx realitycheck visual-approve .realitycheck/runs/RUN/report.json
 ```
 
 Three validated presets remove the blank-config problem:
@@ -200,6 +201,13 @@ Three validated presets remove the blank-config problem:
     "requireSingleH1": true,
     "severity": "major"
   },
+  "visual": {
+    "baselineDirectory": ".realitycheck/visual-baselines",
+    "maxDiffRatio": 0.002,
+    "pixelThreshold": 28,
+    "masks": [".current-time", "[data-dynamic]"],
+    "severity": "major"
+  },
   "security": {
     "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
     "secureForms": true,
@@ -229,6 +237,10 @@ Network reliability policy can independently govern API-only or all-resource tra
 Link integrity policy checks a bounded set of same-origin anchors with `HEAD` only. It never activates links or downloads response bodies, follows at most five same-origin redirects, and reuses the crawler's logout/purchase/delete/OAuth exclusions. The paired [`examples/link-lab`](examples/link-lab) fixtures prove one missing guide fails at **96/100**, the repaired page passes at **100/100**, and query values never enter evidence.
 
 Publishing metadata policy is opt-in and project-defined. It can require one title and description within reviewed length ranges, one absolute canonical URL, a responsive viewport, a valid document language, an indexable robots directive, and exactly one primary heading. Detector evidence stores counts, lengths, directives, and canonical origin/pathname only—not title or description copy, canonical queries, or fragments. The paired [`examples/metadata-lab`](examples/metadata-lab) fixtures produce seven explainable failures at **75/100** and a repaired **100/100** page.
+
+Visual regression policy captures a deterministic full-page desktop snapshot and compares it with a pathname-keyed approved PNG. `maxDiffRatio` limits changed pixels after the per-channel `pixelThreshold`; up to 20 declarative CSS `masks` can hide reviewed dynamic regions. A missing baseline fails visibly and writes `visual-current.png`. After human review, `visual-approve <report.json>` records the PNG, SHA-256 digest, source run, and approval time. A different existing baseline is never overwritten unless the reviewer explicitly adds `--replace-baseline`. A regression writes current, approved, and magenta diff images. The [`examples/visual-regression-lab`](examples/visual-regression-lab) passes at **100/100** despite a masked changing timestamp, then fails at **96/100** when **18.920%** of pixels change.
+
+Keep approval and comparison on a consistent browser/OS/font environment, normally the same CI image. A pixel match proves only rendering stability, not that the approved design is usable or correct. Mask only known dynamic regions; never mask an unexplained failure or increase the threshold solely to clear a gate.
 
 Security baselines are opt-in project policy, so a localhost page is not judged against production headers unless the project asks for them. Policies can require reviewed response headers, forbid mixed content, reject insecure password-form paths, cap unique third-party origins, and allowlist exact HTTPS origins. The [`examples/security-lab`](examples/security-lab) fixture demonstrates three missing headers plus a GET password form without ever submitting it.
 

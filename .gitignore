@@ -1,5 +1,6 @@
 realitycheck_codex_bundle.zip
 .realitycheck/
+examples/visual-regression-lab/.ci-baselines/
 **/__pycache__/
 *.py[cod]
 .DS_Store

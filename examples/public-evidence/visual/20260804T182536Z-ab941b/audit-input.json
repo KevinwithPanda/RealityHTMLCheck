@@ -1,0 +1,206 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "run": {
+    "id": "20260804T182536Z-ab941b",
+    "mode": "quick",
+    "startedAt": "2026-08-04T18:25:36.967Z",
+    "finishedAt": "2026-08-04T18:25:43.064Z",
+    "durationMs": 6081
+  },
+  "target": {
+    "requestedUrl": "http://127.0.0.1:4183/index.html",
+    "finalUrl": "http://127.0.0.1:4183/index.html",
+    "title": "Regressed account overview"
+  },
+  "adapter": {
+    "name": "project-playwright",
+    "isolation": "fresh-context",
+    "capabilities": [
+      "console",
+      "dom",
+      "isolated-contexts",
+      "network-routing",
+      "screenshots",
+      "viewport",
+      "explicit-visual-regression-baseline",
+      "detector-policy-fingerprint"
+    ]
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major",
+    "policyFingerprint": "sha256:4bf4b7cef34ca036d91cc6ef228501c1cd8d610acd61c823074f2b5d102cb77e"
+  },
+  "scenarios": [
+    {
+      "id": "baseline",
+      "status": "completed-with-findings",
+      "durationMs": 826,
+      "notes": [
+        "Baseline runtime findings were recorded."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已记录基线运行时问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "mobile-375",
+      "status": "passed",
+      "durationMs": 609,
+      "notes": [],
+      "translations": {
+        "zh-CN": {
+          "notes": []
+        }
+      }
+    },
+    {
+      "id": "long-text",
+      "status": "passed",
+      "durationMs": 1285,
+      "notes": [
+        "7 deterministic text mutations were applied."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已执行 7 次确定性的文本替换。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "rtl-arabic",
+      "status": "passed",
+      "durationMs": 1294,
+      "notes": [
+        "Directionality stress test only; translation quality was not assessed."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "仅进行书写方向压力测试；未评估翻译质量。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "image-failure",
+      "status": "passed",
+      "durationMs": 879,
+      "notes": [
+        "Expected image request aborts were excluded from failed-request findings."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "预期的图片请求中止未计入普通请求失败问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "keyboard-tab",
+      "status": "passed",
+      "durationMs": 1086,
+      "notes": [
+        "No controls were activated or submitted."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未激活或提交任何控件。"
+          ]
+        }
+      }
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "visual-regression-threshold",
+      "scenarioId": "baseline",
+      "classification": "existing",
+      "severity": "major",
+      "confidence": "high",
+      "title": "Current rendering differs from the approved visual baseline",
+      "summary": "245,207 pixel(s) changed (18.920%); the approved maximum is 0.200%.",
+      "url": "http://127.0.0.1:4183/index.html",
+      "measurements": {
+        "currentWidth": 1440,
+        "currentHeight": 900,
+        "baselineWidth": 1440,
+        "baselineHeight": 900,
+        "dimensionsMatch": true,
+        "changedPixels": 245207,
+        "totalPixels": 1296000,
+        "diffRatio": 0.18920293209876543,
+        "maxDiffRatio": 0.002,
+        "pixelThreshold": 28,
+        "maskedSelectors": 1
+      },
+      "evidence": [
+        {
+          "type": "screenshot",
+          "path": "screenshots/visual-current.png",
+          "label": "Current deterministic visual snapshot"
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/visual-approved.png",
+          "label": "Explicitly approved visual baseline"
+        },
+        {
+          "type": "screenshot",
+          "path": "screenshots/visual-diff.png",
+          "label": "Visual pixel difference"
+        }
+      ],
+      "reproductionSteps": [
+        "Open the route in the same clean desktop viewport.",
+        "Compare visual-current.png, visual-approved.png, and visual-diff.png."
+      ],
+      "remediation": {
+        "summary": "Repair the unintended application-owned rendering change and rerun the audit. If the change is intentional, review it and explicitly replace the baseline with visual-approve --replace-baseline.",
+        "technicalHints": [
+          "Do not raise the threshold or overwrite the baseline solely to clear the gate."
+        ]
+      },
+      "translations": {
+        "zh-CN": {
+          "title": "当前渲染结果与已批准视觉基线不一致",
+          "summary": "245,207 个像素发生变化（18.920%）；批准的上限为 0.200%。",
+          "reproductionSteps": [
+            "在相同的干净桌面视口中打开该路由。",
+            "对比 visual-current.png、visual-approved.png 与 visual-diff.png。"
+          ],
+          "remediation": {
+            "summary": "修复非预期且由应用造成的渲染变化后重新核查；若变化确属预期，应先人工复核，再通过 visual-approve --replace-baseline 显式替换基线。",
+            "technicalHints": [
+              "不要只为通过门禁而提高阈值或覆盖基线。"
+            ]
+          }
+        }
+      },
+      "selector": "html"
+    }
+  ],
+  "warnings": [
+    "Standalone audit used an already-installed system browser (150.0.7871.116).",
+    "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    "Visual regression policy finished with failed state using 1 declared mask(s); baseline replacement always requires an explicit approval command."
+  ],
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "独立核查使用了已安装的系统浏览器（150.0.7871.116）。",
+        "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        "视觉回归策略以 failed 状态完成，并使用 1 个声明式 mask；替换基线始终需要显式批准命令。"
+      ]
+    }
+  }
+}

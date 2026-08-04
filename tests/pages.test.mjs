@@ -19,6 +19,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "evidence/links/latest.html",
     "evidence/network/latest.html",
     "evidence/metadata/latest.html",
+    "evidence/visual/latest.html",
     "evidence/security/latest.html",
     "evidence/accessibility/latest.html",
     "labs/journey/broken.html",
@@ -28,6 +29,9 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "labs/network/fixed.html",
     "labs/metadata/broken.html",
     "labs/metadata/fixed.html",
+    "labs/visual/approved/index.html",
+    "labs/visual/regressed/index.html",
+    "labs/visual/baselines/visual-baseline-index.json",
     "labs/security/index.html",
     "labs/accessibility/broken.html",
   ]) assert.equal(existsSync(resolve(output, path)), true, `Pages output is missing ${path}`);
@@ -42,6 +46,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /方向键切换标签后/);
   assert.match(html, /PUBLISHING CONTRACT/);
   assert.match(html, /七项发布信号却失败/);
+  assert.match(html, /VISUAL REGRESSION/);
+  assert.match(html, /18\.920% 像素变化/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   const localReferences = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((match) => match[1])
     .filter((value) => !/^(?:https?:|#|mailto:|data:)/.test(value));

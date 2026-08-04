@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1",
+  "kind": "visual-baseline-index",
+  "entries": [
+    {
+      "pathname": "/index.html",
+      "filename": "index-html-213456c5dc96.png",
+      "sha256": "sha256:626e4375498e33abe8e40038a1de2060938dc5d50a39b71d59132b159e30786a",
+      "sourceRunId": "20260804T182446Z-55c126",
+      "approvedAt": "2026-08-04T18:24:58.761Z"
+    }
+  ],
+  "updatedAt": "2026-08-04T18:24:58.761Z"
+}

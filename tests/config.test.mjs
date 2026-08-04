@@ -137,6 +137,30 @@ test("publishing metadata policy is explicit, bounded, and text-free", () => {
   assert.throws(() => validateProjectConfig({ metadata: { title: "secret page copy" } }), /unknown property/);
 });
 
+test("visual regression policy is bounded, project-local, and explicit", () => {
+  const visual = {
+    severity: "major",
+    baselineDirectory: ".realitycheck/visual-baselines",
+    maxDiffRatio: 0.005,
+    pixelThreshold: 24,
+    masks: ["[data-dynamic]", ".clock"],
+  };
+  assert.deepEqual(validateProjectConfig({ visual }).visual, visual);
+  assert.throws(() => validateProjectConfig({ visual: { baselineDirectory: "baselines" } }), /maxDiffRatio is required/);
+  assert.throws(() => validateProjectConfig({ visual: { baselineDirectory: "../outside", maxDiffRatio: 0.1 } }), /inside the project/);
+  assert.throws(() => validateProjectConfig({ visual: { baselineDirectory: "baselines", maxDiffRatio: 1.1 } }), /number from 0 to 1/);
+  assert.throws(() => validateProjectConfig({ visual: { baselineDirectory: "baselines", maxDiffRatio: 0.1, pixelThreshold: 256 } }), /0 to 255/);
+  assert.throws(() => validateProjectConfig({ visual: { baselineDirectory: "baselines", maxDiffRatio: 0.1, masks: Array.from({ length: 21 }, (_, index) => `.mask-${index}`) } }), /more than 20/);
+  const directory = mkdtempSync(join(tmpdir(), "realitycheck-visual-config-"));
+  try {
+    const merged = mergeProjectOptions({ routes: [] }, { path: join(directory, "realitycheck.config.json"), directory, cwd: directory, config: { visual } });
+    assert.equal(merged.visual.baselineDirectoryPath, join(directory, ".realitycheck/visual-baselines"));
+    assert.deepEqual(merged.visual.masks, visual.masks);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("security policies are explicit, bounded, and origin-only", () => {
   const security = {
     severity: "major",

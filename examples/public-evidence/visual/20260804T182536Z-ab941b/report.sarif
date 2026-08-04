@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "20260804T182536Z-ab941b"
+      },
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "kind": "element",
+                  "name": "html"
+                }
+              ],
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4183/index.html"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Current rendering differs from the approved visual baseline: 245,207 pixel(s) changed (18.920%); the approved maximum is 0.200%."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "f9dfd0afa50da15a109ead1ad0b4c390f4a947e8b6f8274f968693ee250ddcf5"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-F9DFD0AFA5",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "visual-regression-threshold"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "RealityCheck",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "245,207 pixel(s) changed (18.920%); the approved maximum is 0.200%."
+              },
+              "help": {
+                "markdown": "Repair the unintended application-owned rendering change and rerun the audit. If the change is intentional, review it and explicitly replace the baseline with visual-approve --replace-baseline.\n\n- Do not raise the threshold or overwrite the baseline solely to clear the gate.",
+                "text": "Repair the unintended application-owned rendering change and rerun the audit. If the change is intentional, review it and explicitly replace the baseline with visual-approve --replace-baseline.\n\n- Do not raise the threshold or overwrite the baseline solely to clear the gate."
+              },
+              "id": "visual-regression-threshold",
+              "name": "visual_regression_threshold",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Current rendering differs from the approved visual baseline"
+              }
+            }
+          ],
+          "semanticVersion": "0.4.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

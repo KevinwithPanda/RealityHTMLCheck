@@ -71,6 +71,14 @@ test("publishing metadata fixtures satisfy the project policy schema", () => {
   }
 });
 
+test("visual regression fixture policies satisfy the project policy schema", () => {
+  for (const name of ["realitycheck.config.json", "ci.config.json"]) {
+    const [result] = validateArtifactFiles([resolve(`examples/visual-regression-lab/${name}`)]);
+    assert.equal(result.kind, "config");
+    assert.equal(result.valid, true, `${name}: ${result.errors.join("\n")}`);
+  }
+});
+
 test("validation reports precise paths for incompatible artifacts", () => {
   const directory = mkdtempSync(join(tmpdir(), "realitycheck-validation-"));
   try {

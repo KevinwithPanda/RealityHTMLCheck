@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import re
 import shutil
@@ -283,6 +284,24 @@ class SkillStructureTests(unittest.TestCase):
         self.assertEqual(broken_config["metadata"], fixed_config["metadata"])
         self.assertTrue(broken_config["metadata"]["forbidNoindex"])
         self.assertTrue(broken_config["metadata"]["requireSingleH1"])
+
+    def test_visual_regression_fixture_has_reviewed_baseline_and_dynamic_mask(self) -> None:
+        fixture = REPOSITORY_ROOT / "examples" / "visual-regression-lab"
+        approved = (fixture / "approved" / "index.html").read_text(encoding="utf-8")
+        regressed = (fixture / "regressed" / "index.html").read_text(encoding="utf-8")
+        config = json.loads((fixture / "realitycheck.config.json").read_text(encoding="utf-8"))
+        index = json.loads((fixture / "baselines" / "visual-baseline-index.json").read_text(encoding="utf-8"))
+        self.assertIn('class="current-time"', approved)
+        self.assertIn('class="current-time"', regressed)
+        self.assertIn("new Date().toISOString()", approved)
+        self.assertEqual(config["visual"]["masks"], [".current-time"])
+        self.assertEqual(config["visual"]["maxDiffRatio"], 0.002)
+        self.assertEqual(len(index["entries"]), 1)
+        entry = index["entries"][0]
+        self.assertEqual(entry["pathname"], "/index.html")
+        baseline = fixture / "baselines" / entry["filename"]
+        self.assertTrue(baseline.is_file())
+        self.assertEqual(entry["sha256"], f"sha256:{hashlib.sha256(baseline.read_bytes()).hexdigest()}")
 
     def test_governed_waiver_fixture_is_explicit_and_keeps_the_control_missing(self) -> None:
         fixture = REPOSITORY_ROOT / "examples" / "waiver-lab"

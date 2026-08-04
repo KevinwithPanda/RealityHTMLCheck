@@ -28,6 +28,7 @@ import { writeEvidenceTrustReport } from "./evidence-trust-report.mjs";
 import { buildRiskRegister, writeRiskRegister } from "./risk-register.mjs";
 import { detectorPolicyFingerprint } from "./policy-fingerprint.mjs";
 import { PROFILE_DESCRIPTIONS, buildProjectProfile, formatProfileList } from "./profiles.mjs";
+import { approveVisualBaseline, evaluateVisualRegression } from "./visual-regression.mjs";
 
 const require = createRequire(import.meta.url);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -49,6 +50,7 @@ Usage:
   realitycheck init [--profile starter|product|strict] [--base-url URL] [--config PATH]
   realitycheck profiles
   realitycheck doctor [--config PATH]
+  realitycheck visual-approve <REPORT.JSON> [--config PATH] [--replace-baseline]
   realitycheck validate <FILE|DIRECTORY> [...]
   realitycheck catalog <FILE|DIRECTORY> [...] [--output PATH]
   realitycheck risk-register <FILE|DIRECTORY> [...] [--output PATH]
@@ -80,6 +82,7 @@ Options:
   --baseline REPORT          Gate only regressions against a known-debt report
   --allow-remote             Confirm authorization for a public target
   --force                    Replace an existing config during init
+  --replace-baseline         Explicitly replace an existing visual baseline
   -h, --help                 Show this help
 
 Examples:
@@ -88,6 +91,7 @@ Examples:
   realitycheck profiles
   realitycheck init --profile product --base-url http://localhost:3000
   realitycheck doctor
+  realitycheck visual-approve .realitycheck/runs/RUN/report.json
   realitycheck validate .realitycheck/runs
   realitycheck catalog .realitycheck --output .realitycheck/catalog
   realitycheck risk-register .realitycheck --output .realitycheck/risks
@@ -104,7 +108,7 @@ Examples:
 
 function parseArguments(argv) {
   const args = [...argv];
-  const command = new Set(["audit", "init", "profiles", "doctor", "validate", "catalog", "risk-register", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
+  const command = new Set(["audit", "init", "profiles", "doctor", "visual-approve", "validate", "catalog", "risk-register", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
   const options = {
     command,
     target: null,
@@ -137,6 +141,8 @@ function parseArguments(argv) {
     maxOpenAgeDays: null,
     maxOpenRisks: null,
     maxRecurringRisks: null,
+    visualReport: null,
+    replaceBaseline: false,
   };
   while (args.length) {
     const item = args.shift();
@@ -162,6 +168,10 @@ function parseArguments(argv) {
     }
     if (item === "--force") {
       options.force = true;
+      continue;
+    }
+    if (item === "--replace-baseline") {
+      options.replaceBaseline = true;
       continue;
     }
     if (["--mode", "--fail-on", "--output", "--browser", "--compare", "--baseline", "--config", "--profile", "--base-url", "--route", "--max-pages", "--max-depth", "--storage-state", "--private-key", "--trusted-key", "--trust-policy", "--max-open-age-days", "--max-open-risks", "--max-recurring-risks"].includes(item)) {
@@ -215,6 +225,11 @@ function parseArguments(argv) {
       options.trustReportManifest = item;
       continue;
     }
+    if (command === "visual-approve") {
+      if (options.visualReport) throw new Error(`Unexpected argument: ${item}`);
+      options.visualReport = item;
+      continue;
+    }
     if (command === "profiles") throw new Error(`Unexpected argument: ${item}`);
     if (options.target) throw new Error(`Unexpected argument: ${item}`);
     options.target = item;
@@ -233,6 +248,7 @@ function parseArguments(argv) {
   if (options.trustPolicy && options.trustedKeyIds.length) throw new Error("Use either --trust-policy or --trusted-key, not both");
   if ((options.maxOpenAgeDays !== null || options.maxOpenRisks !== null || options.maxRecurringRisks !== null) && command !== "risk-register") throw new Error("risk policy options are only valid with risk-register");
   if ((options.profile || options.baseUrl) && command !== "init") throw new Error("--profile and --base-url are only valid with init");
+  if (options.replaceBaseline && command !== "visual-approve") throw new Error("--replace-baseline is only valid with visual-approve");
   return options;
 }
 
@@ -407,6 +423,7 @@ function runDoctor(options, loaded) {
   if (options.network) check("Network reliability", () => `${Object.keys(options.network).filter((key) => key.startsWith("max")).length} configured ${options.network.scope} request limit(s); no response bodies or query values retained`);
   if (options.links) check("Link integrity", () => `HEAD-only checks capped at ${options.links.maxChecked} same-origin links; ${options.links.maxFailures} failure(s) allowed`);
   if (options.metadata) check("Publishing metadata", () => `${Object.keys(options.metadata).length - 1} explicit title/description/document rule(s); text values are not retained`);
+  if (options.visual) check("Visual regression", () => `${(options.visual.maxDiffRatio * 100).toFixed(3)}% changed-pixel limit; ${options.visual.masks.length} mask(s); baseline updates require visual-approve`);
   if (options.security) check("Security baseline", () => `${Object.keys(options.security).length - 1} explicit policy setting(s); no form submission`);
   if (options.waivers.length) check("Governed waivers", () => {
     const now = new Date();
@@ -1373,6 +1390,58 @@ async function runMetadataPolicy(page, target, policy) {
   return findings;
 }
 
+async function runVisualRegressionPolicy(page, target, runDirectory, policy) {
+  if (!policy) return { findings: [], summary: null };
+  const result = await evaluateVisualRegression(page, target, runDirectory, policy);
+  const screenshots = {
+    current: { type: "screenshot", path: "screenshots/visual-current.png", label: "Current deterministic visual snapshot" },
+    approved: { type: "screenshot", path: "screenshots/visual-approved.png", label: "Explicitly approved visual baseline" },
+    diff: { type: "screenshot", path: "screenshots/visual-diff.png", label: "Visual pixel difference" },
+  };
+  const structuredEvidence = { type: "visual-policy", state: result.state, ...result.measurements };
+  const existingScreenshot = (path, evidence) => path && existsSync(path) ? [evidence] : [];
+  const findings = [];
+  if (result.state === "missing") findings.push(finding({
+    ruleId: "visual-baseline-missing", scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
+    title: "No approved visual baseline exists for this route", titleZh: "当前路由没有已批准的视觉基线",
+    summary: "A deterministic current snapshot was captured, but comparison is blocked until a human explicitly approves it.",
+    summaryZh: "已捕获确定性的当前快照，但在人明确批准之前不能进行视觉对比。",
+    selector: "html", measurements: result.measurements, evidence: [structuredEvidence, ...existingScreenshot(result.currentPath, screenshots.current)],
+    steps: ["Run the route in a clean desktop browser context.", "Observe that no approved pathname baseline is available."],
+    stepsZh: ["在干净的桌面浏览器上下文中运行该路由。", "确认该路径尚无已批准的视觉基线。"],
+    fix: "Review visual-current.png, then explicitly run realitycheck visual-approve against this report; do not approve an unexplained defect.",
+    fixZh: "复核 visual-current.png 后，对本报告显式运行 realitycheck visual-approve；不要批准原因不明的缺陷。",
+  }));
+  if (result.state === "unusable") findings.push(finding({
+    ruleId: "visual-baseline-unusable", scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
+    title: "Visual comparison could not safely use the configured baseline", titleZh: "视觉对比无法安全使用配置的基线",
+    summary: `The explicit visual policy could not be evaluated: ${result.reason}.`, summaryZh: `无法执行明确配置的视觉策略：${result.reason}。`,
+    selector: "html", measurements: { ...result.measurements, reason: result.reason }, evidence: [structuredEvidence, ...existingScreenshot(result.currentPath, screenshots.current), ...existingScreenshot(result.approvedCopyPath, screenshots.approved)],
+    steps: ["Run the route in a clean desktop browser context.", "Inspect the bounded visual comparison failure reason."],
+    stepsZh: ["在干净的桌面浏览器上下文中运行该路由。", "检查有边界的视觉对比失败原因。"],
+    fix: "Correct invalid mask selectors or replace an unreadable baseline only after reviewing the current snapshot.",
+    fixZh: "修正无效的 mask 选择器；若基线不可读取，必须先复核当前快照再替换。",
+  }));
+  if (result.state === "failed") {
+    const percent = (result.measurements.diffRatio * 100).toFixed(3);
+    const allowed = (result.measurements.maxDiffRatio * 100).toFixed(3);
+    findings.push(finding({
+      ruleId: "visual-regression-threshold", scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
+      title: "Current rendering differs from the approved visual baseline", titleZh: "当前渲染结果与已批准视觉基线不一致",
+      summary: `${result.measurements.changedPixels.toLocaleString("en-US")} pixel(s) changed (${percent}%); the approved maximum is ${allowed}%.`,
+      summaryZh: `${result.measurements.changedPixels.toLocaleString("en-US")} 个像素发生变化（${percent}%）；批准的上限为 ${allowed}%。`,
+      selector: "html", measurements: result.measurements, evidence: [structuredEvidence, screenshots.current, screenshots.approved, screenshots.diff],
+      steps: ["Open the route in the same clean desktop viewport.", "Compare visual-current.png, visual-approved.png, and visual-diff.png."],
+      stepsZh: ["在相同的干净桌面视口中打开该路由。", "对比 visual-current.png、visual-approved.png 与 visual-diff.png。"],
+      fix: "Repair the unintended application-owned rendering change and rerun the audit. If the change is intentional, review it and explicitly replace the baseline with visual-approve --replace-baseline.",
+      fixZh: "修复非预期且由应用造成的渲染变化后重新核查；若变化确属预期，应先人工复核，再通过 visual-approve --replace-baseline 显式替换基线。",
+      hints: ["Do not raise the threshold or overwrite the baseline solely to clear the gate."],
+      hintsZh: ["不要只为通过门禁而提高阈值或覆盖基线。"],
+    }));
+  }
+  return { findings, summary: { state: result.state, measurements: result.measurements } };
+}
+
 async function runSecurityPolicies(page, response, target, policy) {
   if (!policy) return [];
   const findings = [];
@@ -1490,12 +1559,13 @@ async function runSecurityPolicies(page, response, target, policy) {
   return findings;
 }
 
-async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, network = null, links = null, metadataPolicy = null, security = null, crawl = { include: ["/**"], exclude: [] }) {
+async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, network = null, links = null, metadataPolicy = null, visual = null, security = null, crawl = { include: ["/**"], exclude: [] }) {
   const findings = [];
   const results = new Map();
   let targetTitle = "";
   let finalUrl = target;
   let linkSummary = null;
+  let visualSummary = null;
 
   console.log("  1/6  Baseline");
   const baseline = await createPage(browser, target, "baseline", runDirectory, contextOptions);
@@ -1630,6 +1700,11 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
     findings.push(...linkResult.findings);
   }
   if (metadataPolicy) findings.push(...await runMetadataPolicy(baseline.page, finalUrl, metadataPolicy));
+  if (visual) {
+    const visualResult = await runVisualRegressionPolicy(baseline.page, finalUrl, runDirectory, visual);
+    visualSummary = visualResult.summary;
+    findings.push(...visualResult.findings);
+  }
   if (security) findings.push(...await runSecurityPolicies(baseline.page, baseline.response, finalUrl, security));
   results.set("baseline", scenarioResult("baseline", findings.length ? "completed-with-findings" : "passed", baseline.durationMs(), findings.length ? ["Baseline runtime findings were recorded."] : [], findings.length ? ["已记录基线运行时问题。"] : []));
   await baseline.context.close();
@@ -1859,7 +1934,7 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
   await keyboard.context.close();
 
   for (const item of findings) item.url = finalUrl;
-  return { findings, results, targetTitle, finalUrl, baselineLayout, linkSummary };
+  return { findings, results, targetTitle, finalUrl, baselineLayout, linkSummary, visualSummary };
 }
 
 async function runDeepScenarios(browser, target, runDirectory, findings, results, contextOptions = {}) {
@@ -2449,7 +2524,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   const contextOptions = options.storageState ? { storageState: options.storageState } : {};
   const pathname = new URL(target).pathname;
   const applicableChecks = options.checks.filter((check) => routeAllowed(pathname, { include: check.include, exclude: check.exclude }));
-  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.network, options.links, options.metadata, options.security, options.crawl);
+  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.network, options.links, options.metadata, options.visual, options.security, options.crawl);
   if (options.mode === "deep") {
     await runDeepScenarios(browser, target, runDirectory, auditResult.findings, auditResult.results, contextOptions);
   }
@@ -2476,6 +2551,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   if (options.network) audit.adapter.capabilities.push("network-reliability-budgets");
   if (options.links) audit.adapter.capabilities.push("bounded-head-link-integrity");
   if (options.metadata) audit.adapter.capabilities.push("publishing-metadata-policy");
+  if (options.visual) audit.adapter.capabilities.push("explicit-visual-regression-baseline");
   if (options.security) audit.adapter.capabilities.push("security-response-and-origin-policy");
   if (journeyResult.scenarios.length) audit.adapter.capabilities.push("safe-declarative-journeys");
   if (options.waivers.length) audit.adapter.capabilities.push("governed-waivers");
@@ -2496,6 +2572,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
     ...(options.network ? [`${Object.keys(options.network).filter((key) => key.startsWith("max")).length} explicit network reliability limit(s) were evaluated without persisting response bodies or query values.`] : []),
     ...(auditResult.linkSummary ? [`Link integrity checked ${auditResult.linkSummary.checked} same-origin target(s) with HEAD only: ${auditResult.linkSummary.failures} failed, ${auditResult.linkSummary.unsupported} did not support HEAD, ${auditResult.linkSummary.excluded} were excluded by safety policy, and ${auditResult.linkSummary.truncated} exceeded the configured cap.`] : []),
     ...(options.metadata ? [`${Object.keys(options.metadata).length - 1} explicit publishing metadata rule(s) were evaluated from counts, lengths, directives, and query-free destinations without retaining title or description text.`] : []),
+    ...(auditResult.visualSummary ? [`Visual regression policy finished with ${auditResult.visualSummary.state} state using ${auditResult.visualSummary.measurements.maskedSelectors} declared mask(s); baseline replacement always requires an explicit approval command.`] : []),
     ...(options.security ? [`${Object.keys(options.security).length - 1} explicit response, origin, and form security policy setting(s) were evaluated without submitting data.`] : []),
     ...(journeyResult.scenarios.length ? [`${journeyResult.scenarios.length} declarative user journey(s) were executed with same-origin and non-submission safety guards.`] : []),
     ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} finding(s) matched an active governed waiver; evidence remains visible but the finding is excluded from score and gate calculations.`] : []),
@@ -2516,6 +2593,7 @@ async function auditPage({ browser, python, browserVersion, options, target, out
         ...(options.network ? [`已在不保存响应正文或查询参数值的前提下核查 ${Object.keys(options.network).filter((key) => key.startsWith("max")).length} 项明确的网络可靠性限制。`] : []),
         ...(auditResult.linkSummary ? [`链接完整性仅使用 HEAD 核查了 ${auditResult.linkSummary.checked} 个同源目标：${auditResult.linkSummary.failures} 个失败，${auditResult.linkSummary.unsupported} 个不支持 HEAD，${auditResult.linkSummary.excluded} 个被安全策略排除，${auditResult.linkSummary.truncated} 个超过配置上限。`] : []),
         ...(options.metadata ? [`已通过计数、长度、指令和不含查询值的目标核查 ${Object.keys(options.metadata).length - 1} 项明确的发布元数据规则，未保留标题或描述正文。`] : []),
+        ...(auditResult.visualSummary ? [`视觉回归策略以 ${auditResult.visualSummary.state} 状态完成，并使用 ${auditResult.visualSummary.measurements.maskedSelectors} 个声明式 mask；替换基线始终需要显式批准命令。`] : []),
         ...(options.security ? [`已在不提交数据的前提下核查 ${Object.keys(options.security).length - 1} 项明确的响应、来源与表单安全策略。`] : []),
         ...(journeyResult.scenarios.length ? [`已在同源且禁止提交的安全限制下执行 ${journeyResult.scenarios.length} 个声明式用户旅程。`] : []),
         ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} 个问题命中了有效的可审计豁免；证据仍保留，但不计入评分和门禁。`] : []),
@@ -2617,6 +2695,29 @@ async function main() {
     }
     if (cli.command === "init") {
       initializeProjectConfig(cli);
+      return;
+    }
+    if (cli.command === "visual-approve") {
+      if (!cli.visualReport) throw new Error("visual-approve requires a report.json path");
+      if (cli.output) throw new Error("visual-approve writes to the configured baseline directory; do not pass --output");
+      loaded = loadProjectConfig(cli.config);
+      if (!loaded.path) throw new Error("visual-approve requires a project config with visual policy");
+      if (!loaded.config.visual) throw new Error("The project config has no visual policy to approve");
+      const reportPath = resolve(cli.visualReport);
+      const [validation] = validateArtifactFiles([reportPath]);
+      if (!validation?.valid || validation.kind !== "report") throw new Error(`Visual approval source must be a valid page report: ${validation?.errors.join("; ") || "unsupported artifact"}`);
+      const report = JSON.parse(readFileSync(reportPath, "utf8"));
+      const approval = approveVisualBaseline({
+        report,
+        reportPath,
+        configDirectory: loaded.directory,
+        policy: loaded.config.visual,
+        replace: cli.replaceBaseline,
+      });
+      console.log(`visual baseline: ${approval.destination}`);
+      console.log(`baseline index:  ${approval.indexPath}`);
+      console.log(`pathname:        ${approval.entry.pathname}`);
+      console.log(`result:          ${approval.unchanged ? "UNCHANGED" : approval.replaced ? "REPLACED (explicit approval)" : "APPROVED"}`);
       return;
     }
     if (cli.command === "validate") {

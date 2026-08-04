@@ -324,6 +324,83 @@ jobs:
           PY
           node realitycheck/scripts/audit.mjs validate "$broken_report" "$fixed_report"
 
+      - name: Prove explicitly approved visual regression baselines
+        shell: bash
+        run: |
+          python -m http.server 4181 --bind 127.0.0.1 --directory examples/visual-regression-lab/approved >/tmp/realitycheck-visual-approved.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..50}; do
+            if curl --fail --silent http://127.0.0.1:4181/index.html >/dev/null; then break; fi
+            sleep 0.1
+          done
+          set +e
+          npm run audit -- http://127.0.0.1:4181/index.html \
+            --config examples/visual-regression-lab/ci.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-visual-missing \
+            --fail-on major
+          missing_status=$?
+          set -e
+          test "$missing_status" -eq 1
+          missing_report="$(find .realitycheck/ci-visual-missing -name report.json -print -quit)"
+          node realitycheck/scripts/audit.mjs visual-approve "$missing_report" --config examples/visual-regression-lab/ci.config.json
+          npm run audit -- http://127.0.0.1:4181/index.html \
+            --config examples/visual-regression-lab/ci.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-visual-approved \
+            --fail-on major
+          kill "$server_pid"
+          wait "$server_pid" 2>/dev/null || true
+          python -m http.server 4181 --bind 127.0.0.1 --directory examples/visual-regression-lab/regressed >/tmp/realitycheck-visual-regressed.log 2>&1 &
+          server_pid=$!
+          for attempt in {1..50}; do
+            if curl --fail --silent http://127.0.0.1:4181/index.html >/dev/null; then break; fi
+            sleep 0.1
+          done
+          set +e
+          npm run audit -- http://127.0.0.1:4181/index.html \
+            --config examples/visual-regression-lab/ci.config.json \
+            --browser "$(command -v google-chrome)" \
+            --output .realitycheck/ci-visual-regressed \
+            --fail-on major
+          regressed_status=$?
+          set -e
+          test "$regressed_status" -eq 1
+          approved_report="$(find .realitycheck/ci-visual-approved -name report.json -print -quit)"
+          regressed_report="$(find .realitycheck/ci-visual-regressed -name report.json -print -quit)"
+          set +e
+          node realitycheck/scripts/audit.mjs visual-approve "$regressed_report" --config examples/visual-regression-lab/ci.config.json >/tmp/realitycheck-visual-refusal.log 2>&1
+          approval_status=$?
+          set -e
+          test "$approval_status" -eq 2
+          python - "$missing_report" "$approved_report" "$regressed_report" <<'PY'
+          import json
+          import pathlib
+          import sys
+          missing = json.load(open(sys.argv[1], encoding="utf-8"))
+          approved = json.load(open(sys.argv[2], encoding="utf-8"))
+          regressed = json.load(open(sys.argv[3], encoding="utf-8"))
+          assert {finding["ruleId"] for finding in missing["findings"]} == {"visual-baseline-missing"}, missing
+          assert approved["score"]["overall"] == 100 and not approved["findings"], approved
+          assert any("passed state" in warning for warning in approved["warnings"]), approved["warnings"]
+          assert {finding["ruleId"] for finding in regressed["findings"]} == {"visual-regression-threshold"}, regressed
+          finding = regressed["findings"][0]
+          measurements = finding["measurements"]
+          assert measurements["dimensionsMatch"] and measurements["maskedSelectors"] == 1, measurements
+          assert measurements["changedPixels"] > 0 and measurements["diffRatio"] > measurements["maxDiffRatio"], measurements
+          expected = {
+              "screenshots/visual-current.png",
+              "screenshots/visual-approved.png",
+              "screenshots/visual-diff.png",
+          }
+          assert finding["evidence"][0]["type"] == "visual-policy" and finding["evidence"][0]["state"] == "failed", finding
+          assert {item["path"] for item in finding["evidence"] if "path" in item} == expected, finding
+          root = pathlib.Path(sys.argv[3]).parent
+          assert all((root / path).is_file() for path in expected), expected
+          PY
+          node realitycheck/scripts/audit.mjs validate "$missing_report" "$approved_report" "$regressed_report"
+
       - name: Prove authenticated auditing without storage-state leakage
         shell: bash
         run: |
@@ -456,6 +533,9 @@ jobs:
             .realitycheck/ci-links-fixed
             .realitycheck/ci-metadata-broken
             .realitycheck/ci-metadata-fixed
+            .realitycheck/ci-visual-missing
+            .realitycheck/ci-visual-approved
+            .realitycheck/ci-visual-regressed
             .realitycheck/ci-auth-anonymous
             .realitycheck/ci-authenticated
             .realitycheck/ci-accessibility-broken

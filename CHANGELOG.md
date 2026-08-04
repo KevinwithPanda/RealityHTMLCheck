@@ -13,6 +13,7 @@ All notable changes are documented here. This project follows Semantic Versionin
 - Validated `starter`, `product`, and `strict` project profiles, with secret-safe `init --profile ... --base-url ...` generation and a bilingual profile catalog.
 - Safe journey `press` and `assert-url` steps for keyboard navigation and pathname checkpoints, with activation-key/editable-control guards and query-free traces.
 - Opt-in publishing metadata contracts for title and description length, canonical destinations, viewport, language, indexing, and primary-heading structure, with paired 75/100 versus 100/100 real-browser evidence.
+- Pathname-keyed visual regression baselines with bounded pixel thresholds, declarative dynamic-region masks, SHA-256 approval indexes, explicit first approval and replacement commands, and self-contained current/approved/diff evidence.
 
 ### Changed
 
@@ -21,6 +22,7 @@ All notable changes are documented here. This project follows Semantic Versionin
 - Switching report language now regenerates any visible individual or batch repair task and clears stale-language copy feedback.
 - Failed journey assertions now keep one measured trace record instead of adding a second duplicate failure entry.
 - Public detector evidence retains metadata counts, lengths, directives, and query-free canonical structure instead of title or description copy.
+- Visual baselines can no longer change as a side effect of auditing; an existing different baseline requires `visual-approve --replace-baseline`, while ordinary audits remain read-only.
 
 ## [0.4.0] - 2026-08-05
 

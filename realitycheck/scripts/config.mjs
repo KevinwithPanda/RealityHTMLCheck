@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
+import { resolveVisualBaselineDirectory } from "./visual-regression.mjs";
+
 export const CONFIG_FILENAME = "realitycheck.config.json";
 
 export const DEFAULT_PROJECT_CONFIG = Object.freeze({
@@ -32,7 +34,7 @@ export const DEFAULT_PROJECT_CONFIG = Object.freeze({
   owners: [],
 });
 
-const TOP_LEVEL_KEYS = new Set(["$schema", "baseUrl", "mode", "failOn", "output", "routes", "crawl", "checks", "journeys", "budgets", "network", "links", "metadata", "security", "waivers", "qualityGate", "baselinePolicy", "owners"]);
+const TOP_LEVEL_KEYS = new Set(["$schema", "baseUrl", "mode", "failOn", "output", "routes", "crawl", "checks", "journeys", "budgets", "network", "links", "metadata", "visual", "security", "waivers", "qualityGate", "baselinePolicy", "owners"]);
 const CRAWL_KEYS = new Set(["enabled", "maxPages", "maxDepth", "include", "exclude"]);
 const CHECK_KEYS = new Set(["id", "selector", "assertion", "severity", "title", "titleZh", "remediation", "remediationZh", "include", "exclude", "options"]);
 const CHECK_OPTION_KEYS = new Set(["min", "max", "attribute", "equals", "contains", "minWidth", "minHeight"]);
@@ -58,6 +60,7 @@ const SECURITY_HEADERS = new Set(["content-security-policy", "strict-transport-s
 const NETWORK_KEYS = new Set(["severity", "scope", "maxHttpErrors", "maxFailedRequests", "slowRequestMs", "maxSlowRequests", "maxThirdPartyRequests"]);
 const LINK_POLICY_KEYS = new Set(["severity", "maxFailures", "maxChecked", "timeoutMs"]);
 const METADATA_POLICY_KEYS = new Set(["severity", "titleMinLength", "titleMaxLength", "descriptionMinLength", "descriptionMaxLength", "requireCanonical", "requireViewport", "requireLang", "forbidNoindex", "requireSingleH1"]);
+const VISUAL_POLICY_KEYS = new Set(["severity", "baselineDirectory", "maxDiffRatio", "pixelThreshold", "masks"]);
 const WAIVER_KEYS = new Set(["id", "ruleId", "selector", "reason", "owner", "expires", "include", "exclude"]);
 const QUALITY_GATE_KEYS = new Set(["minimumScore", "minimumCoveragePercent", "maxWaivedFindings"]);
 const BASELINE_POLICY_KEYS = new Set(["maxAgeDays", "requireSamePolicy"]);
@@ -326,6 +329,27 @@ function validateMetadataPolicy(value, source) {
   return normalized;
 }
 
+function validateVisualPolicy(value, source) {
+  const label = `${source}.visual`;
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new ConfigError(`${label} must be an object`);
+  assertKnownKeys(value, VISUAL_POLICY_KEYS, label);
+  if (typeof value.baselineDirectory !== "string" || !value.baselineDirectory.trim()) throw new ConfigError(`${label}.baselineDirectory must be a non-empty relative path`);
+  const baselineDirectory = value.baselineDirectory.trim();
+  if (isAbsolute(baselineDirectory) || baselineDirectory.split(/[\\/]+/).includes("..") || baselineDirectory === ".") throw new ConfigError(`${label}.baselineDirectory must be a child path inside the project`);
+  if (value.maxDiffRatio === undefined) throw new ConfigError(`${label}.maxDiffRatio is required`);
+  const normalized = {
+    severity: value.severity ?? "major",
+    baselineDirectory,
+    maxDiffRatio: boundedNumber(value.maxDiffRatio, `${label}.maxDiffRatio`, 0, 1),
+    pixelThreshold: value.pixelThreshold === undefined ? 32 : boundedInteger(value.pixelThreshold, `${label}.pixelThreshold`, 0, 255),
+    masks: value.masks === undefined ? [] : stringArray(value.masks, `${label}.masks`),
+  };
+  if (!new Set(["critical", "major", "minor"]).has(normalized.severity)) throw new ConfigError(`${label}.severity is not supported`);
+  if (normalized.masks.length > 20) throw new ConfigError(`${label}.masks cannot contain more than 20 selectors`);
+  if (normalized.masks.some((selector) => selector.length > 500)) throw new ConfigError(`${label}.masks selectors cannot exceed 500 characters`);
+  return normalized;
+}
+
 function validateWaivers(value, source) {
   if (!Array.isArray(value)) throw new ConfigError(`${source}.waivers must be an array`);
   if (value.length > 100) throw new ConfigError(`${source}.waivers cannot contain more than 100 entries`);
@@ -445,6 +469,7 @@ export function validateProjectConfig(value, source = CONFIG_FILENAME) {
   if (value.network !== undefined) normalized.network = validateNetworkPolicy(value.network, source);
   if (value.links !== undefined) normalized.links = validateLinkPolicy(value.links, source);
   if (value.metadata !== undefined) normalized.metadata = validateMetadataPolicy(value.metadata, source);
+  if (value.visual !== undefined) normalized.visual = validateVisualPolicy(value.visual, source);
   if (value.security !== undefined) normalized.security = validateSecurityPolicy(value.security, source);
   if (value.waivers !== undefined) normalized.waivers = validateWaivers(value.waivers, source);
   if (value.qualityGate !== undefined) normalized.qualityGate = validateQualityGate(value.qualityGate, source);
@@ -527,6 +552,10 @@ export function mergeProjectOptions(cli, loaded) {
     network: project.network || null,
     links: project.links || null,
     metadata: project.metadata || null,
+    visual: project.visual ? {
+      ...project.visual,
+      baselineDirectoryPath: resolveVisualBaselineDirectory(loaded.directory, project.visual.baselineDirectory),
+    } : null,
     security: project.security || null,
     waivers: project.waivers || [],
     qualityGate: project.qualityGate || null,

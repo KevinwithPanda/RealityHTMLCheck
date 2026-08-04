@@ -60,7 +60,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add API/all-resource reliability budgets for HTTP errors, transport failures, latency, and third-party request volume.
 - [x] Add route-level link-integrity auditing with HEAD-only safety boundaries and redirect-chain evidence.
 - [x] Publish a bilingual Pages site with real Chrome evidence packs and live failing fixtures.
-- [ ] Add visual-regression baselines with explicit update approval and perceptual-difference evidence.
+- [x] Add visual-regression baselines with explicit update approval and bounded pixel-difference evidence.
 - [x] Add shareable validated policy presets for starter, product, and strict release adoption.
 - [x] Add explicit publishing metadata contracts with privacy-bounded evidence and paired release fixtures.
 

@@ -30,5 +30,9 @@ test("detector policy fingerprint is order-independent but changes with behavior
   assert.notEqual(first, detectorPolicyFingerprint({ mode: "quick", checks: [], budgets: { requests: 80, navigationMs: 2000, severity: "major" }, network: { severity: "major", scope: "api", maxHttpErrors: 0 } }));
   assert.notEqual(first, detectorPolicyFingerprint({ mode: "quick", checks: [], budgets: { requests: 80, navigationMs: 2000, severity: "major" }, links: { severity: "major", maxFailures: 0, maxChecked: 50, timeoutMs: 5000 } }));
   assert.notEqual(first, detectorPolicyFingerprint({ mode: "quick", checks: [], budgets: { requests: 80, navigationMs: 2000, severity: "major" }, metadata: { severity: "major", requireCanonical: true } }));
+  const visual = { severity: "major", baselineDirectory: "baselines", baselineDirectoryPath: "/machine/a/baselines", maxDiffRatio: 0.01, pixelThreshold: 32, masks: [".clock"] };
+  const visualFingerprint = detectorPolicyFingerprint({ mode: "quick", visual });
+  assert.notEqual(first, visualFingerprint);
+  assert.equal(visualFingerprint, detectorPolicyFingerprint({ mode: "quick", visual: { ...visual, baselineDirectoryPath: "/different/machine/baselines" } }));
   assert.notEqual(first, detectorPolicyFingerprint({ mode: "quick", checks: [], budgets: { requests: 80, navigationMs: 2000, severity: "major" }, security: { severity: "major", requiredHeaders: ["content-security-policy"] } }));
 });
