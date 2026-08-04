@@ -163,6 +163,14 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn('cat "$lab_log"', workflow)
         self.assertIn("trap cleanup_lab EXIT", workflow)
 
+    def test_validation_workflow_proves_the_packed_cli_from_an_isolated_consumer(self) -> None:
+        workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "validate.yml").read_text(encoding="utf-8")
+        self.assertIn("Prove the packed CLI from an isolated consumer", workflow)
+        self.assertIn('npm install --ignore-scripts "$package_path"', workflow)
+        self.assertIn('cli="./node_modules/.bin/realitycheck"', workflow)
+        self.assertIn('config["$schema"] == "./node_modules/realitycheck-web-audit/realitycheck/assets/config.schema.json"', workflow)
+        self.assertIn('plan["target"]["inspected"] is False', workflow)
+
     def test_version_and_release_metadata_agree(self) -> None:
         version = (REPOSITORY_ROOT / "VERSION").read_text(encoding="utf-8").strip()
         self.assertEqual(version, REPORT_MODULE.TOOL_VERSION)

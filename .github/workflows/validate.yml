@@ -48,6 +48,43 @@ jobs:
       - name: Verify package contents
         run: npm pack --dry-run
 
+      - name: Prove the packed CLI from an isolated consumer
+        shell: bash
+        run: |
+          package_dir="$(mktemp -d)"
+          consumer_dir="$(mktemp -d)"
+          cleanup_package_smoke() {
+            rm -rf "$package_dir" "$consumer_dir"
+          }
+          trap cleanup_package_smoke EXIT
+          package_file="$(npm pack --silent --pack-destination "$package_dir")"
+          package_path="$package_dir/$package_file"
+          (
+            cd "$consumer_dir"
+            npm init --yes > /dev/null
+            npm install --ignore-scripts "$package_path" > /dev/null
+            cli="./node_modules/.bin/realitycheck"
+            "$cli" profiles > profiles.txt
+            "$cli" init --profile product --base-url http://127.0.0.1:4300/app
+            "$cli" plan --config realitycheck.config.json --output audit-plan
+            "$cli" validate audit-plan/audit-plan.json
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          config = json.loads(Path("realitycheck.config.json").read_text(encoding="utf-8"))
+          plan = json.loads(Path("audit-plan/audit-plan.json").read_text(encoding="utf-8"))
+          assert config["$schema"] == "./node_modules/realitycheck-web-audit/realitycheck/assets/config.schema.json", config
+          assert Path(config["$schema"]).is_file(), config
+          assert plan["target"]["url"] == "http://127.0.0.1:4300/app", plan
+          assert plan["target"]["inspected"] is False, plan
+          assert {item["id"] for item in plan["safety"]} >= {"preview-only", "no-submit"}, plan
+          assert Path("audit-plan/audit-plan.html").is_file()
+          assert Path("audit-plan/audit-plan.zh-CN.md").is_file()
+          profiles = Path("profiles.txt").read_text(encoding="utf-8")
+          assert all(name in profiles for name in ("starter", "product", "strict")), profiles
+          PY
+          )
+
       - name: Prove the browser-free effective audit plan
         shell: bash
         run: |
