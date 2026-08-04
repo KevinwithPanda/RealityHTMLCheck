@@ -49,6 +49,7 @@ test("policy review blocks semantic security header weakening without copying va
     const afterPath = join(directory, "after.json");
     const base = { baseUrl: "https://app.example/", security: { severity: "major", requiredHeaders: ["content-security-policy"] } };
     const beforeConfig = structuredClone(base);
+    beforeConfig.security.requireSubresourceIntegrity = true;
     beforeConfig.security.headerPolicies = {
       contentSecurityPolicy: { requiredDirectives: ["default-src", "base-uri"], forbiddenTokens: ["'unsafe-eval'", "*"] },
       strictTransportSecurity: { minMaxAgeSeconds: 31536000, requireIncludeSubDomains: true, requirePreload: true },
@@ -72,6 +73,7 @@ test("policy review blocks semantic security header weakening without copying va
     assert.ok(review.changes.some((item) => item.key === "security-nosniff.policy" && item.classification === "weakened"));
     assert.ok(review.changes.some((item) => item.key === "security.headerPolicies.referrerPolicy.allowedValues" && item.classification === "weakened"));
     assert.ok(review.changes.some((item) => item.key === "security.headerPolicies.permissionsPolicy.disabledFeatures" && item.classification === "weakened"));
+    assert.ok(review.changes.some((item) => item.key === "security.requireSubresourceIntegrity" && item.classification === "weakened"));
     assert.doesNotMatch(JSON.stringify(review), /unsafe-eval|unsafe-url|default-src|microphone|geolocation/);
   } finally {
     rmSync(directory, { recursive: true, force: true });

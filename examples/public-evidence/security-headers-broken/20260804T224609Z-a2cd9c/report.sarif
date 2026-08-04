@@ -1,0 +1,276 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "20260804T224609Z-a2cd9c"
+      },
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4193/broken"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Security header does not satisfy the reviewed value policy: content-security-policy: The final document response failed 2 semantic requirement(s): required CSP directives are missing: base-uri, form-action, frame-ancestors; forbidden CSP source tokens are present: 'unsafe-eval'. The raw header value was not retained."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "d296a901bc4bd784696b80156703af9a7f17b52509282b0189316fcda761388c"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-D296A901BC",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "security-header-policy-content-security-policy"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4193/broken"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Security header does not satisfy the reviewed value policy: permissions-policy: The final document response failed 1 semantic requirement(s): these browser features do not use an empty allowlist: camera, geolocation. The raw header value was not retained."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "9dfd5f9c8e4b11e1589775f069a812947527fbb0cf1a3c245758acb247df0e9e"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-9DFD5F9C8E",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "security-header-policy-permissions-policy"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4193/broken"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Security header does not satisfy the reviewed value policy: referrer-policy: The final document response failed 1 semantic requirement(s): the effective Referrer-Policy is unsafe-url; allowed values are: no-referrer, strict-origin-when-cross-origin. The raw header value was not retained."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "a90bb5980656f39910e930a6feb78fe01b959249109fc9e60de0888c405d522d"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-A90BB59806",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "security-header-policy-referrer-policy"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4193/broken"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Security header does not satisfy the reviewed value policy: x-content-type-options: The final document response failed 1 semantic requirement(s): X-Content-Type-Options is not exactly nosniff. The raw header value was not retained."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "749eff79daf2af7884f854ad11fcb4acd8427391e8e4ab560bd92bf197a48d12"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-749EFF79DA",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "security-header-policy-x-content-type-options"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "http://127.0.0.1:4193/broken"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "A cross-origin executable resource has no integrity proof: 1 of 1 cross-origin script or stylesheet resource(s) had no Subresource Integrity attribute. Resource paths and integrity values were not retained."
+          },
+          "partialFingerprints": {
+            "realitycheckFingerprint/v1": "ba5a5df3fbc0ec70054b986134632a20ff8c705a1bb1b12153487feb4e9cf6cb"
+          },
+          "properties": {
+            "classification": "existing",
+            "confidence": "high",
+            "findingId": "RC-BA5A5DF3FB",
+            "scenarioId": "baseline",
+            "severity": "major"
+          },
+          "ruleId": "security-subresource-integrity"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "name": "RealityCheck",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The final document response failed 2 semantic requirement(s): required CSP directives are missing: base-uri, form-action, frame-ancestors; forbidden CSP source tokens are present: 'unsafe-eval'. The raw header value was not retained."
+              },
+              "help": {
+                "markdown": "Configure a reviewed CSP: add the required directives base-uri, form-action, frame-ancestors; remove the forbidden source tokens 'unsafe-eval'. Validate application behavior in staging instead of copying a permissive placeholder.\n\n- Do not weaken the configured rule or add a permissive placeholder only to clear the gate.",
+                "text": "Configure a reviewed CSP: add the required directives base-uri, form-action, frame-ancestors; remove the forbidden source tokens 'unsafe-eval'. Validate application behavior in staging instead of copying a permissive placeholder.\n\n- Do not weaken the configured rule or add a permissive placeholder only to clear the gate."
+              },
+              "id": "security-header-policy-content-security-policy",
+              "name": "security_header_policy_content_security_policy",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Security header does not satisfy the reviewed value policy: content-security-policy"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The final document response failed 1 semantic requirement(s): these browser features do not use an empty allowlist: camera, geolocation. The raw header value was not retained."
+              },
+              "help": {
+                "markdown": "After confirming the route does not need them, set these features to the empty allowlist (): camera, geolocation.\n\n- Do not weaken the configured rule or add a permissive placeholder only to clear the gate.",
+                "text": "After confirming the route does not need them, set these features to the empty allowlist (): camera, geolocation.\n\n- Do not weaken the configured rule or add a permissive placeholder only to clear the gate."
+              },
+              "id": "security-header-policy-permissions-policy",
+              "name": "security_header_policy_permissions_policy",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Security header does not satisfy the reviewed value policy: permissions-policy"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The final document response failed 1 semantic requirement(s): the effective Referrer-Policy is unsafe-url; allowed values are: no-referrer, strict-origin-when-cross-origin. The raw header value was not retained."
+              },
+              "help": {
+                "markdown": "After reviewing outbound navigation, set Referrer-Policy to one of these allowed values: no-referrer, strict-origin-when-cross-origin.\n\n- Do not weaken the configured rule or add a permissive placeholder only to clear the gate.",
+                "text": "After reviewing outbound navigation, set Referrer-Policy to one of these allowed values: no-referrer, strict-origin-when-cross-origin.\n\n- Do not weaken the configured rule or add a permissive placeholder only to clear the gate."
+              },
+              "id": "security-header-policy-referrer-policy",
+              "name": "security_header_policy_referrer_policy",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Security header does not satisfy the reviewed value policy: referrer-policy"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "The final document response failed 1 semantic requirement(s): X-Content-Type-Options is not exactly nosniff. The raw header value was not retained."
+              },
+              "help": {
+                "markdown": "Set X-Content-Type-Options to exactly nosniff on the final document response.\n\n- Do not weaken the configured rule or add a permissive placeholder only to clear the gate.",
+                "text": "Set X-Content-Type-Options to exactly nosniff on the final document response.\n\n- Do not weaken the configured rule or add a permissive placeholder only to clear the gate."
+              },
+              "id": "security-header-policy-x-content-type-options",
+              "name": "security_header_policy_x_content_type_options",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "Security header does not satisfy the reviewed value policy: x-content-type-options"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "fullDescription": {
+                "text": "1 of 1 cross-origin script or stylesheet resource(s) had no Subresource Integrity attribute. Resource paths and integrity values were not retained."
+              },
+              "help": {
+                "markdown": "Pin the reviewed third-party asset, add its cryptographic SRI digest and appropriate crossorigin mode, or self-host the versioned asset; verify behavior before release.\n\n- Never copy a digest from an untrusted response; compute it from the exact reviewed bytes and update it only with an intentional dependency change.",
+                "text": "Pin the reviewed third-party asset, add its cryptographic SRI digest and appropriate crossorigin mode, or self-host the versioned asset; verify behavior before release.\n\n- Never copy a digest from an untrusted response; compute it from the exact reviewed bytes and update it only with an intentional dependency change."
+              },
+              "id": "security-subresource-integrity",
+              "name": "security_subresource_integrity",
+              "properties": {
+                "severity": "major",
+                "tags": [
+                  "browser",
+                  "realitycheck",
+                  "baseline"
+                ]
+              },
+              "shortDescription": {
+                "text": "A cross-origin executable resource has no integrity proof"
+              }
+            }
+          ],
+          "semanticVersion": "0.4.0"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}

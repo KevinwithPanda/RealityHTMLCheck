@@ -14,7 +14,7 @@ RealityCheck never treats an unsupported check as passed. Audit mode is read-onl
 - GitHub issue draft example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/issue-drafts/github-issue-drafts.html
 - Release decision example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/release-decision/release-decision.html
 - Aggregate browser storage privacy evidence: https://kevinwithpanda.github.io/RealityHTMLCheck/evidence/privacy/latest.html
-- Semantic response-header failure evidence: https://kevinwithpanda.github.io/RealityHTMLCheck/evidence/security-headers-broken/latest.html
+- Semantic response-header and Subresource Integrity failure evidence: https://kevinwithpanda.github.io/RealityHTMLCheck/evidence/security-headers-broken/latest.html
 - Semantic response-header passing proof: https://kevinwithpanda.github.io/RealityHTMLCheck/evidence/security-headers-fixed/latest.html
 - Browser-free audit plan example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/audit-plan/audit-plan.html
 - English guide: https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/README.md

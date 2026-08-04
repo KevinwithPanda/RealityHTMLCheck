@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "kind": "evidence-manifest",
+  "generatedAt": "2026-08-04T22:46:16.403Z",
+  "source": {
+    "artifactKind": "page-audit",
+    "runId": "20260804T224609Z-a2cd9c",
+    "target": "http://127.0.0.1:4193/broken"
+  },
+  "algorithm": "sha256",
+  "summary": {
+    "files": 14,
+    "bytes": 267022
+  },
+  "files": [
+    {
+      "path": "audit-input.json",
+      "bytes": 19310,
+      "sha256": "24e6d009c163bd0aa07badd0df00807888f8d85bf23bcc8616e98409a3b16437",
+      "mediaType": "application/json"
+    },
+    {
+      "path": "repair-plan.json",
+      "bytes": 7809,
+      "sha256": "b408bfeffb60d1956e1ad4bdc14c6ea185aafd386496befb1ec81453da61d8e2",
+      "mediaType": "application/json"
+    },
+    {
+      "path": "repair-plan.md",
+      "bytes": 3657,
+      "sha256": "3b42a0febcffe751a0370cd22cc7195b7dfc8ab6d31e178939eb9a9793f454b5",
+      "mediaType": "text/markdown"
+    },
+    {
+      "path": "report.html",
+      "bytes": 71092,
+      "sha256": "c09de1af4f9fc4fa3f718ad98806ae4cc2caebf32476ea1f854cbc5b763fafab",
+      "mediaType": "text/html"
+    },
+    {
+      "path": "report.json",
+      "bytes": 20403,
+      "sha256": "eb4c10d5b2149798e3d13e90e3738fdb6477f849ce018ef0c7dc4f4a45f1df92",
+      "mediaType": "application/json"
+    },
+    {
+      "path": "report.junit.xml",
+      "bytes": 2138,
+      "sha256": "77cdf0a7f7c7f0bf11a93da5591bd2261b19b1616a91ba0a113e428a4e13b2bb",
+      "mediaType": "application/xml"
+    },
+    {
+      "path": "report.md",
+      "bytes": 9708,
+      "sha256": "8f0e0967a1ed9a893bb51782cad40ab8e4bf93fa4464fe48cdb9442bc89e260a",
+      "mediaType": "text/markdown"
+    },
+    {
+      "path": "report.sarif",
+      "bytes": 13031,
+      "sha256": "2fd92579c06f3f8b485a12955728c69b38d7865e42f768e0900e8e3fa21dabeb",
+      "mediaType": "application/sarif+json"
+    },
+    {
+      "path": "screenshots/baseline.png",
+      "bytes": 19910,
+      "sha256": "a4a1fbd3b44f63ef90541380361d4c2efb90ddc2e3847307bc095418d0485ade",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/image-failure.png",
+      "bytes": 19910,
+      "sha256": "a4a1fbd3b44f63ef90541380361d4c2efb90ddc2e3847307bc095418d0485ade",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/keyboard-tab.png",
+      "bytes": 19910,
+      "sha256": "a4a1fbd3b44f63ef90541380361d4c2efb90ddc2e3847307bc095418d0485ade",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/long-text.png",
+      "bytes": 28654,
+      "sha256": "9f7518919aa3b3a21b3d111342d62544b3937b4485f3cb48485f45602827152e",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/mobile-375.png",
+      "bytes": 16427,
+      "sha256": "f5a1f8525b5853293f26b33c87946e1c20caf7070b591b112e647ee1b40b9352",
+      "mediaType": "image/png"
+    },
+    {
+      "path": "screenshots/rtl-arabic.png",
+      "bytes": 15063,
+      "sha256": "c67515ad8ce41cacf527c5cd9ad394cb788f0103268de1985a5f21327942b0d6",
+      "mediaType": "image/png"
+    }
+  ]
+}

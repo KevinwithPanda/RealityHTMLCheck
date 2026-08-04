@@ -396,6 +396,7 @@
         },
         "forbidMixedContent": { "const": true },
         "secureForms": { "const": true },
+        "requireSubresourceIntegrity": { "const": true },
         "maxThirdPartyOrigins": { "type": "integer", "minimum": 0, "maximum": 100 },
         "allowedThirdPartyOrigins": {
           "type": "array",
@@ -408,6 +409,7 @@
         { "required": ["headerPolicies"], "properties": { "headerPolicies": true } },
         { "required": ["forbidMixedContent"], "properties": { "forbidMixedContent": true } },
         { "required": ["secureForms"], "properties": { "secureForms": true } },
+        { "required": ["requireSubresourceIntegrity"], "properties": { "requireSubresourceIntegrity": true } },
         { "required": ["maxThirdPartyOrigins"], "properties": { "maxThirdPartyOrigins": true } },
         { "required": ["allowedThirdPartyOrigins"], "properties": { "allowedThirdPartyOrigins": true } }
       ]

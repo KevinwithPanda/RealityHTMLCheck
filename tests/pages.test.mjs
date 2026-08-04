@@ -103,7 +103,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /UNDERSTAND BEFORE EXECUTION/);
   assert.match(html, /Open the 301-scenario plan/);
   assert.match(html, /browser access&nbsp; NONE/);
-  assert.match(html, /SEMANTIC RESPONSE HEADERS/);
+  assert.match(html, /SECURITY POLICY/);
+  assert.match(html, /80→100/);
   assert.match(html, /evidence\/security-headers-broken\/latest\.html/);
   assert.match(html, /evidence\/security-headers-fixed\/latest\.html/);
   assert.match(html, /浏览器存储隐私/);

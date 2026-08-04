@@ -6,6 +6,7 @@
   "output": "../../.realitycheck/security-header-lab/broken",
   "security": {
     "severity": "major",
+    "requireSubresourceIntegrity": true,
     "headerPolicies": {
       "contentSecurityPolicy": {
         "requiredDirectives": ["default-src", "base-uri", "form-action", "frame-ancestors"],

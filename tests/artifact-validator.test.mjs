@@ -75,7 +75,7 @@ test("the published aggregate privacy evidence verifies every committed output",
 
 test("published semantic response-header evidence proves failure and recovery without raw values", () => {
   const expected = [
-    ["security-headers-broken", 84, 4],
+    ["security-headers-broken", 80, 4],
     ["security-headers-fixed", 100, 0],
   ];
   for (const [kind, score, semanticFindings] of expected) {
@@ -98,6 +98,11 @@ test("published semantic response-header evidence proves failure and recovery wi
     if (kind === "security-headers-broken") {
       assert.match(semantic.find((item) => item.ruleId.endsWith("permissions-policy")).summary, /camera, geolocation/);
       assert.match(semantic.find((item) => item.ruleId.endsWith("content-security-policy")).remediation.summary, /base-uri, form-action, frame-ancestors/);
+      const sri = report.findings.find((item) => item.ruleId === "security-subresource-integrity");
+      assert.equal(sri.measurements.missingIntegrity, 1);
+      assert.equal(sri.measurements.resourcePathsRetained, false);
+      assert.equal(sri.measurements.integrityValuesRetained, false);
+      assert.doesNotMatch(serialized, /asset\.js|sha384-|__realityCheckReviewedAsset/);
     }
   }
 });

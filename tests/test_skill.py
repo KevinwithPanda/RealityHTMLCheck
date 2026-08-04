@@ -339,7 +339,7 @@ class SkillStructureTests(unittest.TestCase):
         server = (fixture / "server.mjs").read_text(encoding="utf-8")
         self.assertIn('"/broken"', server)
         self.assertIn('"/fixed"', server)
-        for name, expected_score, expected_findings in (("security-headers-broken", 84, 4), ("security-headers-fixed", 100, 0)):
+        for name, expected_score, expected_findings in (("security-headers-broken", 80, 4), ("security-headers-fixed", 100, 0)):
             root = REPOSITORY_ROOT / "examples" / "public-evidence" / name
             latest = json.loads((root / "latest.json").read_text(encoding="utf-8"))
             report = json.loads((root / latest["artifacts"]["json"]).read_text(encoding="utf-8"))
@@ -356,6 +356,12 @@ class SkillStructureTests(unittest.TestCase):
                 csp = next(item for item in semantic if item["ruleId"].endswith("content-security-policy"))
                 self.assertIn("camera, geolocation", permissions["summary"])
                 self.assertIn("base-uri, form-action, frame-ancestors", csp["remediation"]["summary"])
+                sri = next(item for item in report["findings"] if item["ruleId"] == "security-subresource-integrity")
+                self.assertEqual(sri["measurements"]["missingIntegrity"], 1)
+                self.assertFalse(sri["measurements"]["resourcePathsRetained"])
+                self.assertFalse(sri["measurements"]["integrityValuesRetained"])
+                self.assertNotIn("asset.js", serialized)
+                self.assertNotIn("sha384-", serialized)
 
     def test_privacy_budget_has_paired_aggregate_only_evidence(self) -> None:
         fixture = REPOSITORY_ROOT / "examples" / "privacy-lab"

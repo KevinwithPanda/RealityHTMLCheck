@@ -173,18 +173,26 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          for name, score, count in (("broken", 84, 4), ("fixed", 100, 0)):
+          for name, score, count, total in (("broken", 80, 4, 5), ("fixed", 100, 0, 0)):
               root = Path(".realitycheck/security-header-lab") / name
               latest = json.loads((root / "latest.json").read_text(encoding="utf-8"))
               report = json.loads((root / latest["artifacts"]["json"]).read_text(encoding="utf-8"))
               semantic = [item for item in report["findings"] if item["ruleId"].startswith("security-header-policy-")]
               assert report["score"]["overall"] == score, report["score"]
               assert len(semantic) == count, semantic
+              assert len(report["findings"]) == total, report["findings"]
               assert all(item["measurements"]["rawValueRetained"] is False for item in semantic)
               serialized = json.dumps(report)
               assert "default-src 'self'" not in serialized
               assert "frame-ancestors 'none'" not in serialized
               assert "private.example" not in serialized
+              assert "asset.js" not in serialized
+              assert "sha384-" not in serialized
+              if name == "broken":
+                  sri = next(item for item in report["findings"] if item["ruleId"] == "security-subresource-integrity")
+                  assert sri["measurements"]["missingIntegrity"] == 1
+                  assert sri["measurements"]["resourcePathsRetained"] is False
+                  assert sri["measurements"]["integrityValuesRetained"] is False
           PY
 
       - name: Prove the zero-configuration bundled demo

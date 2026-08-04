@@ -1,0 +1,195 @@
+{
+  "items": [
+    {
+      "confidence": "high",
+      "findingId": "RC-D296A901BC",
+      "fingerprint": "d296a901bc4bd784696b80156703af9a7f17b52509282b0189316fcda761388c",
+      "remediation": {
+        "summary": "Configure a reviewed CSP: add the required directives base-uri, form-action, frame-ancestors; remove the forbidden source tokens 'unsafe-eval'. Validate application behavior in staging instead of copying a permissive placeholder.",
+        "technicalHints": [
+          "Do not weaken the configured rule or add a permissive placeholder only to clear the gate."
+        ]
+      },
+      "reportAnchor": "report.html#RC-D296A901BC",
+      "ruleId": "security-header-policy-content-security-policy",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "Security header does not satisfy the reviewed value policy: content-security-policy",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "配置经过复核的 CSP：加入必需指令 base-uri, form-action, frame-ancestors；移除禁用来源标记 'unsafe-eval'。在预发布环境验证应用行为，不要复制宽松占位策略。",
+            "technicalHints": [
+              "不要只为通过门禁而削弱配置规则或添加宽松占位值。"
+            ]
+          },
+          "title": "安全响应头不符合已复核的值策略：content-security-policy"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-9DFD5F9C8E",
+      "fingerprint": "9dfd5f9c8e4b11e1589775f069a812947527fbb0cf1a3c245758acb247df0e9e",
+      "remediation": {
+        "summary": "After confirming the route does not need them, set these features to the empty allowlist (): camera, geolocation.",
+        "technicalHints": [
+          "Do not weaken the configured rule or add a permissive placeholder only to clear the gate."
+        ]
+      },
+      "reportAnchor": "report.html#RC-9DFD5F9C8E",
+      "ruleId": "security-header-policy-permissions-policy",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "Security header does not satisfy the reviewed value policy: permissions-policy",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "确认业务不需要后，把这些功能设置为空允许列表 ()：camera, geolocation。",
+            "technicalHints": [
+              "不要只为通过门禁而削弱配置规则或添加宽松占位值。"
+            ]
+          },
+          "title": "安全响应头不符合已复核的值策略：permissions-policy"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-A90BB59806",
+      "fingerprint": "a90bb5980656f39910e930a6feb78fe01b959249109fc9e60de0888c405d522d",
+      "remediation": {
+        "summary": "After reviewing outbound navigation, set Referrer-Policy to one of these allowed values: no-referrer, strict-origin-when-cross-origin.",
+        "technicalHints": [
+          "Do not weaken the configured rule or add a permissive placeholder only to clear the gate."
+        ]
+      },
+      "reportAnchor": "report.html#RC-A90BB59806",
+      "ruleId": "security-header-policy-referrer-policy",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "Security header does not satisfy the reviewed value policy: referrer-policy",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "复核出站导航后，将 Referrer-Policy 设置为以下允许值之一：no-referrer, strict-origin-when-cross-origin。",
+            "technicalHints": [
+              "不要只为通过门禁而削弱配置规则或添加宽松占位值。"
+            ]
+          },
+          "title": "安全响应头不符合已复核的值策略：referrer-policy"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-749EFF79DA",
+      "fingerprint": "749eff79daf2af7884f854ad11fcb4acd8427391e8e4ab560bd92bf197a48d12",
+      "remediation": {
+        "summary": "Set X-Content-Type-Options to exactly nosniff on the final document response.",
+        "technicalHints": [
+          "Do not weaken the configured rule or add a permissive placeholder only to clear the gate."
+        ]
+      },
+      "reportAnchor": "report.html#RC-749EFF79DA",
+      "ruleId": "security-header-policy-x-content-type-options",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "Security header does not satisfy the reviewed value policy: x-content-type-options",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "在最终文档响应上将 X-Content-Type-Options 精确设置为 nosniff。",
+            "technicalHints": [
+              "不要只为通过门禁而削弱配置规则或添加宽松占位值。"
+            ]
+          },
+          "title": "安全响应头不符合已复核的值策略：x-content-type-options"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    },
+    {
+      "confidence": "high",
+      "findingId": "RC-BA5A5DF3FB",
+      "fingerprint": "ba5a5df3fbc0ec70054b986134632a20ff8c705a1bb1b12153487feb4e9cf6cb",
+      "remediation": {
+        "summary": "Pin the reviewed third-party asset, add its cryptographic SRI digest and appropriate crossorigin mode, or self-host the versioned asset; verify behavior before release.",
+        "technicalHints": [
+          "Never copy a digest from an untrusted response; compute it from the exact reviewed bytes and update it only with an intentional dependency change."
+        ]
+      },
+      "reportAnchor": "report.html#RC-BA5A5DF3FB",
+      "ruleId": "security-subresource-integrity",
+      "scenarioId": "baseline",
+      "severity": "major",
+      "title": "A cross-origin executable resource has no integrity proof",
+      "translations": {
+        "zh-CN": {
+          "remediation": {
+            "summary": "固定经过复核的第三方资源版本，加入其 SRI 加密摘要与适当的 crossorigin 模式，或自行托管版本化资源；发布前验证行为。",
+            "technicalHints": [
+              "不要从不可信响应复制摘要；应基于已复核的精确字节计算，并只在有意升级依赖时更新。"
+            ]
+          },
+          "title": "跨来源可执行资源缺少完整性证明"
+        }
+      },
+      "verification": {
+        "forbidSameLevelRegression": true,
+        "requireFingerprintAbsent": true,
+        "requireHealthyBaseline": true,
+        "requiredScenarios": [
+          "baseline"
+        ]
+      }
+    }
+  ],
+  "kind": "repair-plan",
+  "schemaVersion": "1",
+  "source": {
+    "reportPath": "report.json",
+    "runId": "20260804T224609Z-a2cd9c",
+    "target": "http://127.0.0.1:4193/broken"
+  },
+  "summary": {
+    "critical": 0,
+    "items": 5,
+    "major": 5,
+    "minor": 0,
+    "reviewRequired": 0,
+    "waived": 0
+  },
+  "toolVersion": "0.4.0"
+}

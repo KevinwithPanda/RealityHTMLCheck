@@ -193,6 +193,7 @@ test("security policies are explicit, bounded, and origin-only", () => {
     },
     forbidMixedContent: true,
     secureForms: true,
+    requireSubresourceIntegrity: true,
     maxThirdPartyOrigins: 2,
     allowedThirdPartyOrigins: ["https://cdn.example.com"],
   };
@@ -200,6 +201,7 @@ test("security policies are explicit, bounded, and origin-only", () => {
   assert.throws(() => validateProjectConfig({ security: { requiredHeaders: ["Content-Security-Policy"] } }), /lowercase/);
   assert.throws(() => validateProjectConfig({ security: { severity: "major" } }), /at least one security policy/);
   assert.throws(() => validateProjectConfig({ security: { forbidMixedContent: false } }), /must be true/);
+  assert.throws(() => validateProjectConfig({ security: { requireSubresourceIntegrity: false } }), /must be true/);
   assert.throws(() => validateProjectConfig({ security: { requiredHeaders: ["set-cookie"] } }), /unsupported header/);
   assert.throws(() => validateProjectConfig({ security: { allowedThirdPartyOrigins: ["https://cdn.example.com/assets"] } }), /without a path/);
   assert.throws(() => validateProjectConfig({ security: { headerPolicies: {} } }), /at least one header policy/);

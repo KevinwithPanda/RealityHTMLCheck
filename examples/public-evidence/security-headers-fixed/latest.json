@@ -2,17 +2,17 @@
   "schemaVersion": "1",
   "toolVersion": "0.4.0",
   "kind": "latest-run",
-  "updatedAt": "2026-08-04T22:31:25.544Z",
+  "updatedAt": "2026-08-04T22:46:23.826Z",
   "artifactKind": "page-audit",
-  "runId": "20260804T223120Z-f30547",
+  "runId": "20260804T224617Z-54e513",
   "target": "http://127.0.0.1:4193/fixed",
   "state": "passed",
   "score": 100,
   "artifacts": {
-    "html": "20260804T223120Z-f30547/report.html",
-    "json": "20260804T223120Z-f30547/report.json",
-    "repairPlanJson": "20260804T223120Z-f30547/repair-plan.json",
-    "repairPlanMarkdown": "20260804T223120Z-f30547/repair-plan.md",
-    "integrityManifest": "20260804T223120Z-f30547/evidence-manifest.json"
+    "html": "20260804T224617Z-54e513/report.html",
+    "json": "20260804T224617Z-54e513/report.json",
+    "repairPlanJson": "20260804T224617Z-54e513/repair-plan.json",
+    "repairPlanMarkdown": "20260804T224617Z-54e513/repair-plan.md",
+    "integrityManifest": "20260804T224617Z-54e513/evidence-manifest.json"
   }
 }

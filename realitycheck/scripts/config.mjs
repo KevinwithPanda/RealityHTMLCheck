@@ -63,7 +63,7 @@ const BUDGET_KEYS = new Set([
   "transferKb",
   "domNodes",
 ]);
-const SECURITY_KEYS = new Set(["severity", "requiredHeaders", "headerPolicies", "forbidMixedContent", "secureForms", "maxThirdPartyOrigins", "allowedThirdPartyOrigins"]);
+const SECURITY_KEYS = new Set(["severity", "requiredHeaders", "headerPolicies", "forbidMixedContent", "secureForms", "requireSubresourceIntegrity", "maxThirdPartyOrigins", "allowedThirdPartyOrigins"]);
 const SECURITY_HEADERS = new Set(["content-security-policy", "strict-transport-security", "x-content-type-options", "referrer-policy", "permissions-policy"]);
 const HEADER_POLICY_KEYS = new Set(SECURITY_HEADER_POLICY_KEYS);
 const PRIVACY_KEYS = new Set(["severity", "maxCookies", "maxCookieBytes", "maxThirdPartyCookies", "maxLocalStorageEntries", "maxLocalStorageBytes", "maxSessionStorageEntries", "maxSessionStorageBytes"]);
@@ -347,7 +347,7 @@ function validateSecurityPolicy(value, source) {
     if (unsupported) throw new ConfigError(`${label}.requiredHeaders contains unsupported header ${JSON.stringify(unsupported)}`);
   }
   if (value.headerPolicies !== undefined) normalized.headerPolicies = validateHeaderPolicies(value.headerPolicies, `${label}.headerPolicies`);
-  for (const key of ["forbidMixedContent", "secureForms"]) {
+  for (const key of ["forbidMixedContent", "secureForms", "requireSubresourceIntegrity"]) {
     if (value[key] !== undefined) {
       if (value[key] !== true) throw new ConfigError(`${label}.${key} must be true when configured`);
       normalized[key] = true;

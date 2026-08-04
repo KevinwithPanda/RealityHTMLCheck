@@ -1,0 +1,19 @@
+{
+  "items": [],
+  "kind": "repair-plan",
+  "schemaVersion": "1",
+  "source": {
+    "reportPath": "report.json",
+    "runId": "20260804T224617Z-54e513",
+    "target": "http://127.0.0.1:4193/fixed"
+  },
+  "summary": {
+    "critical": 0,
+    "items": 0,
+    "major": 0,
+    "minor": 0,
+    "reviewRequired": 0,
+    "waived": 0
+  },
+  "toolVersion": "0.4.0"
+}

@@ -177,6 +177,7 @@ const PROFILE_TEMPLATES = Object.freeze({
       },
       forbidMixedContent: true,
       secureForms: true,
+      requireSubresourceIntegrity: true,
       maxThirdPartyOrigins: 5,
     },
     privacy: {

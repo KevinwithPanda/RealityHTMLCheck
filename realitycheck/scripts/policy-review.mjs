@@ -231,7 +231,7 @@ export function buildPolicyReview(beforePath, afterPath, { now = new Date() } = 
   if (comparePolicyPresence(add, before.security, after.security, "security", "Security baseline", "安全基线")) {
     compareStringSets(add, before.security.requiredHeaders, after.security.requiredHeaders, { category: "security", key: "security.requiredHeaders", label: "Required security headers", labelZh: "必需安全响应头" });
     compareStringSets(add, before.security.allowedThirdPartyOrigins, after.security.allowedThirdPartyOrigins, { category: "security", key: "security.allowedThirdPartyOrigins", label: "Allowed third-party origins", labelZh: "允许的第三方来源", additionsStrengthen: false });
-    for (const key of ["forbidMixedContent", "secureForms"]) compareBoolean(add, { before: before.security[key] ?? false, after: after.security[key] ?? false, category: "security", key: `security.${key}`, label: `Security rule ${key}`, labelZh: `安全规则 ${key}` });
+    for (const key of ["forbidMixedContent", "secureForms", "requireSubresourceIntegrity"]) compareBoolean(add, { before: before.security[key] ?? false, after: after.security[key] ?? false, category: "security", key: `security.${key}`, label: `Security rule ${key}`, labelZh: `安全规则 ${key}` });
     compareNumber(add, { before: before.security.maxThirdPartyOrigins ?? null, after: after.security.maxThirdPartyOrigins ?? null, category: "security", key: "security.maxThirdPartyOrigins", label: "Third-party origin limit", labelZh: "第三方来源上限", higherIsStronger: false });
     const beforeHeaders = before.security.headerPolicies || {};
     const afterHeaders = after.security.headerPolicies || {};

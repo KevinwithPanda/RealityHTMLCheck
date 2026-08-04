@@ -168,6 +168,8 @@ Aggregate privacy findings use the ordinary finding contract with rule IDs prefi
 
 Semantic response-header findings use rule IDs prefixed `security-header-policy-`. `measurements` and `response-header-policy` evidence carry the header name, controlled violation codes, bounded parsed facts, and `rawValueRetained: false`. CSP facts contain recognized directive names plus configured forbidden-token categories only; HSTS facts contain numeric max-age and booleans; X-Content-Type-Options contains a nosniff boolean; Referrer-Policy contains recognized standard enum values or `unrecognized`; Permissions-Policy contains controlled declared/disabled/missing feature names. Raw header strings, CSP origins, Permissions-Policy allowlist origins, nonces, hashes, and unrecognized token text must never enter the report.
 
+`security-subresource-integrity` carries only the number of examined cross-origin executable resources, the missing-integrity count, bounded resource-kind counts, unique origins, and explicit `resourcePathsRetained: false` / `integrityValuesRetained: false` flags. Resource paths, queries, content, and integrity values must never enter this finding.
+
 ## Redaction and rendering
 
 The renderer:

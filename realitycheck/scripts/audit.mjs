@@ -1581,7 +1581,18 @@ async function runSecurityPolicies(page, response, target, policy) {
         hasPassword: Boolean(form.querySelector('input[type="password"]')),
       };
     });
-    return { documentOrigin, resources, forms };
+    const executableResources = [
+      ...[...document.querySelectorAll("script[src]")].map((element) => ({ element, kind: "script", source: element.src })),
+      ...[...document.querySelectorAll('link[rel~="stylesheet"][href]')].map((element) => ({ element, kind: "stylesheet", source: element.href })),
+    ].slice(0, 500).map(({ element, kind, source }) => {
+      try {
+        const url = new URL(source, location.href);
+        return { origin: url.origin, kind, hasIntegrity: Boolean(element.getAttribute("integrity")?.trim()) };
+      } catch (_) {
+        return null;
+      }
+    }).filter(Boolean);
+    return { documentOrigin, resources, forms, executableResources };
   });
   const documentUrl = new URL(target);
   const thirdPartyOrigins = [...new Set(posture.resources.map((item) => item.origin).filter((origin) => origin !== posture.documentOrigin && !["null", "data:", "blob:"].includes(origin)))].sort();
@@ -1599,6 +1610,37 @@ async function runSecurityPolicies(page, response, target, policy) {
         stepsZh: ["在新的浏览器上下文中打开 HTTPS 页面。", "页面稳定后检查已加载资源所用协议。"],
         fix: "Serve every application-owned subresource over HTTPS and update hard-coded HTTP references.",
         fixZh: "通过 HTTPS 提供所有应用自身的子资源，并更新硬编码的 HTTP 引用。",
+      }));
+    }
+  }
+
+  if (policy.requireSubresourceIntegrity) {
+    const crossOriginExecutable = posture.executableResources.filter((item) => item.origin !== posture.documentOrigin && !["null", "data:", "blob:"].includes(item.origin));
+    const missingIntegrity = crossOriginExecutable.filter((item) => !item.hasIntegrity);
+    if (missingIntegrity.length) {
+      const origins = [...new Set(missingIntegrity.map((item) => item.origin))].sort();
+      const kinds = Object.fromEntries([...new Set(missingIntegrity.map((item) => item.kind))].sort().map((kind) => [kind, missingIntegrity.filter((item) => item.kind === kind).length]));
+      const measurements = {
+        examinedCrossOriginResources: crossOriginExecutable.length,
+        missingIntegrity: missingIntegrity.length,
+        origins,
+        kinds,
+        resourcePathsRetained: false,
+        integrityValuesRetained: false,
+      };
+      findings.push(finding({
+        ruleId: "security-subresource-integrity", scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
+        title: "A cross-origin executable resource has no integrity proof", titleZh: "跨来源可执行资源缺少完整性证明",
+        summary: `${missingIntegrity.length} of ${crossOriginExecutable.length} cross-origin script or stylesheet resource(s) had no Subresource Integrity attribute. Resource paths and integrity values were not retained.`,
+        summaryZh: `${crossOriginExecutable.length} 个跨来源脚本或样式资源中有 ${missingIntegrity.length} 个缺少子资源完整性属性；未保留资源路径或完整性值。`,
+        measurements,
+        evidence: [{ type: "security-posture", policy: "subresource-integrity", ...measurements }, screenshotEvidence("baseline", "Subresource Integrity policy")],
+        steps: ["Open the page in a fresh context.", "Inspect cross-origin script and stylesheet elements for a non-empty integrity attribute without retaining its value or resource path."],
+        stepsZh: ["在新的浏览器上下文中打开页面。", "检查跨来源脚本和样式元素是否具有非空 integrity 属性，但不保留其值或资源路径。"],
+        fix: "Pin the reviewed third-party asset, add its cryptographic SRI digest and appropriate crossorigin mode, or self-host the versioned asset; verify behavior before release.",
+        fixZh: "固定经过复核的第三方资源版本，加入其 SRI 加密摘要与适当的 crossorigin 模式，或自行托管版本化资源；发布前验证行为。",
+        hints: ["Never copy a digest from an untrusted response; compute it from the exact reviewed bytes and update it only with an intentional dependency change."],
+        hintsZh: ["不要从不可信响应复制摘要；应基于已复核的精确字节计算，并只在有意升级依赖时更新。"],
       }));
     }
   }
