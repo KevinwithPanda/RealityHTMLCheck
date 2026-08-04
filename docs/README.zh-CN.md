@@ -375,7 +375,7 @@ npx realitycheck trust-report .realitycheck/runs/RUN/evidence-manifest.json \
 
 执行前后对比后，还会增加 `verification.json`、中英双语 `verification.md`，以及可切换语言的独立 `verification.html` 看板。每次单页渲染还会输出通过 Schema 校验的 JSON 与 Markdown 修复交接清单，其中包含稳定指纹、证明场景、修复建议和验收条件。全站核查会生成站点看板；趋势聚合会生成 `trend.json`、`trend.md` 与双语 `trend.html`。产物目录可把这些结果汇总成一个可搜索、可筛选的双语入口，不依赖数据库或在线服务。
 
-HTML 报告完全离线，可切换中文/英文，不加载远程资源。每个有效问题都有“复制修复并验证任务”按钮；也可以先筛选问题、选择当前显示项，再一次复制只包含稳定问题 ID 与证明场景的批量修复计划。这些操作只准备有边界的 Codex 任务，静态页面本身不会绕过授权直接修改源码。
+HTML 报告完全离线，可切换中文/英文，不加载远程资源。每个有效问题都有“复制修复并验证任务”按钮，任务会直接带上稳定规则 ID、证明场景和当前语言的具体修复建议；也可以先筛选问题、选择当前显示项，再一次复制带有同等上下文的批量修复计划。内嵌建议会规范空白、限制长度，并明确标为“待核实证据”，不能覆盖安全边界。这些操作只准备有边界的 Codex 任务，静态页面本身不会绕过授权直接修改源码。
 
 可以查看仓库中的[可视化参考报告](../examples/reference-run/report.html)和 [Markdown 报告](../examples/reference-run/report.md)。它们用于演示渲染器与 CI 合同；判断其他应用前必须重新运行核查。
 

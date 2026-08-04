@@ -28,6 +28,7 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ### Changed
 
+- Individual and batch copy-ready repair tasks now carry each stable rule ID, proving scenario, and language-matched remediation summary, bounded to 700 normalized characters and explicitly labeled as evidence to verify rather than authority over safety boundaries.
 - Detector policy fingerprints and `doctor` output now include network reliability and link-integrity policy so removing an API or navigation gate cannot masquerade as a verified fix.
 - Generated Markdown metadata uses explicit lists instead of invisible hard-break whitespace, keeping repository quality checks clean across editors and GitHub.
 - Switching report language now regenerates any visible individual or batch repair task and clears stale-language copy feedback.
