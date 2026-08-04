@@ -147,7 +147,7 @@ Three validated presets remove the blank-config problem:
 | --- | --- | --- |
 | `starter` | First audit, personal projects | Quick scenarios, one 375px viewport, 25 safe links, essential metadata, forgiving score gate |
 | `product` | Active product teams | Deep scenarios, 360px phone + 768px tablet, crawl, performance, API, links, metadata, security, aggregate storage privacy, governance |
-| `strict` | Mature release pipelines | 320px + 390px phones and 768px tablet, tighter performance/storage budgets, all-resource reliability, zero active waivers |
+| `strict` | Mature release pipelines | 320px + 390px phones and 768px tablet, tighter performance/storage budgets, all-resource reliability, semantic headers + SRI, zero active waivers |
 
 `init` defaults to `starter`. A preset is a transparent starting file, not a compliance certification: review its limits and safety exclusions before CI adoption.
 

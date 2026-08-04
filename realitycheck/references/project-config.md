@@ -6,7 +6,7 @@
 
 - `starter` keeps Quick mode, one 375x812 viewport, and crawling off while adding a bounded 25-target link check, essential title/viewport/language rules, and a forgiving release score.
 - `product` enables Deep mode, 360x800 phone plus 768x1024 tablet checkpoints, a 20-page safe crawl, performance/API/link/publishing/security/browser-storage privacy policies, exact nosniff and reviewed referrer semantics, and a 30-day same-policy baseline rule.
-- `strict` checks 320x700 and 390x844 phones plus a 768x1024 tablet, tightens performance and aggregate browser-storage budgets, audits all resource requests, requires five reviewed response headers plus CSP/HSTS/nosniff/referrer semantics, and permits no active waivers. It is expected to reveal adoption work.
+- `strict` checks 320x700 and 390x844 phones plus a 768x1024 tablet, tightens performance and aggregate browser-storage budgets, audits all resource requests, requires five reviewed response headers plus CSP/HSTS/nosniff/referrer semantics and cross-origin SRI, and permits no active waivers. It is expected to reveal adoption work.
 
 Profiles generate ordinary JSON with no hidden behavior. They never prove legal, regulatory, security, accessibility, or performance compliance. Review every threshold, required header, route boundary, and exclusion for the application before CI enforcement. `--base-url` rejects credentials, query strings, fragments, and non-HTTP(S) protocols so initialization cannot persist URL secrets.
 
