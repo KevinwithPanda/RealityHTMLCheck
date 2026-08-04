@@ -61,6 +61,19 @@ jobs:
           assert report["adapter"]["isolation"] == "fresh-context", report
           PY
           node realitycheck/scripts/audit.mjs validate "$demo_report"
+          node realitycheck/scripts/audit.mjs github-summary .realitycheck/ci-demo \
+            --output .realitycheck/ci-demo/github-summary.md \
+            --max-annotations 3 \
+            --language zh-CN > /tmp/realitycheck-demo-annotations.log
+          python - <<'PY'
+          from pathlib import Path
+          summary = Path(".realitycheck/ci-demo/github-summary.md").read_text(encoding="utf-8")
+          annotations = [line for line in Path("/tmp/realitycheck-demo-annotations.log").read_text(encoding="utf-8").splitlines() if line.startswith("::")]
+          assert "RealityCheck 拉取请求摘要" in summary, summary
+          assert "优先问题" in summary, summary
+          assert len(annotations) == 3, annotations
+          assert all(line.startswith(("::error", "::warning", "::notice")) for line in annotations), annotations
+          PY
 
       - name: Prove a repair with real browser runs
         shell: bash

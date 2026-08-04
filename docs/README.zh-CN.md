@@ -84,6 +84,17 @@ npx realitycheck audit --config realitycheck.config.json
 
 第二条命令会生成新报告，以及 `verification.json`、中英双语 `verification.md` 和可视化 `verification.html`。退出码 `1` 表示命中了质量门禁，不代表报告生成失败。
 
+无需把证据发送给外部 API，也可以把已校验报告转换为有上限的 GitHub 作业摘要和安全转义的工作流注释：
+
+```bash
+npx realitycheck github-summary .realitycheck/runs \
+  --output .realitycheck/github-summary.md \
+  --max-annotations 20 \
+  --language zh-CN
+```
+
+每个精确目标只使用最新报告：URL query 不进入输出，已豁免问题保留计数但不生成注释，较新的通过报告会让旧问题退出摘要，报告中的不可信文本也会在 GitHub 解析前被规范化。复用 Action 会自动完成这一步；可通过 `summary-language: zh-CN` 选择中文，并从 `github-summary-path` 输出获取 Markdown 路径。
+
 首次配置或排查环境时可以运行：
 
 ```bash

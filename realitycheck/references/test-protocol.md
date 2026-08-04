@@ -261,6 +261,12 @@ A high-confidence stuck loading state requires a loading indicator during the de
 
 Report verified lack of focus movement, hidden/disabled focus targets, traps, and unreachable critical controls. Treat inferred visual-order problems and ambiguous focus styling as low confidence.
 
+### GitHub summary and annotations
+
+Consume only schema-valid page reports and, when a directory is supplied, fail if another discovered RealityCheck artifact is invalid. Group by the exact requested target internally and select only its newest completed run; display origin plus pathname without credentials, query, or fragment. Count waived findings but never emit an annotation for them. Sort active findings by severity and confidence, map Critical/Major to Error, Minor to Warning, and Info/Low-confidence observations to Notice, and cap annotations at 50.
+
+Treat titles, rules, remediation, owners, targets, and scenario labels as hostile. Normalize controls and whitespace, neutralize command-looking `::` sequences, escape percent signs plus property colons/commas, bound title/message lengths, and do not claim a repository filename or line number without source evidence. Keep the Markdown summary below GitHub's per-step limit and report how many annotations were omitted by the configured cap. A newer passing report must remove stale findings from the current summary.
+
 ## 6. Classification and confidence
 
 Create a stable cross-run fingerprint from:

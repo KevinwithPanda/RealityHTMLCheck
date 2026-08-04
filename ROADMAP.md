@@ -64,6 +64,7 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add shareable validated policy presets for starter, product, and strict release adoption.
 - [x] Add explicit publishing metadata contracts with privacy-bounded evidence and paired release fixtures.
 - [x] Add a one-command bundled real-browser demo that needs no application server or project config.
+- [x] Add latest-target GitHub job summaries and bounded, injection-safe workflow annotations.
 
 ## v1.0 criteria
 

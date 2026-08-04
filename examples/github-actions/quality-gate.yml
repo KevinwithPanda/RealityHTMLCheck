@@ -36,6 +36,9 @@ jobs:
           fail-on: major
           output: .realitycheck/pull-request
           artifact-name: realitycheck-${{ github.event.pull_request.number || github.run_number }}
+          # Emit at most this many safely escaped annotations in English or Chinese.
+          max-annotations: 20
+          summary-language: en
           # Optional: signs every completed manifest without committing the key.
           # attestation-private-key: ${{ secrets.REALITYCHECK_ED25519_PRIVATE_KEY }}
           # attestation-trusted-key-id: ${{ vars.REALITYCHECK_ED25519_KEY_ID }}

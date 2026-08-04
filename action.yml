@@ -75,6 +75,14 @@ inputs:
     description: Optional evidence-trust.json path, relative to working-directory, used to evaluate every manifest.
     required: false
     default: ""
+  max-annotations:
+    description: Maximum escaped GitHub workflow annotations emitted from the latest reports, from 1 to 50.
+    required: false
+    default: "20"
+  summary-language:
+    description: Language for the GitHub job summary and finding annotations (en or zh-CN).
+    required: false
+    default: en
 
 outputs:
   exit-code:
@@ -101,6 +109,12 @@ outputs:
   trust-exit-code:
     description: Evidence trust decision exit code (0 trusted/not configured, 1 rejected, 2 operational error).
     value: ${{ steps.trust.outputs.trust-exit-code }}
+  github-summary-path:
+    description: Markdown job summary containing latest-target gates and prioritized findings.
+    value: ${{ steps.summary.outputs.github-summary-path }}
+  summary-exit-code:
+    description: Workflow-summary generation exit code (0 generated, 2 unavailable or invalid input).
+    value: ${{ steps.summary.outputs.summary-exit-code }}
 
 runs:
   using: composite
@@ -147,6 +161,36 @@ runs:
         set -e
         echo "exit-code=$status" >> "$GITHUB_OUTPUT"
         echo "report-root=$RC_WORKDIR/$RC_OUTPUT" >> "$GITHUB_OUTPUT"
+
+    - name: Publish bounded workflow annotations
+      id: summary
+      if: always()
+      shell: bash
+      env:
+        RC_OUTPUT: ${{ inputs.output }}
+        RC_WORKDIR: ${{ inputs.working-directory }}
+        RC_MAX_ANNOTATIONS: ${{ inputs.max-annotations }}
+        RC_SUMMARY_LANGUAGE: ${{ inputs.summary-language }}
+      run: |
+        cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
+        summary_path="$RC_OUTPUT/github-summary.md"
+        annotation_log="$RUNNER_TEMP/realitycheck-annotations-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.log"
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" github-summary "$RC_OUTPUT" \
+          --output "$summary_path" \
+          --max-annotations "$RC_MAX_ANNOTATIONS" \
+          --language "$RC_SUMMARY_LANGUAGE" > "$annotation_log"
+        summary_status=$?
+        set -e
+        echo "summary-exit-code=$summary_status" >> "$GITHUB_OUTPUT"
+        if [ "$summary_status" -eq 0 ]; then
+          cat "$annotation_log"
+          echo "github-summary-path=$RC_WORKDIR/$summary_path" >> "$GITHUB_OUTPUT"
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then cat "$summary_path" >> "$GITHUB_STEP_SUMMARY"; fi
+        else
+          cat "$annotation_log" >&2
+          echo "RealityCheck could not build trusted workflow annotations; the primary audit result remains authoritative." >&2
+        fi
 
     - name: Sign completed evidence manifests
       id: attest
@@ -279,12 +323,17 @@ runs:
       shell: bash
       env:
         RC_EXIT_CODE: ${{ steps.audit.outputs.exit-code }}
+        RC_SUMMARY_EXIT_CODE: ${{ steps.summary.outputs.summary-exit-code }}
         RC_ATTESTATION_OUTCOME: ${{ steps.attest.outcome }}
         RC_RISK_EXIT_CODE: ${{ steps.risks.outputs.risk-exit-code }}
         RC_TRUST_EXIT_CODE: ${{ steps.trust.outputs.trust-exit-code }}
       run: |
         if [ "$RC_ATTESTATION_OUTCOME" = "failure" ]; then
           echo "RealityCheck evidence signing failed. Check that the configured Secret is a valid Ed25519 private key."
+          exit 2
+        fi
+        if [ "$RC_SUMMARY_EXIT_CODE" != "0" ]; then
+          echo "RealityCheck workflow annotation generation failed."
           exit 2
         fi
         if [ "$RC_RISK_EXIT_CODE" = "2" ]; then

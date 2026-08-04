@@ -30,6 +30,7 @@ import { detectorPolicyFingerprint } from "./policy-fingerprint.mjs";
 import { PROFILE_DESCRIPTIONS, buildProjectProfile, formatProfileList } from "./profiles.mjs";
 import { approveVisualBaseline, evaluateVisualRegression } from "./visual-regression.mjs";
 import { startBundledDemoServer } from "./demo-server.mjs";
+import { buildGitHubSummary, writeGitHubSummary } from "./github-summary.mjs";
 
 const require = createRequire(import.meta.url);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -63,6 +64,7 @@ Usage:
   realitycheck visual-approve <REPORT.JSON> [--config PATH] [--replace-baseline]
   realitycheck validate <FILE|DIRECTORY> [...]
   realitycheck catalog <FILE|DIRECTORY> [...] [--output PATH]
+  realitycheck github-summary <FILE|DIRECTORY> [...] [--output PATH]
   realitycheck risk-register <FILE|DIRECTORY> [...] [--output PATH]
   realitycheck attest <EVIDENCE-MANIFEST> --private-key PATH
   realitycheck trust-report <EVIDENCE-MANIFEST> --trust-policy PATH
@@ -86,6 +88,8 @@ Options:
   --max-open-age-days N      Risk gate: oldest open risk may be at most N days
   --max-open-risks N         Risk gate: allow at most N open risks
   --max-recurring-risks N    Risk gate: allow at most N recurring risks
+  --max-annotations N        GitHub workflow annotations, 1-50 (default: 20)
+  --language en|zh-CN        GitHub summary and annotation language
   --headed                   Show the browser while auditing
   --browser PATH             Chrome/Edge/Chromium executable
   --compare REPORT           Write verified before/after results beside the new report
@@ -105,6 +109,7 @@ Examples:
   realitycheck visual-approve .realitycheck/runs/RUN/report.json
   realitycheck validate .realitycheck/runs
   realitycheck catalog .realitycheck --output .realitycheck/catalog
+  realitycheck github-summary .realitycheck/runs --output .realitycheck/github-summary.md
   realitycheck risk-register .realitycheck --output .realitycheck/risks
   realitycheck risk-register .realitycheck --max-open-age-days 30 --max-open-risks 20 --max-recurring-risks 10
   realitycheck attest .realitycheck/runs/RUN/evidence-manifest.json --private-key ci-ed25519.pem
@@ -119,7 +124,7 @@ Examples:
 
 function parseArguments(argv) {
   const args = [...argv];
-  const command = new Set(["audit", "demo", "init", "profiles", "doctor", "visual-approve", "validate", "catalog", "risk-register", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
+  const command = new Set(["audit", "demo", "init", "profiles", "doctor", "visual-approve", "validate", "catalog", "github-summary", "risk-register", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
   const options = {
     command,
     target: null,
@@ -142,6 +147,7 @@ function parseArguments(argv) {
     baseUrl: null,
     validationPaths: [],
     catalogPaths: [],
+    githubSummaryPaths: [],
     riskRegisterPaths: [],
     attestationManifest: null,
     trustReportManifest: null,
@@ -152,6 +158,8 @@ function parseArguments(argv) {
     maxOpenAgeDays: null,
     maxOpenRisks: null,
     maxRecurringRisks: null,
+    maxAnnotations: null,
+    summaryLanguage: null,
     visualReport: null,
     replaceBaseline: false,
   };
@@ -185,7 +193,7 @@ function parseArguments(argv) {
       options.replaceBaseline = true;
       continue;
     }
-    if (["--mode", "--fail-on", "--output", "--browser", "--compare", "--baseline", "--config", "--profile", "--base-url", "--route", "--max-pages", "--max-depth", "--storage-state", "--private-key", "--trusted-key", "--trust-policy", "--max-open-age-days", "--max-open-risks", "--max-recurring-risks"].includes(item)) {
+    if (["--mode", "--fail-on", "--output", "--browser", "--compare", "--baseline", "--config", "--profile", "--base-url", "--route", "--max-pages", "--max-depth", "--storage-state", "--private-key", "--trusted-key", "--trust-policy", "--max-open-age-days", "--max-open-risks", "--max-recurring-risks", "--max-annotations", "--language"].includes(item)) {
       const value = args.shift();
       if (!value) throw new Error(`${item} requires a value`);
       if (item === "--mode") options.mode = value;
@@ -202,7 +210,8 @@ function parseArguments(argv) {
       if (item === "--private-key") options.privateKey = value;
       if (item === "--trusted-key") options.trustedKeyIds.push(value);
       if (item === "--trust-policy") options.trustPolicy = value;
-      if (["--max-pages", "--max-depth", "--max-open-age-days", "--max-open-risks", "--max-recurring-risks"].includes(item)) {
+      if (item === "--language") options.summaryLanguage = value;
+      if (["--max-pages", "--max-depth", "--max-open-age-days", "--max-open-risks", "--max-recurring-risks", "--max-annotations"].includes(item)) {
         const number = Number(value);
         if (!Number.isInteger(number)) throw new Error(`${item} requires an integer`);
         if (item === "--max-pages") options.maxPages = number;
@@ -210,6 +219,7 @@ function parseArguments(argv) {
         if (item === "--max-open-age-days") options.maxOpenAgeDays = number;
         if (item === "--max-open-risks") options.maxOpenRisks = number;
         if (item === "--max-recurring-risks") options.maxRecurringRisks = number;
+        if (item === "--max-annotations") options.maxAnnotations = number;
       }
       continue;
     }
@@ -220,6 +230,10 @@ function parseArguments(argv) {
     }
     if (command === "catalog") {
       options.catalogPaths.push(item);
+      continue;
+    }
+    if (command === "github-summary") {
+      options.githubSummaryPaths.push(item);
       continue;
     }
     if (command === "risk-register") {
@@ -258,6 +272,9 @@ function parseArguments(argv) {
   if (options.trustPolicy && !new Set(["validate", "attest", "trust-report"]).has(command)) throw new Error("--trust-policy is only valid with validate, attest, or trust-report");
   if (options.trustPolicy && options.trustedKeyIds.length) throw new Error("Use either --trust-policy or --trusted-key, not both");
   if ((options.maxOpenAgeDays !== null || options.maxOpenRisks !== null || options.maxRecurringRisks !== null) && command !== "risk-register") throw new Error("risk policy options are only valid with risk-register");
+  if (options.maxAnnotations !== null && command !== "github-summary") throw new Error("--max-annotations is only valid with github-summary");
+  if (options.summaryLanguage !== null && command !== "github-summary") throw new Error("--language is only valid with github-summary");
+  if (options.summaryLanguage !== null && !new Set(["en", "zh-CN"]).has(options.summaryLanguage)) throw new Error("--language must be en or zh-CN");
   if ((options.profile || options.baseUrl) && command !== "init") throw new Error("--profile and --base-url are only valid with init");
   if (options.replaceBaseline && command !== "visual-approve") throw new Error("--replace-baseline is only valid with visual-approve");
   return options;
@@ -2767,6 +2784,16 @@ async function main() {
       console.log(`catalog.md:   ${outputs.markdownPath}`);
       console.log(`catalog.html: ${outputs.htmlPath}`);
       console.log(`artifacts:    ${catalog.summary.artifacts} (${catalog.summary.failing} failing)`);
+      return;
+    }
+    if (cli.command === "github-summary") {
+      if (!cli.githubSummaryPaths.length) throw new Error("github-summary requires at least one report.json file or evidence directory");
+      const result = buildGitHubSummary(cli.githubSummaryPaths, { maxAnnotations: cli.maxAnnotations ?? 20, language: cli.summaryLanguage || "en" });
+      const output = writeGitHubSummary(result, cli.output || ".realitycheck/github-summary.md");
+      for (const annotation of result.annotations) console.log(annotation);
+      console.log(`github-summary.md: ${output}`);
+      console.log(`latest targets:    ${result.summary.latestTargets} (${result.summary.failingTargets} failing)`);
+      console.log(`annotations:       ${result.summary.annotations} (${result.summary.truncatedAnnotations} omitted by limit)`);
       return;
     }
     if (cli.command === "risk-register") {

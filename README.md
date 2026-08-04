@@ -100,6 +100,17 @@ npm run audit -- audit --config realitycheck.config.json
 
 The second command creates a fresh report plus `verification.json`, bilingual `verification.md`, and a visual `verification.html`. Exit code `1` means the configured quality threshold was not met; the reports were still generated successfully.
 
+Turn validated reports into a bounded GitHub job summary and escaped workflow annotations without sending evidence to an API:
+
+```bash
+npx realitycheck github-summary .realitycheck/runs \
+  --output .realitycheck/github-summary.md \
+  --max-annotations 20 \
+  --language en
+```
+
+Only the latest report for each exact target contributes findings. Query values are removed, waived findings stay counted but are not annotated, stale findings disappear after a newer passing report, and untrusted report text is normalized before GitHub parses it. The reusable Action performs this automatically; set `summary-language: zh-CN` for Chinese and read its `github-summary-path` output.
+
 Initialize and diagnose a project without opening a browser:
 
 ```bash
@@ -423,7 +434,7 @@ npx realitycheck risk-register .realitycheck/runs \
 
 `validate` uses a standards-compliant JSON Schema validator and recursively checks project configs, page reports, repair plans, page verification, site reports, site verification, trends, catalogs, latest pointers, integrity manifests, Ed25519 attestations, evidence trust policies, and risk registers. `--require-attestation` makes every discovered manifest require a sibling signature and automatically validates it; combine this with one or more `--trusted-key` values or use `--trust-policy` for an archive-level trust gate with revocation and validity windows. `catalog` validates every discovered source artifact, includes signed receipts, skips incompatible historical files with visible warnings, and writes a searchable artifact inventory. `risk-register` groups page findings by exact target and stable fingerprint, records first/last seen and recurrence, exposes dedicated recurring and overdue filters, and uses the newest proving scenario plus available policy fingerprints to distinguish open, waived, resolved, and unverified risk. Optional open-count, age, and recurrence limits turn the ledger into a portfolio quality gate: the JSON/HTML/Markdown outputs are still written, while exit code `1` tells CI that the debt policy failed. Scenario gaps or policy drift remain explicitly unverified. It also emits formula-injection-safe CSV. Their contracts are published in [`realitycheck/assets`](realitycheck/assets).
 
-This repository is also a reusable composite GitHub Action. It always attempts to build both the artifact catalog and longitudinal risk register, adds their Markdown summaries to the GitHub job summary, exposes catalog/risk/trust paths and exit codes, and uploads the complete evidence bundle before enforcing page/site quality, optional portfolio-risk gates, or evidence-trust decisions. Configure `max-open-risk-age-days`, `max-open-risks`, and `max-recurring-risks` to make longitudinal debt part of the job result. See [`examples/github-actions/quality-gate.yml`](examples/github-actions/quality-gate.yml) for a regression-only baseline gate.
+This repository is also a reusable composite GitHub Action. It emits bounded Error/Warning/Notice annotations from validated latest reports, adds the prioritized Markdown view to the job summary, then builds the artifact catalog and longitudinal risk register. It exposes summary/catalog/risk/trust paths and exit codes, and uploads the complete evidence bundle before enforcing page/site quality, optional portfolio-risk gates, or evidence-trust decisions. Configure `max-annotations`, `summary-language`, `max-open-risk-age-days`, `max-open-risks`, and `max-recurring-risks` as needed. See [`examples/github-actions/quality-gate.yml`](examples/github-actions/quality-gate.yml) for a regression-only baseline gate.
 
 ## Project status
 

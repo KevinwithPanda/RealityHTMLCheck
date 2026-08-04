@@ -59,6 +59,7 @@ class SkillStructureTests(unittest.TestCase):
             "references/project-config.md",
             "scripts/audit.mjs",
             "scripts/demo-server.mjs",
+            "scripts/github-summary.mjs",
             "scripts/artifact-validator.mjs",
             "scripts/evidence-attestation.mjs",
             "scripts/evidence-trust.mjs",
@@ -122,6 +123,11 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("trust-report-count", action)
         self.assertIn("trust-exit-code", action)
         self.assertIn("GITHUB_STEP_SUMMARY", action)
+        self.assertIn("Publish bounded workflow annotations", action)
+        self.assertIn("github-summary-path", action)
+        self.assertIn("max-annotations", action)
+        self.assertIn("summary-language", action)
+        self.assertIn("summary-exit-code", action)
         self.assertIn('exit "$RC_EXIT_CODE"', action)
         self.assertNotIn("eval ", action)
 
