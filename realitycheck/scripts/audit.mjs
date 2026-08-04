@@ -139,6 +139,11 @@ Examples:
 
 function parseArguments(argv) {
   const args = [...argv];
+  // npm consumes this conventional separator, while pnpm and some wrappers
+  // forward it to the script. Accept it only before the command so a copied
+  // `npm run realitycheck -- ...` invocation remains portable without
+  // weakening option validation elsewhere in the argument list.
+  if (args[0] === "--") args.shift();
   const command = new Set(["audit", "demo", "init", "profiles", "doctor", "plan", "visual-approve", "validate", "catalog", "github-summary", "risk-register", "policy-review", "issue-drafts", "release-decision", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
   const options = {
     command,

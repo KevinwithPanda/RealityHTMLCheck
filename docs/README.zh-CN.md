@@ -49,7 +49,7 @@ npm install
 npm run demo
 ```
 
-使用已发布包时可运行 `npx realitycheck-web-audit demo`。命令会在随机端口启动只监听回环地址的内置故障页，用真实 Chrome 核查，把双语报告写入 `.realitycheck/demo`，然后关闭服务器。报告会如实显示 Major 门禁失败；因为这些夹具问题是预期结果，Demo 命令本身返回成功，但浏览器、渲染器或证据故障仍返回运行错误。
+npm 包尚未发布，因此目前受支持的公开入口是先克隆本仓库。`npm run demo` 会在随机端口启动只监听回环地址的内置故障页，用真实 Chrome 核查，把双语报告写入 `.realitycheck/demo`，然后关闭服务器。报告会如实显示 Major 门禁失败；因为这些夹具问题是预期结果，Demo 命令本身返回成功，但浏览器、渲染器或证据故障仍返回运行错误。
 
 ## 为什么报告可信
 
@@ -79,7 +79,7 @@ npm run audit -- http://localhost:3000
 npm run audit -- http://localhost:3000 --mode deep --fail-on major
 npm run audit -- http://localhost:3000 --compare .realitycheck/runs/修复前/report.json
 npm run audit -- http://localhost:3000 --baseline .realitycheck/baseline/report.json
-npx realitycheck audit --config realitycheck.config.json
+npm run realitycheck -- audit --config realitycheck.config.json
 ```
 
 ### 运行前先看懂核查计划
@@ -87,7 +87,7 @@ npx realitycheck audit --config realitycheck.config.json
 如果项目策略看起来过于抽象，可以在打开浏览器前先解析它：
 
 ```bash
-npx realitycheck plan --config realitycheck.config.json \
+npm run realitycheck -- plan --config realitycheck.config.json \
   --output .realitycheck/audit-plan
 ```
 
@@ -98,7 +98,7 @@ npx realitycheck plan --config realitycheck.config.json \
 无需把证据发送给外部 API，也可以把已校验报告转换为有上限的 GitHub 作业摘要和安全转义的工作流注释：
 
 ```bash
-npx realitycheck github-summary .realitycheck/runs \
+npm run realitycheck -- github-summary .realitycheck/runs \
   --output .realitycheck/github-summary.md \
   --max-annotations 20 \
   --language zh-CN
@@ -109,11 +109,11 @@ npx realitycheck github-summary .realitycheck/runs \
 首次配置或排查环境时可以运行：
 
 ```bash
-npx realitycheck profiles
-npx realitycheck init --profile product --base-url http://localhost:3000
-npx realitycheck plan --config realitycheck.config.json
-npx realitycheck doctor
-npx realitycheck visual-approve .realitycheck/runs/运行ID/report.json
+npm run realitycheck -- profiles
+npm run realitycheck -- init --profile product --base-url http://localhost:3000
+npm run realitycheck -- plan --config realitycheck.config.json
+npm run realitycheck -- doctor
+npm run realitycheck -- visual-approve .realitycheck/runs/运行ID/report.json
 ```
 
 三个经过配置校验的预设解决“第一次面对空配置无从下手”的问题：
@@ -364,11 +364,11 @@ Quick 场景总数为“5 + 配置视口数”。每个视口都单独归因，�
 签名有效只证明持有对应私钥，并不自动代表组织授权。企业归档应把 [`examples/evidence-trust.example.json`](../examples/evidence-trust.example.json) 复制为独立版本化的信任注册表，在其中维护可信/已撤销密钥和生效窗口，再生成可供人审阅的中英双语决策：
 
 ```bash
-npx realitycheck attest .realitycheck/runs/RUN/evidence-manifest.json \
+npm run realitycheck -- attest .realitycheck/runs/RUN/evidence-manifest.json \
   --private-key ci-ed25519.pem
-npx realitycheck validate .realitycheck/runs/RUN \
+npm run realitycheck -- validate .realitycheck/runs/RUN \
   --trust-policy evidence-trust.json
-npx realitycheck trust-report .realitycheck/runs/RUN/evidence-manifest.json \
+npm run realitycheck -- trust-report .realitycheck/runs/RUN/evidence-manifest.json \
   --trust-policy evidence-trust.json
 ```
 
@@ -439,25 +439,25 @@ python realitycheck/scripts/report.py compare \
 python realitycheck/scripts/report.py trend .realitycheck/runs \
   --output .realitycheck/trends
 
-npx realitycheck validate .realitycheck/runs
+npm run realitycheck -- validate .realitycheck/runs
 
-npx realitycheck catalog .realitycheck/runs \
+npm run realitycheck -- catalog .realitycheck/runs \
   --output .realitycheck/catalog
 
-npx realitycheck risk-register .realitycheck/runs \
+npm run realitycheck -- risk-register .realitycheck/runs \
   --output .realitycheck/risks \
   --max-open-age-days 30 \
   --max-open-risks 20 \
   --max-recurring-risks 10
 
-npx realitycheck policy-review \
+npm run realitycheck -- policy-review \
   policy/main.config.json realitycheck.config.json \
   --output .realitycheck/policy-review
 
-npx realitycheck issue-drafts .realitycheck/runs \
+npm run realitycheck -- issue-drafts .realitycheck/runs \
   --output .realitycheck/issue-drafts
 
-npx realitycheck release-decision .realitycheck \
+npm run realitycheck -- release-decision .realitycheck \
   --require audit,policy,trust,risk \
   --max-age-hours 24 \
   --output .realitycheck/release-decision

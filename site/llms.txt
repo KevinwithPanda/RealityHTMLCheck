@@ -24,7 +24,7 @@ RealityCheck never treats an unsupported check as passed. Audit mode is read-onl
 
 ## Quick start
 
-Clone the repository, run `npm install`, then run `npm run demo`. To preview an existing project policy without browser access, run `npx realitycheck plan --config realitycheck.config.json`. To audit an authorized local app, run `npm run audit -- http://localhost:3000`.
+Clone the repository, run `npm install`, then run `npm run demo`. To preview an existing project policy without browser access, run `npm run realitycheck -- plan --config realitycheck.config.json`. To audit an authorized local app, run `npm run audit -- http://localhost:3000`.
 
 ## Licensing
 

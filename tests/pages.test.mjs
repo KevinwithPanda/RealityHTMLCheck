@@ -63,6 +63,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   ]) assert.equal(existsSync(resolve(output, path)), true, `Pages output is missing ${path}`);
 
   const html = readFileSync(resolve(output, "index.html"), "utf8");
+  const styles = readFileSync(resolve(output, "styles.css"), "utf8");
+  assert.match(styles, /\.profile-grid button\{min-height:40px;/);
   assert.match(html, /<link rel="canonical" href="https:\/\/kevinwithpanda\.github\.io\/RealityHTMLCheck\/">/);
   assert.match(html, /<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">/);
   assert.match(html, /<link rel="manifest" href="site\.webmanifest">/);
@@ -77,7 +79,10 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.ok(structuredData.featureList.includes("Browser-free bilingual audit plan previews"));
   assert.match(html, /data-language="zh-CN"/);
   assert.match(html, /init --profile product --base-url/);
+  assert.match(html, /git clone --depth 1 https:\/\/github\.com\/KevinwithPanda\/RealityHTMLCheck\.git/);
+  assert.match(html, /npm run realitycheck -- init --profile product/);
   assert.match(html, /npm run demo/);
+  assert.doesNotMatch(html, /npx realitycheck(?:-web-audit)?/);
   assert.match(html, /内置 Demo 不需要应用服务器或配置/);
   assert.match(html, /Issue drafts, anti-weakening policy review, before\/after proof, GitHub annotations/);
   assert.match(html, /工单草稿、防弱化策略审查、前后证明、GitHub 注释/);
@@ -127,6 +132,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(llms, /labs\/policy-review\/review\/policy-review\.html/);
   assert.match(llms, /labs\/audit-plan\/audit-plan\.html/);
   assert.match(llms, /evidence\/security-headers-fixed\/latest\.html/);
+  assert.match(llms, /npm run realitycheck -- plan/);
+  assert.doesNotMatch(llms, /npx realitycheck(?:-web-audit)?/);
 });
 
 test("Pages workflow uses the supported deployment artifact path", () => {

@@ -7,6 +7,7 @@
     "realitycheck": "realitycheck/scripts/audit.mjs"
   },
   "scripts": {
+    "realitycheck": "node realitycheck/scripts/audit.mjs",
     "audit": "node realitycheck/scripts/audit.mjs audit",
     "demo": "node realitycheck/scripts/audit.mjs demo",
     "site:build": "node scripts/build-pages.mjs",

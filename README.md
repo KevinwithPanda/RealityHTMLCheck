@@ -74,7 +74,7 @@ npm install
 npm run demo
 ```
 
-From a published package, use `npx realitycheck-web-audit demo`. The command starts a random loopback-only server, audits the bundled intentionally broken UI with real Chrome, writes the bilingual report under `.realitycheck/demo`, and closes the server. The report correctly fails its Major quality gate, while the demo command returns success because those fixture findings are expected; browser, renderer, or evidence failures still return an operational error.
+The npm package is not published yet, so the supported public entry point is this cloned repository. `npm run demo` starts a random loopback-only server, audits the bundled intentionally broken UI with real Chrome, writes the bilingual report under `.realitycheck/demo`, and closes the server. The report correctly fails its Major quality gate, while the demo command returns success because those fixture findings are expected; browser, renderer, or evidence failures still return an operational error.
 
 ## What makes a finding real?
 
@@ -114,7 +114,7 @@ The second command creates a fresh report plus `verification.json`, bilingual `v
 If a project policy feels too abstract, resolve it before opening a browser:
 
 ```bash
-npx realitycheck plan --config realitycheck.config.json \
+npm run realitycheck -- plan --config realitycheck.config.json \
   --output .realitycheck/audit-plan
 ```
 
@@ -123,7 +123,7 @@ npx realitycheck plan --config realitycheck.config.json \
 Turn validated reports into a bounded GitHub job summary and escaped workflow annotations without sending evidence to an API:
 
 ```bash
-npx realitycheck github-summary .realitycheck/runs \
+npm run realitycheck -- github-summary .realitycheck/runs \
   --output .realitycheck/github-summary.md \
   --max-annotations 20 \
   --language en
@@ -134,11 +134,11 @@ Only the latest report for each exact target contributes findings. Query values 
 Initialize and diagnose a project without opening a browser:
 
 ```bash
-npx realitycheck profiles
-npx realitycheck init --profile product --base-url http://localhost:3000
-npx realitycheck plan --config realitycheck.config.json
-npx realitycheck doctor
-npx realitycheck visual-approve .realitycheck/runs/RUN/report.json
+npm run realitycheck -- profiles
+npm run realitycheck -- init --profile product --base-url http://localhost:3000
+npm run realitycheck -- plan --config realitycheck.config.json
+npm run realitycheck -- doctor
+npm run realitycheck -- visual-approve .realitycheck/runs/RUN/report.json
 ```
 
 Three validated presets remove the blank-config problem:
@@ -388,15 +388,15 @@ The output root also contains stable `latest.json` and bilingual `latest.html` p
 
 ```bash
 openssl genpkey -algorithm Ed25519 -out ci-ed25519.pem
-npx realitycheck attest .realitycheck/runs/RUN/evidence-manifest.json \
+npm run realitycheck -- attest .realitycheck/runs/RUN/evidence-manifest.json \
   --private-key ci-ed25519.pem
-npx realitycheck validate .realitycheck/runs/RUN/evidence-attestation.json
+npm run realitycheck -- validate .realitycheck/runs/RUN/evidence-attestation.json
 ```
 
 To turn signature validity into an organizational trust decision, require one or more independently distributed key IDs:
 
 ```bash
-npx realitycheck validate .realitycheck/runs/RUN \
+npm run realitycheck -- validate .realitycheck/runs/RUN \
   --require-attestation \
   --trusted-key sha256:YOUR_64_HEX_PUBLIC_KEY_ID
 ```
@@ -404,10 +404,10 @@ npx realitycheck validate .realitycheck/runs/RUN \
 For durable CI governance, copy [`examples/evidence-trust.example.json`](examples/evidence-trust.example.json), replace its placeholder ID, and version the policy separately from the signing Secret. It can name trusted or revoked keys, bound their validity windows, and require every discovered manifest to carry a signature:
 
 ```bash
-npx realitycheck validate .realitycheck/runs/RUN \
+npm run realitycheck -- validate .realitycheck/runs/RUN \
   --trust-policy evidence-trust.json
 
-npx realitycheck trust-report .realitycheck/runs/RUN/evidence-manifest.json \
+npm run realitycheck -- trust-report .realitycheck/runs/RUN/evidence-manifest.json \
   --trust-policy evidence-trust.json
 ```
 
@@ -480,25 +480,25 @@ python realitycheck/scripts/report.py compare \
 python realitycheck/scripts/report.py trend .realitycheck/runs \
   --output .realitycheck/trends
 
-npx realitycheck validate .realitycheck/runs
+npm run realitycheck -- validate .realitycheck/runs
 
-npx realitycheck catalog .realitycheck/runs \
+npm run realitycheck -- catalog .realitycheck/runs \
   --output .realitycheck/catalog
 
-npx realitycheck risk-register .realitycheck/runs \
+npm run realitycheck -- risk-register .realitycheck/runs \
   --output .realitycheck/risks \
   --max-open-age-days 30 \
   --max-open-risks 20 \
   --max-recurring-risks 10
 
-npx realitycheck policy-review \
+npm run realitycheck -- policy-review \
   policy/main.config.json realitycheck.config.json \
   --output .realitycheck/policy-review
 
-npx realitycheck issue-drafts .realitycheck/runs \
+npm run realitycheck -- issue-drafts .realitycheck/runs \
   --output .realitycheck/issue-drafts
 
-npx realitycheck release-decision .realitycheck \
+npm run realitycheck -- release-decision .realitycheck \
   --require audit,policy,trust,risk \
   --max-age-hours 24 \
   --output .realitycheck/release-decision

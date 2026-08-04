@@ -14,6 +14,7 @@ function coveredByPackageFiles(path, entries) {
 
 test("npm publication whitelist covers every security and governance runtime surface", () => {
   const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+  assert.equal(packageJson.scripts.realitycheck, "node realitycheck/scripts/audit.mjs");
   const required = [
     "realitycheck/SKILL.md",
     "realitycheck/scripts/audit.mjs",

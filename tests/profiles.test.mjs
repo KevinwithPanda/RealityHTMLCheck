@@ -61,6 +61,10 @@ test("CLI lists profiles and initializes a selected policy without opening a bro
     assert.match(listed.stdout, /product/);
     assert.match(listed.stdout, /strict/);
 
+    const listedThroughForwardingPackageManager = spawnSync(process.execPath, [CLI, "--", "profiles"], { encoding: "utf8" });
+    assert.equal(listedThroughForwardingPackageManager.status, 0, listedThroughForwardingPackageManager.stderr);
+    assert.match(listedThroughForwardingPackageManager.stdout, /starter[\s\S]*product[\s\S]*strict/);
+
     const destination = join(temporary, "realitycheck.config.json");
     const initialized = spawnSync(process.execPath, [CLI, "init", "--profile", "product", "--base-url", "http://127.0.0.1:4300/app", "--config", destination], { encoding: "utf8" });
     assert.equal(initialized.status, 0, initialized.stderr);
