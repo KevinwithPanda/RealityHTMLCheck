@@ -33,6 +33,7 @@ import { startBundledDemoServer } from "./demo-server.mjs";
 import { buildGitHubSummary, writeGitHubSummary } from "./github-summary.mjs";
 import { buildPolicyReview, writePolicyReview } from "./policy-review.mjs";
 import { buildIssueDrafts, writeIssueDrafts } from "./issue-drafts.mjs";
+import { buildReleaseDecision, parseRequiredControls, releaseDecisionExitCode, writeReleaseDecision } from "./release-decision.mjs";
 
 const require = createRequire(import.meta.url);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -70,6 +71,7 @@ Usage:
   realitycheck risk-register <FILE|DIRECTORY> [...] [--output PATH]
   realitycheck policy-review <BEFORE_CONFIG> <AFTER_CONFIG> [--output PATH]
   realitycheck issue-drafts <REPAIR_PLAN|DIRECTORY> [...] [--output PATH]
+  realitycheck release-decision <ARTIFACT|DIRECTORY> [...] [--require audit,policy,trust] [--max-age-hours N] [--output PATH]
   realitycheck attest <EVIDENCE-MANIFEST> --private-key PATH
   realitycheck trust-report <EVIDENCE-MANIFEST> --trust-policy PATH
 
@@ -93,6 +95,8 @@ Options:
   --max-open-risks N         Risk gate: allow at most N open risks
   --max-recurring-risks N    Risk gate: allow at most N recurring risks
   --max-annotations N        GitHub workflow annotations, 1-50 (default: 20)
+  --max-age-hours N          Release evidence freshness limit, 1-8760 (default: 24)
+  --require CONTROLS         Required release controls: audit,verification,policy,trust,risk,issues
   --language en|zh-CN        GitHub summary and annotation language
   --headed                   Show the browser while auditing
   --browser PATH             Chrome/Edge/Chromium executable
@@ -117,6 +121,7 @@ Examples:
   realitycheck risk-register .realitycheck --output .realitycheck/risks
   realitycheck policy-review policy/main.json realitycheck.config.json --output .realitycheck/policy-review
   realitycheck issue-drafts .realitycheck --output .realitycheck/issue-drafts
+  realitycheck release-decision .realitycheck --require audit,policy,trust --max-age-hours 24 --output .realitycheck/release
   realitycheck risk-register .realitycheck --max-open-age-days 30 --max-open-risks 20 --max-recurring-risks 10
   realitycheck attest .realitycheck/runs/RUN/evidence-manifest.json --private-key ci-ed25519.pem
   realitycheck validate .realitycheck/runs/RUN --trusted-key sha256:0123...
@@ -130,7 +135,7 @@ Examples:
 
 function parseArguments(argv) {
   const args = [...argv];
-  const command = new Set(["audit", "demo", "init", "profiles", "doctor", "visual-approve", "validate", "catalog", "github-summary", "risk-register", "policy-review", "issue-drafts", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
+  const command = new Set(["audit", "demo", "init", "profiles", "doctor", "visual-approve", "validate", "catalog", "github-summary", "risk-register", "policy-review", "issue-drafts", "release-decision", "attest", "trust-report"]).has(args[0]) ? args.shift() : "audit";
   const options = {
     command,
     target: null,
@@ -157,6 +162,9 @@ function parseArguments(argv) {
     riskRegisterPaths: [],
     policyReviewPaths: [],
     issueDraftPaths: [],
+    releaseDecisionPaths: [],
+    releaseRequired: null,
+    releaseMaxAgeHours: null,
     attestationManifest: null,
     trustReportManifest: null,
     privateKey: null,
@@ -201,7 +209,7 @@ function parseArguments(argv) {
       options.replaceBaseline = true;
       continue;
     }
-    if (["--mode", "--fail-on", "--output", "--browser", "--compare", "--baseline", "--config", "--profile", "--base-url", "--route", "--max-pages", "--max-depth", "--storage-state", "--private-key", "--trusted-key", "--trust-policy", "--max-open-age-days", "--max-open-risks", "--max-recurring-risks", "--max-annotations", "--language"].includes(item)) {
+    if (["--mode", "--fail-on", "--output", "--browser", "--compare", "--baseline", "--config", "--profile", "--base-url", "--route", "--max-pages", "--max-depth", "--storage-state", "--private-key", "--trusted-key", "--trust-policy", "--max-open-age-days", "--max-open-risks", "--max-recurring-risks", "--max-annotations", "--max-age-hours", "--require", "--language"].includes(item)) {
       const value = args.shift();
       if (!value) throw new Error(`${item} requires a value`);
       if (item === "--mode") options.mode = value;
@@ -219,7 +227,8 @@ function parseArguments(argv) {
       if (item === "--trusted-key") options.trustedKeyIds.push(value);
       if (item === "--trust-policy") options.trustPolicy = value;
       if (item === "--language") options.summaryLanguage = value;
-      if (["--max-pages", "--max-depth", "--max-open-age-days", "--max-open-risks", "--max-recurring-risks", "--max-annotations"].includes(item)) {
+      if (item === "--require") options.releaseRequired = value;
+      if (["--max-pages", "--max-depth", "--max-open-age-days", "--max-open-risks", "--max-recurring-risks", "--max-annotations", "--max-age-hours"].includes(item)) {
         const number = Number(value);
         if (!Number.isInteger(number)) throw new Error(`${item} requires an integer`);
         if (item === "--max-pages") options.maxPages = number;
@@ -228,6 +237,7 @@ function parseArguments(argv) {
         if (item === "--max-open-risks") options.maxOpenRisks = number;
         if (item === "--max-recurring-risks") options.maxRecurringRisks = number;
         if (item === "--max-annotations") options.maxAnnotations = number;
+        if (item === "--max-age-hours") options.releaseMaxAgeHours = number;
       }
       continue;
     }
@@ -254,6 +264,10 @@ function parseArguments(argv) {
     }
     if (command === "issue-drafts") {
       options.issueDraftPaths.push(item);
+      continue;
+    }
+    if (command === "release-decision") {
+      options.releaseDecisionPaths.push(item);
       continue;
     }
     if (command === "attest") {
@@ -293,6 +307,9 @@ function parseArguments(argv) {
   if (options.summaryLanguage !== null && !new Set(["en", "zh-CN"]).has(options.summaryLanguage)) throw new Error("--language must be en or zh-CN");
   if (command === "policy-review" && options.policyReviewPaths.length !== 2) throw new Error("policy-review requires exactly BEFORE_CONFIG and AFTER_CONFIG");
   if (command === "issue-drafts" && !options.issueDraftPaths.length) throw new Error("issue-drafts requires at least one repair plan file or directory");
+  if (command === "release-decision" && !options.releaseDecisionPaths.length) throw new Error("release-decision requires at least one artifact file or directory");
+  if ((options.releaseRequired !== null || options.releaseMaxAgeHours !== null) && command !== "release-decision") throw new Error("--require and --max-age-hours are only valid with release-decision");
+  if (options.releaseRequired !== null) parseRequiredControls(options.releaseRequired);
   if ((options.profile || options.baseUrl) && command !== "init") throw new Error("--profile and --base-url are only valid with init");
   if (options.replaceBaseline && command !== "visual-approve") throw new Error("--replace-baseline is only valid with visual-approve");
   return options;
@@ -2848,6 +2865,24 @@ async function main() {
       } else if (cli.maxOpenAgeDays !== null || cli.maxOpenRisks !== null || cli.maxRecurringRisks !== null) {
         console.log("risk policy:        PASS");
       }
+      return;
+    }
+    if (cli.command === "release-decision") {
+      if (cli.config || cli.target || cli.routes.length || cli.crawl !== undefined || cli.storageState || cli.compareReport || cli.baselineReport || cli.allowRemote || cli.mode || cli.failOn || cli.headed || cli.browserPath || cli.force || cli.maxPages !== undefined || cli.maxDepth !== undefined) throw new Error("release-decision accepts evidence paths, --require, --max-age-hours, and --output only");
+      const output = resolve(cli.output || ".realitycheck/release-decision");
+      const bundle = buildReleaseDecision(cli.releaseDecisionPaths, output, {
+        maxAgeHours: cli.releaseMaxAgeHours ?? 24,
+        requiredControls: parseRequiredControls(cli.releaseRequired || "audit"),
+      });
+      const outputs = writeReleaseDecision(bundle, output);
+      const [validation] = validateArtifactFiles([outputs.jsonPath]);
+      if (!validation?.valid) throw new Error(`Generated release decision failed validation: ${validation?.errors.join("; ")}`);
+      console.log(`release-decision.json:  ${outputs.jsonPath}`);
+      console.log(`release-decision.md:    ${outputs.markdownPath}`);
+      console.log(`release-decision.zh.md: ${outputs.markdownZhPath}`);
+      console.log(`release-decision.html:  ${outputs.htmlPath}`);
+      console.log(`decision:                ${bundle.decision.toUpperCase()} (${bundle.summary.passed} passed, ${bundle.summary.review} review, ${bundle.summary.failed} failed, ${bundle.summary.missing} missing, ${bundle.summary.stale} stale)`);
+      process.exitCode = releaseDecisionExitCode(bundle.decision);
       return;
     }
     if (cli.command === "policy-review") {

@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/release-decision-v1.json",
+  "title": "RealityCheck Release Decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "id", "generatedAt", "decision", "policy", "summary", "controls", "warnings"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "minLength": 1 },
+    "kind": { "const": "release-decision" },
+    "id": { "type": "string", "pattern": "^RELEASE-[A-F0-9]{12}$" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "decision": { "$ref": "#/$defs/decision" },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxAgeHours", "requiredControls"],
+      "properties": {
+        "maxAgeHours": { "type": "integer", "minimum": 1, "maximum": 8760 },
+        "requiredControls": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/controlKey" }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["controls", "required", "passed", "review", "failed", "missing", "stale", "decision"],
+      "properties": {
+        "controls": { "type": "integer", "minimum": 1, "maximum": 6 },
+        "required": { "type": "integer", "minimum": 1, "maximum": 6 },
+        "passed": { "type": "integer", "minimum": 0, "maximum": 6 },
+        "review": { "type": "integer", "minimum": 0, "maximum": 6 },
+        "failed": { "type": "integer", "minimum": 0, "maximum": 6 },
+        "missing": { "type": "integer", "minimum": 0, "maximum": 6 },
+        "stale": { "type": "integer", "minimum": 0, "maximum": 6 },
+        "decision": { "$ref": "#/$defs/decision" }
+      }
+    },
+    "controls": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 6,
+      "items": { "$ref": "#/$defs/control" }
+    },
+    "warnings": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+    }
+  },
+  "$defs": {
+    "controlKey": { "enum": ["audit", "verification", "policy", "trust", "risk", "issues"] },
+    "decision": { "enum": ["go", "review", "no-go"] },
+    "state": { "enum": ["pass", "review", "fail", "missing", "stale"] },
+    "portablePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "pattern": "^(?![A-Za-z]:)(?!/).+$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "sha256"],
+      "properties": {
+        "kind": { "enum": ["report", "site-audit", "verification", "site-verification", "policy-review", "evidence-trust-report", "risk-register", "github-issue-drafts"] },
+        "path": { "$ref": "#/$defs/portablePath" },
+        "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "runFingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "value", "label", "labelZh"],
+      "properties": {
+        "key": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]{0,63}$" },
+        "value": { "oneOf": [{ "type": "number" }, { "type": "boolean" }, { "type": "string", "maxLength": 120 }] },
+        "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "labelZh": { "type": "string", "minLength": 1, "maxLength": 120 }
+      }
+    },
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "outcome", "message", "messageZh"],
+      "properties": {
+        "code": {
+          "enum": [
+            "quality-gate-failed",
+            "verification-gate-failed",
+            "unverified-fixes",
+            "policy-weakened",
+            "policy-review-required",
+            "evidence-rejected",
+            "risk-policy-failed",
+            "risk-unverified",
+            "repair-review-required",
+            "required-control-missing",
+            "evidence-stale",
+            "clock-skew"
+          ]
+        },
+        "outcome": { "enum": ["review", "fail"] },
+        "message": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "messageZh": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "labelZh", "required", "state", "observedAt", "ageHours", "candidates", "facts", "reasons"],
+      "properties": {
+        "key": { "$ref": "#/$defs/controlKey" },
+        "label": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "labelZh": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "required": { "type": "boolean" },
+        "state": { "$ref": "#/$defs/state" },
+        "observedAt": { "type": ["string", "null"], "format": "date-time" },
+        "ageHours": { "type": ["number", "null"], "minimum": 0, "maximum": 1000000 },
+        "candidates": { "type": "integer", "minimum": 0, "maximum": 100000 },
+        "artifact": { "$ref": "#/$defs/artifact" },
+        "facts": { "type": "array", "maxItems": 12, "items": { "$ref": "#/$defs/fact" } },
+        "reasons": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/reason" } }
+      }
+    }
+  }
+}

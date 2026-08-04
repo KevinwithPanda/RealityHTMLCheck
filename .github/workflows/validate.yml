@@ -41,6 +41,7 @@ jobs:
           node --check realitycheck/scripts/site-report.mjs
           node --check realitycheck/scripts/policy-review.mjs
           node --check realitycheck/scripts/issue-drafts.mjs
+          node --check realitycheck/scripts/release-decision.mjs
 
       - name: Verify package contents
         run: npm pack --dry-run
@@ -96,6 +97,36 @@ jobs:
           html = Path(".realitycheck/ci-issue-drafts/github-issue-drafts.html").read_text(encoding="utf-8")
           assert "navigator.clipboard.writeText" in html
           assert "NO AUTO-SUBMISSION" in html
+          PY
+
+      - name: Prove the conservative release decision handoff
+        shell: bash
+        run: |
+          set +e
+          node realitycheck/scripts/audit.mjs release-decision \
+            examples/reference-run/report.json \
+            examples/policy-review-lab/review/policy-review.json \
+            examples/issue-drafts-lab/github-issue-drafts.json \
+            --require audit,policy,issues \
+            --max-age-hours 8760 \
+            --output .realitycheck/ci-release-decision
+          release_status=$?
+          set -e
+          test "$release_status" -eq 1
+          node realitycheck/scripts/audit.mjs validate \
+            .realitycheck/ci-release-decision/release-decision.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          decision = json.loads(Path(".realitycheck/ci-release-decision/release-decision.json").read_text(encoding="utf-8"))
+          assert decision["decision"] == "no-go"
+          assert decision["summary"]["controls"] == 3
+          assert decision["summary"]["failed"] == 2
+          assert decision["policy"]["requiredControls"] == ["audit", "policy", "issues"]
+          assert all("target" not in control for control in decision["controls"])
+          html = Path(".realitycheck/ci-release-decision/release-decision.html").read_text(encoding="utf-8")
+          assert "NO AUTOMATIC DEPLOYMENT" in html
+          assert "data-language=\"zh-CN\"" in html
           PY
 
       - name: Prove the zero-configuration bundled demo

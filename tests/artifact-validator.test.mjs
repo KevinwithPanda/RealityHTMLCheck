@@ -36,6 +36,12 @@ test("the published GitHub issue draft board satisfies its JSON Schema", () => {
   assert.equal(result.valid, true, result.errors.join("\n"));
 });
 
+test("the published release decision satisfies its JSON Schema and semantic binding", () => {
+  const [result] = validateArtifactFiles([resolve("examples/release-decision-lab/release-decision.json")]);
+  assert.equal(result.kind, "release-decision");
+  assert.equal(result.valid, true, result.errors.join("\n"));
+});
+
 test("the published reference evidence manifest verifies every committed output", () => {
   const [result] = validateArtifactFiles([resolve("examples/reference-run/evidence-manifest.json")]);
   assert.equal(result.kind, "evidence-manifest");
@@ -50,7 +56,7 @@ test("the published responsive matrix evidence verifies every committed output",
 });
 
 test("committed interactive HTML surfaces contain parseable inline scripts", () => {
-  for (const path of ["examples/reference-run/report.html", "examples/index.html", "examples/issue-drafts-lab/github-issue-drafts.html"]) {
+  for (const path of ["examples/reference-run/report.html", "examples/index.html", "examples/issue-drafts-lab/github-issue-drafts.html", "examples/release-decision-lab/release-decision.html"]) {
     const source = readFileSync(resolve(path), "utf8");
     const scripts = [...source.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]);
     assert.ok(scripts.length > 0, `${path} should contain an inline script`);

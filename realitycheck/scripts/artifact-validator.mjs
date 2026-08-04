@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,6 +26,7 @@ const ARTIFACT_FILES = new Set([
   "risk-register.json",
   "policy-review.json",
   "github-issue-drafts.json",
+  "release-decision.json",
   "realitycheck.config.json",
 ]);
 const SKIPPED_DIRECTORIES = new Set([".git", "node_modules", "__pycache__"]);
@@ -45,6 +47,7 @@ const SCHEMA_BY_ARTIFACT = {
   "risk-register": "risk-register.schema.json",
   "policy-review": "policy-review.schema.json",
   "github-issue-drafts": "issue-drafts.schema.json",
+  "release-decision": "release-decision.schema.json",
   config: "config.schema.json",
 };
 
@@ -205,6 +208,67 @@ function verifyIssueDrafts(bundle) {
   return errors;
 }
 
+function canonical(value) {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === "object") return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]));
+  return value;
+}
+
+function verifyReleaseDecision(bundle) {
+  const errors = [];
+  const controls = bundle.controls || [];
+  const expected = {
+    controls: controls.length,
+    required: controls.filter((item) => item.required).length,
+    passed: controls.filter((item) => item.state === "pass").length,
+    review: controls.filter((item) => item.state === "review").length,
+    failed: controls.filter((item) => item.state === "fail").length,
+    missing: controls.filter((item) => item.state === "missing").length,
+    stale: controls.filter((item) => item.state === "stale").length,
+  };
+  for (const [key, value] of Object.entries(expected)) {
+    if (bundle.summary?.[key] !== value) errors.push(`/summary/${key} does not match the release controls`);
+  }
+  const keys = new Set();
+  for (const control of controls) {
+    if (keys.has(control.key)) errors.push(`/controls contains duplicate key ${control.key}`);
+    keys.add(control.key);
+    const reasonOutcomes = new Set((control.reasons || []).map((item) => item.outcome));
+    const reasonCodes = new Set((control.reasons || []).map((item) => item.code));
+    if (control.state === "missing") {
+      if (!control.required) errors.push(`/controls/${control.key} missing controls must be required`);
+      if (control.candidates !== 0 || control.observedAt !== null || control.ageHours !== null || control.artifact) errors.push(`/controls/${control.key} missing state contains selected evidence`);
+      if (!reasonCodes.has("required-control-missing")) errors.push(`/controls/${control.key} missing state needs required-control-missing reason`);
+    } else {
+      if (!control.artifact || control.candidates < 1 || control.observedAt === null || control.ageHours === null) errors.push(`/controls/${control.key} selected evidence metadata is incomplete`);
+    }
+    if (control.state === "fail" && !reasonOutcomes.has("fail")) errors.push(`/controls/${control.key} failed state needs a fail reason`);
+    if (control.state === "review" && !reasonOutcomes.has("review")) errors.push(`/controls/${control.key} review state needs a review reason`);
+    if (control.state === "stale" && !reasonCodes.has("evidence-stale")) errors.push(`/controls/${control.key} stale state needs an evidence-stale reason`);
+    if (control.state === "pass" && reasonOutcomes.size) errors.push(`/controls/${control.key} passed state cannot contain review or fail reasons`);
+  }
+  const required = [...(bundle.policy?.requiredControls || [])];
+  for (const key of required) {
+    const control = controls.find((item) => item.key === key);
+    if (!control?.required) errors.push(`/policy/requiredControls ${key} is not represented as required`);
+  }
+  for (const control of controls.filter((item) => item.required)) {
+    if (!required.includes(control.key)) errors.push(`/controls/${control.key} is required but absent from policy.requiredControls`);
+  }
+  const expectedDecision = controls.some((item) => item.state === "fail" || (item.required && ["missing", "stale"].includes(item.state)))
+    ? "no-go"
+    : controls.some((item) => item.state === "review" || item.state === "stale") ? "review" : "go";
+  if (bundle.decision !== expectedDecision) errors.push("/decision does not match control outcomes");
+  if (bundle.summary?.decision !== expectedDecision) errors.push("/summary/decision does not match control outcomes");
+  const identity = {
+    policy: { maxAgeHours: bundle.policy?.maxAgeHours, requiredControls: required },
+    controls: controls.map((item) => ({ key: item.key, required: item.required, state: item.state, sha256: item.artifact?.sha256 || null })),
+  };
+  const expectedId = `RELEASE-${createHash("sha256").update(JSON.stringify(canonical(identity))).digest("hex").slice(0, 12).toUpperCase()}`;
+  if (bundle.id !== expectedId) errors.push("/id does not bind the release policy and selected control evidence");
+  return errors;
+}
+
 export function validateArtifactFiles(inputPaths, { trustedKeyIds = [], requireAttestation = false } = {}) {
   if (!inputPaths.length) throw new Error("validate requires at least one JSON file or directory");
   const trustedKeys = new Set(trustedKeyIds);
@@ -241,6 +305,7 @@ export function validateArtifactFiles(inputPaths, { trustedKeyIds = [], requireA
     if (schemaValid && kind === "risk-register") errors.push(...verifyRiskRegister(value));
     if (schemaValid && kind === "policy-review") errors.push(...verifyPolicyReview(value));
     if (schemaValid && kind === "github-issue-drafts") errors.push(...verifyIssueDrafts(value));
+    if (schemaValid && kind === "release-decision") errors.push(...verifyReleaseDecision(value));
     if (schemaValid && kind === "evidence-attestation" && trustedKeys.size && !trustedKeys.has(value.signer.keyId)) {
       errors.push(`/signer/keyId is not in the trusted key allowlist: ${value.signer.keyId}`);
     }

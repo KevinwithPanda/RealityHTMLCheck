@@ -44,6 +44,8 @@
     "github-issues",
     "issue-tracker",
     "developer-experience",
+    "release-gate",
+    "release-readiness",
     "qa",
     "ai"
   ],

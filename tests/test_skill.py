@@ -62,6 +62,7 @@ class SkillStructureTests(unittest.TestCase):
             "scripts/github-summary.mjs",
             "scripts/policy-review.mjs",
             "scripts/issue-drafts.mjs",
+            "scripts/release-decision.mjs",
             "scripts/artifact-validator.mjs",
             "scripts/evidence-attestation.mjs",
             "scripts/evidence-trust.mjs",
@@ -91,6 +92,7 @@ class SkillStructureTests(unittest.TestCase):
             "assets/risk-register.schema.json",
             "assets/policy-review.schema.json",
             "assets/issue-drafts.schema.json",
+            "assets/release-decision.schema.json",
             "assets/demo/index.html",
             "assets/demo/styles.css",
             "assets/demo/app.js",
@@ -140,6 +142,12 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("Build reviewable GitHub issue drafts", action)
         self.assertIn("issue-drafts-path", action)
         self.assertIn("github-issue-drafts.html", action)
+        self.assertIn("Assemble the release decision", action)
+        self.assertIn("release-required-controls", action)
+        self.assertIn("release-max-age-hours", action)
+        self.assertIn("release-decision-path", action)
+        self.assertIn("release-decision-exit-code", action)
+        self.assertIn('RC_RELEASE_EXIT_CODE" = "3', action)
         self.assertIn('exit "$RC_EXIT_CODE"', action)
         self.assertNotIn("eval ", action)
 

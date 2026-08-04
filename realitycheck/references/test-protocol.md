@@ -275,6 +275,10 @@ Compare only two schema-valid config files explicitly supplied by the caller. Ev
 
 Consume only schema-valid `repair-plan.json` artifacts supplied as files or discovered below explicit directories. Deduplicate by the stable finding fingerprint, reject one fingerprint mapping to conflicting rule IDs, and retain every distinct run/scenario/report anchor as an occurrence. Strip URL credentials, queries, and fragments. Neutralize `@` mentions and HTML-like text before it reaches GitHub-flavored Markdown. Separate low-confidence findings into review and keep waivers explicit instead of silently discarding them. Preserve required proving scenarios, fingerprint absence, healthy-baseline, and no-same-level-regression acceptance criteria. Generate local JSON, bilingual Markdown/HTML, and CSV only; never call an issue API, infer GitHub usernames from team names, or submit/assign work without human approval.
 
+### Release decision handoff
+
+Consume only recognized, schema-valid RealityCheck control artifacts supplied as explicit files or discovered below explicit directories. Select the newest artifact for each observed control and record the candidate count; recommend explicit file paths when scope must be exact. Require at least one named control, bound the freshness limit to 1–8760 hours, treat a required missing/stale control as NO-GO, preserve REVIEW separately from operational failure, and let a failed control override review. Bind every selected source with SHA-256 and a portable path on the same filesystem volume. Do not copy target URLs, page titles, findings, waiver reasons, screenshots, trust error text, or other private source content into the decision. Recompute counts, policy membership, decision, and the stable release ID during validation. Generate local JSON, bilingual Markdown/HTML, and tri-state exit codes only; never trigger deployment or represent the artifact as approval by a person or organization.
+
 ## 6. Classification and confidence
 
 Create a stable cross-run fingerprint from:

@@ -414,6 +414,11 @@ npx realitycheck policy-review \
 
 npx realitycheck issue-drafts .realitycheck/runs \
   --output .realitycheck/issue-drafts
+
+npx realitycheck release-decision .realitycheck \
+  --require audit,policy,trust,risk \
+  --max-age-hours 24 \
+  --output .realitycheck/release-decision
 ```
 
 `validate` 会使用标准兼容的 JSON Schema 校验器，递归验证项目配置、报告、修复/验证产物、趋势、目录、最新入口、完整性清单、风险台账与策略审查。`catalog` 会先校验发现的每份源产物，明确警告并跳过不兼容旧文件，再生成可搜索的产物目录。`risk-register` 按精确目标与稳定指纹聚合页面问题，记录首次/最近出现时间和重复次数，再结合最新证明场景与可用策略指纹保守地区分开放、已豁免、已解决与未验证风险；场景缺失或策略漂移都会明确保持未验证。开放风险总数、最长开放天数和反复风险总数均可设为组合门禁，失败时仍保留全部 JSON、双语 HTML、Markdown 和防公式注入 CSV 证据。
@@ -422,6 +427,8 @@ npx realitycheck issue-drafts .realitycheck/runs \
 
 `issue-drafts` 会把一份或多份已验证的 `repair-plan.json` 变成本地、复核优先的 GitHub 工单交接。它按稳定指纹去重，但保留每次运行/场景的证据链接；移除 URL 查询参数和片段，阻断意外 `@` 提及，把低置信度问题单独放入待复核，并继续明确展示已豁免证据。命令输出通过 Schema 校验的 JSON、中英文 Markdown、CSV 和带复制按钮的可搜索双语看板。它不会调用 GitHub，也不会自动创建工单。[`examples/issue-drafts-lab`](../examples/issue-drafts-lab) 提供由参考核查生成的六份真实草稿。
 
-本仓库也可直接作为复合 GitHub Action 使用。Action 会先执行页面/全站核查，可选地签署清单、评估信任、比较 `policy-before` 与 `policy-after`，自动生成绝不外发的工单草稿看板，再生成产物目录与长期风险台账；所有证据会在页面、策略、组合风险或信任门禁生效前上传。Action 暴露 `issue-drafts-path`、`policy-review-path` / `policy-exit-code`，并把所选语言的策略摘要写入作业摘要。参考 [`examples/github-actions/quality-gate.yml`](../examples/github-actions/quality-gate.yml) 可建立只阻止新增回归的门禁。
+`release-decision` 会把最新有效的质量门禁、前后验证、策略审查、证据信任结果、风险台账与修复复核队列汇总为一份保守的发布审批包。`--require` 指定必须存在的控制，`--max-age-hours` 会拒绝过期的必需证据；每个所选来源都用 SHA-256 绑定，但不会把目标 URL、页面标题、问题正文、豁免理由或截图复制进决策。命令输出 JSON、中英文 Markdown 和交互式双语 HTML；退出码 `0` 表示可发布，`1` 表示不可发布，`3` 表示待人工复核，`2` 表示运行或证据错误。它只记录决策，绝不会部署或批准发布。[`examples/release-decision-lab`](../examples/release-decision-lab) 提供一份真实的三控制项“不可发布”决策包。
+
+本仓库也可直接作为复合 GitHub Action 使用。Action 会先执行页面/全站核查，可选地签署清单、评估信任、比较 `policy-before` 与 `policy-after`，自动生成绝不外发的工单草稿看板，再生成长期风险台账、发布决策与完整产物目录；所有证据会在页面、策略、组合风险、信任或发布门禁生效前上传。Action 暴露 `issue-drafts-path`、`policy-review-path` / `policy-exit-code`，以及 `release-decision-path`、`release-decision` / `release-decision-exit-code`。通过 `release-required-controls` 和 `release-max-age-hours` 可以把缺失或过期证据变成“不可发布”；“待复核”会留给人处理，而不会伪装成工具故障。参考 [`examples/github-actions/quality-gate.yml`](../examples/github-actions/quality-gate.yml) 可建立只阻止新增回归的门禁。
 
 项目目前仍以 Codex 为主要交互入口，但独立 CLI 和报告工具可以直接在克隆仓库中使用。路线图、贡献和安全说明见 [`ROADMAP.md`](../ROADMAP.md)、[`CONTRIBUTING.md`](../CONTRIBUTING.md) 与 [`SECURITY.md`](../SECURITY.md)。项目采用 [MIT License](../LICENSE)。

@@ -1,0 +1,176 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "kind": "release-decision",
+  "id": "RELEASE-1C410472D2D2",
+  "generatedAt": "2026-08-04T20:42:04.553Z",
+  "decision": "no-go",
+  "policy": {
+    "maxAgeHours": 168,
+    "requiredControls": [
+      "audit",
+      "policy",
+      "issues"
+    ]
+  },
+  "summary": {
+    "controls": 3,
+    "required": 3,
+    "passed": 0,
+    "review": 1,
+    "failed": 2,
+    "missing": 0,
+    "stale": 0,
+    "decision": "no-go"
+  },
+  "controls": [
+    {
+      "key": "audit",
+      "label": "Quality gate",
+      "labelZh": "质量门禁",
+      "required": true,
+      "state": "fail",
+      "observedAt": "2026-08-01T04:00:42.000Z",
+      "ageHours": 88.69,
+      "candidates": 1,
+      "artifact": {
+        "kind": "report",
+        "path": "../reference-run/report.json",
+        "sha256": "sha256:be8c9ff22ae8a4fd03e1513b873e837cfa0f935287d02caae0101043a03e807c",
+        "runFingerprint": "sha256:30dbe22cd90e9ecc0ce15f75fc014cfb1acaced82fc82026325a0dc4337d928c"
+      },
+      "facts": [
+        {
+          "key": "score",
+          "value": 78,
+          "label": "Score",
+          "labelZh": "评分"
+        },
+        {
+          "key": "findings",
+          "value": 6,
+          "label": "Findings",
+          "labelZh": "问题数"
+        },
+        {
+          "key": "coveragePercent",
+          "value": 100,
+          "label": "Coverage %",
+          "labelZh": "覆盖率 %"
+        }
+      ],
+      "reasons": [
+        {
+          "code": "quality-gate-failed",
+          "outcome": "fail",
+          "message": "The selected audit did not satisfy its own configured release gate.",
+          "messageZh": "所选核查未满足其自身配置的发布门禁。"
+        }
+      ]
+    },
+    {
+      "key": "policy",
+      "label": "Policy change guard",
+      "labelZh": "策略变更守卫",
+      "required": true,
+      "state": "fail",
+      "observedAt": "2026-08-04T19:48:31.023Z",
+      "ageHours": 0.89,
+      "candidates": 1,
+      "artifact": {
+        "kind": "policy-review",
+        "path": "../policy-review-lab/review/policy-review.json",
+        "sha256": "sha256:920ad76c39746beea5c99f04020a983fab9b5471d2114e4c2f3e6eb36f392ae7"
+      },
+      "facts": [
+        {
+          "key": "weakened",
+          "value": 38,
+          "label": "Weakened",
+          "labelZh": "弱化"
+        },
+        {
+          "key": "strengthened",
+          "value": 0,
+          "label": "Strengthened",
+          "labelZh": "加强"
+        },
+        {
+          "key": "review",
+          "value": 2,
+          "label": "Needs review",
+          "labelZh": "待复核"
+        }
+      ],
+      "reasons": [
+        {
+          "code": "policy-weakened",
+          "outcome": "fail",
+          "message": "38 structural policy weakening change(s) were detected.",
+          "messageZh": "检测到 38 项结构化策略弱化。"
+        }
+      ]
+    },
+    {
+      "key": "issues",
+      "label": "Repair review queue",
+      "labelZh": "修复复核队列",
+      "required": true,
+      "state": "review",
+      "observedAt": "2026-08-04T20:06:53.130Z",
+      "ageHours": 0.59,
+      "candidates": 1,
+      "artifact": {
+        "kind": "github-issue-drafts",
+        "path": "../issue-drafts-lab/github-issue-drafts.json",
+        "sha256": "sha256:388c4ffc88b121db052037d2ac2da2c33ea82119b8b3675f1a42e50fb589b92c"
+      },
+      "facts": [
+        {
+          "key": "drafts",
+          "value": 6,
+          "label": "Drafts",
+          "labelZh": "草稿"
+        },
+        {
+          "key": "actionable",
+          "value": 5,
+          "label": "Actionable",
+          "labelZh": "可执行"
+        },
+        {
+          "key": "review",
+          "value": 1,
+          "label": "Needs review",
+          "labelZh": "待复核"
+        },
+        {
+          "key": "waived",
+          "value": 0,
+          "label": "Waived",
+          "labelZh": "已豁免"
+        },
+        {
+          "key": "duplicates",
+          "value": 0,
+          "label": "Duplicates merged",
+          "labelZh": "已合并重复项"
+        }
+      ],
+      "reasons": [
+        {
+          "code": "repair-review-required",
+          "outcome": "review",
+          "message": "1 repair draft(s) need an owner or evidence decision.",
+          "messageZh": "1 份修复草稿需要负责人或证据判断。"
+        }
+      ]
+    }
+  ],
+  "warnings": [
+    "This decision summarizes selected RealityCheck artifacts; it does not deploy, approve, or prove the absence of defects.",
+    "该决策仅汇总所选 RealityCheck 产物；它不会部署、批准发布，也不能证明不存在缺陷。",
+    "Directory discovery selects the newest valid artifact per control. Use explicit files when release scope must be exact.",
+    "目录发现会为每项控制选择最新有效产物；发布范围必须精确时请传入明确文件。"
+  ]
+}

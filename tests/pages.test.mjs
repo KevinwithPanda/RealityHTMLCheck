@@ -35,6 +35,10 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "labs/issue-drafts/github-issue-drafts.html",
     "labs/issue-drafts/github-issue-drafts.json",
     "labs/issue-drafts/github-issue-drafts.csv",
+    "labs/release-decision/release-decision.html",
+    "labs/release-decision/release-decision.json",
+    "labs/release-decision/release-decision.md",
+    "labs/release-decision/release-decision.zh-CN.md",
     "labs/reference-run/report.html",
     "labs/links/broken.html",
     "labs/links/fixed.html",
@@ -82,6 +86,9 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /EVIDENCE BECOMES REVIEWABLE WORK/);
   assert.match(html, /让证据变成可复核工作/);
   assert.match(html, /external issues&nbsp; 0 created/);
+  assert.match(html, /ONE CONSERVATIVE DELIVERY ANSWER/);
+  assert.match(html, /给出一个保守的交付答案/);
+  assert.match(html, /automatic deployments · 0/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   const localReferences = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((match) => match[1])
     .filter((value) => !/^(?:https?:|#|mailto:|data:)/.test(value));

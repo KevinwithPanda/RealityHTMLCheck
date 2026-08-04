@@ -41,7 +41,8 @@
       "Accessibility and performance checks",
       "API, link, metadata, and security policy checks",
       "Bilingual repair plans and GitHub issue drafts",
-      "Policy anti-weakening review"
+      "Policy anti-weakening review",
+      "Freshness-aware GO, REVIEW, or NO-GO release decisions"
     ]
   }
   </script>
@@ -54,6 +55,7 @@
         <a href="#evidence" data-en="Live evidence" data-zh-cn="真实证据">Live evidence</a>
         <a href="#policy" data-en="Policy guard" data-zh-cn="策略守卫">Policy guard</a>
         <a href="#handoff" data-en="Repair handoff" data-zh-cn="修复交接">Repair handoff</a>
+        <a href="#release" data-en="Release decision" data-zh-cn="发布决策">Release decision</a>
         <a href="#profiles" data-en="Start" data-zh-cn="开始">Start</a>
         <a href="https://github.com/KevinwithPanda/RealityHTMLCheck" data-en="GitHub ↗" data-zh-cn="GitHub ↗">GitHub ↗</a>
       </nav>
@@ -127,6 +129,11 @@ repair     repair-plan.json</code></pre>
     <section class="section issue-section wrap" id="handoff">
       <div class="issue-preview" aria-label="GitHub issue draft example"><div class="issue-preview-head"><span>RealityCheck / ISSUE DRAFTS</span><b>6</b></div><article><span class="issue-severity">MAJOR</span><strong data-en="Checkout review is outside the mobile viewport" data-zh-cn="移动端视口内无法看到结账审核按钮">Checkout review is outside the mobile viewport</strong><small>severity:major · offscreen-critical-control</small></article><article><span class="issue-severity minor">MINOR</span><strong data-en="The page logs an initialization error" data-zh-cn="页面在初始化时输出错误">The page logs an initialization error</strong><small>severity:minor · console-error</small></article><code>5 actionable&nbsp;&nbsp; 1 review<br>external issues&nbsp; 0 created</code></div>
       <div class="issue-copy"><p class="eyebrow" data-en="EVIDENCE BECOMES REVIEWABLE WORK" data-zh-cn="让证据变成可复核工作">EVIDENCE BECOMES REVIEWABLE WORK</p><h2 data-en="Don't make the team rewrite the report." data-zh-cn="不要再让团队手工重写报告。">Don't make the team rewrite the report.</h2><p data-en="issue-drafts deduplicates stable fingerprints across repair plans, removes URL queries, neutralizes mentions, preserves acceptance criteria and evidence links, and produces English/Chinese Markdown, CSV, JSON, and a copy-ready board. It never opens an external issue by itself." data-zh-cn="issue-drafts 会跨修复计划按稳定指纹去重，移除 URL 查询参数、阻断意外 @ 提及，保留验收标准与证据链接，并生成中英文 Markdown、CSV、JSON 和可复制看板。它绝不会自行创建外部工单。">issue-drafts deduplicates stable fingerprints across repair plans, removes URL queries, neutralizes mentions, preserves acceptance criteria and evidence links, and produces English/Chinese Markdown, CSV, JSON, and a copy-ready board. It never opens an external issue by itself.</p><a class="button primary" href="labs/issue-drafts/github-issue-drafts.html" data-en="Open 6 real issue drafts →" data-zh-cn="打开 6 份真实工单草稿 →">Open 6 real issue drafts →</a></div>
+    </section>
+
+    <section class="section release-section wrap" id="release">
+      <div class="release-copy"><p class="eyebrow" data-en="ONE CONSERVATIVE DELIVERY ANSWER" data-zh-cn="给出一个保守的交付答案">ONE CONSERVATIVE DELIVERY ANSWER</p><h2 data-en="Know why the release is blocked." data-zh-cn="明确这次发布为何被阻止。">Know why the release is blocked.</h2><p data-en="release-decision selects the newest valid quality gate, verification, policy, trust, risk, and repair-review artifacts; enforces required controls and evidence age; binds each selected source by SHA-256; and returns GO, REVIEW, or NO-GO. It records a decision but never deploys or approves a release." data-zh-cn="release-decision 会选择最新有效的质量门禁、修复验证、策略、信任、风险和修复复核产物，强制检查必需控制与证据时效，并用 SHA-256 绑定每个所选来源，最终返回可发布、待复核或不可发布。它只记录决策，绝不会部署或批准发布。">release-decision selects the newest valid quality gate, verification, policy, trust, risk, and repair-review artifacts; enforces required controls and evidence age; binds each selected source by SHA-256; and returns GO, REVIEW, or NO-GO. It records a decision but never deploys or approves a release.</p><a class="button primary" href="labs/release-decision/release-decision.html" data-en="Open the real NO-GO decision →" data-zh-cn="打开真实的不可发布决策 →">Open the real NO-GO decision →</a></div>
+      <div class="release-preview" aria-label="Release decision example"><div class="release-preview-head"><span>RealityCheck / RELEASE</span><b>NO-GO</b></div><div><span data-en="Quality gate" data-zh-cn="质量门禁">Quality gate</span><strong class="fail" data-en="FAIL" data-zh-cn="失败">FAIL</strong></div><div><span data-en="Policy change guard" data-zh-cn="策略变更守卫">Policy change guard</span><strong class="fail" data-en="FAIL" data-zh-cn="失败">FAIL</strong></div><div><span data-en="Repair review queue" data-zh-cn="修复复核队列">Repair review queue</span><strong class="review" data-en="REVIEW" data-zh-cn="待复核">REVIEW</strong></div><code>3 required controls<br>0 missing · 0 stale<br>automatic deployments · 0</code></div>
     </section>
 
     <section class="section profile-section wrap" id="profiles">

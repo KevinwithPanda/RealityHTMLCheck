@@ -111,6 +111,10 @@ Finding IDs and fingerprints must be unique within a report. Aggregate repeated 
 
 `github-issue-drafts.json` is a separate `kind: "github-issue-drafts"` artifact built from validated repair plans. One `ISSUE-*` draft represents one stable finding fingerprint; repeated observations remain in its `occurrences` array with portable report anchors. Each draft carries severity, confidence, actionable/review/waived disposition, safe labels, optional accountable owner, English/Chinese title and Markdown body, and the original proving acceptance contract. Semantic validation recomputes all summary/lifecycle counts and rejects duplicate IDs or fingerprints. The sibling bilingual Markdown, HTML, and CSV are review/export surfaces. No artifact represents a submitted external issue.
 
+## Release decision contract
+
+`release-decision.json` is a separate `kind: "release-decision"` artifact that selects the newest valid evidence for up to six controls: `audit`, `verification`, `policy`, `trust`, `risk`, and `issues`. Policy records the required control set and maximum evidence age. Each selected control stores a portable source link, SHA-256 digest, optional hashed run fingerprint, observed time, bounded numeric facts, and bilingual reason codes; it does not copy raw run IDs, target URLs, page titles, finding text, waiver reasons, or screenshots. A required missing or stale control and any failed control produce `no-go`; a review state or optional stale control produces `review` when no blocker exists; otherwise the result is `go`. Semantic validation recomputes every summary count and decision, checks missing/selected evidence invariants, and recomputes the stable `RELEASE-*` ID from policy plus selected digests and states. The sibling English/Chinese Markdown and bilingual HTML are review surfaces. They never deploy or approve a release.
+
 Visual policy findings use the ordinary finding contract. `visual-baseline-missing` references `screenshots/visual-current.png`; `visual-regression-threshold` additionally references `visual-approved.png` and `visual-diff.png`. Measurements record current/baseline dimensions, whether dimensions match, changed and total pixels, exact ratio and allowed ratio, per-channel threshold, and mask count. Baseline filesystem paths, mask selector text, URL queries, and fragments are not copied into the report. The evidence manifest hashes each emitted visual file like every other screenshot.
 
 ## English and Chinese content
@@ -213,6 +217,7 @@ The published schemas are:
 - `assets/risk-register.schema.json`
 - `assets/policy-review.schema.json`
 - `assets/issue-drafts.schema.json`
+- `assets/release-decision.schema.json`
 
 Validate a file or directory recursively with `scripts/audit.mjs validate`. `--require-attestation` requires a sibling signature for every discovered evidence manifest and validates that signature automatically; repeat `--trusted-key sha256:...` to restrict accepted signer keys. Exit code `0` means every recognized artifact satisfies schema, semantic integrity, signature, and requested trust policy; `1` means at least one artifact failed; `2` means the command itself could not run or found no artifacts.
 

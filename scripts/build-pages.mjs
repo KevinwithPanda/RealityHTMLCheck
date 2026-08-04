@@ -29,6 +29,7 @@ copy("examples/accessibility-lab", "labs/accessibility");
 copy("examples/viewport-lab", "labs/viewport");
 copy("examples/policy-review-lab", "labs/policy-review");
 copy("examples/issue-drafts-lab", "labs/issue-drafts");
+copy("examples/release-decision-lab", "labs/release-decision");
 copy("examples/reference-run", "labs/reference-run");
 writeFileSync(join(output, ".nojekyll"), "", "utf8");
 

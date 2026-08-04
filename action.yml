@@ -91,6 +91,14 @@ inputs:
     description: Optional proposed RealityCheck config paired with policy-before; both are required together.
     required: false
     default: ""
+  release-required-controls:
+    description: Comma-separated release controls that must exist (audit, verification, policy, trust, risk, issues).
+    required: false
+    default: audit
+  release-max-age-hours:
+    description: Maximum age in hours for selected release evidence, from 1 to 8760.
+    required: false
+    default: "24"
 
 outputs:
   exit-code:
@@ -132,6 +140,15 @@ outputs:
   policy-exit-code:
     description: Policy review exit code (0 no weakening/not configured, 1 weakening blocked, 2 operational error).
     value: ${{ steps.policy.outputs.policy-exit-code }}
+  release-decision-path:
+    description: Bilingual HTML GO, REVIEW, or NO-GO decision assembled from selected release controls.
+    value: ${{ steps.release.outputs.release-decision-path }}
+  release-decision:
+    description: Conservative release state (go, review, or no-go).
+    value: ${{ steps.release.outputs.release-decision }}
+  release-decision-exit-code:
+    description: Release decision exit code (0 GO, 1 NO-GO, 2 operational error, 3 REVIEW).
+    value: ${{ steps.release.outputs.release-decision-exit-code }}
 
 runs:
   using: composite
@@ -331,30 +348,6 @@ runs:
           echo "No valid repair plan was available for GitHub issue drafts." >&2
         fi
 
-    - name: Build the evidence catalog
-      id: catalog
-      if: always()
-      shell: bash
-      env:
-        RC_OUTPUT: ${{ inputs.output }}
-        RC_WORKDIR: ${{ inputs.working-directory }}
-      run: |
-        cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
-        catalog_dir="$RC_OUTPUT/catalog"
-        set +e
-        node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" catalog "$RC_OUTPUT" --output "$catalog_dir"
-        catalog_status=$?
-        set -e
-        if [ "$catalog_status" -eq 0 ]; then
-          echo "catalog-path=$RC_WORKDIR/$catalog_dir/catalog.html" >> "$GITHUB_OUTPUT"
-          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-            printf '\n## RealityCheck evidence catalog\n\n' >> "$GITHUB_STEP_SUMMARY"
-            cat "$catalog_dir/catalog.md" >> "$GITHUB_STEP_SUMMARY"
-          fi
-        else
-          echo "No valid RealityCheck evidence was available for a catalog." >&2
-        fi
-
     - name: Build the longitudinal risk register
       id: risks
       if: always()
@@ -388,6 +381,67 @@ runs:
           echo "No valid RealityCheck page reports were available for a risk register." >&2
         fi
 
+    - name: Assemble the release decision
+      id: release
+      if: always()
+      shell: bash
+      env:
+        RC_OUTPUT: ${{ inputs.output }}
+        RC_WORKDIR: ${{ inputs.working-directory }}
+        RC_RELEASE_REQUIRED: ${{ inputs.release-required-controls }}
+        RC_RELEASE_MAX_AGE_HOURS: ${{ inputs.release-max-age-hours }}
+        RC_SUMMARY_LANGUAGE: ${{ inputs.summary-language }}
+      run: |
+        cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
+        release_dir="$RC_OUTPUT/release-decision"
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" release-decision "$RC_OUTPUT" \
+          --require "$RC_RELEASE_REQUIRED" \
+          --max-age-hours "$RC_RELEASE_MAX_AGE_HOURS" \
+          --output "$release_dir"
+        release_status=$?
+        set -e
+        echo "release-decision-exit-code=$release_status" >> "$GITHUB_OUTPUT"
+        if [ "$release_status" -eq 0 ] || [ "$release_status" -eq 1 ] || [ "$release_status" -eq 3 ]; then
+          decision="$(node -e 'const fs=require("node:fs");const value=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(value.decision)' "$release_dir/release-decision.json")"
+          echo "release-decision=$decision" >> "$GITHUB_OUTPUT"
+          echo "release-decision-path=$RC_WORKDIR/$release_dir/release-decision.html" >> "$GITHUB_OUTPUT"
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            printf '\n' >> "$GITHUB_STEP_SUMMARY"
+            if [ "$RC_SUMMARY_LANGUAGE" = "zh-CN" ]; then
+              cat "$release_dir/release-decision.zh-CN.md" >> "$GITHUB_STEP_SUMMARY"
+            else
+              cat "$release_dir/release-decision.md" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+        else
+          echo "RealityCheck could not assemble a valid release decision." >&2
+        fi
+
+    - name: Build the evidence catalog
+      id: catalog
+      if: always()
+      shell: bash
+      env:
+        RC_OUTPUT: ${{ inputs.output }}
+        RC_WORKDIR: ${{ inputs.working-directory }}
+      run: |
+        cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
+        catalog_dir="$RC_OUTPUT/catalog"
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" catalog "$RC_OUTPUT" --output "$catalog_dir"
+        catalog_status=$?
+        set -e
+        if [ "$catalog_status" -eq 0 ]; then
+          echo "catalog-path=$RC_WORKDIR/$catalog_dir/catalog.html" >> "$GITHUB_OUTPUT"
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            printf '\n## RealityCheck evidence catalog\n\n' >> "$GITHUB_STEP_SUMMARY"
+            cat "$catalog_dir/catalog.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+        else
+          echo "No valid RealityCheck evidence was available for a catalog." >&2
+        fi
+
     - name: Upload RealityCheck evidence
       if: always() && inputs.upload-artifact == 'true'
       uses: actions/upload-artifact@v7
@@ -406,6 +460,7 @@ runs:
         RC_RISK_EXIT_CODE: ${{ steps.risks.outputs.risk-exit-code }}
         RC_TRUST_EXIT_CODE: ${{ steps.trust.outputs.trust-exit-code }}
         RC_POLICY_EXIT_CODE: ${{ steps.policy.outputs.policy-exit-code }}
+        RC_RELEASE_EXIT_CODE: ${{ steps.release.outputs.release-decision-exit-code }}
       run: |
         if [ "$RC_ATTESTATION_OUTCOME" = "failure" ]; then
           echo "RealityCheck evidence signing failed. Check that the configured Secret is a valid Ed25519 private key."
@@ -427,6 +482,10 @@ runs:
           echo "RealityCheck could not complete the configured policy review."
           exit 2
         fi
+        if [ "$RC_RELEASE_EXIT_CODE" = "2" ]; then
+          echo "RealityCheck could not assemble the configured release decision."
+          exit 2
+        fi
         if [ "$RC_EXIT_CODE" -eq 1 ]; then
           echo "RealityCheck quality gate failed. Download the uploaded evidence report for exact findings."
         elif [ "$RC_EXIT_CODE" -eq 2 ]; then
@@ -434,5 +493,6 @@ runs:
         fi
         if [ "$RC_TRUST_EXIT_CODE" = "1" ]; then echo "RealityCheck evidence trust policy rejected one or more bundles."; fi
         if [ "$RC_POLICY_EXIT_CODE" = "1" ]; then echo "RealityCheck blocked one or more structural policy weakenings."; fi
-        if [ "$RC_EXIT_CODE" -eq 1 ] || [ "$RC_RISK_EXIT_CODE" = "1" ] || [ "$RC_TRUST_EXIT_CODE" = "1" ] || [ "$RC_POLICY_EXIT_CODE" = "1" ]; then exit 1; fi
+        if [ "$RC_RELEASE_EXIT_CODE" = "3" ]; then echo "RealityCheck release evidence requires human review; inspect the decision artifact."; fi
+        if [ "$RC_EXIT_CODE" -eq 1 ] || [ "$RC_RISK_EXIT_CODE" = "1" ] || [ "$RC_TRUST_EXIT_CODE" = "1" ] || [ "$RC_POLICY_EXIT_CODE" = "1" ] || [ "$RC_RELEASE_EXIT_CODE" = "1" ]; then exit 1; fi
         exit "$RC_EXIT_CODE"
