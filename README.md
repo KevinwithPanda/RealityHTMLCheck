@@ -32,6 +32,20 @@
 > [!IMPORTANT]
 > RealityCheck is a **v0.4.0 Beta**. It is local-first and conservative: an untested scenario is `unsupported`, never silently “passed.”
 
+## See the output before installing
+
+This is the committed bilingual report UI from a real Chrome run—not a mockup. It shows a failed 80/100 security gate with five measured Major findings.
+
+<p align="center"><img src="docs/assets/report-preview.png" alt="RealityCheck Chinese report overview showing an 80 out of 100 gate and five Major findings" width="100%" /></p>
+
+<details>
+<summary><strong>See the evidence-to-repair view</strong></summary>
+
+Each finding explains the violated rule and proving scenario, supports selection for a batch, and has a copyable fix-and-verification task. The static report never edits source by itself.
+
+<p align="center"><img src="docs/assets/finding-preview.png" alt="RealityCheck finding cards with specific Chinese explanations, batch selection, and copy fix and verification task buttons" width="100%" /></p>
+</details>
+
 ## One prompt
 
 After the one-time skill install, this is the complete workflow:

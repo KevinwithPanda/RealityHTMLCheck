@@ -19,6 +19,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "sitemap.xml",
     "assets/icon.svg",
     "assets/social-preview.png",
+    "assets/report-preview.png",
+    "assets/finding-preview.png",
     "reference/report.html",
     "evidence/viewport/latest.html",
     "evidence/journey/latest.html",
@@ -66,6 +68,12 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   const html = readFileSync(resolve(output, "index.html"), "utf8");
   const styles = readFileSync(resolve(output, "styles.css"), "utf8");
   assert.match(styles, /\.profile-grid button\{min-height:40px;/);
+  for (const [name, width, height] of [["report-preview.png", 1440, 900], ["finding-preview.png", 1440, 900]]) {
+    const png = readFileSync(resolve(output, "assets", name));
+    assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10], `${name} has an invalid PNG signature`);
+    assert.equal(png.readUInt32BE(16), width, `${name} width changed`);
+    assert.equal(png.readUInt32BE(20), height, `${name} height changed`);
+  }
   assert.match(html, /<link rel="canonical" href="https:\/\/kevinwithpanda\.github\.io\/RealityHTMLCheck\/">/);
   assert.match(html, /<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">/);
   assert.match(html, /<link rel="manifest" href="site\.webmanifest">/);

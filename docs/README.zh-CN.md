@@ -8,6 +8,20 @@ RealityCheck 是面向 Codex 的本地 Web 核查 skill，也提供可独立运�
 
 无需安装即可打开[在线演示站](https://kevinwithpanda.github.io/RealityHTMLCheck/)，直接体验用户旅程、安全策略和 Deep 可访问性三份真实 Chrome 证据；仓库内的[演示中心](../examples/index.html)还包含全站夹具、修复证明、产物目录、风险台账、组合门禁和签名决策。
 
+## 安装前先看实际效果
+
+下面是一次真实 Chrome 核查提交的双语报告界面，不是设计稿。它展示安全门禁得分 80/100，以及 5 个带测量证据的主要问题。
+
+<p align="center"><img src="assets/report-preview.png" alt="RealityCheck 中文报告概览，显示 80 分门禁和 5 个主要问题" width="100%" /></p>
+
+<details>
+<summary><strong>查看从证据到修复任务的界面</strong></summary>
+
+每个问题会解释违反的规则与证明场景，可加入批量修复，并可复制“修复并验证任务”。静态报告本身不会修改源码。
+
+<p align="center"><img src="assets/finding-preview.png" alt="RealityCheck 中文问题卡片，包含具体说明、批量选择和复制修复并验证任务按钮" width="100%" /></p>
+</details>
+
 ## 一句话使用
 
 一次安装后，只需要告诉 Codex：
