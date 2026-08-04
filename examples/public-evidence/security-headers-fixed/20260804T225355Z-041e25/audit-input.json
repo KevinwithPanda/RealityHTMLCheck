@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "1",
+  "toolVersion": "0.4.0",
+  "run": {
+    "id": "20260804T225355Z-041e25",
+    "mode": "quick",
+    "startedAt": "2026-08-04T22:53:55.721Z",
+    "finishedAt": "2026-08-04T22:54:00.558Z",
+    "durationMs": 4815
+  },
+  "target": {
+    "requestedUrl": "http://127.0.0.1:4193/fixed",
+    "finalUrl": "http://127.0.0.1:4193/fixed",
+    "title": "Semantic security header laboratory"
+  },
+  "adapter": {
+    "name": "project-playwright",
+    "isolation": "fresh-context",
+    "capabilities": [
+      "console",
+      "dom",
+      "isolated-contexts",
+      "network-routing",
+      "screenshots",
+      "viewport",
+      "responsive-viewport-matrix",
+      "security-response-and-origin-policy",
+      "detector-policy-fingerprint"
+    ]
+  },
+  "config": {
+    "allowRemote": false,
+    "failOn": "major",
+    "viewports": [
+      {
+        "id": "mobile-375",
+        "width": 375,
+        "height": 812,
+        "touch": true
+      }
+    ],
+    "policyFingerprint": "sha256:4b100b0f6896dbda974c97cc461ac72034ebdbb562ad1cf066556168adc3d87e"
+  },
+  "scenarios": [
+    {
+      "id": "baseline",
+      "status": "passed",
+      "durationMs": 769,
+      "notes": [],
+      "translations": {
+        "zh-CN": {
+          "notes": []
+        }
+      }
+    },
+    {
+      "id": "mobile-375",
+      "status": "passed",
+      "durationMs": 592,
+      "notes": [
+        "Evaluated 375×812; touch-target checks were enabled."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已核查 375×812；触控目标检查已启用。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "long-text",
+      "status": "passed",
+      "durationMs": 1053,
+      "notes": [
+        "1 deterministic text mutations were applied."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "已执行 1 次确定性的文本替换。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "rtl-arabic",
+      "status": "passed",
+      "durationMs": 993,
+      "notes": [
+        "Directionality stress test only; translation quality was not assessed."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "仅进行书写方向压力测试；未评估翻译质量。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "image-failure",
+      "status": "passed",
+      "durationMs": 614,
+      "notes": [
+        "Expected image request aborts were excluded from failed-request findings."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "预期的图片请求中止未计入普通请求失败问题。"
+          ]
+        }
+      }
+    },
+    {
+      "id": "keyboard-tab",
+      "status": "passed",
+      "durationMs": 709,
+      "notes": [
+        "No controls were activated or submitted."
+      ],
+      "translations": {
+        "zh-CN": {
+          "notes": [
+            "未激活或提交任何控件。"
+          ]
+        }
+      }
+    }
+  ],
+  "findings": [],
+  "warnings": [
+    "Standalone audit used an already-installed system browser (150.0.7871.116).",
+    "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    "Responsive layout was evaluated in 1 configured viewport(s); touch-target heuristics ran only where touch was enabled.",
+    "6 explicit response, semantic-header, origin, and form security policy setting(s) were evaluated without submitting data or retaining raw header values."
+  ],
+  "translations": {
+    "zh-CN": {
+      "warnings": [
+        "独立核查使用了已安装的系统浏览器（150.0.7871.116）。",
+        "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        "已在 1 个配置视口中核查响应式布局；仅在启用 touch 的视口运行触控目标启发式检查。",
+        "已在不提交数据或保留原始响应头值的前提下核查 6 项明确的响应、语义响应头、来源与表单安全策略。"
+      ]
+    }
+  }
+}
