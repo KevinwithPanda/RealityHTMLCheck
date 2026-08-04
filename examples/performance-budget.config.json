@@ -7,6 +7,10 @@
   "budgets": {
     "severity": "major",
     "navigationMs": 2000,
+    "ttfbMs": 800,
+    "firstContentfulPaintMs": 1800,
+    "largestContentfulPaintMs": 2500,
+    "cumulativeLayoutShift": 0.1,
     "requests": 20,
     "transferKb": 250,
     "domNodes": 10

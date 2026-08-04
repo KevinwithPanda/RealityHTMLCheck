@@ -1,0 +1,21 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4173/examples/journey-lab/broken.html",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/journey-lab-broken-runs",
+  "journeys": [
+    {
+      "id": "settings-notifications",
+      "title": "Settings notifications remain usable",
+      "titleZh": "设置通知流程保持可用",
+      "startPath": "/examples/journey-lab/broken.html",
+      "severity": "major",
+      "steps": [
+        { "action": "click", "selector": "[role=tab][aria-controls=notifications]" },
+        { "action": "assert", "selector": "#notifications", "assertion": "visible" }
+      ]
+    }
+  ],
+  "crawl": { "enabled": false, "include": ["/examples/journey-lab/**"] }
+}

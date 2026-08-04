@@ -24,4 +24,6 @@ test("detector policy fingerprint is order-independent but changes with behavior
   assert.match(first, /^sha256:[a-f0-9]{64}$/);
   assert.notEqual(first, detectorPolicyFingerprint({ mode: "deep", checks: [], budgets: null }));
   assert.notEqual(first, detectorPolicyFingerprint({ mode: "quick", checks: [], budgets: { requests: 81, severity: "major" } }));
+  assert.notEqual(first, detectorPolicyFingerprint({ mode: "quick", checks: [], journeys: [{ id: "smoke", startPath: "/", severity: "major", steps: [{ action: "assert", selector: "main", assertion: "exists" }] }], budgets: { requests: 80, navigationMs: 2000, severity: "major" } }));
+  assert.notEqual(first, detectorPolicyFingerprint({ mode: "quick", checks: [], budgets: { requests: 80, navigationMs: 2000, severity: "major" }, security: { severity: "major", requiredHeaders: ["content-security-policy"] } }));
 });

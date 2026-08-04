@@ -107,6 +107,67 @@
         }
       }
     },
+    "journeys": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "steps"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "titleZh": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "startPath": { "type": "string", "pattern": "^/(?!/)", "maxLength": 1000 },
+          "severity": { "enum": ["critical", "major", "minor"] },
+          "steps": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 50,
+            "contains": { "type": "object", "required": ["action"], "properties": { "action": { "const": "assert" } } },
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["action", "path"],
+                  "properties": { "action": { "const": "goto" }, "path": { "type": "string", "pattern": "^/(?!/)", "maxLength": 1000 } }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["action", "selector"],
+                  "properties": { "action": { "const": "click" }, "selector": { "type": "string", "minLength": 1, "maxLength": 500 } }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["action", "selector", "assertion"],
+                  "properties": {
+                    "action": { "const": "assert" },
+                    "selector": { "type": "string", "minLength": 1, "maxLength": 500 },
+                    "assertion": { "enum": ["exists", "visible", "enabled", "accessible-name", "attribute", "count", "no-horizontal-overflow", "minimum-size"] },
+                    "options": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "min": { "type": "integer", "minimum": 0, "maximum": 100000 },
+                        "max": { "type": "integer", "minimum": 0, "maximum": 100000 },
+                        "attribute": { "type": "string", "minLength": 1, "maxLength": 500 },
+                        "equals": { "type": "string", "minLength": 1, "maxLength": 500 },
+                        "contains": { "type": "string", "minLength": 1, "maxLength": 500 },
+                        "minWidth": { "type": "integer", "minimum": 0, "maximum": 100000 },
+                        "minHeight": { "type": "integer", "minimum": 0, "maximum": 100000 }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
     "budgets": {
       "type": "object",
       "additionalProperties": false,
@@ -114,6 +175,10 @@
         "severity": { "enum": ["critical", "major", "minor"] },
         "navigationMs": { "type": "integer", "minimum": 0, "maximum": 10000000 },
         "domContentLoadedMs": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "ttfbMs": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "firstContentfulPaintMs": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "largestContentfulPaintMs": { "type": "integer", "minimum": 0, "maximum": 10000000 },
+        "cumulativeLayoutShift": { "type": "number", "minimum": 0, "maximum": 100 },
         "requests": { "type": "integer", "minimum": 0, "maximum": 10000000 },
         "transferKb": { "type": "integer", "minimum": 0, "maximum": 10000000 },
         "domNodes": { "type": "integer", "minimum": 0, "maximum": 10000000 }
@@ -121,9 +186,40 @@
       "anyOf": [
         { "required": ["navigationMs"], "properties": { "navigationMs": true } },
         { "required": ["domContentLoadedMs"], "properties": { "domContentLoadedMs": true } },
+        { "required": ["ttfbMs"], "properties": { "ttfbMs": true } },
+        { "required": ["firstContentfulPaintMs"], "properties": { "firstContentfulPaintMs": true } },
+        { "required": ["largestContentfulPaintMs"], "properties": { "largestContentfulPaintMs": true } },
+        { "required": ["cumulativeLayoutShift"], "properties": { "cumulativeLayoutShift": true } },
         { "required": ["requests"], "properties": { "requests": true } },
         { "required": ["transferKb"], "properties": { "transferKb": true } },
         { "required": ["domNodes"], "properties": { "domNodes": true } }
+      ]
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "severity": { "enum": ["critical", "major", "minor"] },
+        "requiredHeaders": {
+          "type": "array",
+          "items": { "enum": ["content-security-policy", "strict-transport-security", "x-content-type-options", "referrer-policy", "permissions-policy"] },
+          "uniqueItems": true
+        },
+        "forbidMixedContent": { "const": true },
+        "secureForms": { "const": true },
+        "maxThirdPartyOrigins": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "allowedThirdPartyOrigins": {
+          "type": "array",
+          "items": { "type": "string", "format": "uri", "pattern": "^https://[^/]+/?$" },
+          "uniqueItems": true
+        }
+      },
+      "anyOf": [
+        { "required": ["requiredHeaders"], "properties": { "requiredHeaders": true } },
+        { "required": ["forbidMixedContent"], "properties": { "forbidMixedContent": true } },
+        { "required": ["secureForms"], "properties": { "secureForms": true } },
+        { "required": ["maxThirdPartyOrigins"], "properties": { "maxThirdPartyOrigins": true } },
+        { "required": ["allowedThirdPartyOrigins"], "properties": { "allowedThirdPartyOrigins": true } }
       ]
     },
     "crawl": {

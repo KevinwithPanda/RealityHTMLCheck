@@ -4,7 +4,7 @@
 
 RealityCheck 是面向 Codex 的本地 Web 核查 skill，也提供可独立运行的浏览器 CLI。它不只生成静态报告：在你明确授权后，Codex 会依据真实浏览器证据修改应用源码，再用同一检测器复测，并生成修复前后对比。
 
-当前版本：`v0.3.0 Beta`。未执行的场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
+当前版本：`v0.4.0 Beta`。未执行的场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
 
 可直接打开包含 15 个真实入口的[演示中心](../examples/index.html)：除了参考报告、全站夹具与 Deep 修复证明，还能查看稳定最新入口、100 份产物目录、68 次运行的风险台账、失败组合门禁，以及可信/拒绝两类签名决策。
 
@@ -122,11 +122,33 @@ npx realitycheck doctor
       "severity": "major"
     }
   ],
+  "journeys": [
+    {
+      "id": "settings-notifications",
+      "startPath": "/app/settings",
+      "severity": "major",
+      "steps": [
+        { "action": "click", "selector": "[role=tab][aria-controls=notifications]" },
+        { "action": "assert", "selector": "#notifications", "assertion": "visible" }
+      ]
+    }
+  ],
   "budgets": {
     "navigationMs": 2500,
+    "ttfbMs": 800,
+    "firstContentfulPaintMs": 1800,
+    "largestContentfulPaintMs": 2500,
+    "cumulativeLayoutShift": 0.1,
     "requests": 80,
     "transferKb": 1500,
     "domNodes": 1800,
+    "severity": "major"
+  },
+  "security": {
+    "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
+    "secureForms": true,
+    "maxThirdPartyOrigins": 3,
+    "allowedThirdPartyOrigins": ["https://cdn.example.com"],
     "severity": "major"
   },
   "waivers": [
@@ -144,7 +166,11 @@ npx realitycheck doctor
 
 爬虫只跟随同源页面链接，会去掉查询参数和片段，不点击控件、不提交表单，并默认拒绝退出、购买、删除与 OAuth 等危险路径。每个页面都在隔离浏览器上下文中执行；单页运行失败不会抹掉其他页面的证据。
 
-自定义检查仅允许声明式断言：`exists`、`visible`、`enabled`、`accessible-name`、`attribute`、`count`、`no-horizontal-overflow`、`minimum-size`，并可用路由 glob 限定范围。任意 JavaScript 会被拒绝。需要登录的应用可通过 `--storage-state` 或 `REALITYCHECK_STORAGE_STATE` 加载 Playwright 登录状态；路径、Cookie、Token 和具体值都不会进入报告。
+自定义检查仅允许声明式断言：`exists`、`visible`、`enabled`、`accessible-name`、`attribute`、`count`、`no-horizontal-overflow`、`minimum-size`，并可用路由 glob 限定范围。声明式旅程可以跨同源导航、标签页和折叠面板复用这些断言，每一步都有截图；运行器会拒绝表单提交、危险文案、排除路由、匹配多个元素的点击和未明确标记的业务按钮。任意 JavaScript 都会被拒绝。可直接运行 [`examples/journey-lab`](../examples/journey-lab) 的成功与失败配置。
+
+安全基线必须由项目显式配置，因此普通 localhost 不会自动被生产响应头要求误伤。策略可要求安全响应头、禁止混合内容、阻止不安全密码表单、限制第三方来源数量，并只允许精确 HTTPS 来源。[`examples/security-lab`](../examples/security-lab) 会在不提交表单的情况下证明三个缺失响应头和一个 GET 密码表单问题。
+
+性能预算除导航、DOMContentLoaded、请求数、传输量和 DOM 数量外，现已覆盖 TTFB、首次内容绘制、最大内容绘制和累积布局偏移。需要登录的应用仍可通过 `--storage-state` 或 `REALITYCHECK_STORAGE_STATE` 加载 Playwright 登录状态；路径、Cookie、Token 和具体值都不会进入报告。
 
 受治理的豁免可以处理企业里的已知欠账，但不会隐藏问题。每条豁免必须指定精确规则、原因和到期日，也可以限定负责人、选择器和路由。报告仍保留问题、截图、修复建议和豁免元数据，只在有效期内把它排除出评分与门禁；`doctor` 会阻止过期策略，SARIF 会写入外部抑制，JUnit 则保留证据但不让该场景失败。
 
@@ -156,7 +182,7 @@ npx realitycheck doctor
 
 合成的 [`examples/authenticated-app`](../examples/authenticated-app) 夹具端到端证明了这条边界：匿名运行因管理面板规则未满足而得到 96/100；同一页面加载仅限回环地址的合成状态后得到 100/100。CI 还会断言状态路径和合成值都没有进入 `report.json`。
 
-成对的 [`examples/accessibility-lab`](../examples/accessibility-lab) 夹具用于验证不依赖 axe-core 的保守规则。负例会产生 5 个实测问题：缺少语言、缺少标题、重复 ID、标题跳级和无名称图标控件，得分 **93/100**；修复版为 **100/100**。这些检查扩大了基线覆盖，但不声称 WCAG 合规。
+成对的 [`examples/accessibility-lab`](../examples/accessibility-lab) 夹具用于验证 Quick 模式的保守基线规则。负例会产生 5 个实测问题：缺少语言、缺少标题、重复 ID、标题跳级和无名称图标控件，得分 **93/100**。Deep 模式还会运行内置 axe-core 4.12.1，核查 WCAG A/AA 与最佳实践，并把每条规则的证据限制为最多 5 个节点。这些检查扩大了覆盖，但不声称 WCAG 合规。
 
 [`examples/waiver-lab`](../examples/waiver-lab) 可以直接演示治理效果。使用 `unwaived.config.json` 核查时，缺失的导出控件会得到 **96/100** 并触发 Major 门禁；改用 `realitycheck.config.json` 后，同一个问题仍完整显示，但命名豁免让结果变为 **100/100** 且门禁通过。报告会明确展示负责人、原因和到期日，不会假装缺陷已经消失。
 
@@ -166,7 +192,7 @@ npx realitycheck doctor
 
 | 场景 | Quick | 核查目标 |
 | --- | :---: | --- |
-| Baseline | 是 | 运行时/资源问题、无名称控件、文档语言与标题、重复 ID、标题结构、自定义规则和性能预算 |
+| Baseline | 是 | 运行时/资源问题、语义、自定义规则、核心体验性能预算和配置的安全策略 |
 | 375px 手机 | 是 | 离屏操作、固定宽度和页面横向溢出 |
 | 长文本 | 是 | 中文、emoji、无空格长串造成的新截断或恶化 |
 | RTL 阿拉伯语 | 是 | 物理方向 CSS 和对齐假设 |
@@ -178,7 +204,7 @@ npx realitycheck doctor
 | 接口错误 | Deep | 安全同源 GET 请求返回 503 后是否提供可见恢复反馈 |
 | 空数据 | Deep | 安全 JSON 数组变为空后的空状态 |
 | 200% 页面缩放 | Deep | 仅在适配器支持真实缩放时运行 |
-| axe-core | Deep | 仅在项目已经提供 axe 时运行 |
+| axe-core | Deep | 内置 WCAG A/AA 与最佳实践规则，每条最多保留 5 个证据节点 |
 
 ## 可操作报告
 

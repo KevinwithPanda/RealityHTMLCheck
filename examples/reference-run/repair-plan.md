@@ -1,6 +1,6 @@
 # RealityCheck repair plan
 
-Source run: `reference-demo-v0.3.0`  
+Source run: `reference-demo-v0.4.0`
 Target: `http://127.0.0.1:4173/`  
 Items: **6** · Critical: **0** · Major: **2** · Minor: **4** · Waived: **0** · Review required: **1**
 

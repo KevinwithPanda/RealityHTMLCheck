@@ -1,7 +1,7 @@
 interface:
   display_name: "RealityCheck"
-  short_description: "Find, fix, and prove real Web UI breakages"
+  short_description: "Stress UI journeys, security, a11y, and performance"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/logo.svg"
   brand_color: "#FF5C35"
-  default_prompt: "Use $realitycheck on this app to find real UI breakages, fix high-confidence major issues, and prove every fix."
+  default_prompt: "Use $realitycheck on this app to audit safe user journeys, security policy, accessibility, performance, and stress states; fix selected high-confidence major issues and prove every fix."

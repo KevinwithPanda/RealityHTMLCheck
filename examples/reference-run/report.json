@@ -335,7 +335,7 @@
   "run": {
     "durationMs": 42000.0,
     "finishedAt": "2026-08-01T04:00:42.000Z",
-    "id": "reference-demo-v0.3.0",
+    "id": "reference-demo-v0.4.0",
     "mode": "quick",
     "startedAt": "2026-08-01T04:00:00.000Z"
   },
@@ -464,7 +464,7 @@
       }
     ]
   },
-  "toolVersion": "0.3.0",
+  "toolVersion": "0.4.0",
   "translations": {
     "zh-CN": {
       "warnings": [

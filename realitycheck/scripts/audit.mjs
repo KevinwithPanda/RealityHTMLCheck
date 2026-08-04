@@ -371,6 +371,7 @@ function runDoctor(options, loaded) {
     playwright = loadPlaywright();
     return "available";
   });
+  check("Accessibility engine", () => `axe-core ${require("axe-core").version} bundled for deep mode`);
   check("Python report engine", () => pythonExecutable());
   check("Evidence signing", () => {
     const { privateKey } = generateKeyPairSync("ed25519");
@@ -387,7 +388,9 @@ function runDoctor(options, loaded) {
   if (playwright) check("Chrome / Edge / Chromium", () => browserExecutable(playwright.chromium, options.browserPath));
   if (options.target) check("Target authorization", () => isPrivateTarget(options.target, options.allowRemote));
   if (options.checks.length) check("Declarative checks", () => `${options.checks.length} validated rule(s); no executable code`);
+  if (options.journeys.length) check("Safe user journeys", () => `${options.journeys.length} validated journey(s); same-origin, no form submission`);
   if (options.budgets) check("Performance budgets", () => `${Object.keys(options.budgets).length - 1} configured limit(s)`);
+  if (options.security) check("Security baseline", () => `${Object.keys(options.security).length - 1} explicit policy setting(s); no form submission`);
   if (options.waivers.length) check("Governed waivers", () => {
     const now = new Date();
     const expired = options.waivers.filter((waiver) => new Date(`${waiver.expires}T23:59:59.999Z`) < now);
@@ -635,6 +638,28 @@ async function createPage(browser, target, scenarioId, runDirectory, options = {
   if (options.reducedMotion) contextOptions.reducedMotion = options.reducedMotion;
   if (options.colorScheme) contextOptions.colorScheme = options.colorScheme;
   const context = await browser.newContext(contextOptions);
+  await context.addInitScript(() => {
+    const vitals = { largestContentfulPaintMs: 0, cumulativeLayoutShift: 0 };
+    Object.defineProperty(window, "__realitycheckVitals", { value: vitals, configurable: false, enumerable: false });
+    try {
+      new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        const last = entries.at(-1);
+        if (last) vitals.largestContentfulPaintMs = Math.round(last.startTime);
+      }).observe({ type: "largest-contentful-paint", buffered: true });
+    } catch (_) {
+      // The metric remains zero when this browser does not expose LCP.
+    }
+    try {
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (!entry.hadRecentInput) vitals.cumulativeLayoutShift += entry.value;
+        }
+      }).observe({ type: "layout-shift", buffered: true });
+    } catch (_) {
+      // The metric remains zero when this browser does not expose LayoutShift.
+    }
+  });
   if (options.route) await options.route(context);
   const page = await context.newPage();
   const runtime = { consoleErrors: [], pageErrors: [], failedRequests: [], httpErrors: [] };
@@ -881,12 +906,18 @@ async function runPerformanceBudgets(page, budgets) {
   const metrics = await page.evaluate(() => {
     const navigation = performance.getEntriesByType("navigation")[0];
     const resources = performance.getEntriesByType("resource");
+    const firstContentfulPaint = performance.getEntriesByName("first-contentful-paint")[0];
+    const observedVitals = window.__realitycheckVitals || {};
     const navigationMs = navigation ? (navigation.loadEventEnd || navigation.duration || 0) : 0;
     const domContentLoadedMs = navigation ? (navigation.domContentLoadedEventEnd || 0) : 0;
     const transferBytes = (navigation?.transferSize || 0) + resources.reduce((sum, entry) => sum + (entry.transferSize || 0), 0);
     return {
       navigationMs: Math.round(navigationMs),
       domContentLoadedMs: Math.round(domContentLoadedMs),
+      ttfbMs: Math.round(navigation?.responseStart || 0),
+      firstContentfulPaintMs: Math.round(firstContentfulPaint?.startTime || 0),
+      largestContentfulPaintMs: Math.round(observedVitals.largestContentfulPaintMs || 0),
+      cumulativeLayoutShift: Number((observedVitals.cumulativeLayoutShift || 0).toFixed(4)),
       requests: resources.length + (navigation ? 1 : 0),
       transferKb: Math.round(transferBytes / 1024),
       domNodes: document.querySelectorAll("*").length,
@@ -895,6 +926,10 @@ async function runPerformanceBudgets(page, budgets) {
   const definitions = {
     navigationMs: { title: "Page navigation exceeds its performance budget", titleZh: "页面导航超过性能预算", unit: "ms" },
     domContentLoadedMs: { title: "DOMContentLoaded exceeds its performance budget", titleZh: "DOMContentLoaded 超过性能预算", unit: "ms" },
+    ttfbMs: { title: "Time to First Byte exceeds its performance budget", titleZh: "首字节时间超过性能预算", unit: "ms" },
+    firstContentfulPaintMs: { title: "First Contentful Paint exceeds its performance budget", titleZh: "首次内容绘制超过性能预算", unit: "ms" },
+    largestContentfulPaintMs: { title: "Largest Contentful Paint exceeds its performance budget", titleZh: "最大内容绘制超过性能预算", unit: "ms" },
+    cumulativeLayoutShift: { title: "Cumulative Layout Shift exceeds its performance budget", titleZh: "累积布局偏移超过性能预算", unit: "score" },
     requests: { title: "Request count exceeds its performance budget", titleZh: "请求数量超过性能预算", unit: "requests" },
     transferKb: { title: "Transferred bytes exceed the performance budget", titleZh: "传输体积超过性能预算", unit: "KiB" },
     domNodes: { title: "DOM size exceeds its performance budget", titleZh: "DOM 规模超过性能预算", unit: "nodes" },
@@ -918,7 +953,124 @@ async function runPerformanceBudgets(page, budgets) {
   return findings;
 }
 
-async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null) {
+async function runSecurityPolicies(page, response, target, policy) {
+  if (!policy) return [];
+  const findings = [];
+  const responseHeaders = response?.headers() || {};
+  for (const header of policy.requiredHeaders || []) {
+    if (responseHeaders[header]) continue;
+    findings.push(finding({
+      ruleId: `security-header-${header}`, scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
+      title: `Required security header is missing: ${header}`, titleZh: `缺少必需的安全响应头：${header}`,
+      summary: `The final document response did not include the project-required ${header} header.`, summaryZh: `最终文档响应没有包含项目要求的 ${header} 响应头。`,
+      measurements: { header, present: false, responseStatus: response?.status() || 0 },
+      evidence: [{ type: "response-policy", header, present: false, status: response?.status() || 0 }, screenshotEvidence("baseline", "Security response policy")],
+      steps: ["Open the page in a fresh context.", `Inspect the final document response for the ${header} header.`],
+      stepsZh: ["在新的浏览器上下文中打开页面。", `检查最终文档响应是否包含 ${header} 响应头。`],
+      fix: `Configure the application or trusted edge to emit a reviewed ${header} policy on this route.`,
+      fixZh: `在应用或可信边缘层为该路由配置经审核的 ${header} 策略。`,
+      hints: ["Test the actual policy in a staging environment; do not add a permissive placeholder only to satisfy the check."],
+      hintsZh: ["在预发布环境验证真实策略；不要只为通过检查而添加宽松占位值。"],
+    }));
+  }
+
+  const posture = await page.evaluate(() => {
+    const documentOrigin = location.origin;
+    const resources = performance.getEntriesByType("resource").slice(0, 2_000).map((entry) => {
+      try {
+        const url = new URL(entry.name, location.href);
+        return { origin: url.origin, protocol: url.protocol, initiatorType: entry.initiatorType || "other" };
+      } catch (_) {
+        return null;
+      }
+    }).filter(Boolean);
+    const forms = [...document.forms].slice(0, 100).map((form, index) => {
+      const action = new URL(form.action || location.href, location.href);
+      return {
+        index,
+        method: (form.method || "get").toLowerCase(),
+        actionOrigin: action.origin,
+        actionProtocol: action.protocol,
+        hasPassword: Boolean(form.querySelector('input[type="password"]')),
+      };
+    });
+    return { documentOrigin, resources, forms };
+  });
+  const documentUrl = new URL(target);
+  const thirdPartyOrigins = [...new Set(posture.resources.map((item) => item.origin).filter((origin) => origin !== posture.documentOrigin && !["null", "data:", "blob:"].includes(origin)))].sort();
+
+  if (policy.forbidMixedContent && documentUrl.protocol === "https:") {
+    const insecure = posture.resources.filter((item) => item.protocol === "http:");
+    if (insecure.length) {
+      findings.push(finding({
+        ruleId: "security-mixed-content", scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
+        title: "HTTPS page loads insecure subresources", titleZh: "HTTPS 页面加载了不安全的子资源",
+        summary: `${insecure.length} loaded resource(s) used HTTP from an HTTPS document.`, summaryZh: `HTTPS 文档中有 ${insecure.length} 个已加载资源使用 HTTP。`,
+        measurements: { insecureResources: insecure.length, initiatorTypes: [...new Set(insecure.map((item) => item.initiatorType))] },
+        evidence: [{ type: "security-posture", policy: "forbid-mixed-content", insecureResources: insecure.length, initiatorTypes: [...new Set(insecure.map((item) => item.initiatorType))] }, screenshotEvidence("baseline", "Mixed content policy")],
+        steps: ["Open the HTTPS page in a fresh context.", "Inspect loaded resource protocols after the page settles."],
+        stepsZh: ["在新的浏览器上下文中打开 HTTPS 页面。", "页面稳定后检查已加载资源所用协议。"],
+        fix: "Serve every application-owned subresource over HTTPS and update hard-coded HTTP references.",
+        fixZh: "通过 HTTPS 提供所有应用自身的子资源，并更新硬编码的 HTTP 引用。",
+      }));
+    }
+  }
+
+  if (policy.maxThirdPartyOrigins !== undefined && thirdPartyOrigins.length > policy.maxThirdPartyOrigins) {
+    findings.push(finding({
+      ruleId: "security-third-party-origin-budget", scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
+      title: "Third-party origin count exceeds the project policy", titleZh: "第三方来源数量超过项目策略",
+      summary: `The page contacted ${thirdPartyOrigins.length} third-party origin(s), above the configured maximum of ${policy.maxThirdPartyOrigins}.`, summaryZh: `页面联系了 ${thirdPartyOrigins.length} 个第三方来源，超过配置上限 ${policy.maxThirdPartyOrigins}。`,
+      measurements: { actual: thirdPartyOrigins.length, limit: policy.maxThirdPartyOrigins, origins: thirdPartyOrigins },
+      evidence: [{ type: "security-posture", policy: "third-party-origin-budget", origins: thirdPartyOrigins, actual: thirdPartyOrigins.length, limit: policy.maxThirdPartyOrigins }, screenshotEvidence("baseline", "Third-party origin policy")],
+      steps: ["Open the page in a fresh context.", "Count unique origins used by loaded resources after the page settles."],
+      stepsZh: ["在新的浏览器上下文中打开页面。", "页面稳定后统计已加载资源使用的唯一来源。"],
+      fix: "Remove unnecessary third-party dependencies, consolidate delivery, or obtain a documented policy exception.",
+      fixZh: "移除不必要的第三方依赖、合并交付来源，或获得有记录的策略例外。",
+    }));
+  }
+
+  if (policy.allowedThirdPartyOrigins) {
+    const allowed = new Set(policy.allowedThirdPartyOrigins);
+    const unapproved = thirdPartyOrigins.filter((origin) => !allowed.has(origin));
+    if (unapproved.length) {
+      findings.push(finding({
+        ruleId: "security-unapproved-third-party-origin", scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
+        title: "The page contacts an unapproved third-party origin", titleZh: "页面联系了未经批准的第三方来源",
+        summary: `${unapproved.length} third-party origin(s) were not present in the configured allowlist.`, summaryZh: `${unapproved.length} 个第三方来源不在配置的允许列表中。`,
+        measurements: { unapprovedOrigins: unapproved, allowedOrigins: policy.allowedThirdPartyOrigins },
+        evidence: [{ type: "security-posture", policy: "third-party-origin-allowlist", unapprovedOrigins: unapproved }, screenshotEvidence("baseline", "Third-party allowlist")],
+        steps: ["Open the page in a fresh context.", "Compare loaded third-party resource origins with the reviewed allowlist."],
+        stepsZh: ["在新的浏览器上下文中打开页面。", "将已加载的第三方资源来源与审核后的允许列表比较。"],
+        fix: "Remove the unexpected dependency or add its exact HTTPS origin only after security and privacy review.",
+        fixZh: "移除意外依赖；只有通过安全与隐私审核后，才能添加其准确的 HTTPS 来源。",
+      }));
+    }
+  }
+
+  if (policy.secureForms) {
+    const loopback = new Set(["localhost", "127.0.0.1", "[::1]"]).has(documentUrl.hostname);
+    const insecureForms = posture.forms.filter((form) => (form.hasPassword && form.method === "get")
+      || (!loopback && form.hasPassword && documentUrl.protocol !== "https:")
+      || (documentUrl.protocol === "https:" && form.actionProtocol === "http:"));
+    if (insecureForms.length) {
+      findings.push(finding({
+        ruleId: "security-insecure-form", scenarioId: "baseline", classification: "existing", severity: policy.severity, confidence: "high",
+        title: "A sensitive form uses an insecure submission path", titleZh: "敏感表单使用了不安全的提交路径",
+        summary: `${insecureForms.length} form(s) could expose credentials through GET or an insecure transport.`, summaryZh: `${insecureForms.length} 个表单可能通过 GET 或不安全传输暴露凭据。`,
+        measurements: { forms: insecureForms },
+        evidence: [{ type: "security-posture", policy: "secure-forms", forms: insecureForms }, screenshotEvidence("baseline", "Secure form policy")],
+        steps: ["Open the page in a fresh context.", "Inspect password fields, form methods, and resolved action protocols without submitting anything."],
+        stepsZh: ["在新的浏览器上下文中打开页面。", "在不提交任何内容的前提下检查密码字段、表单方法和解析后的 action 协议。"],
+        fix: "Use POST for credentials and submit only to a reviewed HTTPS endpoint.",
+        fixZh: "凭据使用 POST，并且只提交到经审核的 HTTPS 端点。",
+      }));
+    }
+  }
+  return findings;
+}
+
+async function runQuickAudit(browser, target, runDirectory, contextOptions = {}, customChecks = [], budgets = null, security = null) {
   const findings = [];
   const results = new Map();
   let targetTitle = "";
@@ -1050,6 +1202,7 @@ async function runQuickAudit(browser, target, runDirectory, contextOptions = {},
   }
   if (customChecks.length) findings.push(...await runCustomChecks(baseline.page, customChecks));
   if (budgets) findings.push(...await runPerformanceBudgets(baseline.page, budgets));
+  if (security) findings.push(...await runSecurityPolicies(baseline.page, baseline.response, finalUrl, security));
   results.set("baseline", scenarioResult("baseline", findings.length ? "completed-with-findings" : "passed", baseline.durationMs(), findings.length ? ["Baseline runtime findings were recorded."] : [], findings.length ? ["已记录基线运行时问题。"] : []));
   await baseline.context.close();
 
@@ -1567,9 +1720,235 @@ async function runDeepScenarios(browser, target, runDirectory, findings, results
   results.set("empty-data", scenarioResult("empty-data", transformedResponses ? (findings.some((item) => item.scenarioId === "empty-data") ? "completed-with-findings" : "passed") : "skipped", empty.durationMs(), transformedResponses ? [`Transformed ${transformedResponses} safe JSON response(s).`] : ["No safe JSON array response was observed."], transformedResponses ? [`已转换 ${transformedResponses} 个安全 JSON 响应。`] : ["没有观察到可安全转换的 JSON 数组响应。"]));
   await empty.context.close();
 
-  console.log(" 13/13 axe-core (unsupported)");
-  results.set("axe", scenarioResult("axe", "unsupported", 0, ["axe-core is not bundled with the standalone adapter."], ["独立适配器目前没有捆绑 axe-core。"]));
+  console.log(" 13/13 axe-core");
+  const axeStarted = Date.now();
+  const axe = await createPage(browser, target, "axe", runDirectory, contextOptions);
+  const axeStart = findings.length;
+  try {
+    await axe.page.addScriptTag({ path: require.resolve("axe-core/axe.min.js") });
+    const violations = await axe.page.evaluate(async () => {
+      const result = await window.axe.run(document, {
+        runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"] },
+        resultTypes: ["violations"],
+      });
+      return result.violations.slice(0, 50).map((violation) => ({
+        id: violation.id,
+        impact: violation.impact || "moderate",
+        help: violation.help,
+        description: violation.description,
+        helpUrl: violation.helpUrl,
+        tags: violation.tags.slice(0, 20),
+        nodeCount: violation.nodes.length,
+        nodes: violation.nodes.slice(0, 5).map((node) => ({
+          target: node.target.slice(0, 4).map(String),
+          failureSummary: (node.failureSummary || "").slice(0, 1_000),
+          impact: node.impact || violation.impact || "moderate",
+        })),
+      }));
+    });
+    const impactSeverity = { critical: "critical", serious: "major", moderate: "minor", minor: "minor" };
+    const impactZh = { critical: "致命", serious: "严重", moderate: "中等", minor: "轻微" };
+    for (const violation of violations) {
+      const firstSelector = violation.nodes[0]?.target?.join(" ") || undefined;
+      const nodeEvidence = violation.nodes.map((node) => ({ type: "axe-node", target: node.target, impact: node.impact, failureSummary: node.failureSummary }));
+      findings.push(finding({
+        ruleId: `axe-${violation.id}`, scenarioId: "axe", classification: "existing", severity: impactSeverity[violation.impact] || "minor", confidence: "high",
+        title: violation.help, titleZh: `axe 可访问性问题：${violation.help}`,
+        summary: `${violation.description} Axe-core matched ${violation.nodeCount} node(s) with ${violation.impact} impact.`, summaryZh: `${violation.description} axe-core 匹配到 ${violation.nodeCount} 个节点，影响级别为${impactZh[violation.impact] || violation.impact}。`,
+        selector: firstSelector,
+        measurements: { axeRule: violation.id, impact: violation.impact, nodeCount: violation.nodeCount, sampledNodes: violation.nodes.length, tags: violation.tags },
+        evidence: [...nodeEvidence, screenshotEvidence("axe", "Axe-core accessibility scan")],
+        steps: ["Open the page in a fresh browser context.", `Run the bundled axe-core ${violation.id} rule and inspect the sampled targets.`],
+        stepsZh: ["在新的浏览器上下文中打开页面。", `运行内置 axe-core 的 ${violation.id} 规则并检查抽样目标。`],
+        fix: violation.help,
+        fixZh: `根据 ${violation.id} 规则修复抽样节点，并使用辅助技术进行人工验证。`,
+        hints: [...[...new Set(violation.nodes.map((node) => node.failureSummary).filter(Boolean))].slice(0, 5), `Rule guidance: ${violation.helpUrl}`],
+        hintsZh: [...[...new Set(violation.nodes.map((node) => node.failureSummary).filter(Boolean))].slice(0, 5), `规则说明：${violation.helpUrl}`],
+      }));
+    }
+    results.set("axe", scenarioResult(
+      "axe",
+      findings.length > axeStart ? "completed-with-findings" : "passed",
+      Date.now() - axeStarted,
+      [`Bundled axe-core evaluated WCAG A/AA and best-practice rules; ${violations.length} violation rule(s) were recorded with at most five sampled nodes each. Automated scanning does not establish WCAG conformance.`],
+      [`内置 axe-core 已核查 WCAG A/AA 与最佳实践规则；记录 ${violations.length} 条违规规则，每条最多抽样五个节点。自动扫描不能证明 WCAG 合规。`],
+    ));
+  } catch (error) {
+    results.set("axe", scenarioResult("axe", "failed", Date.now() - axeStarted, [`axe-core could not complete: ${String(error.message || error).slice(0, 300)}`], ["axe-core 未能完成；请检查浏览器注入与页面策略。"]));
+  } finally {
+    await axe.context.close();
+  }
   for (const item of findings) if (!item.url) item.url = target;
+}
+
+async function evaluateJourneyAssertion(page, step) {
+  return page.evaluate((rule) => {
+    const visible = (element) => {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden" && Number(style.opacity) !== 0;
+    };
+    const accessibleName = (element) => {
+      const labelledBy = (element.getAttribute("aria-labelledby") || "").split(/\s+/).filter(Boolean)
+        .map((id) => document.getElementById(id)?.textContent || "").join(" ").trim();
+      const labelText = [...(element.labels || [])].map((label) => label.textContent || "").join(" ").trim();
+      const inputValue = element instanceof HTMLInputElement && ["button", "submit", "reset"].includes(element.type) ? element.value : "";
+      return (element.getAttribute("aria-label") || labelledBy || labelText || element.getAttribute("alt") || element.getAttribute("title") || (element.textContent || "").trim() || inputValue || element.getAttribute("placeholder") || "").trim();
+    };
+    const nodes = [...document.querySelectorAll(rule.selector)].slice(0, 500);
+    const options = rule.options || {};
+    const minimum = options.min ?? 1;
+    const maximum = options.max ?? Number.MAX_SAFE_INTEGER;
+    const sample = nodes.slice(0, 20).map((element, index) => {
+      const rect = element.getBoundingClientRect();
+      const attributeValue = options.attribute ? element.getAttribute(options.attribute) : null;
+      return {
+        index,
+        visible: visible(element),
+        enabled: !element.disabled && element.getAttribute("aria-disabled") !== "true",
+        hasAccessibleName: Boolean(accessibleName(element)),
+        attributeMatches: options.attribute ? element.hasAttribute(options.attribute)
+          && (options.equals === undefined || attributeValue === options.equals)
+          && (options.contains === undefined || (attributeValue || "").includes(options.contains)) : null,
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        overflowX: Math.max(0, element.scrollWidth - element.clientWidth),
+      };
+    });
+    let passed = false;
+    if (rule.assertion === "exists") passed = nodes.length >= minimum;
+    if (rule.assertion === "visible") passed = nodes.length >= minimum && nodes.filter(visible).length >= minimum;
+    if (rule.assertion === "enabled") passed = nodes.length >= minimum && nodes.filter((element) => !element.disabled && element.getAttribute("aria-disabled") !== "true").length >= minimum;
+    if (rule.assertion === "accessible-name") passed = nodes.length >= minimum && nodes.every((element) => Boolean(accessibleName(element)));
+    if (rule.assertion === "attribute") passed = nodes.length >= minimum && nodes.every((element) => {
+      const value = element.getAttribute(options.attribute);
+      return element.hasAttribute(options.attribute)
+        && (options.equals === undefined || value === options.equals)
+        && (options.contains === undefined || (value || "").includes(options.contains));
+    });
+    if (rule.assertion === "count") passed = nodes.length >= (options.min ?? 0) && nodes.length <= maximum;
+    if (rule.assertion === "no-horizontal-overflow") passed = nodes.length >= minimum && nodes.every((element) => element.scrollWidth <= element.clientWidth + 2);
+    if (rule.assertion === "minimum-size") passed = nodes.length >= minimum && nodes.filter(visible).every((element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.width >= (options.minWidth ?? 44) && rect.height >= (options.minHeight ?? 44);
+    });
+    return { passed, count: nodes.length, visibleCount: nodes.filter(visible).length, sample };
+  }, step);
+}
+
+async function inspectJourneyClick(page, selector, target, crawl) {
+  const locator = page.locator(selector);
+  const count = await locator.count();
+  if (count !== 1) throw new ConfigError(`Journey click selector ${JSON.stringify(selector)} must match exactly one element; matched ${count}`);
+  const metadata = await locator.evaluate((element) => ({
+    tag: element.tagName.toLowerCase(),
+    role: (element.getAttribute("role") || "").toLowerCase(),
+    href: element instanceof HTMLAnchorElement ? element.href : "",
+    target: element.getAttribute("target") || "",
+    type: (element.getAttribute("type") || "").toLowerCase(),
+    hasExpandedState: element.hasAttribute("aria-expanded"),
+    explicitlySafe: element.getAttribute("data-realitycheck-safe") === "true",
+    text: (element.getAttribute("aria-label") || element.textContent || "").trim().replace(/\s+/g, " ").slice(0, 120),
+  }));
+  if (/\b(delete|remove|destroy|purchase|checkout|pay|submit|send|logout|log out|signout|sign out|unsubscribe)\b/i.test(metadata.text)) {
+    throw new ConfigError(`Journey refused a potentially destructive control: ${JSON.stringify(metadata.text)}`);
+  }
+  if (metadata.tag === "a") {
+    const destination = new URL(metadata.href, page.url());
+    if (destination.origin !== new URL(target).origin) throw new ConfigError("Journey clicks must stay on the audited origin");
+    if (!routeAllowed(destination.pathname, crawl)) throw new ConfigError(`Journey click destination is excluded by the crawl safety policy: ${destination.pathname}`);
+    return metadata;
+  }
+  const safeDisclosure = metadata.tag === "summary" || (metadata.tag === "button" && (metadata.role === "tab" || metadata.hasExpandedState));
+  const safeExplicitButton = metadata.tag === "button" && metadata.type !== "submit" && metadata.explicitlySafe;
+  if (!safeDisclosure && !safeExplicitButton) {
+    throw new ConfigError("Journey clicks are limited to same-origin links, tabs, disclosures, or non-submit buttons marked data-realitycheck-safe=true");
+  }
+  return metadata;
+}
+
+async function runDeclarativeJourneys(browser, target, runDirectory, journeys, contextOptions, crawl) {
+  const findings = [];
+  const scenarios = [];
+  for (let journeyIndex = 0; journeyIndex < journeys.length; journeyIndex += 1) {
+    const journey = journeys[journeyIndex];
+    const scenarioId = `journey-${journey.id}`;
+    const startedAt = Date.now();
+    const trace = [];
+    let session;
+    let finalPath = journey.startPath;
+    let failure = null;
+    console.log(`  J${journeyIndex + 1}/${journeys.length} Journey ${journey.id}`);
+    try {
+      const startUrl = resolveRoute(target, journey.startPath);
+      if (!routeAllowed(new URL(startUrl).pathname, crawl)) throw new ConfigError(`Journey startPath is excluded by the crawl safety policy: ${journey.startPath}`);
+      session = await createPage(browser, startUrl, `${scenarioId}-start`, runDirectory, contextOptions);
+      for (let stepIndex = 0; stepIndex < journey.steps.length; stepIndex += 1) {
+        const step = journey.steps[stepIndex];
+        try {
+          if (step.action === "goto") {
+            const destination = resolveRoute(target, step.path);
+            if (!routeAllowed(new URL(destination).pathname, crawl)) throw new ConfigError(`Journey goto path is excluded by the crawl safety policy: ${step.path}`);
+            await session.page.goto(destination, { waitUntil: "domcontentloaded", timeout: 20_000 });
+            await settle(session.page);
+            trace.push({ step: stepIndex + 1, action: "goto", path: new URL(session.page.url()).pathname, passed: true });
+          } else if (step.action === "click") {
+            const metadata = await inspectJourneyClick(session.page, step.selector, target, crawl);
+            await session.page.locator(step.selector).click({ timeout: 5_000 });
+            await settle(session.page, 700);
+            trace.push({ step: stepIndex + 1, action: "click", selector: step.selector, element: metadata.tag, passed: true });
+          } else {
+            const assertion = await evaluateJourneyAssertion(session.page, step);
+            trace.push({ step: stepIndex + 1, action: "assert", selector: step.selector, assertion: step.assertion, count: assertion.count, visibleCount: assertion.visibleCount, passed: assertion.passed });
+            if (!assertion.passed) throw new Error(`Assertion ${step.assertion} failed for ${step.selector}`);
+          }
+          await session.page.screenshot({ path: join(runDirectory, "screenshots", `${scenarioId}-step-${stepIndex + 1}.png`), fullPage: true });
+        } catch (error) {
+          failure = { step: stepIndex + 1, action: step.action, selector: step.selector, path: step.path, reason: String(error.message || error).slice(0, 500) };
+          trace.push({ ...failure, passed: false });
+          await session.page.screenshot({ path: join(runDirectory, "screenshots", `${scenarioId}-failure.png`), fullPage: true }).catch(() => {});
+          break;
+        }
+      }
+    } catch (error) {
+      failure = { step: 0, action: "start", reason: String(error.message || error).slice(0, 500) };
+      trace.push({ ...failure, passed: false });
+    } finally {
+      if (session) {
+        finalPath = new URL(session.page.url()).pathname;
+        await session.context.close();
+      }
+    }
+    const title = journey.title || journey.id;
+    const titleZh = journey.titleZh || journey.title || journey.id;
+    if (failure) {
+      const evidence = [{ type: "journey-trace", steps: trace }];
+      if (session) evidence.push({ type: "screenshot", path: `screenshots/${scenarioId}-failure.png`, label: "Journey failure checkpoint" });
+      findings.push(finding({
+        ruleId: `journey-${journey.id}`, scenarioId, classification: "existing", severity: journey.severity, confidence: "high",
+        title: `User journey failed: ${title}`, titleZh: `用户旅程未通过：${titleZh}`,
+        summary: `Step ${failure.step || "start"} (${failure.action}) did not complete: ${failure.reason}`, summaryZh: `第 ${failure.step || "起始"} 步（${failure.action}）未完成：${failure.reason}`,
+        selector: failure.selector,
+        measurements: { completedSteps: trace.filter((item) => item.passed).length, totalSteps: journey.steps.length, failedStep: failure.step, failedAction: failure.action, finalPath },
+        evidence,
+        steps: [`Open the journey at ${journey.startPath} in a fresh isolated context.`, ...journey.steps.map((step, index) => `${index + 1}. ${step.action}${step.path ? ` ${step.path}` : ""}${step.selector ? ` ${step.selector}` : ""}${step.assertion ? ` (${step.assertion})` : ""}.`)],
+        stepsZh: [`在新的隔离上下文中从 ${journey.startPath} 打开旅程。`, ...journey.steps.map((step, index) => `${index + 1}. 执行 ${step.action}${step.path ? ` ${step.path}` : ""}${step.selector ? ` ${step.selector}` : ""}${step.assertion ? `（${step.assertion}）` : ""}。`)],
+        fix: "Restore the first failed application state or transition; keep the journey assertion unchanged and rerun the entire journey.",
+        fixZh: "修复第一个失败的应用状态或转换；保持旅程断言不变，并重新运行完整旅程。",
+        hints: ["Use the step trace and failure screenshot to distinguish a missing state from a blocked transition."],
+        hintsZh: ["利用步骤轨迹和失败截图区分状态缺失与转换受阻。"],
+      }));
+    }
+    scenarios.push(scenarioResult(
+      scenarioId,
+      failure ? "completed-with-findings" : "passed",
+      Date.now() - startedAt,
+      failure ? [`Stopped safely at step ${failure.step || "start"}; no form was submitted.`] : [`Completed ${journey.steps.length} declarative steps without form submission.`],
+      failure ? [`已在第 ${failure.step || "起始"} 步安全停止；未提交任何表单。`] : [`已完成 ${journey.steps.length} 个声明式步骤，未提交任何表单。`],
+    ));
+  }
+  for (const item of findings) item.url = target;
+  return { findings, scenarios };
 }
 
 async function auditPage({ browser, python, browserVersion, options, target, outputRoot, pageNumber, pageTotal }) {
@@ -1588,9 +1967,14 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   const contextOptions = options.storageState ? { storageState: options.storageState } : {};
   const pathname = new URL(target).pathname;
   const applicableChecks = options.checks.filter((check) => routeAllowed(pathname, { include: check.include, exclude: check.exclude }));
-  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets);
+  const auditResult = await runQuickAudit(browser, target, runDirectory, contextOptions, applicableChecks, options.budgets, options.security);
   if (options.mode === "deep") {
     await runDeepScenarios(browser, target, runDirectory, auditResult.findings, auditResult.results, contextOptions);
+  }
+  let journeyResult = { findings: [], scenarios: [] };
+  if (options.journeys.length && target === options.target) {
+    journeyResult = await runDeclarativeJourneys(browser, target, runDirectory, options.journeys, contextOptions, options.crawl);
+    auditResult.findings.push(...journeyResult.findings);
   }
   const ownershipResult = applyFindingOwnership(auditResult.findings, auditResult.finalUrl, options.owners);
   const waiverResult = applyFindingWaivers(auditResult.findings, auditResult.finalUrl, options.waivers);
@@ -1603,22 +1987,29 @@ async function auditPage({ browser, python, browserVersion, options, target, out
   audit.target.title = auditResult.targetTitle;
   audit.adapter.isolation = "fresh-context";
   audit.adapter.capabilities = ["console", "dom", "isolated-contexts", "network-routing", "screenshots", "viewport"];
+  if (options.mode === "deep") audit.adapter.capabilities.push("axe-core-accessibility");
   if (options.storageState) audit.adapter.capabilities.push("authenticated-storage-state");
   if (applicableChecks.length) audit.adapter.capabilities.push("declarative-custom-checks");
   if (options.budgets) audit.adapter.capabilities.push("performance-budgets");
+  if (options.security) audit.adapter.capabilities.push("security-response-and-origin-policy");
+  if (journeyResult.scenarios.length) audit.adapter.capabilities.push("safe-declarative-journeys");
   if (options.waivers.length) audit.adapter.capabilities.push("governed-waivers");
   if (options.qualityGate) audit.adapter.capabilities.push("release-policy-gates");
   if (options.owners.length) audit.adapter.capabilities.push("finding-ownership");
   if (options.baselinePolicy) audit.adapter.capabilities.push("baseline-governance-policy");
   audit.adapter.capabilities.push("detector-policy-fingerprint");
   audit.scenarios = audit.scenarios.map((item) => auditResult.results.get(item.id) || scenarioResult(item.id, "unsupported", 0, ["The standalone adapter did not implement this scenario."], ["独立适配器尚未实现此场景。"]));
+  audit.scenarios.push(...journeyResult.scenarios);
   audit.findings = auditResult.findings;
   audit.warnings = [
     `Standalone audit used an already-installed system browser (${browserVersion}).`,
     "Automated findings remain bounded observations; review low-confidence items before fixing.",
+    ...(options.mode === "deep" ? ["Bundled axe-core checks supplement scenario testing but cannot establish complete WCAG conformance."] : []),
     ...(options.storageState ? ["A user-provided Playwright storage state was loaded into isolated contexts; its path and values were not persisted."] : []),
     ...(applicableChecks.length ? [`${applicableChecks.length} declarative custom requirement(s) were evaluated without arbitrary script execution.`] : []),
     ...(options.budgets ? [`${Object.keys(options.budgets).length - 1} project performance budget(s) were evaluated from the browser Performance API.`] : []),
+    ...(options.security ? [`${Object.keys(options.security).length - 1} explicit response, origin, and form security policy setting(s) were evaluated without submitting data.`] : []),
+    ...(journeyResult.scenarios.length ? [`${journeyResult.scenarios.length} declarative user journey(s) were executed with same-origin and non-submission safety guards.`] : []),
     ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} finding(s) matched an active governed waiver; evidence remains visible but the finding is excluded from score and gate calculations.`] : []),
     ...(waiverResult.expiredIds.length ? [`Expired waiver(s) were ignored: ${waiverResult.expiredIds.join(", ")}.`] : []),
     ...(options.qualityGate ? [`${Object.keys(options.qualityGate).length} project release policy limit(s) were evaluated in addition to the severity threshold.`] : []),
@@ -1630,9 +2021,12 @@ async function auditPage({ browser, python, browserVersion, options, target, out
       warnings: [
         `独立核查使用了已安装的系统浏览器（${browserVersion}）。`,
         "自动化问题仍然属于有边界的观察结果；修复前请人工复核低置信度项目。",
+        ...(options.mode === "deep" ? ["内置 axe-core 检查用于补充场景测试，但不能证明完整的 WCAG 合规。"] : []),
         ...(options.storageState ? ["用户提供的 Playwright 登录状态仅加载到隔离上下文中；路径和内容均未写入报告。"] : []),
         ...(applicableChecks.length ? [`已执行 ${applicableChecks.length} 条声明式自定义要求，未运行任意脚本。`] : []),
         ...(options.budgets ? [`已通过浏览器 Performance API 核查 ${Object.keys(options.budgets).length - 1} 项项目性能预算。`] : []),
+        ...(options.security ? [`已在不提交数据的前提下核查 ${Object.keys(options.security).length - 1} 项明确的响应、来源与表单安全策略。`] : []),
+        ...(journeyResult.scenarios.length ? [`已在同源且禁止提交的安全限制下执行 ${journeyResult.scenarios.length} 个声明式用户旅程。`] : []),
         ...(waiverResult.appliedCount ? [`${waiverResult.appliedCount} 个问题命中了有效的可审计豁免；证据仍保留，但不计入评分和门禁。`] : []),
         ...(waiverResult.expiredIds.length ? [`已忽略过期豁免：${waiverResult.expiredIds.join("、")}。`] : []),
         ...(options.qualityGate ? [`除严重级别门禁外，还核查了 ${Object.keys(options.qualityGate).length} 项项目发布策略限制。`] : []),

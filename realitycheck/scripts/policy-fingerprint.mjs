@@ -13,7 +13,7 @@ function canonicalize(value) {
   return value;
 }
 
-export function detectorPolicyFingerprint({ mode, checks = [], budgets = null, toolVersion = TOOL_VERSION }) {
-  const policy = canonicalize({ toolVersion, mode, checks, budgets });
+export function detectorPolicyFingerprint({ mode, checks = [], journeys = [], budgets = null, security = null, toolVersion = TOOL_VERSION }) {
+  const policy = canonicalize({ toolVersion, mode, checks, journeys, budgets, security });
   return `sha256:${createHash("sha256").update(JSON.stringify(policy)).digest("hex")}`;
 }

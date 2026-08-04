@@ -20,7 +20,7 @@
 </p>
 
 > [!IMPORTANT]
-> RealityCheck is a **v0.3.0 Beta**. It is local-first and conservative: an untested scenario is `unsupported`, never silently “passed.”
+> RealityCheck is a **v0.4.0 Beta**. It is local-first and conservative: an untested scenario is `unsupported`, never silently “passed.”
 
 ## One prompt
 
@@ -137,11 +137,33 @@ npx realitycheck doctor
       "severity": "major"
     }
   ],
+  "journeys": [
+    {
+      "id": "settings-notifications",
+      "startPath": "/app/settings",
+      "severity": "major",
+      "steps": [
+        { "action": "click", "selector": "[role=tab][aria-controls=notifications]" },
+        { "action": "assert", "selector": "#notifications", "assertion": "visible" }
+      ]
+    }
+  ],
   "budgets": {
     "navigationMs": 2500,
+    "ttfbMs": 800,
+    "firstContentfulPaintMs": 1800,
+    "largestContentfulPaintMs": 2500,
+    "cumulativeLayoutShift": 0.1,
     "requests": 80,
     "transferKb": 1500,
     "domNodes": 1800,
+    "severity": "major"
+  },
+  "security": {
+    "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
+    "secureForms": true,
+    "maxThirdPartyOrigins": 3,
+    "allowedThirdPartyOrigins": ["https://cdn.example.com"],
     "severity": "major"
   },
   "waivers": [
@@ -159,7 +181,11 @@ npx realitycheck doctor
 
 The crawler only follows same-origin page links, strips query strings and fragments, never clicks controls or submits forms, and rejects common logout, purchase, delete, and OAuth routes by default. Each page runs in isolated browser contexts. One page failure does not erase evidence from the others.
 
-Custom checks are declarative—`exists`, `visible`, `enabled`, `accessible-name`, `attribute`, `count`, `no-horizontal-overflow`, or `minimum-size`—and may be restricted by route globs. Arbitrary JavaScript is deliberately rejected. Authenticated apps can load a Playwright storage-state file with `--storage-state` or `REALITYCHECK_STORAGE_STATE`; the path, cookies, tokens, and values are never copied into reports.
+Custom checks are declarative—`exists`, `visible`, `enabled`, `accessible-name`, `attribute`, `count`, `no-horizontal-overflow`, or `minimum-size`—and may be restricted by route globs. Declarative journeys reuse these assertions across safe same-origin navigation, tabs, and disclosures; every step gets a checkpoint screenshot. The runner refuses form submission, destructive labels, excluded routes, ambiguous click selectors, and unmarked business buttons. Arbitrary JavaScript is deliberately rejected. See the passing and failing [`examples/journey-lab`](examples/journey-lab) configurations.
+
+Security baselines are opt-in project policy, so a localhost page is not judged against production headers unless the project asks for them. Policies can require reviewed response headers, forbid mixed content, reject insecure password-form paths, cap unique third-party origins, and allowlist exact HTTPS origins. The [`examples/security-lab`](examples/security-lab) fixture demonstrates three missing headers plus a GET password form without ever submitting it.
+
+Performance budgets now include TTFB, First Contentful Paint, Largest Contentful Paint, and Cumulative Layout Shift in addition to navigation, DOMContentLoaded, request, transfer, and DOM limits. Authenticated apps can load a Playwright storage-state file with `--storage-state` or `REALITYCHECK_STORAGE_STATE`; the path, cookies, tokens, and values are never copied into reports.
 
 Governed waivers support real-world known debt without hiding it. A waiver requires an exact rule, reason, and expiry; it may also name an owner, selector, and route scope. The report still shows the finding, screenshots, remediation, and waiver metadata, while score and gate ignore it until expiry. `doctor` fails on expired policy, SARIF records an external suppression, and JUnit keeps the evidence without failing the scenario.
 
@@ -171,7 +197,7 @@ Regression baselines can expire too. `baselinePolicy.maxAgeDays` limits how long
 
 The synthetic [`examples/authenticated-app`](examples/authenticated-app) fixture proves this boundary end to end: the anonymous run fails its declared admin-panel rule at 96/100, while the same page loaded with generated loopback-only state passes at 100/100. CI asserts that neither the state path nor its synthetic value appears in `report.json`.
 
-The paired [`examples/accessibility-lab`](examples/accessibility-lab) fixture exercises conservative checks that do not require axe-core. Its negative page produces five measured findings—missing language, missing title, duplicate IDs, a skipped heading level, and an unnamed icon control—at **93/100**. The repaired page scores **100/100**. These checks improve baseline coverage but do not claim WCAG conformance.
+The paired [`examples/accessibility-lab`](examples/accessibility-lab) fixture exercises conservative baseline checks in Quick mode. Its negative page produces five measured findings—missing language, missing title, duplicate IDs, a skipped heading level, and an unnamed icon control—at **93/100**. Deep mode also runs bundled axe-core 4.12.1 and records WCAG A/AA plus best-practice violations with at most five sampled nodes per rule. These checks improve coverage but do not claim WCAG conformance.
 
 The [`examples/waiver-lab`](examples/waiver-lab) fixture makes governance directly demonstrable. Audit with `unwaived.config.json` and the missing declared export control scores **96/100** and fails the Major gate. Audit with `realitycheck.config.json` and the same finding remains fully visible, but the named waiver yields **100/100** and a passing gate. The report exposes its owner, reason, and expiry instead of pretending the defect disappeared.
 
@@ -181,7 +207,7 @@ A multi-page run adds `site-report.json`, `site-report.md`, and a bilingual `sit
 
 | Scenario | Quick | What it proves |
 | --- | :---: | --- |
-| Baseline | Yes | Runtime/resource defects, unnamed controls, language/title, duplicate IDs, heading structure, custom rules, and budgets |
+| Baseline | Yes | Runtime/resource defects, semantics, custom rules, Core Web Vital budgets, and configured security policy |
 | 375px mobile | Yes | Offscreen actions, fixed widths, and document overflow |
 | Long text | Yes | New or worsened clipping under CJK, emoji, and unbroken strings |
 | RTL Arabic | Yes | Physical-direction CSS and alignment assumptions |
@@ -193,7 +219,7 @@ A multi-page run adds `site-report.json`, `site-report.md`, and a bilingual `sit
 | API error | Deep | Visible recovery feedback after bounded same-origin GET requests return 503 |
 | Empty data | Deep | Empty-state behavior after a safe JSON-array transform |
 | 200% page zoom | Deep | Runs only when the adapter exposes real page zoom |
-| axe-core | Deep | Runs only when axe is already available |
+| axe-core | Deep | Bundled WCAG A/AA and best-practice rules, capped at five evidence nodes per rule |
 
 Quick mode targets a useful first result in under a minute for a small stable page. Every scenario has an explicit terminal status, including unsupported and skipped coverage.
 
@@ -330,6 +356,6 @@ This repository is also a reusable composite GitHub Action. It always attempts t
 
 ## Project status
 
-RealityCheck is Codex-first, but its standalone audit CLI and report tools also work directly in a cloned repository. Current Deep limitations are disclosed in the report: the bundled CLI does not pretend to support real page zoom or axe-core when those capabilities are absent.
+RealityCheck is Codex-first, but its standalone audit CLI and report tools also work directly in a cloned repository. Real 200% browser zoom remains adapter-dependent and is disclosed as unsupported by the bundled CLI; axe-core is bundled and executed in Deep mode.
 
 See [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [SECURITY.md](SECURITY.md). The project is licensed under [MIT](LICENSE).

@@ -69,6 +69,32 @@ Each rule has a stable lowercase `id`, a CSS `selector`, an `assertion`, and an 
 
 Unknown fields and executable assertions are rejected before browser navigation. A failing rule becomes a normal finding with measurements, evidence, route, and a remediation task.
 
+## Safe declarative journeys
+
+Journeys prove small read-only user workflows without accepting executable config. Each journey has a stable ID, same-origin `startPath`, severity, and 1–50 ordered steps. At least one step must be an `assert`.
+
+```json
+{
+  "journeys": [
+    {
+      "id": "settings-notifications",
+      "title": "Settings notifications remain usable",
+      "startPath": "/settings",
+      "severity": "major",
+      "steps": [
+        { "action": "assert", "selector": "[role=tab]", "assertion": "count", "options": { "min": 2 } },
+        { "action": "click", "selector": "[role=tab][aria-controls=notifications]" },
+        { "action": "assert", "selector": "#notifications", "assertion": "visible" },
+        { "action": "goto", "path": "/profile" },
+        { "action": "assert", "selector": "h1", "assertion": "accessible-name" }
+      ]
+    }
+  ]
+}
+```
+
+`goto` accepts only absolute paths on the audited origin and obeys the merged crawl exclusions. `click` must match exactly one same-origin link, tab, disclosure, or non-submit button explicitly marked `data-realitycheck-safe="true"`. Labels suggesting delete, purchase, payment, submission, sending, logout, or unsubscribe are refused even when marked. The runner never fills inputs or submits forms. It saves a screenshot after every completed step, stops at the first failure, and creates one evidence-backed journey finding with a bounded step trace.
+
 ## Performance budgets
 
 Budgets run in the clean baseline context. Define at least one numeric limit:
@@ -78,6 +104,10 @@ Budgets run in the clean baseline context. Define at least one numeric limit:
   "budgets": {
     "navigationMs": 2500,
     "domContentLoadedMs": 1800,
+    "ttfbMs": 800,
+    "firstContentfulPaintMs": 1800,
+    "largestContentfulPaintMs": 2500,
+    "cumulativeLayoutShift": 0.1,
     "requests": 80,
     "transferKb": 1500,
     "domNodes": 1800,
@@ -86,7 +116,26 @@ Budgets run in the clean baseline context. Define at least one numeric limit:
 }
 ```
 
-Transfer size depends on browser timing availability and server headers. Treat it as a browser observation, not a billing measurement. Never increase a budget solely to clear a quality gate.
+TTFB, FCP, and LCP use integer milliseconds. CLS accepts a finite number from 0 to 100. LCP and CLS observers are installed before navigation so buffered entries are available after the page settles. Transfer size depends on browser timing availability and server headers. Treat every value as a browser observation, not a billing or field-RUM measurement. Never increase a budget solely to clear a quality gate.
+
+## Security baseline
+
+Security checks are opt-in because localhost and production delivery policies differ. Define at least one policy; `severity` defaults to `major`.
+
+```json
+{
+  "security": {
+    "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
+    "forbidMixedContent": true,
+    "secureForms": true,
+    "maxThirdPartyOrigins": 3,
+    "allowedThirdPartyOrigins": ["https://cdn.example.com"],
+    "severity": "major"
+  }
+}
+```
+
+Supported response headers are `content-security-policy`, `strict-transport-security`, `x-content-type-options`, `referrer-policy`, and `permissions-policy`. Header checks record presence only, not values. `secureForms` inspects password fields, form methods, and resolved action protocols without reading or submitting field values; loopback HTTP remains trusted except that passwords sent through GET are still reported. Third-party policy stores only unique origins, never resource paths or query parameters. Allowed origins must be exact HTTPS origins without credentials, paths, queries, or fragments.
 
 ## Finding ownership
 
@@ -164,7 +213,7 @@ An optional `baselinePolicy` prevents a regression-only `--baseline` from preser
 }
 ```
 
-`maxAgeDays` is an integer from 1 to 3650. Age is measured from the baseline run's `finishedAt` to the new run's `startedAt`, so copying a file does not make old evidence fresh. `requireSamePolicy` compares SHA-256 fingerprints derived from tool version, scenario mode, declarative checks, and performance budgets; property/list ordering is canonicalized, and raw selectors or policy content are not copied into the report. Missing or different fingerprints produce `policy-drift` instead of a false resolution. At least one policy must be active. These gates are enforced only for `--baseline`; `--compare` remains an unrestricted historical analysis tool.
+`maxAgeDays` is an integer from 1 to 3650. Age is measured from the baseline run's `finishedAt` to the new run's `startedAt`, so copying a file does not make old evidence fresh. `requireSamePolicy` compares SHA-256 fingerprints derived from tool version, scenario mode, declarative checks, journeys, performance budgets, and security policy; property/list ordering is canonicalized, and raw selectors or policy content are not copied into the report. Missing or different fingerprints produce `policy-drift` instead of a false resolution. At least one policy must be active. These gates are enforced only for `--baseline`; `--compare` remains an unrestricted historical analysis tool.
 
 ## Authenticated pages
 

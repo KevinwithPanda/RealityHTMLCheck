@@ -1,6 +1,6 @@
 ---
 name: realitycheck
-description: Audit, safely crawl, stress-test, fix, and verify a developer-controlled web application with deterministic real-browser scenarios, project rules, performance budgets, and evidence-based HTML, Markdown, JSON, SARIF, JUnit, site, trend, and before/after reports. Use when Codex needs to QA, break, reality-check, harden, or repair a localhost or authorized web UI; test mobile layout, long text, RTL, image failures, keyboard access, user preferences, slow or failed APIs, empty data, runtime errors, or accessibility; prove a selected fix with the same detector; compare or baseline runs; or enforce a report threshold in CI. The user may provide a URL or simply ask to check the current app.
+description: Audit, safely crawl, stress-test, fix, and verify a developer-controlled web application with deterministic real-browser scenarios, safe user journeys, security policy, Core Web Vital budgets, bundled axe-core, and evidence-based HTML, Markdown, JSON, SARIF, JUnit, site, trend, and before/after reports. Use when Codex needs to QA, break, reality-check, harden, or repair a localhost or authorized web UI; test mobile layout, long text, RTL, image failures, keyboard access, user preferences, workflow states, slow or failed APIs, empty data, runtime errors, security headers/forms/origins, performance, or accessibility; prove a selected fix with the same detector; compare or baseline runs; or enforce a report threshold in CI. The user may provide a URL or simply ask to check the current app.
 ---
 
 # RealityCheck
@@ -15,7 +15,7 @@ Select one action and one mode:
 - `fix <finding-id...>`: modify source only for selected findings, add or update tests, rerun the proving scenarios, and compare the before/after reports.
 - `harden` or an explicit request to find and fix: audit first, then fix only high-confidence Critical/Major findings whose evidence identifies an application-owned cause. Ask before any ambiguous or broad change.
 - `quick` (default): baseline plus mobile, long-text, RTL, image-failure, and keyboard checks; target completion under 60 seconds when the page is small and stable.
-- `deep`: add reduced motion, declared dark-scheme contrast, slow API, simulated 503 recovery, empty data, 200% zoom, and automated accessibility checks when the selected adapter supports them.
+- `deep`: add reduced motion, declared dark-scheme contrast, slow API, simulated 503 recovery, empty data, 200% zoom, and bundled axe-core WCAG A/AA plus best-practice checks.
 
 If the user omits the URL, discover it from an already-running local server, repository scripts, framework configuration, or terminal output. Start the documented dev/preview command when that is a normal reversible project step. Ask only if multiple targets remain materially ambiguous. If action or mode is omitted, use `audit quick`. Do not interpret an audit-only request as permission to fix code.
 
@@ -50,7 +50,7 @@ Stop before navigation if ownership or remote authorization is unclear. Do not u
    - no adapter: stop and give the smallest explicit setup step. Do not silently download a browser.
    Before treating the bundled adapter as unavailable, resolve the Codex workspace dependency runtime when that capability exists. If it returns an absolute Node executable and a bundled `node_modules` directory, invoke that Node directly and expose only that dependency directory through `NODE_PATH` for the audit command. Do not require the user to edit their system PATH.
 4. Probe the target once. Report connection, TLS, authentication, or build failures as preflight failures rather than product findings.
-5. Prefer a discovered `realitycheck.config.json` when present. Validate its routes, crawl boundaries, custom checks, budgets, and output location before navigation. CLI values override config values.
+5. Prefer a discovered `realitycheck.config.json` when present. Validate its routes, crawl boundaries, custom checks, journeys, budgets, security policy, and output location before navigation. CLI values override config values.
 6. For the bundled adapter, run one command from the target repository and skip the manual run-input steps below:
 
    ```bash
@@ -78,7 +78,9 @@ Use the emitted `audit-input.json` path for the rest of the run.
 - Cap discovery at the configured `maxPages` and `maxDepth`. Audit each page in fresh contexts and keep completed page evidence when another page fails.
 - Load authenticated Playwright storage state only when the user supplies it or the project already documents it. Never persist its path, cookies, origins, headers, or token values.
 - Evaluate custom project requirements only through the supported declarative assertions: `exists`, `visible`, `enabled`, `accessible-name`, `attribute`, `count`, `no-horizontal-overflow`, and `minimum-size`. Never execute arbitrary code from config.
-- Treat performance budgets as ordinary evidence-backed findings. Do not relax a budget to make a run pass without explicit product approval.
+- Run declarative journeys only through validated `goto`, `click`, and `assert` steps. Keep navigation same-origin and inside crawl policy. Click only one matched safe link, tab, disclosure, or explicitly marked non-submit button; refuse destructive labels and all form submission. Save step checkpoints and stop at the first failure.
+- Treat navigation, TTFB, FCP, LCP, CLS, request, transfer, and DOM budgets as ordinary evidence-backed findings. Do not relax a budget to make a run pass without explicit product approval.
+- Enforce only explicitly configured security policy. Record response-header presence without values, inspect sensitive form method/protocol without field values or submission, and persist only unique third-party origins. A passing baseline is not a comprehensive security assessment.
 - Apply governed waivers only when the project policy supplies an exact rule, documented reason, and future expiry. Keep the finding and evidence visible, disclose the owner and expiry, and let expired waivers restore normal score and gate behavior. Never invent a waiver during an audit.
 - Enforce configured release policy limits for minimum score, minimum completed-scenario coverage, and maximum active waivers in addition to `failOn`. Preserve them during strict and regression-only comparisons. Report each failed condition with its actual and expected values; do not reduce a policy limit to make the run pass.
 - Enforce configured baseline governance only for regression-only `--baseline`: use report timestamps for `maxAgeDays`, and require matching canonical detector-policy fingerprints when `requireSamePolicy` is true. Still generate verification evidence, but fail with explicit `baseline-age` or `policy-drift`; never call a missing finding resolved after checks, budgets, mode, or detector version changed. Do not apply these release exception policies to explicit historical `--compare`.

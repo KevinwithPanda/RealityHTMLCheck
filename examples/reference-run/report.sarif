@@ -3,7 +3,7 @@
   "runs": [
     {
       "automationDetails": {
-        "id": "reference-demo-v0.3.0"
+        "id": "reference-demo-v0.4.0"
       },
       "results": [
         {
@@ -348,7 +348,7 @@
               }
             }
           ],
-          "semanticVersion": "0.3.0"
+          "semanticVersion": "0.4.0"
         }
       }
     }

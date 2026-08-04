@@ -4,7 +4,7 @@
 **Target:** `http://127.0.0.1:4173/`  
 **Mode:** quick  
 **Adapter:** project-playwright (fresh-context)  
-**Run:** `reference-demo-v0.3.0`  
+**Run:** `reference-demo-v0.4.0`
 **Threshold:** major - FAILED
 
 > Automated checks cover only the recorded scenarios and cannot prove the absence of bugs or complete WCAG compliance.
@@ -242,5 +242,5 @@ Restore a high-contrast focus-visible style.
 - Started: 2026-08-01T04:00:00.000Z
 - Finished: 2026-08-01T04:00:42.000Z
 - Duration: 42000 ms
-- Tool version: 0.3.0
+- Tool version: 0.4.0
 - Schema version: 1

@@ -1,0 +1,30 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4173/examples/journey-lab/index.html",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/journey-lab-runs",
+  "journeys": [
+    {
+      "id": "settings-notifications",
+      "title": "Settings notifications remain usable",
+      "titleZh": "设置通知流程保持可用",
+      "startPath": "/examples/journey-lab/index.html",
+      "severity": "major",
+      "steps": [
+        { "action": "assert", "selector": "[role=tab]", "assertion": "count", "options": { "min": 2 } },
+        { "action": "click", "selector": "[role=tab][aria-controls=notifications]" },
+        { "action": "assert", "selector": "#notifications", "assertion": "visible" },
+        { "action": "click", "selector": "[aria-controls=advanced]" },
+        { "action": "assert", "selector": "#advanced", "assertion": "visible" },
+        { "action": "click", "selector": "a[href='profile.html']" },
+        { "action": "assert", "selector": "h1", "assertion": "accessible-name" }
+      ]
+    }
+  ],
+  "crawl": {
+    "enabled": false,
+    "include": ["/examples/journey-lab/**"],
+    "exclude": ["/logout/**", "/signout/**", "/delete/**", "/remove/**", "/unsubscribe/**", "/purchase/**", "/checkout/**", "/oauth/**"]
+  }
+}

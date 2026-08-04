@@ -4,7 +4,22 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-05
+
 ### Added
+
+- Safe declarative user journeys with same-origin navigation, bounded state assertions, per-step screenshots, and guards that refuse form submission and destructive actions.
+- Explicit security baselines for required response headers, mixed content, sensitive forms, third-party origin budgets, and reviewed HTTPS-origin allowlists.
+- Real Deep-mode axe-core 4.12.1 scanning for WCAG A/AA and best-practice rules, capped at five evidence nodes per rule and clearly bounded short of a WCAG conformance claim.
+- Browser-measured TTFB, First Contentful Paint, Largest Contentful Paint, and Cumulative Layout Shift budgets alongside existing navigation, request, transfer, and DOM budgets.
+- Passing/failing journey fixtures and an intentional security-policy laboratory with ready-to-run project configurations.
+
+### Changed
+
+- Detector policy fingerprints now cover journeys and security baselines, preventing removed workflow or security checks from masquerading as verified fixes.
+- `doctor` reports bundled accessibility-engine availability and summarizes configured journeys, security baselines, and expanded performance budgets.
+
+### Governance
 
 - An open-risk count budget (`--max-open-risks` and matching composite-Action input) alongside age and recurrence portfolio gates.
 - `doctor` visibility for Ed25519 support, bundled trust-registry contracts, and all three portfolio-risk budgets.

@@ -27,16 +27,33 @@ export const DEFAULT_PROJECT_CONFIG = Object.freeze({
     ],
   },
   checks: [],
+  journeys: [],
   waivers: [],
   owners: [],
 });
 
-const TOP_LEVEL_KEYS = new Set(["$schema", "baseUrl", "mode", "failOn", "output", "routes", "crawl", "checks", "budgets", "waivers", "qualityGate", "baselinePolicy", "owners"]);
+const TOP_LEVEL_KEYS = new Set(["$schema", "baseUrl", "mode", "failOn", "output", "routes", "crawl", "checks", "journeys", "budgets", "security", "waivers", "qualityGate", "baselinePolicy", "owners"]);
 const CRAWL_KEYS = new Set(["enabled", "maxPages", "maxDepth", "include", "exclude"]);
 const CHECK_KEYS = new Set(["id", "selector", "assertion", "severity", "title", "titleZh", "remediation", "remediationZh", "include", "exclude", "options"]);
 const CHECK_OPTION_KEYS = new Set(["min", "max", "attribute", "equals", "contains", "minWidth", "minHeight"]);
 const CHECK_ASSERTIONS = new Set(["exists", "visible", "enabled", "accessible-name", "attribute", "count", "no-horizontal-overflow", "minimum-size"]);
-const BUDGET_KEYS = new Set(["severity", "navigationMs", "domContentLoadedMs", "requests", "transferKb", "domNodes"]);
+const JOURNEY_KEYS = new Set(["id", "title", "titleZh", "startPath", "severity", "steps"]);
+const JOURNEY_STEP_KEYS = new Set(["action", "path", "selector", "assertion", "options"]);
+const JOURNEY_ACTIONS = new Set(["goto", "click", "assert"]);
+const BUDGET_KEYS = new Set([
+  "severity",
+  "navigationMs",
+  "domContentLoadedMs",
+  "ttfbMs",
+  "firstContentfulPaintMs",
+  "largestContentfulPaintMs",
+  "cumulativeLayoutShift",
+  "requests",
+  "transferKb",
+  "domNodes",
+]);
+const SECURITY_KEYS = new Set(["severity", "requiredHeaders", "forbidMixedContent", "secureForms", "maxThirdPartyOrigins", "allowedThirdPartyOrigins"]);
+const SECURITY_HEADERS = new Set(["content-security-policy", "strict-transport-security", "x-content-type-options", "referrer-policy", "permissions-policy"]);
 const WAIVER_KEYS = new Set(["id", "ruleId", "selector", "reason", "owner", "expires", "include", "exclude"]);
 const QUALITY_GATE_KEYS = new Set(["minimumScore", "minimumCoveragePercent", "maxWaivedFindings"]);
 const BASELINE_POLICY_KEYS = new Set(["maxAgeDays", "requireSamePolicy"]);
@@ -60,6 +77,13 @@ function stringArray(value, label) {
 function boundedInteger(value, label, minimum, maximum) {
   if (!Number.isInteger(value) || value < minimum || value > maximum) {
     throw new ConfigError(`${label} must be an integer from ${minimum} to ${maximum}`);
+  }
+  return value;
+}
+
+function boundedNumber(value, label, minimum, maximum) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < minimum || value > maximum) {
+    throw new ConfigError(`${label} must be a number from ${minimum} to ${maximum}`);
   }
   return value;
 }
@@ -111,15 +135,124 @@ function validateCustomChecks(value, source) {
   });
 }
 
+function validateJourneySelector(value, label) {
+  if (typeof value !== "string" || !value.trim() || value.length > 500) {
+    throw new ConfigError(`${label} must be a non-empty CSS selector up to 500 characters`);
+  }
+  return value.trim();
+}
+
+function validateJourneyOptions(value, label) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new ConfigError(`${label} must be an object`);
+  assertKnownKeys(value, CHECK_OPTION_KEYS, label);
+  const normalized = {};
+  for (const key of ["min", "max", "minWidth", "minHeight"]) {
+    if (value[key] !== undefined) normalized[key] = boundedInteger(value[key], `${label}.${key}`, 0, 100_000);
+  }
+  for (const key of ["attribute", "equals", "contains"]) {
+    if (value[key] !== undefined) {
+      if (typeof value[key] !== "string" || !value[key].trim() || value[key].length > 500) throw new ConfigError(`${label}.${key} must be a non-empty string up to 500 characters`);
+      normalized[key] = value[key].trim();
+    }
+  }
+  return normalized;
+}
+
+function validateJourneys(value, source) {
+  if (!Array.isArray(value)) throw new ConfigError(`${source}.journeys must be an array`);
+  if (value.length > 20) throw new ConfigError(`${source}.journeys cannot contain more than 20 journeys`);
+  const ids = new Set();
+  return value.map((raw, index) => {
+    const label = `${source}.journeys[${index}]`;
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new ConfigError(`${label} must be an object`);
+    assertKnownKeys(raw, JOURNEY_KEYS, label);
+    if (typeof raw.id !== "string" || !/^[a-z][a-z0-9-]{1,63}$/.test(raw.id)) throw new ConfigError(`${label}.id must match ^[a-z][a-z0-9-]{1,63}$`);
+    if (ids.has(raw.id)) throw new ConfigError(`${source}.journeys contains duplicate id ${JSON.stringify(raw.id)}`);
+    ids.add(raw.id);
+    const normalized = { id: raw.id };
+    for (const key of ["title", "titleZh"]) {
+      if (raw[key] !== undefined) {
+        if (typeof raw[key] !== "string" || !raw[key].trim() || raw[key].length > 200) throw new ConfigError(`${label}.${key} must be a non-empty string up to 200 characters`);
+        normalized[key] = raw[key].trim();
+      }
+    }
+    const startPath = raw.startPath ?? "/";
+    if (typeof startPath !== "string" || !startPath.startsWith("/") || startPath.startsWith("//") || startPath.length > 1_000) throw new ConfigError(`${label}.startPath must be a same-origin absolute path`);
+    normalized.startPath = startPath;
+    normalized.severity = raw.severity ?? "major";
+    if (!new Set(["critical", "major", "minor"]).has(normalized.severity)) throw new ConfigError(`${label}.severity is not supported`);
+    if (!Array.isArray(raw.steps) || !raw.steps.length || raw.steps.length > 50) throw new ConfigError(`${label}.steps must contain 1 to 50 steps`);
+    normalized.steps = raw.steps.map((step, stepIndex) => {
+      const stepLabel = `${label}.steps[${stepIndex}]`;
+      if (!step || typeof step !== "object" || Array.isArray(step)) throw new ConfigError(`${stepLabel} must be an object`);
+      assertKnownKeys(step, JOURNEY_STEP_KEYS, stepLabel);
+      if (!JOURNEY_ACTIONS.has(step.action)) throw new ConfigError(`${stepLabel}.action must be goto, click, or assert`);
+      if (step.action === "goto") {
+        if (typeof step.path !== "string" || !step.path.startsWith("/") || step.path.startsWith("//") || step.path.length > 1_000) throw new ConfigError(`${stepLabel}.path must be a same-origin absolute path`);
+        if (step.selector !== undefined || step.assertion !== undefined || step.options !== undefined) throw new ConfigError(`${stepLabel} contains fields that are not valid for goto`);
+        return { action: "goto", path: step.path };
+      }
+      const normalizedStep = { action: step.action, selector: validateJourneySelector(step.selector, `${stepLabel}.selector`) };
+      if (step.action === "click") {
+        if (step.path !== undefined || step.assertion !== undefined || step.options !== undefined) throw new ConfigError(`${stepLabel} contains fields that are not valid for click`);
+        return normalizedStep;
+      }
+      if (!CHECK_ASSERTIONS.has(step.assertion)) throw new ConfigError(`${stepLabel}.assertion is not supported`);
+      normalizedStep.assertion = step.assertion;
+      if (step.options !== undefined) normalizedStep.options = validateJourneyOptions(step.options, `${stepLabel}.options`);
+      if (step.path !== undefined) throw new ConfigError(`${stepLabel}.path is not valid for assert`);
+      if (step.assertion === "attribute" && !normalizedStep.options?.attribute) throw new ConfigError(`${stepLabel}.options.attribute is required for the attribute assertion`);
+      return normalizedStep;
+    });
+    if (!normalized.steps.some((step) => step.action === "assert")) throw new ConfigError(`${label}.steps must include at least one assert action`);
+    return normalized;
+  });
+}
+
 function validateBudgets(value, source) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new ConfigError(`${source}.budgets must be an object`);
   assertKnownKeys(value, BUDGET_KEYS, `${source}.budgets`);
   const normalized = { severity: value.severity ?? "major" };
   if (!new Set(["critical", "major", "minor"]).has(normalized.severity)) throw new ConfigError(`${source}.budgets.severity is not supported`);
-  for (const key of ["navigationMs", "domContentLoadedMs", "requests", "transferKb", "domNodes"]) {
+  for (const key of ["navigationMs", "domContentLoadedMs", "ttfbMs", "firstContentfulPaintMs", "largestContentfulPaintMs", "requests", "transferKb", "domNodes"]) {
     if (value[key] !== undefined) normalized[key] = boundedInteger(value[key], `${source}.budgets.${key}`, 0, 10_000_000);
   }
+  if (value.cumulativeLayoutShift !== undefined) {
+    normalized.cumulativeLayoutShift = boundedNumber(value.cumulativeLayoutShift, `${source}.budgets.cumulativeLayoutShift`, 0, 100);
+  }
   if (Object.keys(normalized).length === 1) throw new ConfigError(`${source}.budgets must define at least one numeric limit`);
+  return normalized;
+}
+
+function validateSecurityPolicy(value, source) {
+  const label = `${source}.security`;
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new ConfigError(`${label} must be an object`);
+  assertKnownKeys(value, SECURITY_KEYS, label);
+  const normalized = { severity: value.severity ?? "major" };
+  if (!new Set(["critical", "major", "minor"]).has(normalized.severity)) throw new ConfigError(`${label}.severity is not supported`);
+  if (value.requiredHeaders !== undefined) {
+    normalized.requiredHeaders = stringArray(value.requiredHeaders, `${label}.requiredHeaders`);
+    if (normalized.requiredHeaders.some((header) => header !== header.toLowerCase())) throw new ConfigError(`${label}.requiredHeaders must use lowercase header names`);
+    const unsupported = normalized.requiredHeaders.find((header) => !SECURITY_HEADERS.has(header));
+    if (unsupported) throw new ConfigError(`${label}.requiredHeaders contains unsupported header ${JSON.stringify(unsupported)}`);
+  }
+  for (const key of ["forbidMixedContent", "secureForms"]) {
+    if (value[key] !== undefined) {
+      if (value[key] !== true) throw new ConfigError(`${label}.${key} must be true when configured`);
+      normalized[key] = true;
+    }
+  }
+  if (value.maxThirdPartyOrigins !== undefined) normalized.maxThirdPartyOrigins = boundedInteger(value.maxThirdPartyOrigins, `${label}.maxThirdPartyOrigins`, 0, 100);
+  if (value.allowedThirdPartyOrigins !== undefined) {
+    const origins = stringArray(value.allowedThirdPartyOrigins, `${label}.allowedThirdPartyOrigins`);
+    normalized.allowedThirdPartyOrigins = origins.map((raw, index) => {
+      let url;
+      try { url = new URL(raw); } catch (_) { throw new ConfigError(`${label}.allowedThirdPartyOrigins[${index}] must be an HTTPS origin`); }
+      if (url.protocol !== "https:" || url.username || url.password || url.pathname !== "/" || url.search || url.hash) throw new ConfigError(`${label}.allowedThirdPartyOrigins[${index}] must be an HTTPS origin without a path`);
+      return url.origin;
+    });
+  }
+  if (Object.keys(normalized).length === 1) throw new ConfigError(`${label} must define at least one security policy`);
   return normalized;
 }
 
@@ -237,7 +370,9 @@ export function validateProjectConfig(value, source = CONFIG_FILENAME) {
   }
   if (value.routes !== undefined) normalized.routes = stringArray(value.routes, `${source}.routes`);
   if (value.checks !== undefined) normalized.checks = validateCustomChecks(value.checks, source);
+  if (value.journeys !== undefined) normalized.journeys = validateJourneys(value.journeys, source);
   if (value.budgets !== undefined) normalized.budgets = validateBudgets(value.budgets, source);
+  if (value.security !== undefined) normalized.security = validateSecurityPolicy(value.security, source);
   if (value.waivers !== undefined) normalized.waivers = validateWaivers(value.waivers, source);
   if (value.qualityGate !== undefined) normalized.qualityGate = validateQualityGate(value.qualityGate, source);
   if (value.baselinePolicy !== undefined) normalized.baselinePolicy = validateBaselinePolicy(value.baselinePolicy, source);
@@ -314,7 +449,9 @@ export function mergeProjectOptions(cli, loaded) {
     routes,
     crawl,
     checks: project.checks || [],
+    journeys: project.journeys || [],
     budgets: project.budgets || null,
+    security: project.security || null,
     waivers: project.waivers || [],
     qualityGate: project.qualityGate || null,
     baselinePolicy: project.baselinePolicy || null,

@@ -16,7 +16,9 @@ Use one adapter for a run and record its capabilities. Do not mix evidence from 
 | Authenticated storage state | Supported | Session-dependent | Supported |
 | Bounded same-origin link discovery | Supported | Manual | Project-dependent |
 | CDP page zoom | Unsupported | Adapter-dependent | Chromium only |
-| axe-core | Unsupported | Adapter-dependent | Only when already installed |
+| axe-core | Bundled in Deep | Adapter-dependent | Only when already installed |
+| Safe declarative journeys | Supported | Manual | Project-dependent |
+| Response/origin security policy | Supported | Adapter-dependent | Project-dependent |
 
 Probe capabilities; do not infer them from the adapter name.
 
@@ -30,9 +32,9 @@ node <skill-dir>/scripts/audit.mjs <url> --mode quick --fail-on major
 
 Do not assume a missing `node` command means Node is unavailable. In Codex desktop, first use the available workspace dependency locator to obtain the bundled Node executable and `node_modules` directory. Invoke the absolute executable and set `NODE_PATH` for that process only. This keeps the one-prompt workflow working without asking the user to modify PATH or install a second runtime.
 
-The CLI creates a fresh context per scenario and page, applies the bounded protocol mutations, takes real screenshots, invokes `report.py`, and records the system browser version without persisting its local executable path. It can discover a validated project config, safely crawl bounded same-origin links, load user-supplied Playwright storage state without persisting it, evaluate declarative custom checks, and enforce performance budgets. Use `--compare <before-report.json>` after a source fix to produce strict verification, or `--baseline <before-report.json>` to gate regressions while preserving known debt. A missing detector in the after run counts as resolved only when its proving scenario completed successfully.
+The CLI creates a fresh context per scenario and page, applies bounded protocol mutations, takes real screenshots, invokes `report.py`, and records the system browser version without persisting its local executable path. It can discover a validated project config, safely crawl bounded same-origin links, load user-supplied Playwright storage state without persisting it, evaluate declarative checks and safe journeys, enforce Core Web Vital budgets, inspect explicit response/origin/form security policy, and run bundled axe-core in Deep mode. Use `--compare <before-report.json>` after a source fix to produce strict verification, or `--baseline <before-report.json>` to gate regressions while preserving known debt. A missing detector in the after run counts as resolved only when its proving scenario completed successfully.
 
-The standalone Deep adapter currently reports real page zoom and axe as `unsupported`. It evaluates reduced-motion and declared dark-scheme behavior, delays safe same-origin fetch/XHR requests, returns bounded synthetic 503 responses for safe GET API requests, and transforms only safe top-level JSON arrays for the network scenarios.
+The standalone Deep adapter currently reports real page zoom as `unsupported`. It evaluates reduced-motion and declared dark-scheme behavior, delays safe same-origin fetch/XHR requests, returns bounded synthetic 503 responses for safe GET API requests, transforms only safe top-level JSON arrays for network scenarios, and runs packaged axe-core with bounded evidence.
 
 ## Codex browser
 

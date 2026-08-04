@@ -1,0 +1,15 @@
+{
+  "$schema": "../../realitycheck/assets/config.schema.json",
+  "baseUrl": "http://127.0.0.1:4173/examples/security-lab/index.html",
+  "mode": "quick",
+  "failOn": "major",
+  "output": "../../.realitycheck/security-lab-runs",
+  "security": {
+    "severity": "major",
+    "requiredHeaders": ["content-security-policy", "x-content-type-options", "referrer-policy"],
+    "forbidMixedContent": true,
+    "secureForms": true,
+    "maxThirdPartyOrigins": 0,
+    "allowedThirdPartyOrigins": []
+  }
+}

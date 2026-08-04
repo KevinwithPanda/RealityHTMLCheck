@@ -169,7 +169,7 @@ Skip objects containing `accessToken`, `refreshToken`, `session`, `currentUser`,
 
 ### `axe`
 
-Run axe-core only when the selected adapter already exposes it or the target project declares it. Do not download it silently. Limit evidence to five nodes per rule and state that automated scanning cannot establish WCAG compliance.
+The bundled CLI injects its packaged axe-core into a fresh Deep-mode context after the page settles. Other adapters may run it only when already exposed. Evaluate WCAG A/AA through 2.2 plus best-practice tags. Aggregate one finding per axe rule, cap the run at 50 violation rules and five sampled nodes per rule, omit raw node HTML, and state that automated scanning cannot establish WCAG compliance. A missing or failed engine must produce `unsupported` or `failed`, never `passed`.
 
 Suggested impact mapping:
 
@@ -223,7 +223,15 @@ Run only config-validated assertions: existence, visibility, enabled state, acce
 
 ### Performance budgets
 
-At baseline, record navigation duration, DOMContentLoaded duration, resource request count, transferred KiB when available, and DOM node count. Compare only configured limits. A zero transfer size may mean the browser or server omitted timing data; do not infer that the page transferred nothing. Budget changes require product approval and must not be used as an automatic repair.
+Install buffered LCP and layout-shift observers before baseline navigation. After settle, record navigation duration, DOMContentLoaded duration, TTFB, FCP, LCP, CLS, resource request count, transferred KiB when available, and DOM node count. Compare only configured limits. These are lab observations, not field RUM. A zero transfer size or paint value may mean the browser/server omitted timing data; do not infer that the page transferred or painted nothing. Budget changes require product approval and must not be used as an automatic repair.
+
+### Safe declarative journeys
+
+Run configured journeys only once from the primary target, in a fresh context. Resolve `startPath` and `goto` paths against the audited origin and enforce the merged route exclusions. A click must match exactly one element and be a same-origin allowed link, semantic tab/disclosure, or non-submit button explicitly marked `data-realitycheck-safe="true"`. Reject destructive labels and all submit controls. Never fill inputs, read form values, or activate login, consent, purchase, delete, publish, send, or logout actions. Capture bounded step traces and screenshots; stop on the first failure so later steps cannot obscure the root transition.
+
+### Security policy detectors
+
+Run only explicitly configured security policy. Required-header evidence records name/presence/status, not header values. Mixed-content checks apply only to HTTPS documents. Secure-form inspection records bounded method/protocol/origin metadata and whether a password field exists, never its value, and never submits. Third-party budgets and allowlists persist unique origins only. Treat a policy violation as High confidence because the project declared the exact boundary; do not infer comprehensive application security from a passing baseline.
 
 ### `blank-or-stuck-state`
 

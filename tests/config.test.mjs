@@ -76,8 +76,27 @@ test("route and rule ownership assigns one accountable team and rejects ambiguit
 });
 
 test("performance budgets are bounded and carry an explicit severity", () => {
-  const config = validateProjectConfig({ budgets: { navigationMs: 1500, requests: 40, transferKb: 500, severity: "minor" } });
-  assert.deepEqual(config.budgets, { severity: "minor", navigationMs: 1500, requests: 40, transferKb: 500 });
+  const config = validateProjectConfig({ budgets: { navigationMs: 1500, ttfbMs: 600, largestContentfulPaintMs: 2500, cumulativeLayoutShift: 0.1, requests: 40, transferKb: 500, severity: "minor" } });
+  assert.deepEqual(config.budgets, { severity: "minor", navigationMs: 1500, ttfbMs: 600, largestContentfulPaintMs: 2500, requests: 40, transferKb: 500, cumulativeLayoutShift: 0.1 });
+  assert.throws(() => validateProjectConfig({ budgets: { cumulativeLayoutShift: -0.1 } }), /number from 0 to 100/);
+  assert.throws(() => validateProjectConfig({ budgets: { cumulativeLayoutShift: "0.1" } }), /number from 0 to 100/);
+});
+
+test("security policies are explicit, bounded, and origin-only", () => {
+  const security = {
+    severity: "major",
+    requiredHeaders: ["content-security-policy", "x-content-type-options"],
+    forbidMixedContent: true,
+    secureForms: true,
+    maxThirdPartyOrigins: 2,
+    allowedThirdPartyOrigins: ["https://cdn.example.com"],
+  };
+  assert.deepEqual(validateProjectConfig({ security }).security, security);
+  assert.throws(() => validateProjectConfig({ security: { requiredHeaders: ["Content-Security-Policy"] } }), /lowercase/);
+  assert.throws(() => validateProjectConfig({ security: { severity: "major" } }), /at least one security policy/);
+  assert.throws(() => validateProjectConfig({ security: { forbidMixedContent: false } }), /must be true/);
+  assert.throws(() => validateProjectConfig({ security: { requiredHeaders: ["set-cookie"] } }), /unsupported header/);
+  assert.throws(() => validateProjectConfig({ security: { allowedThirdPartyOrigins: ["https://cdn.example.com/assets"] } }), /without a path/);
 });
 
 test("governed waivers require ownership context and expire automatically", () => {
@@ -122,6 +141,28 @@ test("declarative checks are normalized without accepting executable code", () =
   assert.deepEqual(config.checks[0].include, ["/**"]);
   assert.deepEqual(config.checks[1].options, { minWidth: 44, minHeight: 44 });
   assert.equal(JSON.stringify(config).includes("function"), false);
+});
+
+test("declarative journeys require safe bounded navigation and a proving assertion", () => {
+  const journeys = [{
+    id: "settings-tabs",
+    title: "Settings tabs stay usable",
+    startPath: "/settings",
+    severity: "major",
+    steps: [
+      { action: "assert", selector: "[role=tab]", assertion: "count", options: { min: 2 } },
+      { action: "click", selector: "[role=tab][aria-controls=security]" },
+      { action: "assert", selector: "#security", assertion: "visible" },
+      { action: "goto", path: "/settings/profile" },
+      { action: "assert", selector: "h1", assertion: "accessible-name" },
+    ],
+  }];
+  const config = validateProjectConfig({ journeys });
+  assert.equal(config.journeys[0].steps.length, 5);
+  assert.equal(config.journeys[0].startPath, "/settings");
+  assert.throws(() => validateProjectConfig({ journeys: [{ id: "bad-journey", steps: [{ action: "goto", path: "https://example.com" }] }] }), /same-origin absolute path/);
+  assert.throws(() => validateProjectConfig({ journeys: [{ id: "no-proof", steps: [{ action: "click", selector: "button" }] }] }), /at least one assert/);
+  assert.throws(() => validateProjectConfig({ journeys: [{ id: "script-step", steps: [{ action: "javascript", selector: "body" }, { action: "assert", selector: "body", assertion: "exists" }] }] }), /goto, click, or assert/);
 });
 
 test("CLI values override project values and paths resolve beside the config", () => {

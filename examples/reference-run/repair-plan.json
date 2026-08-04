@@ -222,7 +222,7 @@
   "schemaVersion": "1",
   "source": {
     "reportPath": "report.json",
-    "runId": "reference-demo-v0.3.0",
+    "runId": "reference-demo-v0.4.0",
     "target": "http://127.0.0.1:4173/"
   },
   "summary": {
@@ -233,5 +233,5 @@
     "reviewRequired": 1,
     "waived": 0
   },
-  "toolVersion": "0.3.0"
+  "toolVersion": "0.4.0"
 }
