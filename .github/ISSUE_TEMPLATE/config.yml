@@ -1,2 +1,8 @@
 blank_issues_enabled: true
-contact_links: []
+contact_links:
+  - name: Support and safe evidence guide
+    url: https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/SUPPORT.md
+    about: Choose the right template and learn which environment details are safe to share.
+  - name: Security reporting policy
+    url: https://github.com/KevinwithPanda/RealityHTMLCheck/security/policy
+    about: Report vulnerabilities without exposing exploit details or private application evidence.

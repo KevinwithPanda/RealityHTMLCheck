@@ -13,6 +13,10 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "index.html",
     "app.js",
     "styles.css",
+    "robots.txt",
+    "llms.txt",
+    "site.webmanifest",
+    "sitemap.xml",
     "assets/icon.svg",
     "reference/report.html",
     "evidence/viewport/latest.html",
@@ -47,6 +51,16 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
 
   const html = readFileSync(resolve(output, "index.html"), "utf8");
   assert.match(html, /<link rel="canonical" href="https:\/\/kevinwithpanda\.github\.io\/RealityHTMLCheck\/">/);
+  assert.match(html, /<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">/);
+  assert.match(html, /<link rel="manifest" href="site\.webmanifest">/);
+  assert.match(html, /<meta name="twitter:card" content="summary_large_image">/);
+  const structuredDataMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+  assert.ok(structuredDataMatch, "Pages homepage is missing JSON-LD product metadata");
+  const structuredData = JSON.parse(structuredDataMatch[1]);
+  assert.equal(structuredData["@type"], "SoftwareApplication");
+  assert.equal(structuredData.softwareVersion, "0.4.0");
+  assert.equal(structuredData.codeRepository, "https://github.com/KevinwithPanda/RealityHTMLCheck");
+  assert.ok(structuredData.featureList.includes("Policy anti-weakening review"));
   assert.match(html, /data-language="zh-CN"/);
   assert.match(html, /init --profile product --base-url/);
   assert.match(html, /npm run demo/);
@@ -76,6 +90,15 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     assert.equal(path.startsWith(output), true, `Pages reference escapes output: ${reference}`);
     assert.equal(existsSync(path), true, `Pages reference is missing: ${reference}`);
   }
+
+  const robots = readFileSync(resolve(output, "robots.txt"), "utf8");
+  assert.match(robots, /Sitemap: https:\/\/kevinwithpanda\.github\.io\/RealityHTMLCheck\/sitemap\.xml/);
+  const manifest = JSON.parse(readFileSync(resolve(output, "site.webmanifest"), "utf8"));
+  assert.equal(manifest.start_url, "./");
+  assert.equal(manifest.icons[0].src, "assets/icon.svg");
+  const llms = readFileSync(resolve(output, "llms.txt"), "utf8");
+  assert.match(llms, /GitHub issue drafts are local files that are never submitted automatically/);
+  assert.match(llms, /labs\/policy-review\/review\/policy-review\.html/);
 });
 
 test("Pages workflow uses the supported deployment artifact path", () => {

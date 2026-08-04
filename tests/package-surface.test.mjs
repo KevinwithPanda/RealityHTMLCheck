@@ -46,3 +46,19 @@ test("npm publication whitelist covers every security and governance runtime sur
   assert.equal(packageJson.files.some((entry) => entry.includes(".realitycheck")), false, "generated local evidence must not be published");
   assert.equal(packageJson.files.some((entry) => entry.includes("private")), false, "private-key material must not be published");
 });
+
+test("public project metadata matches the current supported release and community boundary", () => {
+  const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+  const security = readFileSync("SECURITY.md", "utf8");
+  const supportedLine = "latest `" + packageJson.version.replace(/\.\d+$/, ".x") + "` release";
+  assert.ok(security.includes(supportedLine), `SECURITY.md must include ${supportedLine}`);
+  for (const path of ["CODE_OF_CONDUCT.md", "CONTRIBUTING.md", "SECURITY.md", "SUPPORT.md"]) {
+    assert.equal(existsSync(path), true, `${path} is missing`);
+  }
+  const readme = readFileSync("README.md", "utf8");
+  assert.match(readme, /actions\/workflows\/validate\.yml\/badge\.svg/);
+  assert.match(readme, /SUPPORT\.md/);
+  const issueConfig = readFileSync(".github/ISSUE_TEMPLATE/config.yml", "utf8");
+  assert.match(issueConfig, /SUPPORT\.md/);
+  assert.match(issueConfig, /security\/policy/);
+});

@@ -1,0 +1,26 @@
+# RealityCheck
+
+RealityCheck is a local-first, evidence-first Web quality audit skill and CLI. It uses a real installed Chrome, Edge, or Chromium browser to stress responsive layouts, user journeys, API and network recovery, links, publishing metadata, visual baselines, performance, accessibility, and security policy. It writes bilingual human reports plus machine-readable JSON, SARIF, JUnit, repair plans, policy reviews, issue drafts, manifests, and verification evidence.
+
+RealityCheck never treats an unsupported check as passed. Audit mode is read-only, remote targets require explicit authorization, and generated GitHub issue drafts are local files that are never submitted automatically.
+
+## Primary links
+
+- Project: https://github.com/KevinwithPanda/RealityHTMLCheck
+- Live product page: https://kevinwithpanda.github.io/RealityHTMLCheck/
+- Real reference report: https://kevinwithpanda.github.io/RealityHTMLCheck/reference/report.html
+- Public evidence catalog: https://kevinwithpanda.github.io/RealityHTMLCheck/evidence/journey/latest.html
+- Policy anti-weakening example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/policy-review/review/policy-review.html
+- GitHub issue draft example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/issue-drafts/github-issue-drafts.html
+- English guide: https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/README.md
+- Chinese guide: https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/docs/README.zh-CN.md
+- Report contracts: https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/realitycheck/references/report-schema.md
+- Security policy: https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/SECURITY.md
+
+## Quick start
+
+Clone the repository, run `npm install`, then run `npm run demo`. To audit an authorized local app, run `npm run audit -- http://localhost:3000`.
+
+## Licensing
+
+MIT. Reports may contain screenshots or metadata from the audited application; review them before sharing.

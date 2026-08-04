@@ -2,6 +2,8 @@
 
 Thanks for helping RealityCheck make browser audits more trustworthy.
 
+By participating, you agree to follow the [community code of conduct](CODE_OF_CONDUCT.md). For installation and usage questions, start with [SUPPORT.md](SUPPORT.md); security reports follow [SECURITY.md](SECURITY.md).
+
 ## Before starting
 
 1. Search existing issues and the roadmap.

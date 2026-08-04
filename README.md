@@ -8,6 +8,13 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/KevinwithPanda/RealityHTMLCheck/actions/workflows/validate.yml"><img alt="Validation" src="https://github.com/KevinwithPanda/RealityHTMLCheck/actions/workflows/validate.yml/badge.svg" /></a>
+  <a href="https://github.com/KevinwithPanda/RealityHTMLCheck/actions/workflows/pages.yml"><img alt="GitHub Pages" src="https://github.com/KevinwithPanda/RealityHTMLCheck/actions/workflows/pages.yml/badge.svg" /></a>
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-39d98a" /></a>
+  <img alt="Node 20 or newer" src="https://img.shields.io/badge/node-%3E%3D20-7ec8ff" />
+</p>
+
+<p align="center">
   <a href="https://kevinwithpanda.github.io/RealityHTMLCheck/"><strong>Live demo</strong></a> ·
   <a href="docs/README.zh-CN.md">中文</a> ·
   <a href="#one-prompt">One prompt</a> ·
@@ -17,7 +24,9 @@
   <a href="examples/demo-broken">Broken demo</a> ·
   <a href="examples/scenario-lab">Resilience lab</a> ·
   <a href="examples/demo-fixed">Fixed demo</a> ·
-  <a href="examples/reference-run/report.html">Visual report</a>
+  <a href="examples/reference-run/report.html">Visual report</a> ·
+  <a href="CONTRIBUTING.md">Contribute</a> ·
+  <a href="SUPPORT.md">Support</a>
 </p>
 
 > [!IMPORTANT]
