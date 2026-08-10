@@ -1,6 +1,8 @@
 # RealityCheck
 
-RealityCheck is a local-first, evidence-first Web quality audit skill and CLI. Before browser access, it can write a bilingual audit-plan preview of effective coverage, safety, and data retention. It then uses a real installed Chrome, Edge, or Chromium browser to stress responsive layouts, user journeys, API and network recovery, links, publishing metadata, visual baselines, performance, accessibility, security policy, and aggregate Cookie/Web Storage privacy budgets. It writes bilingual human reports plus machine-readable JSON, SARIF, JUnit, repair plans, policy reviews, issue drafts, manifests, verification evidence, and freshness-aware GO/REVIEW/NO-GO release decisions.
+RealityCheck is a local-first HTML note checker plus an evidence-first Web quality audit skill and CLI. The zero-install note checker reads selected HTML files only inside the user's browser and checks encoding, document structure, broken attachments, internal navigation, machine-specific paths, remote dependencies, executable scripts, mobile readability, accessibility, and unfinished AI placeholders. It can download JSON evidence, copy bilingual repair tasks, and generate a new conservatively repaired copy without overwriting the source.
+
+For professional Web QA, RealityCheck can preview a bilingual audit plan before browser access. It then uses a real installed Chrome, Edge, or Chromium browser to stress responsive layouts, user journeys, API and network recovery, links, publishing metadata, visual baselines, performance, accessibility, security policy, and aggregate Cookie/Web Storage privacy budgets. It writes bilingual human reports plus machine-readable JSON, SARIF, JUnit, repair plans, policy reviews, issue drafts, manifests, verification evidence, and freshness-aware GO/REVIEW/NO-GO release decisions.
 
 RealityCheck never treats an unsupported check as passed. Audit mode is read-only, remote targets require explicit authorization, and generated GitHub issue drafts are local files that are never submitted automatically.
 
@@ -8,6 +10,7 @@ RealityCheck never treats an unsupported check as passed. Audit mode is read-onl
 
 - Project: https://github.com/KevinwithPanda/RealityHTMLCheck
 - Live product page: https://kevinwithpanda.github.io/RealityHTMLCheck/
+- Zero-install HTML note checker: https://kevinwithpanda.github.io/RealityHTMLCheck/note.html
 - Real reference report: https://kevinwithpanda.github.io/RealityHTMLCheck/reference/report.html
 - Public evidence catalog: https://kevinwithpanda.github.io/RealityHTMLCheck/evidence/journey/latest.html
 - Policy anti-weakening example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/policy-review/review/policy-review.html
@@ -24,7 +27,7 @@ RealityCheck never treats an unsupported check as passed. Audit mode is read-onl
 
 ## Quick start
 
-Clone the repository, run `npm install`, then run `npm run demo`. To preview an existing project policy without browser access, run `npm run realitycheck -- plan --config realitycheck.config.json`. To audit an authorized local app, run `npm run audit -- http://localhost:3000`.
+Open the zero-install checker and choose an HTML file or note folder. For the CLI, clone the repository, run `npm install`, then run `npm run note -- ./my-notes`. Add `--fix-safe` to generate repaired copies without modifying the originals. To preview an existing Web project policy without browser access, run `npm run realitycheck -- plan --config realitycheck.config.json`. To audit an authorized local app, run `npm run audit -- http://localhost:3000`.
 
 ## Licensing
 

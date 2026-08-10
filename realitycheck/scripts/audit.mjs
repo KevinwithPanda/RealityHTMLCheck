@@ -36,6 +36,7 @@ import { buildIssueDrafts, writeIssueDrafts } from "./issue-drafts.mjs";
 import { buildReleaseDecision, parseRequiredControls, releaseDecisionExitCode, writeReleaseDecision } from "./release-decision.mjs";
 import { buildAuditPlan, writeAuditPlan } from "./audit-plan.mjs";
 import { describeSecurityHeaderViolations, evaluateSecurityHeaderPolicies, requiredSecurityHeaders, suggestSecurityHeaderFix } from "./security-headers.mjs";
+import { runNoteCommand } from "./note-check.mjs";
 
 const require = createRequire(import.meta.url);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -62,6 +63,7 @@ function usage() {
 Usage:
   realitycheck <url> [options]
   realitycheck audit <url> [options]
+  realitycheck note <FILE|DIRECTORY> [--fix-safe] [--output PATH]
   realitycheck demo [--output PATH] [--headed] [--browser PATH]
   realitycheck init [--profile starter|product|strict] [--base-url URL] [--config PATH]
   realitycheck profiles
@@ -112,6 +114,8 @@ Options:
 
 Examples:
   realitycheck http://localhost:3000
+  realitycheck note my-note.html
+  realitycheck note ./notes --fix-safe
   realitycheck demo
   realitycheck init
   realitycheck profiles
@@ -2960,7 +2964,13 @@ async function main() {
   let options;
   let loaded;
   try {
-    const cli = parseArguments(process.argv.slice(2));
+    const rawArguments = process.argv.slice(2);
+    if (rawArguments[0] === "--") rawArguments.shift();
+    if (rawArguments[0] === "note") {
+      process.exitCode = await runNoteCommand(rawArguments.slice(1));
+      return;
+    }
+    const cli = parseArguments(rawArguments);
     if (cli.command === "profiles") {
       console.log(`RealityCheck project profiles\n\n${formatProfileList()}\n\nCreate one with: realitycheck init --profile product --base-url http://localhost:3000`);
       return;

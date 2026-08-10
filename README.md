@@ -3,8 +3,8 @@
 </div>
 
 <p align="center">
-  <strong>Break your localhost. Fix what breaks. Prove the fix.</strong><br />
-  One Codex prompt turns real browser stress states into evidence, bounded repairs, and before/after proof.
+  <strong>Check AI-generated HTML before you trust or share it.</strong><br />
+  Zero-upload note checks for everyone; evidence-first real-browser audits when a product team needs deeper QA.
 </p>
 
 <p align="center">
@@ -15,6 +15,7 @@
 </p>
 
 <p align="center">
+  <a href="https://kevinwithpanda.github.io/RealityHTMLCheck/note.html"><strong>Check an HTML note</strong></a> ·
   <a href="https://kevinwithpanda.github.io/RealityHTMLCheck/"><strong>Live demo</strong></a> ·
   <a href="docs/README.zh-CN.md">中文</a> ·
   <a href="#one-prompt">One prompt</a> ·
@@ -30,7 +31,38 @@
 </p>
 
 > [!IMPORTANT]
-> RealityCheck is a **v0.4.0 Beta**. It is local-first and conservative: an untested scenario is `unsupported`, never silently “passed.”
+> RealityCheck is a **v0.4.0 Beta**. It is local-first and conservative: selected note content is never uploaded, source notes are never overwritten, and an untested Web scenario is `unsupported`, never silently “passed.”
+
+## The useful first minute: check an HTML note
+
+AI agents increasingly produce complete HTML notes, research summaries, tutorials, and knowledge pages. A file can look correct in one browser while its images are missing, table of contents is dead, paths only work on the author's computer, scripts contact remote servers, or mobile reading is broken.
+
+Open the [zero-install note checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html), then choose one `.html` file or the whole note folder. The check runs entirely in the browser:
+
+- no account, upload, or server;
+- broken local images, styles, attachments, and linked notes when a folder is selected;
+- encoding, title, heading outline, duplicate IDs, internal anchors, image alternatives, and tables;
+- machine-specific paths, case-sensitive path drift, remote dependencies, scripts, and event handlers;
+- phone viewport, wide fixed layouts, long unbreakable text, and unfinished AI placeholders;
+- bilingual evidence, copy-ready repair tasks, JSON export, and downloadable safe-repair copies.
+
+The three automatic fixes are deliberately narrow: add an HTML5 doctype, declare the document language, and add UTF-8 metadata. They download a **new copy** and never overwrite the selected note. Decisions such as writing image descriptions or changing headings remain reviewable human/agent tasks.
+
+For a folder or repeatable workflow, use the zero-config CLI:
+
+```bash
+npm install
+npm run note -- ./my-notes
+# open .realitycheck/notes/latest.html
+```
+
+Generate conservative repaired copies inside the evidence run, leaving every source file byte-for-byte unchanged:
+
+```bash
+npm run note -- ./my-notes --fix-safe
+```
+
+Use `--fail-on error` or `--fail-on warning` when the note check is part of an export pipeline. The existing URL-based Web audit remains available for responsive interaction, network recovery, accessibility, performance, security headers, privacy budgets, and release governance.
 
 ## See the output before installing
 

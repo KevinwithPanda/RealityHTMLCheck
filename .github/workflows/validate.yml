@@ -44,6 +44,8 @@ jobs:
           node --check realitycheck/scripts/release-decision.mjs
           node --check realitycheck/scripts/audit-plan.mjs
           node --check realitycheck/scripts/security-headers.mjs
+          node --check realitycheck/scripts/note-analyzer.mjs
+          node --check realitycheck/scripts/note-check.mjs
 
       - name: Verify package contents
         run: npm pack --dry-run
@@ -69,6 +71,14 @@ jobs:
             "$cli" plan --config realitycheck.config.json --output audit-plan
             "$cli" validate audit-plan/audit-plan.json
             python - <<'PY'
+          from pathlib import Path
+          root = Path("note-fixture")
+          (root / "assets").mkdir(parents=True)
+          (root / "assets" / "chart.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"></svg>', encoding="utf-8")
+          (root / "note.html").write_text('''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Packed note</title></head><body><h1>Packed note</h1><p>This portable note contains enough readable content to prove the installed package checks a real folder without a server or configuration.</p><img src="assets/chart.svg" alt="Chart"></body></html>''', encoding="utf-8")
+          PY
+            "$cli" note note-fixture --output note-evidence --fail-on error --language en
+            python - <<'PY'
           import json
           from pathlib import Path
           config = json.loads(Path("realitycheck.config.json").read_text(encoding="utf-8"))
@@ -80,6 +90,12 @@ jobs:
           assert {item["id"] for item in plan["safety"]} >= {"preview-only", "no-submit"}, plan
           assert Path("audit-plan/audit-plan.html").is_file()
           assert Path("audit-plan/audit-plan.zh-CN.md").is_file()
+          note = json.loads(Path("note-evidence/latest.json").read_text(encoding="utf-8"))
+          assert note["kind"] == "html-note-check-bundle", note
+          assert note["summary"]["score"] == 100, note
+          assert note["privacy"] == {"uploaded": False, "absolutePathsPersisted": False}, note
+          assert note["sourceModified"] is False, note
+          assert Path("note-evidence/latest.html").is_file()
           profiles = Path("profiles.txt").read_text(encoding="utf-8")
           assert all(name in profiles for name in ("starter", "product", "strict")), profiles
           PY

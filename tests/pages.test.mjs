@@ -11,6 +11,10 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.equal(built.status, 0, `${built.stdout}\n${built.stderr}`);
   for (const path of [
     "index.html",
+    "note.html",
+    "note.css",
+    "note-checker.js",
+    "note-analyzer.mjs",
     "app.js",
     "styles.css",
     "robots.txt",
@@ -91,13 +95,18 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.equal(structuredData.image, "https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png");
   assert.ok(structuredData.featureList.includes("Policy anti-weakening review"));
   assert.ok(structuredData.featureList.includes("Browser-free bilingual audit plan previews"));
+  assert.ok(structuredData.featureList.includes("Zero-upload HTML note and folder checks"));
+  assert.match(html, /href="note\.html"/);
+  assert.match(html, /Check AI-made HTML before you trust or share it/);
+  assert.match(html, /AI 生成的 HTML，使用和分享前先体检/);
+  assert.match(html, /npm run note -- \.\/my-notes/);
   assert.match(html, /data-language="zh-CN"/);
   assert.match(html, /init --profile product --base-url/);
   assert.match(html, /git clone --depth 1 https:\/\/github\.com\/KevinwithPanda\/RealityHTMLCheck\.git/);
   assert.match(html, /npm run realitycheck -- init --profile product/);
-  assert.match(html, /npm run demo/);
+  assert.match(html, /npm run note -- \.\/my-notes/);
   assert.doesNotMatch(html, /npx realitycheck(?:-web-audit)?/);
-  assert.match(html, /内置 Demo 不需要应用服务器或配置/);
+  assert.match(html, /不需要服务器，也不需要配置/);
   assert.match(html, /Issue drafts, anti-weakening policy review, before\/after proof, GitHub annotations/);
   assert.match(html, /工单草稿、防弱化策略审查、前后证明、GitHub 注释/);
   assert.match(html, /Choose a transparent starting policy/);
@@ -147,6 +156,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(llms, /labs\/audit-plan\/audit-plan\.html/);
   assert.match(llms, /evidence\/security-headers-fixed\/latest\.html/);
   assert.match(llms, /npm run realitycheck -- plan/);
+  assert.match(llms, /Zero-install HTML note checker/);
+  assert.match(llms, /npm run note -- \.\/my-notes/);
   assert.doesNotMatch(llms, /npx realitycheck(?:-web-audit)?/);
 });
 

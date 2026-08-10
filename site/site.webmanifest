@@ -1,7 +1,7 @@
 {
-  "name": "RealityCheck · Evidence-first Web quality",
+  "name": "RealityCheck · Local HTML note checker",
   "short_name": "RealityCheck",
-  "description": "Real-browser Web quality audits with evidence and verified repairs.",
+  "description": "Check AI-generated HTML notes locally, then use real-browser Web audits for deeper product QA.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

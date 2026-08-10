@@ -17,6 +17,7 @@ mkdirSync(output, { recursive: true });
 copy("site", ".");
 copy("docs/assets", "assets");
 copy("realitycheck/assets/icon.svg", "assets/icon.svg");
+copy("realitycheck/scripts/note-analyzer.mjs", "note-analyzer.mjs");
 copy("examples/public-evidence", "evidence");
 copy("examples/reference-run", "reference");
 copy("examples/journey-lab", "labs/journey");

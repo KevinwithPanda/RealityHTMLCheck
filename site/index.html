@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="RealityCheck previews and runs real Web UI, visual-regression, API, link, privacy, security, performance, and accessibility checks with safe journeys, repair tasks, and release proof.">
+  <meta name="description" content="Check AI-generated HTML notes locally for broken attachments, structure, portability, safety, and mobile readability; run evidence-first Web UI audits when you need deeper QA.">
   <meta name="theme-color" content="#15171c">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
-  <meta property="og:title" content="RealityCheck · Evidence-first Web quality">
-  <meta property="og:description" content="Break your website before your users do. Real browser stress tests, actionable repairs, and proof.">
+  <meta property="og:title" content="RealityCheck · Local checks for AI-generated HTML notes">
+  <meta property="og:description" content="Drop an HTML note or folder. Find broken content and get reviewable fixes without uploading your files.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://kevinwithpanda.github.io/RealityHTMLCheck/">
   <meta property="og:image" content="https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png">
@@ -16,22 +16,22 @@
   <meta property="og:image:height" content="640">
   <meta property="og:image:alt" content="RealityCheck evidence-first Web quality audit">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="RealityCheck · Evidence-first Web quality">
-  <meta name="twitter:description" content="Break your website before users do with real-browser evidence and verified repairs.">
+  <meta name="twitter:title" content="RealityCheck · Check AI-generated HTML notes locally">
+  <meta name="twitter:description" content="No upload, no account: inspect HTML notes for broken assets, structure, portability, safety, and readability.">
   <meta name="twitter:image" content="https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png">
   <link rel="canonical" href="https://kevinwithpanda.github.io/RealityHTMLCheck/">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="manifest" href="site.webmanifest">
   <link rel="stylesheet" href="styles.css">
-  <title>RealityCheck · Break your website before users do</title>
+  <title>RealityCheck · Check AI-generated HTML notes locally</title>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "RealityCheck",
-    "applicationCategory": "DeveloperApplication",
+    "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "Windows, macOS, Linux",
-    "description": "Local-first real-browser Web quality audits with evidence, repair plans, release gates, and verified fixes.",
+    "description": "Local-first checks for AI-generated HTML notes plus real-browser Web quality audits with evidence and repair plans.",
     "url": "https://kevinwithpanda.github.io/RealityHTMLCheck/",
     "image": "https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png",
     "codeRepository": "https://github.com/KevinwithPanda/RealityHTMLCheck",
@@ -40,6 +40,9 @@
     "softwareVersion": "0.4.0",
     "isAccessibleForFree": true,
     "featureList": [
+      "Zero-upload HTML note and folder checks",
+      "Broken attachment, outline, internal-link, portability, mobile-readability, and script-safety checks",
+      "Downloadable safe-repair copies that never overwrite source notes",
       "Responsive viewport matrix auditing",
       "Visual regression evidence",
       "Accessibility and performance checks",
@@ -57,6 +60,7 @@
     <div class="wrap topbar-inner">
       <a class="brand" href="#top" aria-label="RealityCheck home"><img src="assets/icon.svg" alt=""><span>RealityCheck</span><small>v0.4</small></a>
       <nav aria-label="Primary navigation">
+        <a href="note.html" data-en="Check a note" data-zh-cn="检查笔记">Check a note</a>
         <a href="#plan" data-en="Audit plan" data-zh-cn="核查计划">Audit plan</a>
         <a href="#evidence" data-en="Live evidence" data-zh-cn="真实证据">Live evidence</a>
         <a href="#policy" data-en="Policy guard" data-zh-cn="策略守卫">Policy guard</a>
@@ -72,35 +76,35 @@
   <main id="top">
     <section class="hero wrap">
       <div class="hero-copy">
-        <p class="eyebrow" data-en="REAL BROWSER · LOCAL FIRST · EVIDENCE ALWAYS" data-zh-cn="真实浏览器 · 本地优先 · 证据为准">REAL BROWSER · LOCAL FIRST · EVIDENCE ALWAYS</p>
-        <h1 data-en="Break your website before your users do." data-zh-cn="在用户发现之前，先把网站问题找出来。">Break your website before your users do.</h1>
-        <p class="hero-lede" data-en="RealityCheck audits responsive UI, approved visual baselines, safe journeys, API/network reliability, broken links, publishing, security and aggregate browser-storage privacy policy, Core Web Vitals, accessibility, and recovery—then turns every finding into a repair task with proof." data-zh-cn="RealityCheck 核查响应式界面、已批准视觉基线、安全用户旅程、API/网络可靠性、失效链接、发布、安全与浏览器存储聚合隐私策略、核心体验指标、可访问性和故障恢复，再把问题变成带验证的修复任务。">RealityCheck audits responsive UI, approved visual baselines, safe journeys, API/network reliability, broken links, publishing, security and aggregate browser-storage privacy policy, Core Web Vitals, accessibility, and recovery—then turns every finding into a repair task with proof.</p>
-        <div class="hero-actions"><a class="button primary" href="#start" data-en="Run your first audit" data-zh-cn="开始第一次核查">Run your first audit</a><a class="button ghost" href="labs/audit-plan/audit-plan.html" data-en="Preview what will run" data-zh-cn="预览将执行什么">Preview what will run</a><a class="button ghost" href="evidence/journey/latest.html" data-en="Open a real report" data-zh-cn="打开真实报告">Open a real report</a></div>
-        <div class="trust-row"><span data-en="No cloud account" data-zh-cn="无需云账号">No cloud account</span><span data-en="No source edits during audit" data-zh-cn="核查时不改源码">No source edits during audit</span><span data-en="English + 中文" data-zh-cn="中文 + English">English + 中文</span></div>
+        <p class="eyebrow" data-en="AI HTML NOTES · LOCAL FIRST · EVIDENCE ALWAYS" data-zh-cn="AI HTML 笔记 · 本地优先 · 证据为准">AI HTML NOTES · LOCAL FIRST · EVIDENCE ALWAYS</p>
+        <h1 data-en="Check AI-made HTML before you trust or share it." data-zh-cn="AI 生成的 HTML，使用和分享前先体检。">Check AI-made HTML before you trust or share it.</h1>
+        <p class="hero-lede" data-en="Drop a note or folder to find broken images, dead outlines, machine-only paths, unsafe scripts, phone-reading problems, and unfinished AI placeholders. Nothing is uploaded. Need deeper product QA? The existing real-browser Web audit remains built in." data-zh-cn="拖入笔记或文件夹，即可发现丢失图片、失效目录、仅本机可用路径、危险脚本、手机阅读问题和未完成的 AI 占位内容。文件不会上传；需要更深入的产品 QA 时，原有真实浏览器网页审计仍然保留。">Drop a note or folder to find broken images, dead outlines, machine-only paths, unsafe scripts, phone-reading problems, and unfinished AI placeholders. Nothing is uploaded. Need deeper product QA? The existing real-browser Web audit remains built in.</p>
+        <div class="hero-actions"><a class="button primary" href="note.html" data-en="Check an HTML note now" data-zh-cn="立即检查 HTML 笔记">Check an HTML note now</a><a class="button ghost" href="#start" data-en="Use the CLI" data-zh-cn="使用命令行">Use the CLI</a><a class="button ghost" href="reference/report.html" data-en="Open a real Web report" data-zh-cn="打开真实网页报告">Open a real Web report</a></div>
+        <div class="trust-row"><span data-en="No upload or account" data-zh-cn="无需上传或账号">No upload or account</span><span data-en="Source never overwritten" data-zh-cn="绝不覆盖源文件">Source never overwritten</span><span data-en="English + 中文" data-zh-cn="中文 + English">English + 中文</span></div>
       </div>
       <aside class="terminal" aria-label="RealityCheck command example">
-        <div class="terminal-bar"><span></span><span></span><span></span><b>realitycheck / quick</b></div>
+        <div class="terminal-bar"><span></span><span></span><span></span><b>realitycheck / note</b></div>
         <pre><code><i>$</i> git clone --depth 1 \
   https://github.com/KevinwithPanda/RealityHTMLCheck.git
 <i>$</i> cd RealityHTMLCheck &amp;&amp; npm install
-<i>$</i> npm run audit -- http://localhost:3000
+<i>$</i> npm run note -- ./my-notes
 
-<em>✓</em> baseline + viewport matrix + RTL
-<em>✓</em> long text + image failure
-<em>✓</em> keyboard + project policy
+<em>✓</em> structure + table of contents
+<em>✓</em> local images + attachments
+<em>✓</em> portability + script safety
 
-score      <strong>96 / 100</strong>
-gate       <mark>FAILED · 1 major</mark>
-evidence   report.html
-repair     repair-plan.json</code></pre>
+score      <strong>84 / 100</strong>
+found      <mark>2 errors · 3 warnings</mark>
+report     latest.html
+uploaded   <strong>NO</strong></code></pre>
       </aside>
     </section>
 
     <section class="metrics wrap" aria-label="Product metrics">
-      <article><strong>13+</strong><span data-en="isolated stress scenarios" data-zh-cn="个隔离压力场景">isolated stress scenarios</span></article>
-      <article><strong>9</strong><span data-en="performance budget metrics" data-zh-cn="项性能预算指标">performance budget metrics</span></article>
-      <article><strong>11</strong><span data-en="public real-browser evidence packs" data-zh-cn="份公开真实浏览器证据包">public real-browser evidence packs</span></article>
-      <article><strong>0</strong><span data-en="remote assets in reports" data-zh-cn="报告中的远程资源">remote assets in reports</span></article>
+      <article><strong>22+</strong><span data-en="HTML note integrity and portability rules" data-zh-cn="项 HTML 笔记完整性与可迁移规则">HTML note integrity and portability rules</span></article>
+      <article><strong>0</strong><span data-en="note bytes uploaded" data-zh-cn="字节笔记内容上传">note bytes uploaded</span></article>
+      <article><strong>3</strong><span data-en="conservative safe-copy fixes" data-zh-cn="项保守的安全副本修复">conservative safe-copy fixes</span></article>
+      <article><strong>13+</strong><span data-en="real-browser Web stress scenarios retained" data-zh-cn="个保留的真实浏览器网页压力场景">real-browser Web stress scenarios retained</span></article>
     </section>
 
     <section class="section wrap" id="evidence">
@@ -160,7 +164,7 @@ repair     repair-plan.json</code></pre>
       </div>
     </section>
 
-    <section class="section wrap start" id="start"><div><p class="eyebrow" data-en="START LOCAL" data-zh-cn="从本地开始">START LOCAL</p><h2 data-en="A real audit from the public source." data-zh-cn="直接从公开源码运行真实核查。">A real audit from the public source.</h2><p data-en="Clone the repository, then the bundled demo needs no app server or config: it starts a loopback fixture, audits it with real Chrome, writes evidence, and shuts down." data-zh-cn="克隆仓库后，内置 Demo 不需要应用服务器或配置：它会启动回环夹具，用真实 Chrome 核查、写入证据并自动关闭。">Clone the repository, then the bundled demo needs no app server or config: it starts a loopback fixture, audits it with real Chrome, writes evidence, and shuts down.</p></div><div class="command"><code>git clone --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git<br>cd RealityHTMLCheck<br>npm install<br>npm run demo<br># open .realitycheck/demo/latest.html</code><button type="button" data-copy="git clone --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git&#10;cd RealityHTMLCheck&#10;npm install&#10;npm run demo" data-en="Copy" data-zh-cn="复制">Copy</button></div><div class="start-links"><a class="button primary" href="https://github.com/KevinwithPanda/RealityHTMLCheck#try-a-real-audit-in-one-command" data-en="Read the source-run guide →" data-zh-cn="阅读源码运行指南 →">Read the source-run guide →</a><a class="button ghost" href="reference/report.html" data-en="Inspect the reference report" data-zh-cn="查看参考报告">Inspect the reference report</a></div></section>
+    <section class="section wrap start" id="start"><div><p class="eyebrow" data-en="START LOCAL" data-zh-cn="从本地开始">START LOCAL</p><h2 data-en="Check a whole note folder with one command." data-zh-cn="一条命令检查整个笔记文件夹。">Check a whole note folder with one command.</h2><p data-en="No server and no configuration are required. The CLI checks HTML notes and their local attachments, writes a bilingual visual report, and can create conservative repaired copies without overwriting the originals." data-zh-cn="不需要服务器，也不需要配置。命令行会检查 HTML 笔记和本地附件，生成双语可视报告，还能创建保守修复副本且绝不覆盖原文件。">No server and no configuration are required. The CLI checks HTML notes and their local attachments, writes a bilingual visual report, and can create conservative repaired copies without overwriting the originals.</p></div><div class="command"><code>git clone --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git<br>cd RealityHTMLCheck<br>npm install<br>npm run note -- ./my-notes<br># open .realitycheck/notes/latest.html</code><button type="button" data-copy="git clone --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git&#10;cd RealityHTMLCheck&#10;npm install&#10;npm run note -- ./my-notes" data-en="Copy" data-zh-cn="复制">Copy</button></div><div class="start-links"><a class="button primary" href="note.html" data-en="Use the no-install checker →" data-zh-cn="打开免安装检查器 →">Use the no-install checker →</a><a class="button ghost" href="reference/report.html" data-en="Inspect the professional Web report" data-zh-cn="查看专业网页报告">Inspect the professional Web report</a></div></section>
   </main>
 
   <footer><div class="wrap"><span>RealityCheck · MIT</span><span data-en="Evidence first. Local by default." data-zh-cn="证据优先，默认本地。">Evidence first. Local by default.</span><a href="https://github.com/KevinwithPanda/RealityHTMLCheck">GitHub</a></div></footer>

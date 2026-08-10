@@ -1,7 +1,7 @@
 interface:
   display_name: "RealityCheck"
-  short_description: "Preview and audit UI, privacy, security, releases"
+  short_description: "Check HTML notes and audit Web quality locally"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/logo.svg"
   brand_color: "#FF5C35"
-  default_prompt: "Use $realitycheck on this app to preview the effective audit plan when explanation or approval is needed, choose an appropriate transparent starter/product/strict policy when setup is requested, audit safe user journeys, API/network reliability, link integrity, aggregate browser-storage privacy budgets, semantic response-header and Subresource Integrity security, accessibility, performance, and stress states, then fix selected high-confidence major issues and prove every fix."
+  default_prompt: "Use $realitycheck to check this local HTML note or note folder for integrity, broken attachments, structure, portability, unsafe scripts, mobile readability, accessibility, and unfinished AI placeholders without uploading or overwriting it; when the target is a running app, use the evidence-first Web audit and prove any authorized fix."

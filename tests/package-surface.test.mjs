@@ -18,6 +18,8 @@ test("npm publication whitelist covers every security and governance runtime sur
   const required = [
     "realitycheck/SKILL.md",
     "realitycheck/scripts/audit.mjs",
+    "realitycheck/scripts/note-analyzer.mjs",
+    "realitycheck/scripts/note-check.mjs",
     "realitycheck/scripts/demo-server.mjs",
     "realitycheck/scripts/github-summary.mjs",
     "realitycheck/scripts/policy-review.mjs",
@@ -42,6 +44,7 @@ test("npm publication whitelist covers every security and governance runtime sur
     "realitycheck/assets/demo/styles.css",
     "realitycheck/assets/demo/app.js",
     "realitycheck/assets/demo/api/orders.json",
+    "realitycheck/references/html-notes.md",
     "README.md",
     "LICENSE",
   ];
@@ -51,6 +54,7 @@ test("npm publication whitelist covers every security and governance runtime sur
   }
   assert.equal(packageJson.files.some((entry) => entry.includes(".realitycheck")), false, "generated local evidence must not be published");
   assert.equal(packageJson.files.some((entry) => entry.includes("private")), false, "private-key material must not be published");
+  assert.equal(packageJson.scripts.note, "node realitycheck/scripts/audit.mjs note");
 });
 
 test("public project metadata matches the current supported release and community boundary", () => {

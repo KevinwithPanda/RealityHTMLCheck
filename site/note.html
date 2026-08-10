@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Check AI-generated HTML notes locally for broken attachments, structure, navigation, portability, safety, mobile readability, and unfinished placeholders. No upload or account.">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <meta property="og:title" content="RealityCheck Note · Local HTML note health check">
+  <meta property="og:description" content="Drop an AI-generated HTML note or folder. Get evidence and repair guidance without uploading the content.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://kevinwithpanda.github.io/RealityHTMLCheck/note.html">
+  <meta property="og:image" content="https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://kevinwithpanda.github.io/RealityHTMLCheck/note.html">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="note.css">
+  <title>RealityCheck Note · Check AI-generated HTML notes locally</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="index.html"><img src="assets/icon.svg" alt=""><span>RealityCheck</span><small>NOTE</small></a>
+      <a class="back" href="index.html" data-en="Web audit →" data-zh-cn="专业网页审计 →">Web audit →</a>
+      <div class="language" role="group" aria-label="Language">
+        <button type="button" data-language="en" aria-pressed="true">EN</button>
+        <button type="button" data-language="zh-CN" aria-pressed="false">中文</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <p class="eyebrow" data-en="BUILT FOR AI-GENERATED NOTES" data-zh-cn="为 AI 生成的笔记而做">BUILT FOR AI-GENERATED NOTES</p>
+      <h1 data-en="Drop your HTML note. Keep the content private." data-zh-cn="拖入 HTML 笔记，内容仍留在你的电脑。">Drop your HTML note. Keep the content private.</h1>
+      <p class="lede" data-en="Find broken images, bad outlines, dead table-of-contents links, machine-only paths, unsafe scripts, mobile reading problems, and unfinished AI placeholders—without installing software, creating an account, or uploading a word." data-zh-cn="检查丢失图片、错误大纲、失效目录、仅本机可用的路径、危险脚本、手机阅读问题和未完成的 AI 占位内容——无需安装、无需账号，也不会上传一个字。">Find broken images, bad outlines, dead table-of-contents links, machine-only paths, unsafe scripts, mobile reading problems, and unfinished AI placeholders—without installing software, creating an account, or uploading a word.</p>
+      <div class="trust"><span data-en="Runs in this browser" data-zh-cn="只在当前浏览器运行">Runs in this browser</span><span data-en="No upload" data-zh-cn="不会上传">No upload</span><span data-en="Source never overwritten" data-zh-cn="绝不覆盖源文件">Source never overwritten</span></div>
+    </section>
+
+    <section class="checker wrap" aria-labelledby="checker-title">
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-icon" aria-hidden="true">HTML</div>
+        <h2 id="checker-title" data-en="Start with one file or the whole note folder" data-zh-cn="选择一个文件，或者整个笔记文件夹">Start with one file or the whole note folder</h2>
+        <p data-en="Choose the folder to verify local images, styles, attachments, and linked notes. Files are read locally by your browser." data-zh-cn="选择文件夹后还能核验本地图片、样式、附件和互相链接的笔记。文件只由你的浏览器在本地读取。">Choose the folder to verify local images, styles, attachments, and linked notes. Files are read locally by your browser.</p>
+        <div class="picker-actions">
+          <label class="button primary"><span data-en="Choose HTML file" data-zh-cn="选择 HTML 文件">Choose HTML file</span><input id="file-picker" type="file" accept=".html,.htm,text/html" multiple></label>
+          <label class="button"><span data-en="Choose note folder" data-zh-cn="选择笔记文件夹">Choose note folder</span><input id="folder-picker" type="file" webkitdirectory multiple></label>
+          <button type="button" class="button ghost" id="demo-button" data-en="Try an imperfect AI note" data-zh-cn="体验一份有问题的 AI 笔记">Try an imperfect AI note</button>
+        </div>
+        <small data-en="Or drag HTML files here. Folder selection gives the most reliable portability check." data-zh-cn="也可以把 HTML 文件拖到这里。选择文件夹可获得最可靠的可迁移性检查。">Or drag HTML files here. Folder selection gives the most reliable portability check.</small>
+      </div>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="results wrap" id="results" hidden aria-labelledby="results-title">
+      <div class="result-heading">
+        <div><p class="eyebrow" data-en="LOCAL EVIDENCE" data-zh-cn="本地证据">LOCAL EVIDENCE</p><h2 id="results-title" data-en="Here is what will break—and how to fix it." data-zh-cn="这些地方可能出错，也告诉你如何修改。">Here is what will break—and how to fix it.</h2></div>
+        <button type="button" class="reset" id="reset-button" data-en="Check different files" data-zh-cn="检查其他文件">Check different files</button>
+      </div>
+      <div class="summary" id="summary"></div>
+      <div class="result-actions">
+        <button type="button" class="button primary" id="copy-all" data-en="Copy complete repair task" data-zh-cn="复制完整修复任务">Copy complete repair task</button>
+        <button type="button" class="button" id="download-json" data-en="Download JSON evidence" data-zh-cn="下载 JSON 证据">Download JSON evidence</button>
+        <span data-en="Safe fixes download a new copy; they never edit your selected file." data-zh-cn="安全修复只下载新副本，绝不会编辑你选择的源文件。">Safe fixes download a new copy; they never edit your selected file.</span>
+      </div>
+      <div class="filters" role="group" aria-label="Finding filters">
+        <button type="button" data-filter="all" aria-pressed="true" data-en="All" data-zh-cn="全部">All</button>
+        <button type="button" data-filter="error" aria-pressed="false" data-en="Errors" data-zh-cn="错误">Errors</button>
+        <button type="button" data-filter="warning" aria-pressed="false" data-en="Warnings" data-zh-cn="警告">Warnings</button>
+        <button type="button" data-filter="advice" aria-pressed="false" data-en="Advice" data-zh-cn="建议">Advice</button>
+      </div>
+      <div id="file-results"></div>
+    </section>
+
+    <section class="explain wrap">
+      <div><p class="eyebrow" data-en="NOT JUST MOJIBAKE" data-zh-cn="不只是检查乱码">NOT JUST MOJIBAKE</p><h2 data-en="A note can look fine and still be broken." data-zh-cn="看起来正常的笔记，也可能已经损坏。">A note can look fine and still be broken.</h2></div>
+      <div class="rule-grid">
+        <article><b>01</b><h3 data-en="Content integrity" data-zh-cn="内容完整性">Content integrity</h3><p data-en="Encoding, empty exports, unfinished template markers, titles, and metadata." data-zh-cn="编码、空导出、未完成模板标记、标题和元数据。">Encoding, empty exports, unfinished template markers, titles, and metadata.</p></article>
+        <article><b>02</b><h3 data-en="Portable folders" data-zh-cn="文件夹可迁移">Portable folders</h3><p data-en="Missing images, local attachments, case-sensitive paths, and machine-only links." data-zh-cn="丢失图片、本地附件、大小写路径和仅本机可用链接。">Missing images, local attachments, case-sensitive paths, and machine-only links.</p></article>
+        <article><b>03</b><h3 data-en="Readable structure" data-zh-cn="可读结构">Readable structure</h3><p data-en="Headings, table-of-contents anchors, tables, phone layouts, and long text." data-zh-cn="标题、目录锚点、表格、手机布局和超长文本。">Headings, table-of-contents anchors, tables, phone layouts, and long text.</p></article>
+        <article><b>04</b><h3 data-en="Safer sharing" data-zh-cn="更安全地分享">Safer sharing</h3><p data-en="Executable scripts, event handlers, insecure resources, and remote privacy dependencies." data-zh-cn="可执行脚本、事件处理、不安全资源和远程隐私依赖。">Executable scripts, event handlers, insecure resources, and remote privacy dependencies.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="wrap"><span>RealityCheck Note · MIT</span><span data-en="Your files stay on your device." data-zh-cn="你的文件始终留在设备上。">Your files stay on your device.</span><a href="https://github.com/KevinwithPanda/RealityHTMLCheck">GitHub</a></div></footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="note-checker.js?v=0.4.0-notes"></script>
+</body>
+</html>

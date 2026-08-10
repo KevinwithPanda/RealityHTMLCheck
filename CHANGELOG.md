@@ -6,6 +6,11 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ### Added
 
+- A zero-install, zero-upload HTML note checker for AI-generated and exported notes, with local file/folder input, bilingual evidence, filters, JSON export, copy-ready repair tasks, and downloadable repaired copies that never overwrite source files.
+- A zero-configuration `note <file-or-directory>` CLI that statically checks encoding, structure, attachments, internal navigation, portability, script safety, mobile readability, accessibility, and unfinished AI placeholders without starting a server or executing note content.
+- Twenty-two-plus deterministic note rules, case-sensitive portability checks, bounded evidence, batch folder discovery, `--fail-on` export gates, and conservative `--fix-safe` copies limited to doctype, language, and UTF-8 metadata.
+- A dedicated HTML-note workflow and interpretation boundary in the RealityCheck skill, clearly separating document correctness from factual or citation verification.
+
 - A browser-free `plan` command that resolves effective project coverage into a schema-validated, fingerprint-bound, bilingual HTML/JSON/Markdown preview with page/scenario ceilings, all detector states, explicit safety and retention boundaries, a copy-ready next command, and a committed 301-execution demonstration. The composite Action now publishes this fail-closed preflight before browser access, and the evidence catalog indexes it alongside run evidence.
 - Opt-in semantic response-header policies for bounded CSP directive/source-token rules, HSTS transport/max-age/subdomain/preload facts, exact `nosniff`, reviewed Referrer-Policy enums, and empty-allowlist requirements for 15 controlled Permissions-Policy features. Findings translate controlled violation codes into bilingual, value-specific explanations and repair steps. Raw header values, allowed origins, CSP nonces/hashes, and unknown tokens are discarded; policy-review treats lost or relaxed requirements as structural weakening.
 - Opt-in cross-origin Subresource Integrity policy for scripts and stylesheets, with aggregate origin/kind/count evidence, zero resource-path/content/hash retention, anti-weakening review, a strict-profile default, and paired 80/100 versus 100/100 real-browser proof.

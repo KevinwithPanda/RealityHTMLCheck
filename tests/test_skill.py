@@ -57,7 +57,10 @@ class SkillStructureTests(unittest.TestCase):
             "references/browser-adapters.md",
             "references/report-schema.md",
             "references/project-config.md",
+            "references/html-notes.md",
             "scripts/audit.mjs",
+            "scripts/note-analyzer.mjs",
+            "scripts/note-check.mjs",
             "scripts/demo-server.mjs",
             "scripts/github-summary.mjs",
             "scripts/policy-review.mjs",
@@ -170,6 +173,9 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn('cli="./node_modules/.bin/realitycheck"', workflow)
         self.assertIn('config["$schema"] == "./node_modules/realitycheck-web-audit/realitycheck/assets/config.schema.json"', workflow)
         self.assertIn('plan["target"]["inspected"] is False', workflow)
+        self.assertIn('"$cli" note note-fixture', workflow)
+        self.assertIn('note["kind"] == "html-note-check-bundle"', workflow)
+        self.assertIn('note["privacy"] == {"uploaded": False, "absolutePathsPersisted": False}', workflow)
 
     def test_version_and_release_metadata_agree(self) -> None:
         version = (REPOSITORY_ROOT / "VERSION").read_text(encoding="utf-8").strip()

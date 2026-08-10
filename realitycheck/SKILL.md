@@ -1,16 +1,18 @@
 ---
 name: realitycheck
-description: Preview, audit, safely crawl, stress-test, fix, and verify a developer-controlled web app with a browser-free bilingual audit plan, deterministic real-browser scenarios, approved visual baselines, safe user journeys, API and link limits, publishing, semantic response-header and Subresource Integrity security, aggregate browser-storage privacy policy, performance budgets, bundled axe-core, and evidence-based HTML, JSON, SARIF, JUnit, trend, and before/after reports. Use when Codex needs to explain what a Web audit will do; QA, break, harden, or repair localhost or an authorized UI; test mobile layout, visual drift, long text, RTL, image failures, keyboard access, preferences, workflows, slow or failed APIs, broken links, metadata contracts, Cookie/Web Storage budgets, third-party requests, empty data, runtime errors, security, performance, or accessibility; prove a fix with the same detector; compare runs; or enforce a CI threshold. The user may provide a URL or ask to check the current app.
+description: Check, repair, and verify local HTML notes or note folders, including AI-generated and exported notes, for encoding damage, document structure, broken attachments, internal navigation, portability, unsafe scripts, mobile readability, accessibility, and unfinished placeholders; also preview, audit, safely crawl, stress-test, fix, and verify a developer-controlled Web app with deterministic real-browser scenarios, visual baselines, safe journeys, network, metadata, security, privacy, performance, accessibility, repair plans, and before/after proof. Use when Codex receives an HTML note or folder, the user asks whether an HTML document is correct or shareable, local images or links are broken, or a localhost or authorized UI needs evidence-first QA and repair.
 ---
 
 # RealityCheck
 
-Break a web UI safely before its users do. Run real browser checks, distinguish baseline defects from scenario-induced regressions, and report only claims supported by evidence.
+Check local HTML notes before they are trusted or shared, and break a Web UI safely before its users do. Report only claims supported by deterministic evidence.
 
 ## Choose the action
 
 Select one action and one mode:
 
+- `note <file-or-directory>`: when the input is an HTML note, AI-generated HTML document, exported knowledge page, or folder of linked notes, run `scripts/audit.mjs note`. It requires no server, configuration, or browser automation; checks selected files locally without executing their scripts; writes bilingual evidence; and never uploads or overwrites source files. Prefer the whole note folder when local images, styles, attachments, or linked notes must be verified. Read [references/html-notes.md](references/html-notes.md) before interpreting or repairing note findings.
+- `note <file-or-directory> --fix-safe`: only when the user requests repair, generate new copies containing the three unambiguous metadata fixes (HTML5 doctype, inferred document language, and early UTF-8 declaration). Never present it as a complete repair and never replace the originals. Treat headings, alternative text, paths, scripts, and content changes as reviewable fixes requiring source inspection.
 - `audit` (default): inspect and report without changing application source.
 - `plan`: when the user asks what an audit will do, needs approval before browser access, or finds project policy hard to understand, run `scripts/audit.mjs plan`; write the bilingual preview without opening a browser or requesting the target, then explain the page/scenario ceiling, enabled detectors, safety boundaries, and retained data.
 - `demo`: when the user wants a walkthrough or proof before providing an app, run `scripts/audit.mjs demo`; it serves only the bundled loopback fixture, preserves the expected failed gate, and never treats fixture findings as defects in the user's project.
@@ -19,7 +21,7 @@ Select one action and one mode:
 - `quick` (default): baseline plus mobile, long-text, RTL, image-failure, and keyboard checks; target completion under 60 seconds when the page is small and stable.
 - `deep`: add reduced motion, declared dark-scheme contrast, slow API, simulated 503 recovery, empty data, 200% zoom, and bundled axe-core WCAG A/AA plus best-practice checks.
 
-If the user omits the URL, discover it from an already-running local server, repository scripts, framework configuration, or terminal output. Start the documented dev/preview command when that is a normal reversible project step. Ask only if multiple targets remain materially ambiguous. If action or mode is omitted, use `audit quick`. Do not interpret an audit-only request as permission to fix code.
+Choose `note` instead of `audit` when the target is a local `.html`/`.htm` document or note folder rather than a running application. If the user omits the URL for a Web audit, discover it from an already-running local server, repository scripts, framework configuration, or terminal output. Start the documented dev/preview command when that is a normal reversible project step. Ask only if multiple targets remain materially ambiguous. If action or mode is omitted, use `audit quick`. Do not interpret an inspection-only request as permission to fix source.
 
 ## Enforce safety before navigation
 
@@ -35,6 +37,7 @@ Stop before navigation if ownership or remote authorization is unclear. Do not u
 
 ## Load only the required resources
 
+- For every HTML note check, read [references/html-notes.md](references/html-notes.md) completely. Do not load the Web test protocol unless the user also requests a running-page audit.
 - For every audit, read [references/test-protocol.md](references/test-protocol.md) completely.
 - Read [references/browser-adapters.md](references/browser-adapters.md) when selecting, invoking, or recovering a browser adapter.
 - Read [references/report-schema.md](references/report-schema.md) before filling the run input or consuming `report.json`.
