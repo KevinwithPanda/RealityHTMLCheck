@@ -1,4 +1,4 @@
-import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "./note-analyzer.mjs?v=0.4.0-notes";
+import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "./note-analyzer.mjs?v=0.4.0-simple";
 
 const elements = {
   dropZone: document.querySelector("#drop-zone"),
@@ -195,7 +195,12 @@ function renderFile(report, bundle) {
 function render(bundle) {
   renderSummary(bundle);
   elements.files.replaceChildren(...bundle.reports.map((report) => renderFile(report, bundle)));
-  for (const button of document.querySelectorAll("[data-filter]")) button.setAttribute("aria-pressed", String(button.dataset.filter === "all"));
+  applyFilter(bundle.summary.counts.error ? "error" : bundle.summary.counts.warning ? "warning" : "all");
+}
+
+function applyFilter(filter) {
+  for (const finding of document.querySelectorAll(".finding")) finding.hidden = filter !== "all" && finding.dataset.level !== filter;
+  for (const button of document.querySelectorAll("[data-filter]")) button.setAttribute("aria-pressed", String(button.dataset.filter === filter));
 }
 
 function reset() {
@@ -223,9 +228,7 @@ elements.downloadJson.addEventListener("click", () => {
   download(`realitycheck-note-${new Date().toISOString().slice(0, 10)}.json`, `${JSON.stringify(safe, null, 2)}\n`, "application/json;charset=utf-8");
 });
 for (const button of document.querySelectorAll("[data-filter]")) button.addEventListener("click", () => {
-  const filter = button.dataset.filter;
-  for (const finding of document.querySelectorAll(".finding")) finding.hidden = filter !== "all" && finding.dataset.level !== filter;
-  for (const item of document.querySelectorAll("[data-filter]")) item.setAttribute("aria-pressed", String(item === button));
+  applyFilter(button.dataset.filter);
 });
 elements.demo.addEventListener("click", async () => {
   const html = `<!doctype html><html><head><title>AI research draft</title><style>main{min-width:860px}</style></head><body onclick="init()"><main><h1 id="result">Research TODO</h1><h3 id="result">Findings</h3><p>This AI-generated draft contains an unfinished placeholder {{citation}}, a local image, a broken contents link, and enough text to demonstrate a realistic note check.</p><a href="#methods">Read methods</a><img src="images/result.png"><script src="http://example.invalid/helper.js"></script></main></body></html>`;

@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -205,6 +206,32 @@ class SkillStructureTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("dry run; no files changed", result.stdout)
         self.assertIn("skills", result.stdout)
+
+    def test_installer_status_distinguishes_current_and_changed_copies(self) -> None:
+        installer = REPOSITORY_ROOT / "scripts" / "install-skill.py"
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            environment = {**os.environ, "CODEX_HOME": temporary_directory}
+            installed = subprocess.run(
+                [sys.executable, str(installer)], check=False, capture_output=True,
+                text=True, encoding="utf-8", errors="replace", env=environment,
+            )
+            self.assertEqual(installed.returncode, 0, installed.stderr)
+            current = subprocess.run(
+                [sys.executable, str(installer), "--status"], check=False,
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+                env=environment,
+            )
+            self.assertEqual(current.returncode, 0, current.stderr)
+            self.assertIn("installed and current", current.stdout)
+            installed_skill = Path(temporary_directory) / "skills" / "realitycheck" / "SKILL.md"
+            installed_skill.write_text(installed_skill.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+            changed = subprocess.run(
+                [sys.executable, str(installer), "--status"], check=False,
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+                env=environment,
+            )
+            self.assertEqual(changed.returncode, 1)
+            self.assertIn("different from this repository", changed.stdout)
 
     def test_svg_assets_are_well_formed(self) -> None:
         svg_paths = (
@@ -816,7 +843,7 @@ class ReportCliTests(unittest.TestCase):
             )
             self.assertIn("结账控制台", html_report)
             self.assertIn("主要操作移动到了屏幕外", html_report)
-            self.assertIn("复制修复并验证任务", html_report)
+            self.assertIn("复制给 Codex 的修复任务", html_report)
             self.assertIn("Use $realitycheck to fix and verify", html_report)
             self.assertIn("使用 $realitycheck 修复并验证", html_report)
             self.assertIn(

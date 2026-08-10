@@ -1,7 +1,10 @@
 interface:
   display_name: "RealityCheck"
-  short_description: "Check HTML notes and audit Web quality locally"
+  short_description: "Check HTML notes and Web apps with local evidence"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/logo.svg"
   brand_color: "#FF5C35"
-  default_prompt: "Use $realitycheck to check this local HTML note or note folder for integrity, broken attachments, structure, portability, unsafe scripts, mobile readability, accessibility, and unfinished AI placeholders without uploading or overwriting it; when the target is a running app, use the evidence-first Web audit and prove any authorized fix."
+  default_prompt: "Use $realitycheck to check this HTML note or Web app, explain the evidence clearly, and prepare safe, reviewable fixes."
+
+policy:
+  allow_implicit_invocation: true

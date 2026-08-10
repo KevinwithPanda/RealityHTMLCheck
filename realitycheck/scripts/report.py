@@ -85,13 +85,12 @@ SECRET_ASSIGNMENT_RE = re.compile(
 HTML_STYLES = """
 :root {
   color-scheme: light;
-  --ink: #16181d;
-  --muted: #676b75;
-  --line: #e7e3dc;
-  --paper: #fffdfa;
-  --canvas: #f4f1eb;
+  --ink: #1b1d22;
+  --muted: #656b76;
+  --line: #dfdcd6;
+  --paper: #fff;
+  --canvas: #f6f4f0;
   --accent: #ff5c35;
-  --accent-soft: #fff0eb;
   --success: #13795b;
   --warning: #a25b00;
   --danger: #c72c41;
@@ -103,49 +102,49 @@ html { scroll-behavior: smooth; }
 body { margin: 0; color: var(--ink); background: var(--canvas); }
 a { color: inherit; }
 .topbar { border-bottom: 1px solid #2b2c31; color: #fff; background: #17181c; }
-.topbar-inner { width: min(1180px, calc(100% - 40px)); min-height: 68px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.brand { display: flex; align-items: center; gap: 11px; font-weight: 820; letter-spacing: -.02em; }
-.brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; color: #17181c; background: linear-gradient(135deg, #ffbd2e, var(--accent)); font-size: 13px; }
-.topbar-actions { display: flex; align-items: center; gap: 18px; }
-.report-kind { color: #acadb5; font-size: 13px; }
-.language-switch { display: flex; padding: 3px; border: 1px solid #3b3d44; border-radius: 9px; background: #212228; }
+.topbar-inner { width: min(1040px, calc(100% - 36px)); min-height: 58px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 820; letter-spacing: -.02em; }
+.brand-mark { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; color: #17181c; background: linear-gradient(135deg, #ffbd2e, var(--accent)); font-size: 11px; }
+.topbar-actions { display: flex; align-items: center; gap: 14px; }
+.report-kind { color: #acadb5; font-size: 11px; }
+.language-switch { display: flex; padding: 3px; border: 1px solid #3b3d44; border-radius: 8px; background: #212228; }
 .language-button { min-width: 42px; border: 0; border-radius: 6px; padding: 6px 9px; color: #aeb0b7; background: transparent; font: inherit; font-size: 12px; font-weight: 780; cursor: pointer; }
 .language-button[aria-pressed="true"] { color: #17181c; background: #fff; }
-.container { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
-.hero { padding: 56px 0 34px; }
-.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 48px; }
-.eyebrow { margin: 0 0 10px; color: var(--accent); font-size: 12px; font-weight: 850; letter-spacing: .11em; text-transform: uppercase; }
-h1 { max-width: 790px; margin: 0; font-size: clamp(34px, 5vw, 64px); line-height: .99; letter-spacing: -.055em; }
-.target { max-width: 760px; margin: 22px 0 0; color: var(--muted); font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+.container { width: min(1040px, calc(100% - 36px)); margin: 0 auto; }
+.hero { padding: 38px 0 20px; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) 150px; align-items: center; gap: 34px; }
+.eyebrow { margin: 0 0 8px; color: var(--accent); font-size: 10px; font-weight: 850; letter-spacing: .11em; text-transform: uppercase; }
+h1 { max-width: 790px; margin: 0; font-size: clamp(32px, 4.5vw, 46px); line-height: 1.03; letter-spacing: -.045em; text-wrap: balance; }
+.target { max-width: 760px; margin: 14px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
 .target a { text-decoration-color: #c1bcb3; text-underline-offset: 3px; }
-.score-ring { --score: 0; width: 174px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--accent) calc(var(--score) * 1%), #ded9d0 0); box-shadow: 0 16px 44px rgb(39 33 25 / 12%); }
-.score-core { width: 138px; aspect-ratio: 1; display: grid; place-content: center; border-radius: 50%; background: var(--paper); text-align: center; }
-.score-value { font-size: 48px; font-weight: 850; line-height: 1; letter-spacing: -.06em; }
-.score-label { margin-top: 6px; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
-.gate { margin-top: 18px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); font-size: 12px; font-weight: 760; }
+.score-ring { --score: 0; width: 150px; min-height: 104px; display: grid; place-items: center; border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 12px; background: var(--paper); }
+.score-core { display: grid; place-content: center; text-align: center; }
+.score-value { font-size: 42px; font-weight: 850; line-height: 1; letter-spacing: -.06em; }
+.score-label { margin-top: 5px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.gate { margin-top: 14px; display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); font-size: 11px; font-weight: 760; }
 .gate::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
 .gate.failed::before { background: var(--danger); }
-.notice { margin: 0 0 32px; padding: 15px 17px; border: 1px solid #ded9cf; border-radius: 13px; color: #5d5f66; background: #ede9e1; font-size: 13px; line-height: 1.5; }
-.stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 54px; }
-.stat { min-width: 0; padding: 18px; border: 1px solid var(--line); border-radius: 15px; background: var(--paper); box-shadow: 0 10px 30px rgb(39 33 25 / 4%); }
-.stat-label { display: block; color: var(--muted); font-size: 11px; font-weight: 760; letter-spacing: .06em; text-transform: uppercase; }
-.stat-value { display: block; margin-top: 9px; font-size: 26px; font-weight: 820; letter-spacing: -.04em; }
-.section { margin: 0 0 58px; }
-.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
-.section-heading h2 { margin: 0; font-size: 28px; letter-spacing: -.035em; }
+.notice { margin: 0 0 22px; padding: 13px 15px; border: 1px solid #ded9cf; border-radius: 10px; color: #5d5f66; background: #eeece7; font-size: 12px; line-height: 1.5; }
+.stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 36px; }
+.stat { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.stat-label { display: block; color: var(--muted); font-size: 10px; font-weight: 760; letter-spacing: .04em; text-transform: uppercase; }
+.stat-value { display: block; margin-top: 6px; font-size: 23px; font-weight: 820; letter-spacing: -.04em; }
+.section { margin: 0 0 38px; }
+.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 14px; }
+.section-heading h2 { margin: 0; font-size: 24px; letter-spacing: -.03em; }
 .section-heading p { margin: 0; color: var(--muted); font-size: 13px; }
 .scenario-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.scenario { padding: 18px; border: 1px solid var(--line); border-radius: 15px; background: var(--paper); }
+.scenario { padding: 15px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
 .scenario-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.scenario-name { font: 750 13px ui-monospace, SFMono-Regular, Consolas, monospace; }
+.scenario-name { font: 750 12px ui-monospace, SFMono-Regular, Consolas, monospace; }
 .status { padding: 5px 8px; border-radius: 999px; color: #4d515a; background: #ebe8e1; font-size: 10px; font-weight: 800; text-transform: uppercase; }
 .status.passed { color: var(--success); background: #e4f4ee; }
 .status.completed-with-findings { color: var(--warning); background: #fff0d9; }
 .status.failed { color: var(--danger); background: #ffe5ea; }
-.scenario-meta { margin-top: 22px; display: flex; align-items: end; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
-.scenario-notes { min-height: 34px; margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
-.findings { display: grid; gap: 14px; }
-.finding-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin: 0 0 16px; }
+.scenario-meta { margin-top: 16px; display: flex; align-items: end; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 11px; }
+.scenario-notes { min-height: 30px; margin: 10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.findings { display: grid; gap: 10px; }
+.finding-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
 .finding-filters { display: flex; flex-wrap: wrap; gap: 6px; }
 .finding-filter { border: 1px solid #d9d4cb; border-radius: 8px; padding: 8px 10px; color: #4e5159; background: var(--paper); font: inherit; font-size: 12px; font-weight: 760; cursor: pointer; }
 .finding-filter[aria-pressed="true"] { color: #fff; border-color: #25262b; background: #25262b; }
@@ -158,12 +157,12 @@ h1 { max-width: 790px; margin: 0; font-size: clamp(34px, 5vw, 64px); line-height
 .finding-search:focus-visible, .finding-filter:focus-visible, .batch-select-visible:focus-visible, .batch-clear:focus-visible, .batch-fix-button:focus-visible, .repair-select input:focus-visible { outline: 3px solid #ff9a7e; outline-offset: 2px; }
 .finding-count { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .finding[hidden], .empty[hidden] { display: none; }
-.finding { overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 0 10px 30px rgb(39 33 25 / 4%); }
-.finding-accent { height: 4px; background: #8a8d96; }
+.finding { overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.finding-accent { height: 3px; background: #8a8d96; }
 .finding.severity-major .finding-accent { background: var(--danger); }
 .finding.severity-critical .finding-accent { background: var(--critical); }
 .finding.severity-minor .finding-accent { background: #d77b00; }
-.finding-body { padding: 24px; }
+.finding-body { padding: 19px; }
 .finding-kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .repair-select { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; color: var(--muted); font-size: 11px; font-weight: 720; cursor: pointer; }
 .repair-select input { width: 16px; height: 16px; margin: 0; accent-color: #202228; }
@@ -173,20 +172,20 @@ h1 { max-width: 790px; margin: 0; font-size: clamp(34px, 5vw, 64px); line-height
 .pill.waived { color: #325f8c; background: #e6f0fb; }
 .pill.owner { color: #235743; background: #e3f3ec; text-transform: none; }
 .finding-id { color: var(--muted); font: 12px ui-monospace, SFMono-Regular, Consolas, monospace; }
-.finding h3 { margin: 17px 0 8px; font-size: 23px; line-height: 1.2; letter-spacing: -.025em; }
-.finding-summary { margin: 0; color: #4f525b; line-height: 1.65; }
-.finding-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 19px 0 0; padding: 15px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.finding h3 { margin: 13px 0 6px; font-size: 20px; line-height: 1.25; letter-spacing: -.02em; }
+.finding-summary { margin: 0; color: #4f525b; font-size: 13px; line-height: 1.6; }
+.finding-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
 .finding-meta code { color: #34363c; overflow-wrap: anywhere; }
-.finding-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+.finding-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-top: 14px; }
 .fix-button { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 9px; padding: 10px 13px; color: #fff; background: #202228; font: inherit; font-size: 12px; font-weight: 780; cursor: pointer; }
 .fix-button:hover { background: #090a0d; }
 .fix-button:focus-visible, .language-button:focus-visible { outline: 3px solid #ff9a7e; outline-offset: 2px; }
 .fix-note { color: var(--muted); font-size: 11px; line-height: 1.4; }
 .fix-prompt-output { width: 100%; min-height: 92px; margin-top: 2px; padding: 11px; border: 1px solid #d9d4cb; border-radius: 9px; color: #34363c; background: #f8f6f2; font: 11px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; resize: vertical; }
-.finding details { margin-top: 18px; border-top: 1px solid var(--line); }
-.finding summary { padding-top: 17px; cursor: pointer; font-size: 13px; font-weight: 780; }
-.detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 18px; }
-.detail-card { min-width: 0; padding: 17px; border-radius: 12px; background: #f5f2ec; }
+.finding details { margin-top: 14px; border-top: 1px solid var(--line); }
+.finding summary { padding-top: 13px; cursor: pointer; font-size: 12px; font-weight: 780; }
+.detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 13px; }
+.detail-card { min-width: 0; padding: 14px; border-radius: 9px; background: #f5f2ec; }
 .detail-card h4 { margin: 0 0 10px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
 .detail-card p, .detail-card li { color: #565962; font-size: 13px; line-height: 1.55; }
 .detail-card ol, .detail-card ul { margin: 0; padding-left: 20px; }
@@ -198,27 +197,26 @@ figcaption { margin-top: 6px; color: var(--muted); font-size: 11px; }
 .empty { padding: 34px; border: 1px dashed #c9c4ba; border-radius: 16px; color: var(--muted); text-align: center; }
 .warning-list { margin: 0; padding-left: 20px; }
 .warning-list li { margin: 8px 0; line-height: 1.55; }
-.metadata { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: var(--line); }
+.metadata { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--line); }
 .metadata div { min-width: 0; padding: 16px; background: var(--paper); }
 .metadata dt { color: var(--muted); font-size: 11px; text-transform: uppercase; }
 .metadata dd { margin: 7px 0 0; font-size: 13px; overflow-wrap: anywhere; }
-.footer { margin-top: 70px; padding: 28px 0 42px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.footer { margin-top: 44px; padding: 24px 0 36px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
 .toast { position: fixed; z-index: 50; left: 50%; bottom: 24px; max-width: min(520px, calc(100% - 28px)); translate: -50% 18px; padding: 12px 15px; border-radius: 10px; color: #fff; background: #17181c; box-shadow: 0 14px 40px rgb(0 0 0 / 28%); font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .18s ease, translate .18s ease; }
 .toast.visible { translate: -50% 0; opacity: 1; }
 @media (max-width: 900px) {
   .hero-grid { grid-template-columns: 1fr; }
   .score-ring { width: 150px; }
-  .score-core { width: 118px; }
   .stats { grid-template-columns: repeat(3, 1fr); }
   .scenario-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 620px) {
-  .topbar-inner, .container { width: min(100% - 28px, 1180px); }
+  .topbar-inner, .container { width: min(100% - 24px, 1040px); }
   .report-kind { display: none; }
-  .hero { padding-top: 36px; }
+  .hero { padding-top: 30px; }
   .stats, .scenario-grid, .detail-grid, .metadata { grid-template-columns: 1fr; }
   .section-heading { align-items: start; flex-direction: column; }
-  .finding-body { padding: 19px; }
+  .finding-body { padding: 16px; }
   .repair-select { width: 100%; margin-left: 0; }
 }
 @media print {
@@ -235,7 +233,7 @@ HTML_I18N = {
     "en": {
         "reportKind": "Evidence report · local artifact",
         "languageLabel": "Report language",
-        "eyebrow": "Web stress-test result",
+        "eyebrow": "Check complete",
         "testedPrefix": "Tested",
         "modeConnector": "in",
         "modeSuffix": "mode using",
@@ -244,7 +242,7 @@ HTML_I18N = {
         "gatePassed": "PASSED",
         "gateFailed": "FAILED",
         "scoreLabel": "Reality score",
-        "notice": "Automated checks cover only the recorded scenarios. This report cannot prove the absence of bugs or complete WCAG compliance.",
+        "notice": "Scope: recorded scenarios only. This report does not prove that the site has no other bugs or full WCAG compliance.",
         "critical": "Critical",
         "major": "Major",
         "minor": "Minor",
@@ -252,7 +250,7 @@ HTML_I18N = {
         "baselineCost": "Baseline cost",
         "stressCost": "Stress cost",
         "scenarioCoverage": "Scenario coverage",
-        "findings": "Evidence-backed findings",
+        "findings": "Problems and fixes",
         "filterAll": "All",
         "filterWaived": "Waived",
         "filterLabel": "Filter findings by severity",
@@ -279,12 +277,12 @@ HTML_I18N = {
         "waiverOwner": "Owner",
         "waiverExpires": "Expires",
         "ownerTeam": "Accountable team",
-        "inspect": "Inspect measurements, evidence, and remediation",
+        "inspect": "Evidence and technical details",
         "measurements": "Measurements",
         "evidence": "Evidence",
         "reproduce": "Reproduce",
         "recommendedFix": "Recommended fix",
-        "fixWithCodex": "Copy fix + verification task",
+        "fixWithCodex": "Copy repair task for Codex",
         "fixNote": "One click prepares a bounded task; Codex changes source only after you submit it, then reruns the same detector.",
         "fixCopied": "Fix + verification task copied. Paste it into Codex to begin.",
         "fixCopyFailed": "Copy was blocked. The fix + verification task is shown below the button for manual copying.",
@@ -320,7 +318,7 @@ HTML_I18N = {
     "zh-CN": {
         "reportKind": "核查报告 · 本地文件",
         "languageLabel": "报告语言",
-        "eyebrow": "网站压力核查结果",
+        "eyebrow": "检查完成",
         "testedPrefix": "已核查",
         "modeConnector": "采用",
         "modeSuffix": "模式，适配器为",
@@ -329,7 +327,7 @@ HTML_I18N = {
         "gatePassed": "通过",
         "gateFailed": "未通过",
         "scoreLabel": "Reality 评分",
-        "notice": "自动化核查只覆盖报告中记录的场景，不能据此证明网站不存在其他问题，也不能代表完整的 WCAG 合规认证。",
+        "notice": "范围：仅包含报告中记录的场景；不能据此证明网站没有其他问题或已完整符合 WCAG。",
         "critical": "致命",
         "major": "主要",
         "minor": "次要",
@@ -337,7 +335,7 @@ HTML_I18N = {
         "baselineCost": "基线扣分",
         "stressCost": "压力场景扣分",
         "scenarioCoverage": "场景覆盖",
-        "findings": "有证据的问题",
+        "findings": "问题与修复",
         "filterAll": "全部",
         "filterWaived": "已豁免",
         "filterLabel": "按严重度筛选问题",
@@ -364,12 +362,12 @@ HTML_I18N = {
         "waiverOwner": "负责人",
         "waiverExpires": "到期日",
         "ownerTeam": "负责团队",
-        "inspect": "查看测量值、证据与修复方案",
+        "inspect": "证据与技术细节",
         "measurements": "测量值",
         "evidence": "证据",
         "reproduce": "复现步骤",
         "recommendedFix": "建议修复",
-        "fixWithCodex": "复制修复并验证任务",
+        "fixWithCodex": "复制给 Codex 的修复任务",
         "fixNote": "一次点击即可准备限定范围的任务；只有你提交任务后 Codex 才会修改源码，并用同一检测器复测。",
         "fixCopied": "修复并验证任务已复制，请粘贴到 Codex 中开始。",
         "fixCopyFailed": "浏览器阻止了复制，修复指令已显示在按钮下方，可手动复制。",
@@ -1624,7 +1622,7 @@ def render_html(report: dict[str, Any]) -> str:
             fix_action = "".join(
                 [
                     '<div class="finding-actions">',
-                    f'<button class="fix-button" type="button" data-finding-id="{html_text(finding["id"])}" data-rule-id="{html_text(finding["ruleId"])}" data-scenario-id="{html_text(finding["scenarioId"])}" data-remediation-en="{html_text(finding["remediation"]["summary"])}" data-remediation-zh-cn="{html_text(remediation_zh)}"><span aria-hidden="true">↗</span><span data-i18n="fixWithCodex">Copy fix + verification task</span></button>',
+                    f'<button class="fix-button" type="button" data-finding-id="{html_text(finding["id"])}" data-rule-id="{html_text(finding["ruleId"])}" data-scenario-id="{html_text(finding["scenarioId"])}" data-remediation-en="{html_text(finding["remediation"]["summary"])}" data-remediation-zh-cn="{html_text(remediation_zh)}"><span aria-hidden="true">↗</span><span data-i18n="fixWithCodex">Copy repair task for Codex</span></button>',
                     '<span class="fix-note" data-i18n="fixNote">Copies a scoped instruction; Codex still verifies the change and reruns the proving scenario.</span>',
                     '<textarea class="fix-prompt-output" hidden readonly data-i18n-aria="fixPromptLabel" aria-label="Scoped Codex fix and verification task"></textarea>',
                     "</div>",
@@ -1770,7 +1768,7 @@ def render_html(report: dict[str, Any]) -> str:
             "</div>",
             f'<div class="score-ring" style="--score:{score["overall"]}"><div class="score-core"><span class="score-value">{score["overall"]}</span><span class="score-label" data-i18n="scoreLabel">Reality score</span></div></div>',
             "</div></section>",
-            '<p class="notice" data-i18n="notice">Automated checks cover only the recorded scenarios. This report cannot prove the absence of bugs or complete WCAG compliance.</p>',
+            '<p class="notice" data-i18n="notice">Scope: recorded scenarios only. This report does not prove that the site has no other bugs or full WCAG compliance.</p>',
             gate_reasons_html,
             '<section class="stats" data-i18n-aria="findings" aria-label="Finding summary">',
             f'<div class="stat"><span class="stat-label" data-i18n="critical">Critical</span><span class="stat-value">{score["counts"]["critical"]}</span></div>',
@@ -1780,12 +1778,12 @@ def render_html(report: dict[str, Any]) -> str:
             f'<div class="stat"><span class="stat-label" data-i18n="baselineCost">Baseline cost</span><span class="stat-value">−{score["baselinePenalty"]:g}</span></div>',
             f'<div class="stat"><span class="stat-label" data-i18n="stressCost">Stress cost</span><span class="stat-value">−{score["chaosPenalty"]:g}</span></div>',
             "</section>",
+            '<section class="section primary-section"><div class="section-heading"><h2 data-i18n="findings">Problems and fixes</h2>',
+            f'<p {html_localized_attributes(finding_summary_en, finding_summary_zh)}>{html_text(finding_summary_en)}</p></div>',
+            f'{finding_toolbar}<div class="findings">{findings_html}</div></section>',
             '<section class="section"><div class="section-heading"><h2 data-i18n="scenarioCoverage">Scenario coverage</h2>',
             f'<p {html_localized_attributes(scenario_summary_en, scenario_summary_zh)}>{html_text(scenario_summary_en)}</p></div>',
             f'<div class="scenario-grid">{"".join(scenario_cards)}</div></section>',
-            '<section class="section"><div class="section-heading"><h2 data-i18n="findings">Evidence-backed findings</h2>',
-            f'<p {html_localized_attributes(finding_summary_en, finding_summary_zh)}>{html_text(finding_summary_en)}</p></div>',
-            f'{finding_toolbar}<div class="findings">{findings_html}</div></section>',
             '<section class="section"><div class="section-heading"><h2 data-i18n="coverageWarnings">Coverage warnings</h2></div>',
             f'<div class="notice"><div class="warning-list">{warnings_html}</div></div></section>',
             '<section class="section"><div class="section-heading"><h2 data-i18n="runMetadata">Run metadata</h2></div>',

@@ -107,9 +107,10 @@ From this cloned repository:
 
 ```bash
 python scripts/install-skill.py
+python scripts/install-skill.py --status
 ```
 
-Reload Codex if its skill list does not refresh automatically. Updating with the same command preserves the previous installed skill as a timestamped backup.
+The second command must print `installed and current`. Then reload Codex if its skill list does not refresh automatically. RealityCheck is not a background process: after installation, Codex sees its metadata at startup and loads the full workflow only when the request matches, or immediately when you say `$realitycheck`. Updating with the same install command preserves the previous installed skill as a timestamped backup.
 
 ## Try a real audit in one command
 

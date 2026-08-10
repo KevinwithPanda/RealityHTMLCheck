@@ -79,9 +79,10 @@ npm run note -- ./我的笔记 --fix-safe
 
 ```bash
 python scripts/install-skill.py
+python scripts/install-skill.py --status
 ```
 
-如果 Codex 没有自动刷新 skill 列表，请重新加载。再次执行安装命令会先把旧版本保存为带时间戳的备份。
+第二条命令应显示 `installed and current`。如果 Codex 没有自动刷新 skill 列表，请重新加载。RealityCheck 不是常驻后台程序：安装后，Codex 启动时会发现它的元数据；只有请求匹配时才加载完整流程，显式输入 `$realitycheck` 则会立即调用。再次执行安装命令会先把旧版本保存为带时间戳的备份。
 
 ## 一条命令体验真实核查
 

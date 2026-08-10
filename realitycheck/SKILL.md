@@ -7,6 +7,8 @@ description: Check, repair, and verify local HTML notes or note folders, includi
 
 Check local HTML notes before they are trusted or shared, and break a Web UI safely before its users do. Report only claims supported by deterministic evidence.
 
+Keep the user-facing flow simple: identify whether the target is an HTML note or a running Web app, run the smallest useful check, lead with the score and error counts, show the visual report path, and state the next safe action. Put detailed coverage and machine artifacts after the actionable result.
+
 ## Choose the action
 
 Select one action and one mode:
