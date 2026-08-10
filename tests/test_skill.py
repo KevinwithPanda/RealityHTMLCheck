@@ -52,6 +52,23 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("$realitycheck", content)
         self.assertNotIn("build-realitycheck", content)
 
+    def test_html_note_skill_supports_direct_repair_and_recheck_of_a_copy(self) -> None:
+        skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        reference = (SKILL_ROOT / "references" / "html-notes.md").read_text(
+            encoding="utf-8"
+        )
+        for required in (
+            "note repair <file-or-directory>",
+            "before report",
+            "repaired HTML or folder",
+            "after report",
+            "Never overwrite the supplied source",
+            "Do not ask the user to copy a report prompt back",
+        ):
+            self.assertIn(required, skill)
+        self.assertIn("perform the handoff inside the same Codex task", reference)
+        self.assertIn("Do not claim the repaired output is complete", reference)
+
     def test_required_resources_exist(self) -> None:
         required = (
             "references/test-protocol.md",
