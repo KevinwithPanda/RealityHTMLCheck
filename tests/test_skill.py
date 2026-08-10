@@ -250,6 +250,61 @@ class SkillStructureTests(unittest.TestCase):
             self.assertEqual(changed.returncode, 1)
             self.assertIn("different from this repository", changed.stdout)
 
+    def test_installer_keeps_backups_outside_the_discoverable_skills_directory(self) -> None:
+        installer = REPOSITORY_ROOT / "scripts" / "install-skill.py"
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            environment = {**os.environ, "CODEX_HOME": temporary_directory}
+            for _ in range(2):
+                installed = subprocess.run(
+                    [sys.executable, str(installer)], check=False, capture_output=True,
+                    text=True, encoding="utf-8", errors="replace", env=environment,
+                )
+                self.assertEqual(installed.returncode, 0, installed.stderr)
+
+            skills = Path(temporary_directory) / "skills"
+            self.assertEqual([path.name for path in skills.iterdir()], ["realitycheck"])
+            backups = list(
+                (Path(temporary_directory) / "skill-backups" / "realitycheck").glob(
+                    "realitycheck.backup-*"
+                )
+            )
+            self.assertEqual(len(backups), 1)
+            self.assertTrue((backups[0] / "SKILL.md").is_file())
+
+    def test_installer_migrates_legacy_discoverable_backups(self) -> None:
+        installer = REPOSITORY_ROOT / "scripts" / "install-skill.py"
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            environment = {**os.environ, "CODEX_HOME": temporary_directory}
+            first = subprocess.run(
+                [sys.executable, str(installer)], check=False, capture_output=True,
+                text=True, encoding="utf-8", errors="replace", env=environment,
+            )
+            self.assertEqual(first.returncode, 0, first.stderr)
+            legacy = Path(temporary_directory) / "skills" / "realitycheck.backup-legacy"
+            shutil.copytree(Path(temporary_directory) / "skills" / "realitycheck", legacy)
+
+            status = subprocess.run(
+                [sys.executable, str(installer), "--status"], check=False,
+                capture_output=True, text=True, encoding="utf-8", errors="replace",
+                env=environment,
+            )
+            self.assertEqual(status.returncode, 1)
+            self.assertIn("duplicate skills", status.stdout)
+
+            migrated = subprocess.run(
+                [sys.executable, str(installer)], check=False, capture_output=True,
+                text=True, encoding="utf-8", errors="replace", env=environment,
+            )
+            self.assertEqual(migrated.returncode, 0, migrated.stderr)
+            self.assertFalse(legacy.exists())
+            migrated_backup = (
+                Path(temporary_directory)
+                / "skill-backups"
+                / "realitycheck"
+                / "realitycheck.backup-legacy"
+            )
+            self.assertTrue((migrated_backup / "SKILL.md").is_file())
+
     def test_svg_assets_are_well_formed(self) -> None:
         svg_paths = (
             SKILL_ROOT / "assets" / "icon.svg",

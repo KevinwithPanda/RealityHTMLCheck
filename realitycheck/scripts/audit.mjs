@@ -63,7 +63,7 @@ function usage() {
 Usage:
   realitycheck <url> [options]
   realitycheck audit <url> [options]
-  realitycheck note <FILE|DIRECTORY> [--fix-safe] [--output PATH]
+  realitycheck note <FILE|DIRECTORY> [--fix-safe|--prepare-repair] [--output PATH]
   realitycheck demo [--output PATH] [--headed] [--browser PATH]
   realitycheck init [--profile starter|product|strict] [--base-url URL] [--config PATH]
   realitycheck profiles
@@ -116,6 +116,7 @@ Examples:
   realitycheck http://localhost:3000
   realitycheck note my-note.html
   realitycheck note ./notes --fix-safe
+  realitycheck note ./notes --prepare-repair
   realitycheck demo
   realitycheck init
   realitycheck profiles

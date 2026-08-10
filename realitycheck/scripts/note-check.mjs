@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,6 +10,7 @@ import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "./note-ana
 const HTML_EXTENSIONS = new Set([".htm", ".html"]);
 const IGNORED_DIRECTORIES = new Set([".git", ".realitycheck", "node_modules"]);
 const LEVEL_ORDER = Object.freeze({ error: 0, warning: 1, advice: 2 });
+const MAX_REPAIR_COPY_BYTES = 512 * 1024 * 1024;
 
 function usage() {
   return `RealityCheck Note — local HTML note health check
@@ -20,6 +21,7 @@ Usage:
 Options:
   --output PATH            Report root (default: .realitycheck/notes)
   --fix-safe               Write repaired copies for unambiguous metadata fixes
+  --prepare-repair         Copy the bounded note bundle and apply safe fixes for Codex repair
   --fail-on LEVEL          error|warning|never (default: never)
   --language en|zh-CN      Terminal summary language (default: zh-CN)
   --max-files NUMBER       Maximum HTML notes, 1-500 (default: 200)
@@ -30,12 +32,16 @@ The command never uploads files and never overwrites the source note.`;
 
 function parseArguments(argv) {
   const args = [...argv];
-  const options = { input: null, output: ".realitycheck/notes", fixSafe: false, failOn: "never", language: "zh-CN", maxFiles: 200 };
+  const options = { input: null, output: ".realitycheck/notes", fixSafe: false, prepareRepair: false, failOn: "never", language: "zh-CN", maxFiles: 200 };
   while (args.length) {
     const item = args.shift();
     if (item === "-h" || item === "--help") return { ...options, help: true };
     if (item === "--fix-safe") {
       options.fixSafe = true;
+      continue;
+    }
+    if (item === "--prepare-repair") {
+      options.prepareRepair = true;
       continue;
     }
     if (["--output", "--fail-on", "--language", "--max-files"].includes(item)) {
@@ -203,6 +209,14 @@ export async function runNoteCommand(argv) {
 
   const root = inputStat.isDirectory() ? input : dirname(input);
   const discovered = discover(root, { htmlLimit: options.maxFiles });
+  if (options.prepareRepair && inputStat.isDirectory() && discovered.truncated) {
+    throw new Error("Refused to prepare an incomplete repair copy; reduce the folder or raise --max-files within its safe limit");
+  }
+  const repairFilesToCopy = options.prepareRepair ? (inputStat.isFile() ? [input] : discovered.allFiles) : [];
+  const repairCopyBytes = repairFilesToCopy.reduce((sum, path) => sum + lstatSync(path).size, 0);
+  if (repairCopyBytes > MAX_REPAIR_COPY_BYTES) {
+    throw new Error("Refused to prepare a repair copy larger than 512 MiB");
+  }
   const htmlFiles = inputStat.isFile() ? [input] : discovered.htmlFiles;
   if (!htmlFiles.length) throw new Error("No .html or .htm notes were found");
   const knownFiles = discovered.truncated ? null : discovered.allFiles.map((path) => portablePath(relative(root, path)));
@@ -247,7 +261,25 @@ export async function runNoteCommand(argv) {
   writeFileSync(join(outputRoot, "repair-plan.zh-CN.md"), repairPlanZh, "utf8");
   writeFileSync(join(outputRoot, "latest.html"), reportHtml, "utf8");
   writeFileSync(join(outputRoot, "latest.json"), reportJson, "utf8");
-  if (options.fixSafe) {
+  let preparedRepair = null;
+  if (options.prepareRepair) {
+    const repairRoot = resolve(runDirectory, "repaired");
+    let safeFixes = 0;
+    for (const path of repairFilesToCopy) {
+      const relativePath = portablePath(relative(root, path)) || basename(path);
+      const target = resolve(repairRoot, relativePath);
+      if (!target.startsWith(`${repairRoot}${sep}`)) throw new Error("Refused repaired output outside the run directory");
+      mkdirSync(dirname(target), { recursive: true });
+      if (HTML_EXTENSIONS.has(extname(path).toLowerCase())) {
+        const repaired = applySafeNoteFixes(readFileSync(path, "utf8"));
+        safeFixes += repaired.changes.length;
+        writeFileSync(target, repaired.html, "utf8");
+      } else {
+        copyFileSync(path, target);
+      }
+    }
+    preparedRepair = { root: repairRoot, files: repairFilesToCopy.length, bytes: repairCopyBytes, safeFixes };
+  } else if (options.fixSafe) {
     for (const path of htmlFiles) {
       const repaired = applySafeNoteFixes(readFileSync(path, "utf8"));
       if (!repaired.changes.length) continue;
@@ -264,6 +296,11 @@ export async function runNoteCommand(argv) {
     ? `已检查 ${summary.files} 个 HTML 笔记：${summary.score}/100，${counts.error} 个错误，${counts.warning} 个警告。`
     : `Checked ${summary.files} HTML note(s): ${summary.score}/100, ${counts.error} error(s), ${counts.warning} warning(s).`);
   console.log(zh ? `可视报告：${join(runDirectory, "report.html")}` : `Visual report: ${join(runDirectory, "report.html")}`);
+  if (preparedRepair) {
+    console.log(zh
+      ? `Codex 修复工作副本：${preparedRepair.root}（共 ${preparedRepair.files} 个文件，已应用 ${preparedRepair.safeFixes} 项安全修复）`
+      : `Codex repair working copy: ${preparedRepair.root} (${preparedRepair.files} file(s), ${preparedRepair.safeFixes} safe fix(es) applied)`);
+  }
   console.log(zh ? "源文件未修改，内容未上传。" : "Source files were not modified and content was not uploaded.");
   return thresholdFailed(counts, options.failOn) ? 1 : 0;
 }

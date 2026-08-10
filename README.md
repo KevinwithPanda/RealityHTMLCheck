@@ -1,4 +1,8 @@
 <div align="center">
+  <img src="docs/assets/hero.svg" alt="RealityCheck checks portable HTML notes, exposes hidden Web UI failures, and proves repairs with before and after evidence" width="100%" />
+</div>
+
+<div align="center">
 
 # RealityCheck
 
@@ -94,7 +98,7 @@ the repaired usable HTML folder, the after report, and anything
 that could not be fixed without inventing content.
 ```
 
-That one request authorizes edits to a **new working copy**. The Skill audits first, lets Codex repair justified findings directly, reruns the same note check, and returns:
+That one request authorizes edits to a **new working copy**. The Skill first copies the bounded note bundle with its local images, styles, attachments, and linked notes into the evidence run, applies the three safe metadata repairs, lets Codex repair justified findings directly, reruns the same note check, and returns:
 
 1. the before technical report;
 2. the repaired HTML file or self-contained folder;

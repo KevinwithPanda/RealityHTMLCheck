@@ -47,9 +47,9 @@ Do not automatically invent titles, heading levels, alternative text, missing re
 
 When the user invokes the Skill with an explicit request to check and repair a bounded note or folder, perform the handoff inside the same Codex task. The user does not need to copy the report prompt back into Codex.
 
-1. Preserve the initial run as before evidence.
-2. Create a separate repaired working folder inside the run and preserve the relative note-and-asset structure. Treat the request as authorization to edit that copy, not the supplied source.
-3. Apply the safe metadata fixes, inspect each remaining finding and its source context, and make only high-confidence changes whose intended result can be established from the note folder.
+1. Run `node <skill-dir>/scripts/audit.mjs note <file-or-directory> --prepare-repair`. Preserve the initial run as before evidence.
+2. Use the emitted `repaired` folder, which preserves the bounded relative note-and-asset structure and applies safe metadata fixes. Treat the request as authorization to edit that copy, not the supplied source.
+3. Inspect each remaining finding and its source context, and make only high-confidence changes whose intended result can be established from the note folder.
 4. Rerun the same note command against the repaired folder and retain a separate after report.
 5. Return both reports, the repaired entry HTML or folder, the change summary, and unresolved decisions.
 

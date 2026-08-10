@@ -62,6 +62,35 @@ test("safe repair mode writes a new copy and leaves the source byte-for-byte unc
   }
 });
 
+test("agentic repair preparation copies the bounded note bundle and applies safe metadata fixes", () => {
+  const root = mkdtempSync(join(tmpdir(), "realitycheck-note-prepare-"));
+  try {
+    const notes = join(root, "notes");
+    mkdirSync(join(notes, "assets"), { recursive: true });
+    const source = `<html><head><title>Portable bundle</title><link rel="stylesheet" href="assets/note.css"></head><body><h1>Portable bundle</h1><p>This folder has enough content to prove that Codex receives a complete repair working copy with its local resources.</p><a href="guide.html">Guide</a></body></html>`;
+    writeFileSync(join(notes, "index.html"), source, "utf8");
+    writeFileSync(join(notes, "guide.html"), "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Guide</title></head><body><h1>Guide</h1><p>This linked note remains inside the prepared repair bundle.</p></body></html>", "utf8");
+    writeFileSync(join(notes, "assets", "note.css"), "body { max-width: 70rem; }", "utf8");
+    writeFileSync(join(notes, "assets", "pixel.bin"), Buffer.from([0, 1, 2, 255]));
+    const output = join(root, "evidence");
+    const result = run([notes, "--output", output, "--prepare-repair", "--language", "en"]);
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    assert.match(result.stdout, /Codex repair working copy:/);
+    const latest = JSON.parse(readFileSync(join(output, "latest.json"), "utf8"));
+    const repaired = join(output, latest.id, "repaired");
+    const repairedEntry = readFileSync(join(repaired, "index.html"), "utf8");
+    assert.match(repairedEntry, /^<!doctype html>/);
+    assert.match(repairedEntry, /<html lang="en">/);
+    assert.match(repairedEntry, /<meta charset="utf-8">/);
+    assert.equal(readFileSync(join(notes, "index.html"), "utf8"), source);
+    assert.equal(readFileSync(join(repaired, "assets", "note.css"), "utf8"), "body { max-width: 70rem; }");
+    assert.deepEqual(readFileSync(join(repaired, "assets", "pixel.bin")), Buffer.from([0, 1, 2, 255]));
+    assert.equal(existsSync(join(repaired, "guide.html")), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("note CLI keeps the report when a requested quality threshold fails", () => {
   const root = mkdtempSync(join(tmpdir(), "realitycheck-note-gate-"));
   try {
@@ -85,4 +114,5 @@ test("note CLI help presents the zero-config boundary", () => {
   assert.match(result.stdout, /realitycheck note <FILE\|DIRECTORY>/);
   assert.match(result.stdout, /never uploads files/);
   assert.match(result.stdout, /never overwrites the source note/);
+  assert.match(result.stdout, /--prepare-repair/);
 });

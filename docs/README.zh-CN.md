@@ -33,6 +33,8 @@ npm run note -- ./我的笔记
 npm run note -- ./我的笔记 --fix-safe
 ```
 
+如果在 Codex 中要求 `$realitycheck` “检查并修复”，Skill 会使用 `--prepare-repair` 把有上限的完整笔记文件夹、图片、样式、附件和关联笔记复制到证据目录，再由 Codex 直接修改该工作副本并复检。用户会在同一个任务中得到修复前报告、修复版 HTML 文件夹、修复后报告和仍需判断的问题，不需要把静态报告里的提示词再次粘贴回 Codex。
+
 如果要在导出流水线中阻止错误，可添加 `--fail-on error` 或 `--fail-on warning`。原有 URL 网页核查仍用于响应式交互、接口恢复、可访问性、性能、安全响应头、隐私预算和发布治理。
 
 无需安装也可以打开[产品首页](https://kevinwithpanda.github.io/RealityHTMLCheck/)；仓库内的[演示中心](../examples/index.html)还包含真实浏览器夹具、修复证明、产物目录、风险台账、组合门禁和签名决策。
@@ -82,7 +84,7 @@ python scripts/install-skill.py
 python scripts/install-skill.py --status
 ```
 
-第二条命令应显示 `installed and current`。如果 Codex 没有自动刷新 skill 列表，请重新加载。RealityCheck 不是常驻后台程序：安装后，Codex 启动时会发现它的元数据；只有请求匹配时才加载完整流程，显式输入 `$realitycheck` 则会立即调用。再次执行安装命令会先把旧版本保存为带时间戳的备份。
+第二条命令应显示 `installed and current`。如果 Codex 没有自动刷新 skill 列表，请重新加载。RealityCheck 不是常驻后台程序：安装后，Codex 启动时会发现它的元数据；只有请求匹配时才加载完整流程，显式输入 `$realitycheck` 则会立即调用。再次执行安装命令会先把旧版本保存到 Codex 主目录下独立的 `skill-backups/realitycheck`，避免备份被误识别为第二个同名 Skill。
 
 ## 一条命令体验真实核查
 
