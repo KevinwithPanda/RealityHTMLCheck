@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "../realitycheck/scripts/note-analyzer.mjs";
+import { analyzeNotePackage, mergePackageFindings } from "../realitycheck/scripts/note-package.mjs";
 
 const healthyNote = `<!doctype html>
 <html lang="zh-CN">
@@ -84,6 +85,16 @@ test("a single-file browser check reports unverified attachments instead of fake
   const report = analyzeHtmlNote({ path: "note.html", html: healthyNote, knownFiles: null });
   assert.equal(report.findings.some((finding) => finding.ruleId === "missing-local-file"), false);
   assert.equal(report.findings.some((finding) => finding.ruleId === "local-files-not-verified"), true);
+  assert.equal(report.status, "review");
+});
+
+test("safe fixes refuse to preserve already damaged decoding", () => {
+  const input = "<html><head><title>Damaged</title></head><body><h1>Damaged �</h1></body></html>";
+  const report = analyzeHtmlNote({ path: "damaged.html", html: input, knownFiles: ["damaged.html"] });
+  assert.equal(report.counts.autoFixable, 0);
+  const repaired = applySafeNoteFixes(input);
+  assert.equal(repaired.html, input);
+  assert.deepEqual(repaired.changes, []);
 });
 
 test("path casing is portable only when the HTML and file agree exactly", () => {
@@ -94,6 +105,18 @@ test("path casing is portable only when the HTML and file agree exactly", () => 
   });
   assert.equal(report.findings.some((finding) => finding.ruleId === "path-case-mismatch"), true);
   assert.equal(report.findings.some((finding) => finding.ruleId === "missing-local-file"), false);
+});
+
+test("HTML resource paths cannot escape the selected package or use a root shortcut", () => {
+  for (const reference of ["../../private/x.png", "/assets/x.png"]) {
+    const report = analyzeHtmlNote({
+      path: "notes/index.html",
+      html: healthyNote.replace("assets/chart.svg", reference),
+      knownFiles: ["notes/index.html", "private/x.png", "assets/x.png"],
+    });
+    assert.equal(report.findings.some((finding) => finding.ruleId === "unsafe-package-path"), true, reference);
+    assert.equal(report.status, "needs-fix");
+  }
 });
 
 test("safe fixes are conservative, downloadable, and idempotent", () => {
@@ -109,6 +132,29 @@ test("safe fixes are conservative, downloadable, and idempotent", () => {
   assert.equal(second.html, first.html);
 });
 
+test("safe language inference does not label Japanese or Korean as Chinese", () => {
+  const japanese = applySafeNoteFixes("<html><head><title>研究</title></head><body><p>これは日本語の研究ノートです。結果を確認します。</p></body></html>");
+  const korean = applySafeNoteFixes("<html><head><title>연구</title></head><body><p>이것은 한국어 연구 노트입니다. 결과를 확인합니다.</p></body></html>");
+  assert.match(japanese.html, /<html lang="ja">/);
+  assert.match(korean.html, /<html lang="ko">/);
+  assert.doesNotMatch(japanese.html, /lang="zh-CN"/);
+  assert.doesNotMatch(korean.html, /lang="zh-CN"/);
+});
+
+test("code examples and scripts do not masquerade as HTML or CSS dependencies", () => {
+  const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Code note</title></head><body><h1>Code note</h1><p>This note explains the literal snippets url(images/example.png) and min-width: 768px without applying either style.</p><script>const example = "<div>";</script></body></html>';
+  const report = analyzeHtmlNote({ path: "code.html", html, knownFiles: ["code.html"] });
+  assert.equal(report.findings.some((finding) => finding.ruleId === "missing-local-file"), false);
+  assert.equal(report.findings.some((finding) => finding.ruleId === "wide-fixed-layout"), false);
+  assert.equal(report.findings.some((finding) => finding.ruleId === "unbalanced-container"), false);
+});
+
+test("desktop-only media-query minimum width is not treated as a mobile floor", () => {
+  const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Responsive note</title><style>@media (min-width:768px){main{min-width:768px}}</style></head><body><main><h1>Responsive note</h1><p>This note only applies its desktop layout above the matching viewport.</p></main></body></html>';
+  const report = analyzeHtmlNote({ path: "responsive.html", html, knownFiles: ["responsive.html"] });
+  assert.equal(report.findings.some((finding) => finding.ruleId === "wide-fixed-layout"), false);
+});
+
 test("repair tasks stay bilingual and include evidence locations", () => {
   const report = analyzeHtmlNote({ path: "draft.html", html: "<html><head></head><body>TODO</body></html>" });
   const zh = buildRepairTask(report, "zh-CN");
@@ -119,4 +165,121 @@ test("repair tasks stay bilingual and include evidence locations", () => {
   assert.match(en, /Repair the following problems in HTML note draft\.html/);
   assert.match(en, /Rerun the same check/);
   assert.doesNotMatch(zh, /undefined/);
+});
+
+test("folder package check follows CSS resources and imported stylesheets", () => {
+  const findings = analyzeNotePackage({
+    knownFiles: ["index.html", "styles/main.css", "styles/theme.css", "images/Hero.png"],
+    entries: [
+      { path: "index.html", kind: "html", text: '<!doctype html><html><head><link rel="stylesheet" href="styles/main.css"></head><body><h1>Note</h1></body></html>' },
+      { path: "styles/main.css", kind: "css", text: '@import "theme.css"; .hero{background:url(../images/hero.png)} .missing{background:url("../images/missing.png")}' },
+      { path: "styles/theme.css", kind: "css", text: "main{min-width:860px}" },
+    ],
+  });
+  const rules = new Set(findings.map((finding) => finding.ruleId));
+  assert.equal(rules.has("css-missing-local-file"), true);
+  assert.equal(rules.has("css-path-case-mismatch"), true);
+  assert.equal(rules.has("external-css-wide-fixed-layout"), true);
+  const base = analyzeHtmlNote({ path: "index.html", html: '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Note</title></head><body><h1>Note</h1><p>This note has enough useful content for package-check scoring.</p></body></html>', knownFiles: ["index.html"] });
+  const merged = mergePackageFindings(base, findings);
+  assert.equal(merged.status, "needs-fix");
+  assert.ok(merged.score < base.score);
+});
+
+test("folder package check verifies fragments in linked HTML notes", () => {
+  const entries = [
+    { path: "index.html", kind: "html", text: '<!doctype html><html><body><a href="guide.html#missing">Guide</a></body></html>' },
+    { path: "guide.html", kind: "html", text: '<!doctype html><html><body><h1 id="present">Guide</h1></body></html>' },
+  ];
+  const broken = analyzeNotePackage({ entries, knownFiles: ["index.html", "guide.html"] });
+  assert.equal(broken.some((finding) => finding.ruleId === "broken-cross-document-fragment"), true);
+  const fixed = analyzeNotePackage({ entries: entries.map((entry) => entry.path === "guide.html" ? { ...entry, text: entry.text.replace("present", "missing") } : entry), knownFiles: ["index.html", "guide.html"] });
+  assert.equal(fixed.some((finding) => finding.ruleId === "broken-cross-document-fragment"), false);
+});
+
+test("package graph ignores unreachable CSS and follows only reachable imports", () => {
+  const entries = [
+    { path: "index.html", kind: "html", text: '<!doctype html><html><head><link rel="stylesheet" href="styles/main.css"></head><body></body></html>' },
+    { path: "styles/main.css", kind: "css", text: '@import "theme.css"; body{color:#222}' },
+    { path: "styles/theme.css", kind: "css", text: '.hero{background:url(../img/missing.png)}' },
+    { path: "styles/old.css", kind: "css", text: '.old{background:url(../img/also-missing.png)}' },
+  ];
+  const knownFiles = ["index.html", "styles/main.css", "styles/theme.css", "styles/old.css"];
+  const linked = analyzeNotePackage({ entries, knownFiles });
+  assert.equal(linked.find((finding) => finding.ruleId === "css-missing-local-file")?.affectedCount, 1);
+  const noImport = analyzeNotePackage({ entries: entries.map((entry) => entry.path === "styles/main.css" ? { ...entry, text: "body{color:#222}" } : entry), knownFiles });
+  assert.equal(noImport.some((finding) => finding.ruleId === "css-missing-local-file"), false);
+  const noLink = analyzeNotePackage({ entries: entries.map((entry) => entry.path === "index.html" ? { ...entry, text: "<!doctype html><html><body></body></html>" } : entry), knownFiles });
+  assert.deepEqual(noLink, []);
+});
+
+test("package paths cannot escape the selected root or use root-relative shortcuts", () => {
+  const entries = [
+    { path: "index.html", kind: "html", text: '<!doctype html><html><head><link rel="stylesheet" href="styles/main.css"></head><body></body></html>' },
+    { path: "styles/main.css", kind: "css", text: '.a{background:url(../../private/x.png)}.b{background:url(/assets/x.png)}' },
+  ];
+  const findings = analyzeNotePackage({ entries, knownFiles: ["index.html", "styles/main.css", "private/x.png", "assets/x.png"] });
+  const unsafe = findings.find((finding) => finding.ruleId === "unsafe-package-path");
+  assert.equal(unsafe?.affectedCount, 2);
+  assert.equal(unsafe?.level, "error");
+});
+
+test("cross-document fragments survive query strings", () => {
+  const entries = [
+    { path: "index.html", kind: "html", text: '<!doctype html><html><body><a href="guide.html?view=print#missing">Guide</a></body></html>' },
+    { path: "guide.html", kind: "html", text: '<!doctype html><html><body><h1 id="present">Guide</h1></body></html>' },
+  ];
+  const findings = analyzeNotePackage({ entries, knownFiles: ["index.html", "guide.html"] });
+  assert.equal(findings.some((finding) => finding.ruleId === "broken-cross-document-fragment"), true);
+});
+
+test("reachable oversized stylesheet content is disclosed as unverified", () => {
+  const findings = analyzeNotePackage({
+    entries: [{ path: "index.html", kind: "html", text: '<!doctype html><html><head><link rel="stylesheet" href="large.css"></head><body></body></html>' }],
+    knownFiles: ["index.html", "large.css"],
+  });
+  const unverified = findings.find((finding) => finding.ruleId === "package-content-not-verified");
+  assert.equal(unverified?.level, "warning");
+});
+
+test("CSS graph handles unquoted imports, comments, remote assets, and cycles once", () => {
+  const entries = [
+    { path: "index.html", kind: "html", text: '<html><head><link rel="stylesheet" href="a.css"><link rel="stylesheet" href="a.css"></head></html>' },
+    { path: "a.css", kind: "css", text: '@import url(b.css); /* url(commented-missing.png); min-width:900px */' },
+    { path: "b.css", kind: "css", text: '@import "a.css"; .x{background:url(missing.png)}.r{background:url(https://cdn.example/image.png)}' },
+  ];
+  const findings = analyzeNotePackage({ entries, knownFiles: ["index.html", "a.css", "b.css"] });
+  assert.equal(findings.find((finding) => finding.ruleId === "css-missing-local-file")?.affectedCount, 1);
+  assert.equal(findings.some((finding) => finding.ruleId === "external-css-wide-fixed-layout"), false);
+  assert.equal(findings.find((finding) => finding.ruleId === "css-remote-dependency")?.affectedCount, 1);
+});
+
+test("a unique case-only stylesheet import is inspected after being reported", () => {
+  const entries = [
+    { path: "index.html", kind: "html", text: '<html><head><link rel="stylesheet" href="main.css"></head></html>' },
+    { path: "main.css", kind: "css", text: '@import "theme.css"' },
+    { path: "Theme.css", kind: "css", text: '.x{background:url(missing.png)}' },
+  ];
+  const findings = analyzeNotePackage({ entries, knownFiles: ["index.html", "main.css", "Theme.css"] });
+  assert.equal(findings.some((finding) => finding.ruleId === "css-path-case-mismatch"), true);
+  assert.equal(findings.some((finding) => finding.ruleId === "css-missing-local-file"), true);
+});
+
+test("ambiguous case-only cross-note targets are blocked instead of guessed", () => {
+  const entries = [
+    { path: "index.html", kind: "html", text: '<html><body><a href="GUIDE.html#methods">Guide</a></body></html>' },
+    { path: "Guide.html", kind: "html", text: '<html><body><h1 id="methods">A</h1></body></html>' },
+    { path: "guide.html", kind: "html", text: '<html><body><h1 id="methods">B</h1></body></html>' },
+  ];
+  const findings = analyzeNotePackage({ entries, knownFiles: entries.map((entry) => entry.path) });
+  assert.equal(findings.some((finding) => finding.ruleId === "unsafe-package-path"), true);
+});
+
+test("CSS string content and data imports are not treated as missing files", () => {
+  const entries = [
+    { path: "index.html", kind: "html", text: '<html><head><link rel="stylesheet" href="main.css"></head></html>' },
+    { path: "main.css", kind: "css", text: '.x::before{content:"url(missing.png)"}@import url(data:text/css,.x%7Bcolor:red%7D);' },
+  ];
+  const findings = analyzeNotePackage({ entries, knownFiles: ["index.html", "main.css"] });
+  assert.equal(findings.some((finding) => finding.ruleId === "css-missing-local-file"), false);
 });

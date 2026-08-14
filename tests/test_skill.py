@@ -78,6 +78,8 @@ class SkillStructureTests(unittest.TestCase):
             "references/html-notes.md",
             "scripts/audit.mjs",
             "scripts/note-analyzer.mjs",
+            "scripts/note-package.mjs",
+            "scripts/note-summary.mjs",
             "scripts/note-check.mjs",
             "scripts/demo-server.mjs",
             "scripts/github-summary.mjs",
@@ -249,6 +251,38 @@ class SkillStructureTests(unittest.TestCase):
             )
             self.assertEqual(changed.returncode, 1)
             self.assertIn("different from this repository", changed.stdout)
+
+    def test_installed_skill_runs_note_check_without_repository_node_modules(self) -> None:
+        installer = REPOSITORY_ROOT / "scripts" / "install-skill.py"
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            environment = {**os.environ, "CODEX_HOME": str(root)}
+            installed = subprocess.run(
+                [sys.executable, str(installer)], check=False, capture_output=True,
+                text=True, encoding="utf-8", errors="replace", env=environment,
+            )
+            self.assertEqual(installed.returncode, 0, installed.stderr)
+            note = root / "note.html"
+            note.write_text(
+                '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+                '<meta name="viewport" content="width=device-width"><title>Installed skill</title>'
+                '</head><body style="color: #222"><h1>Installed skill</h1><p>This portable note proves that the '
+                'installed Skill can run without repository dependencies.</p></body></html>',
+                encoding="utf-8",
+            )
+            script = root / "skills" / "realitycheck" / "scripts" / "note-check.mjs"
+            output = root / "evidence"
+            node_executable = shutil.which("node") or os.environ.get("REALITYCHECK_NODE")
+            self.assertIsNotNone(node_executable, "Node executable is required for the installed-Skill smoke test")
+            checked = subprocess.run(
+                [str(node_executable), str(script), str(note), "--output", str(output), "--language", "en"],
+                check=False, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                cwd=root, env={**environment, "NODE_PATH": ""},
+            )
+            self.assertEqual(checked.returncode, 0, checked.stderr)
+            self.assertIn("Checked 1 HTML note(s):", checked.stdout)
+            self.assertNotIn("ERR_MODULE_NOT_FOUND", checked.stderr)
+            self.assertTrue((output / "latest.html").is_file())
 
     def test_installer_keeps_backups_outside_the_discoverable_skills_directory(self) -> None:
         installer = REPOSITORY_ROOT / "scripts" / "install-skill.py"

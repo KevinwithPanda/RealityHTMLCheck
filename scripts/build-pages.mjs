@@ -18,6 +18,8 @@ copy("site", ".");
 copy("docs/assets", "assets");
 copy("realitycheck/assets/icon.svg", "assets/icon.svg");
 copy("realitycheck/scripts/note-analyzer.mjs", "note-analyzer.mjs");
+copy("realitycheck/scripts/note-package.mjs", "note-package.mjs");
+copy("realitycheck/scripts/note-summary.mjs", "note-summary.mjs");
 copy("examples/public-evidence", "evidence");
 copy("examples/reference-run", "reference");
 copy("examples/journey-lab", "labs/journey");

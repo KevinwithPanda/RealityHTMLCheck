@@ -123,7 +123,8 @@ def main() -> int:
 
     print("status:      installed")
     print("verification: installed files match this repository")
-    print("next:        reload Codex, then say: Use $realitycheck on this app.")
+    print("next:        reload Codex, then attach a note folder and say:")
+    print("             Use $realitycheck to check and repair this HTML note folder without overwriting the originals.")
     return 0
 
 

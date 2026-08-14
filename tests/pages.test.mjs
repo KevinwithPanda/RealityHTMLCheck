@@ -15,6 +15,9 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "note.css",
     "note-checker.js",
     "note-analyzer.mjs",
+    "note-package.mjs",
+    "note-summary.mjs",
+    "note-share-report.mjs",
     "app.js",
     "styles.css",
     "robots.txt",
@@ -99,6 +102,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /href="note\.html"/);
   assert.match(html, /Check AI-made HTML before you trust or share it/);
   assert.match(html, /AI 生成的 HTML，使用和分享前先体检/);
+  assert.match(html, /<article><strong>30<\/strong><span[^>]+>HTML note integrity and portability rules/);
   assert.match(html, /npm run note -- \.\/my-notes/);
   assert.match(html, /data-language="zh-CN"/);
   assert.match(html, /init --profile product --base-url/);

@@ -7,6 +7,7 @@ examples/visual-regression-lab/.ci-baselines/
 .pytest_cache/
 .venv/
 node_modules/
+output/
 _site/
 *.tgz
 npm-debug.log*

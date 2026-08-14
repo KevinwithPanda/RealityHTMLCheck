@@ -1,4 +1,7 @@
-import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "./note-analyzer.mjs?v=0.4.0-simple";
+import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "./note-analyzer.mjs?v=0.4.0-readiness";
+import { analyzeNotePackage, mergePackageFindings } from "./note-package.mjs?v=0.4.0-readiness";
+import { summarizeNoteReports, noteDecision } from "./note-summary.mjs?v=0.4.0-readiness";
+import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.4.0-readiness";
 
 const elements = {
   dropZone: document.querySelector("#drop-zone"),
@@ -8,10 +11,12 @@ const elements = {
   status: document.querySelector("#status"),
   results: document.querySelector("#results"),
   summary: document.querySelector("#summary"),
+  decision: document.querySelector("#decision"),
   files: document.querySelector("#file-results"),
   reset: document.querySelector("#reset-button"),
   copyAll: document.querySelector("#copy-all"),
   downloadJson: document.querySelector("#download-json"),
+  downloadReport: document.querySelector("#download-report"),
   toast: document.querySelector("#toast"),
 };
 
@@ -67,15 +72,14 @@ async function copy(text) {
   }
 }
 
-function summarize(reports) {
-  const counts = { error: 0, warning: 0, advice: 0, autoFixable: 0 };
-  for (const report of reports) for (const key of Object.keys(counts)) counts[key] += report.counts[key];
-  return { files: reports.length, score: Math.round(reports.reduce((sum, report) => sum + report.score, 0) / reports.length), counts };
-}
-
 async function inspectFiles(fileList, folderMode = false) {
-  const files = [...fileList].filter((file) => file.size <= 25 * 1024 * 1024);
-  const htmlFiles = files.filter((file) => /\.html?$/i.test(file.name));
+  const allFiles = [...fileList];
+  const oversizedHtml = allFiles.filter((file) => /\.html?$/i.test(file.name) && file.size > 25 * 1024 * 1024);
+  if (oversizedHtml.length) {
+    elements.status.textContent = language === "zh-CN" ? `有 ${oversizedHtml.length} 个 HTML 文件超过 25 MiB，未生成不完整报告。请缩小或拆分文件后重试。` : `${oversizedHtml.length} HTML file(s) exceed 25 MiB. No incomplete report was created; reduce or split them and try again.`;
+    return;
+  }
+  const htmlFiles = allFiles.filter((file) => /\.html?$/i.test(file.name));
   if (!htmlFiles.length) {
     elements.status.textContent = language === "zh-CN" ? "没有找到 .html 或 .htm 文件。" : "No .html or .htm file was found.";
     return;
@@ -85,14 +89,25 @@ async function inspectFiles(fileList, folderMode = false) {
     return;
   }
   elements.status.textContent = language === "zh-CN" ? `正在本地读取 ${htmlFiles.length} 个 HTML 文件…` : `Reading ${htmlFiles.length} HTML file(s) locally…`;
-  const knownFiles = folderMode || files.some((file) => file.webkitRelativePath) || files.length > htmlFiles.length ? files.map(pathFor) : null;
+  const knownFiles = folderMode || allFiles.some((file) => file.webkitRelativePath) || allFiles.length > htmlFiles.length ? allFiles.map(pathFor) : null;
   const sources = new Map();
-  const reports = [];
+  let reports = [];
+  const packageEntries = [];
   for (const file of htmlFiles) {
     const html = await file.text();
     const path = pathFor(file);
     sources.set(path, { file, html });
+    packageEntries.push({ path, text: html, kind: "html" });
     reports.push(analyzeHtmlNote({ path, html, knownFiles }));
+  }
+  if (knownFiles) {
+    const cssFiles = allFiles.filter((file) => /\.css$/i.test(file.name));
+    for (const file of cssFiles) packageEntries.push({ path: pathFor(file), text: file.size <= 5 * 1024 * 1024 ? await file.text() : null, kind: "css" });
+    const packageFindings = analyzeNotePackage({ entries: packageEntries, knownFiles });
+    if (packageFindings.length) {
+      const primaryPath = reports[0].path;
+      reports = reports.map((report) => report.path === primaryPath ? mergePackageFindings(report, packageFindings) : report);
+    }
   }
   reports.sort((left, right) => left.score - right.score || left.path.localeCompare(right.path));
   current = {
@@ -101,7 +116,7 @@ async function inspectFiles(fileList, folderMode = false) {
     generatedAt: new Date().toISOString(),
     privacy: { uploaded: false, sourceModified: false },
     knownFiles: knownFiles ? knownFiles.length : null,
-    summary: summarize(reports),
+    summary: summarizeNoteReports(reports),
     reports,
     sources,
   };
@@ -114,7 +129,7 @@ async function inspectFiles(fileList, folderMode = false) {
 function renderSummary(bundle) {
   elements.summary.replaceChildren();
   const cards = [
-    [bundle.summary.score, "/100", { en: "average health", zhCN: "平均健康度" }],
+    [bundle.summary.score, "/100", { en: "folder readiness · lowest file", zhCN: "文件夹就绪度 · 最低文件分" }],
     [bundle.summary.files, "", { en: "HTML files", zhCN: "HTML 文件" }],
     [bundle.summary.counts.error, "", { en: "errors", zhCN: "错误" }],
     [bundle.summary.counts.warning, "", { en: "warnings", zhCN: "警告" }],
@@ -127,6 +142,15 @@ function renderSummary(bundle) {
     article.append(strong, create("small", "", translate(label)));
     elements.summary.append(article);
   }
+}
+
+function renderDecision(bundle) {
+  const decision = noteDecision(bundle.summary.status);
+  elements.decision.dataset.tone = decision.tone;
+  elements.decision.replaceChildren();
+  const heading = create("div");
+  heading.append(create("small", "", translate(decision.label)), create("strong", "", translate(decision.title)));
+  elements.decision.append(heading, create("p", "", translate(decision.detail)));
 }
 
 function renderFinding(report, finding) {
@@ -193,6 +217,7 @@ function renderFile(report, bundle) {
 }
 
 function render(bundle) {
+  renderDecision(bundle);
   renderSummary(bundle);
   elements.files.replaceChildren(...bundle.reports.map((report) => renderFile(report, bundle)));
   applyFilter(bundle.summary.counts.error ? "error" : bundle.summary.counts.warning ? "warning" : "all");
@@ -207,6 +232,7 @@ function reset() {
   current = null;
   elements.results.hidden = true;
   elements.summary.replaceChildren();
+  elements.decision.replaceChildren();
   elements.files.replaceChildren();
   elements.filePicker.value = "";
   elements.folderPicker.value = "";
@@ -222,6 +248,11 @@ for (const event of ["dragleave", "drop"]) elements.dropZone.addEventListener(ev
 elements.dropZone.addEventListener("drop", (event) => inspectFiles(event.dataTransfer.files, false));
 elements.reset.addEventListener("click", reset);
 elements.copyAll.addEventListener("click", () => current && copy(current.reports.map((report) => buildRepairTask(report, language)).join("\n\n---\n\n")));
+elements.downloadReport.addEventListener("click", () => {
+  if (!current) return;
+  download(`realitycheck-note-report-${new Date().toISOString().slice(0, 10)}.html`, buildPortableNoteReport(current, { buildRepairTask, noteDecision }), "text/html;charset=utf-8");
+  notify("Portable bilingual report downloaded.", "中英双语可携带报告已下载。");
+});
 elements.downloadJson.addEventListener("click", () => {
   if (!current) return;
   const safe = { ...current, sources: undefined };

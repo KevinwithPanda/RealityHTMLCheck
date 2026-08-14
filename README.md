@@ -36,7 +36,7 @@ AI agents and export tools increasingly produce research notes, tutorials, repor
 - scripts and remote dependencies make a supposedly local note execute code or contact a server;
 - fixed-width layouts, long strings, missing viewport metadata, or weak structure make the note hard to read and reuse.
 
-RealityCheck checks the **whole note folder**, not just one HTML string. Its 30 deterministic rules cover integrity, structure, navigation, attachments, portability, readability, accessibility markup, unsafe behavior, and unfinished AI placeholders.
+RealityCheck checks the **whole note folder**, not just one HTML string. Its 30 deterministic HTML rules cover integrity, structure, navigation, attachments, portability, readability, accessibility markup, unsafe behavior, and unfinished AI placeholders. Package-level analysis additionally follows reachable external CSS imports and assets, checks CSS path case, and verifies cross-note fragments.
 
 ### 2. Cross-platform Web failures hidden by the happy path
 
@@ -124,7 +124,7 @@ Use $realitycheck to audit this app. Do not modify source.
 
 ### No-install HTML note check
 
-Open the [online checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html), select one `.html` file or the entire note folder, and inspect the result locally. The selected content is not uploaded and note scripts are not executed.
+Open the [online checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html), select one `.html` file or the entire note folder, and inspect the result locally. The selected content is not uploaded and note scripts are not executed. The result leads with **Do not share yet / Review before sharing / No blockers found**, uses the lowest file score so one broken note cannot disappear inside a folder average, and can download a self-contained bilingual HTML report.
 
 The **Download safe repaired copy** button is deliberately narrow. It creates a new file and can only:
 

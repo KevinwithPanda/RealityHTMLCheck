@@ -30,9 +30,17 @@ function decodePath(value) {
 
 function resolveReference(documentPath, reference) {
   const clean = decodePath(withoutQueryOrHash(reference)).replaceAll("\\", "/");
-  if (clean.startsWith("/")) return normalizePath(clean.slice(1));
+  if (clean.startsWith("/")) return null;
   const directory = normalizePath(documentPath).split("/").slice(0, -1).join("/");
-  return normalizePath(`${directory}/${clean}`);
+  const output = [];
+  for (const part of `${directory}/${clean}`.split("/")) {
+    if (!part || part === ".") continue;
+    if (part === "..") {
+      if (!output.length) return null;
+      output.pop();
+    } else output.push(part);
+  }
+  return output.join("/");
 }
 
 function lineAt(source, index) {
@@ -70,9 +78,17 @@ function visibleText(value) {
 function scanTags(source) {
   const tags = [];
   let cursor = 0;
+  let rawTextTag = null;
   while (cursor < source.length) {
     const start = source.indexOf("<", cursor);
     if (start < 0) break;
+    if (rawTextTag) {
+      const closingPattern = new RegExp(`^<\\s*\\/\\s*${rawTextTag}\\b`, "i");
+      if (!closingPattern.test(source.slice(start))) {
+        cursor = start + 1;
+        continue;
+      }
+    }
     if (source.startsWith("<!--", start)) {
       const end = source.indexOf("-->", start + 4);
       cursor = end < 0 ? source.length : end + 3;
@@ -91,14 +107,17 @@ function scanTags(source) {
     const raw = source.slice(start, end + 1);
     const match = raw.match(/^<\s*(\/)?\s*([a-z][\w:-]*)\b([\s\S]*?)\/?\s*>$/i);
     if (match) {
-      tags.push({
+      const tag = {
         name: match[2].toLowerCase(),
         closing: Boolean(match[1]),
         raw,
         attributes: match[1] ? {} : parseAttributes(match[3]),
         index: start,
         line: lineAt(source, start),
-      });
+      };
+      tags.push(tag);
+      if (tag.closing && tag.name === rawTextTag) rawTextTag = null;
+      else if (!tag.closing && new Set(["script", "style", "textarea", "title"]).has(tag.name)) rawTextTag = tag.name;
     }
     cursor = end + 1;
   }
@@ -167,11 +186,18 @@ function collectReferences(tags, source, path) {
       }
     }
   }
-  const cssPattern = /url\(\s*(['"]?)(.*?)\1\s*\)/gi;
-  let cssMatch;
-  while ((cssMatch = cssPattern.exec(source))) {
-    const value = cssMatch[2].trim();
-    if (value) references.push({ tag: "style", attribute: "url", value, line: lineAt(source, cssMatch.index), raw: cssMatch[0], kind: "asset" });
+  const styleSources = [];
+  const styleBlockPattern = /<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi;
+  let styleMatch;
+  while ((styleMatch = styleBlockPattern.exec(source))) styleSources.push({ css: styleMatch[1], offset: styleMatch.index });
+  for (const tag of tags.filter((item) => !item.closing && item.attributes.style)) styleSources.push({ css: tag.attributes.style, offset: tag.index });
+  for (const style of styleSources) {
+    const cssPattern = /url\(\s*(['"]?)(.*?)\1\s*\)/gi;
+    let cssMatch;
+    while ((cssMatch = cssPattern.exec(style.css))) {
+      const value = cssMatch[2].trim();
+      if (value) references.push({ tag: "style", attribute: "url", value, line: lineAt(source, style.offset + cssMatch.index), raw: cssMatch[0], kind: "asset" });
+    }
   }
   return references.map((item) => ({ ...item, path }));
 }
@@ -194,6 +220,31 @@ function getElementMatches(source, tagPattern) {
   let match;
   while ((match = expression.exec(source))) matches.push({ name: match[1].toLowerCase(), text: visibleText(match[2]), raw: match[0], line: lineAt(source, match.index) });
   return matches;
+}
+
+function removeMinWidthMediaQueries(css) {
+  let output = "";
+  let cursor = 0;
+  const pattern = /@media\s*\([^)]*\bmin-width\s*:[^)]*\)\s*\{/gi;
+  let match;
+  while ((match = pattern.exec(css))) {
+    output += css.slice(cursor, match.index);
+    let depth = 1;
+    let index = pattern.lastIndex;
+    let quote = null;
+    for (; index < css.length && depth; index += 1) {
+      const character = css[index];
+      if (quote) {
+        if (character === quote && css[index - 1] !== "\\") quote = null;
+      } else if (character === '"' || character === "'") quote = character;
+      else if (character === "{") depth += 1;
+      else if (character === "}") depth -= 1;
+    }
+    output += " ".repeat(index - match.index);
+    cursor = index;
+    pattern.lastIndex = index;
+  }
+  return output + css.slice(cursor);
 }
 
 export function analyzeHtmlNote({ path = "note.html", html, knownFiles = null }) {
@@ -220,7 +271,7 @@ export function analyzeHtmlNote({ path = "note.html", html, knownFiles = null })
     title: ["The document has no HTML5 doctype", "文档缺少 HTML5 doctype"],
     summary: ["Without a doctype, browsers may render the note in compatibility mode with inconsistent layout rules.", "缺少 doctype 时，浏览器可能进入兼容模式，造成布局规则不一致。"],
     remediation: ["Add <!doctype html> as the first line.", "在第一行添加 <!doctype html>。"],
-    occurrences: /^\s*<!doctype\s+html\b/i.test(html) ? [] : [evidence(documentPath, 1, html.slice(0, 80))], safeFix: true,
+    occurrences: /^\s*<!doctype\s+html\b/i.test(html) ? [] : [evidence(documentPath, 1, html.slice(0, 80))], safeFix: !html.includes("�"),
   });
   const htmlTag = openTags.find((tag) => tag.name === "html");
   add({
@@ -228,7 +279,7 @@ export function analyzeHtmlNote({ path = "note.html", html, knownFiles = null })
     title: ["The note language is not declared", "笔记没有声明语言"],
     summary: ["Screen readers, translation tools, and search engines cannot reliably choose pronunciation and language rules.", "屏幕阅读器、翻译工具和搜索引擎无法可靠选择发音与语言规则。"],
     remediation: ["Add a valid lang attribute to the html element, such as lang=\"zh-CN\" or lang=\"en\".", "在 html 元素上添加有效的 lang，例如 lang=\"zh-CN\" 或 lang=\"en\"。"],
-    occurrences: htmlTag && htmlTag.attributes.lang?.trim() ? [] : [evidence(documentPath, htmlTag?.line ?? 1, htmlTag?.raw ?? "<html>")], safeFix: Boolean(htmlTag),
+    occurrences: htmlTag && htmlTag.attributes.lang?.trim() ? [] : [evidence(documentPath, htmlTag?.line ?? 1, htmlTag?.raw ?? "<html>")], safeFix: Boolean(htmlTag) && !html.includes("�"),
   });
   const charsetTag = openTags.find((tag) => tag.name === "meta" && (tag.attributes.charset || String(tag.attributes["http-equiv"] || "").toLowerCase() === "content-type"));
   const headTag = openTags.find((tag) => tag.name === "head");
@@ -237,7 +288,7 @@ export function analyzeHtmlNote({ path = "note.html", html, knownFiles = null })
     title: ["The character encoding is not declared", "没有声明字符编码"],
     summary: ["A shared or reopened note can decode Chinese, symbols, and emoji incorrectly when UTF-8 is not declared early.", "共享或重新打开笔记时，如果没有尽早声明 UTF-8，中文、符号和 emoji 可能被错误解码。"],
     remediation: ["Add <meta charset=\"utf-8\"> near the start of head.", "在 head 开头附近添加 <meta charset=\"utf-8\">。"],
-    occurrences: charsetTag ? [] : [evidence(documentPath, headTag?.line ?? 1, headTag?.raw ?? "<head>")], safeFix: Boolean(headTag),
+    occurrences: charsetTag ? [] : [evidence(documentPath, headTag?.line ?? 1, headTag?.raw ?? "<head>")], safeFix: Boolean(headTag) && !html.includes("�"),
   });
   if (charsetTag && charsetTag.index > 1024) add({
     ruleId: "late-charset", level: "warning", category: "integrity",
@@ -393,13 +444,25 @@ export function analyzeHtmlNote({ path = "note.html", html, knownFiles = null })
   if (known) {
     const missing = [];
     const caseMismatch = [];
+    const unsafePaths = [];
     for (const item of localCandidates) {
       const resolved = resolveReference(documentPath, item.value);
-      if (!resolved || resolved.endsWith("/")) continue;
+      if (!resolved) {
+        unsafePaths.push(evidence(documentPath, item.line, item.raw));
+        continue;
+      }
+      if (resolved.endsWith("/")) continue;
       if (known.has(resolved)) continue;
       if (knownLower.has(resolved.toLowerCase())) caseMismatch.push(evidence(documentPath, item.line, `${item.value} → ${knownLower.get(resolved.toLowerCase())}`));
       else missing.push(evidence(documentPath, item.line, item.raw));
     }
+    add({
+      ruleId: "unsafe-package-path", level: "error", category: "portability",
+      title: ["A reference escapes the selected note folder", "引用越过了所选笔记文件夹"],
+      summary: ["Root-relative or parent traversal paths can point outside the shared note package and behave differently after moving it.", "根相对路径或越级父目录路径可能指向共享笔记包之外，移动后行为也会变化。"],
+      remediation: ["Copy the dependency inside the selected note folder and use an exact relative path that stays within it.", "把依赖复制到所选笔记文件夹内，并使用不会越界且大小写准确的相对路径。"],
+      occurrences: unsafePaths,
+    });
     add({
       ruleId: "missing-local-file", level: "error", category: "portability",
       title: ["A referenced local file is missing", "引用的本地文件不存在"],
@@ -416,7 +479,7 @@ export function analyzeHtmlNote({ path = "note.html", html, knownFiles = null })
     });
   } else if (localCandidates.length) {
     add({
-      ruleId: "local-files-not-verified", level: "advice", category: "portability",
+    ruleId: "local-files-not-verified", level: "warning", category: "portability",
       title: ["Local attachments were not verified", "本地附件尚未核验"],
       summary: ["Only one HTML file was selected, so the browser cannot confirm whether sibling images and attachments exist.", "目前只选择了一个 HTML 文件，因此浏览器无法确认同目录图片和附件是否存在。"],
       remediation: ["Choose the whole note folder to verify every local dependency without uploading it.", "选择整个笔记文件夹，即可在不上传的情况下核验所有本地依赖。"],
@@ -482,13 +545,19 @@ export function analyzeHtmlNote({ path = "note.html", html, knownFiles = null })
     remediation: ["Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">.", "添加 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">。"],
     occurrences: viewport ? [] : [evidence(documentPath, headTag?.line ?? 1, headTag?.raw ?? "<head>")],
   });
-  const wideMinimums = [...html.matchAll(/min-width\s*:\s*(\d+(?:\.\d+)?)px/gi)].filter((match) => Number(match[1]) > 480);
+  const cssForLayout = [
+    ...[...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi)].map((match) => ({ css: match[1], offset: match.index })),
+    ...openTags.filter((tag) => tag.attributes.style).map((tag) => ({ css: tag.attributes.style, offset: tag.index })),
+  ];
+  const wideMinimums = cssForLayout.flatMap(({ css, offset }) => [...removeMinWidthMediaQueries(css).matchAll(/min-width\s*:\s*(\d+(?:\.\d+)?)px/gi)]
+    .filter((match) => Number(match[1]) > 480)
+    .map((match) => ({ ...match, absoluteIndex: offset + match.index })));
   add({
     ruleId: "wide-fixed-layout", level: "warning", category: "readability",
     title: ["A fixed minimum width can force horizontal scrolling", "固定最小宽度可能强制横向滚动"],
     summary: ["A container wider than a typical phone viewport makes long notes difficult to read on mobile devices.", "容器宽于常见手机视口时，长笔记在移动端会难以阅读。"],
     remediation: ["Use max-width with a fluid width, and allow tables and code blocks to scroll independently.", "使用 max-width 配合流式宽度，并让表格、代码块单独滚动。"],
-    occurrences: wideMinimums.map((match) => evidence(documentPath, lineAt(html, match.index), match[0])),
+    occurrences: wideMinimums.map((match) => evidence(documentPath, lineAt(html, match.absoluteIndex), match[0])),
   });
   const longTokens = [...visibleText(html).matchAll(/\S{100,}/g)];
   add({
@@ -553,6 +622,9 @@ export function analyzeHtmlNote({ path = "note.html", html, knownFiles = null })
 
 export function applySafeNoteFixes(html) {
   if (typeof html !== "string") throw new TypeError("html must be a string");
+  // A replacement character means the original bytes may already have been
+  // decoded incorrectly. Re-encoding that text would make the damage durable.
+  if (html.includes("�")) return { html, changes: [] };
   let output = html;
   const changes = [];
   if (!/^\s*<!doctype\s+html\b/i.test(output)) {
@@ -560,8 +632,10 @@ export function applySafeNoteFixes(html) {
     changes.push("missing-doctype");
   }
   const text = visibleText(output);
-  const cjkCount = text.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu)?.length ?? 0;
-  const language = cjkCount >= Math.max(4, text.length * 0.08) ? "zh-CN" : "en";
+  const han = text.match(/\p{Script=Han}/gu)?.length ?? 0;
+  const kana = text.match(/[\p{Script=Hiragana}\p{Script=Katakana}]/gu)?.length ?? 0;
+  const hangul = text.match(/\p{Script=Hangul}/gu)?.length ?? 0;
+  const language = kana >= 3 ? "ja" : hangul >= 3 ? "ko" : han >= Math.max(4, text.length * 0.08) ? "zh-CN" : "en";
   output = output.replace(/<html\b([^>]*)>/i, (match, attributes) => {
     if (/\blang\s*=/i.test(attributes)) return match;
     changes.push("missing-document-language");

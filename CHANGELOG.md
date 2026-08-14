@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- HTML note folders now use the lowest file score, lead with a conservative sharing decision, and can export a self-contained bilingual report from the zero-upload browser checker.
+- Folder checks follow reachable external CSS imports and assets, verify cross-note fragments, reject package-root escapes, disclose unreadable large stylesheets, and avoid treating CSS comments or code examples as dependencies.
+- The installed Codex Skill now invokes the dependency-free note entry directly, with an isolated installed-Skill smoke test proving the workflow does not depend on repository `node_modules`.
+- Safe-copy repair no longer preserves replacement-character corruption, and language inference distinguishes Chinese, Japanese, and Korean scripts.
+
 All notable changes are documented here. This project follows Semantic Versioning.
 
 ## [Unreleased]

@@ -6,6 +6,8 @@ import { basename, dirname, extname, join, relative, resolve, sep } from "node:p
 import { fileURLToPath } from "node:url";
 
 import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "./note-analyzer.mjs";
+import { analyzeNotePackage, mergePackageFindings } from "./note-package.mjs";
+import { summarizeNoteReports } from "./note-summary.mjs";
 
 const HTML_EXTENSIONS = new Set([".htm", ".html"]);
 const IGNORED_DIRECTORIES = new Set([".git", ".realitycheck", "node_modules"]);
@@ -107,21 +109,6 @@ function localized(value, language) {
   return language === "zh-CN" ? value.zhCN : value.en;
 }
 
-function summaryCounts(reports) {
-  const counts = { error: 0, warning: 0, advice: 0, autoFixable: 0 };
-  for (const report of reports) for (const key of Object.keys(counts)) counts[key] += report.counts[key];
-  return counts;
-}
-
-function overallScore(reports) {
-  if (!reports.length) return 0;
-  return Math.round(reports.reduce((sum, report) => sum + report.score, 0) / reports.length);
-}
-
-function reportStatus(counts) {
-  return counts.error ? "needs-fix" : counts.warning ? "review" : "ready";
-}
-
 function renderHtml(bundle) {
   const { reports, summary } = bundle;
   const allTaskZh = reports.map((report) => buildRepairTask(report, "zh-CN")).join("\n\n---\n\n");
@@ -152,7 +139,7 @@ function renderHtml(bundle) {
 </style></head><body>
 <header class="top"><div class="wrap"><b>RealityCheck Note</b><span data-en="Local HTML note health check" data-zh-cn="本地 HTML 笔记体检">Local HTML note health check</span><div class="language" role="group" aria-label="Language"><button type="button" data-language="en" aria-pressed="true">EN</button><button type="button" data-language="zh-CN" aria-pressed="false">中文</button></div></div></header>
 <main class="wrap"><section class="hero"><p class="eyebrow" data-en="CHECK COMPLETE" data-zh-cn="检查完成">CHECK COMPLETE</p><h1 data-en="Results and next steps" data-zh-cn="结果与下一步">Results and next steps</h1><p data-en="Start with errors. Each item explains the impact, the recommended change, and the source evidence." data-zh-cn="先处理错误。每一项都说明影响、建议修改方法和源文件证据。">Start with errors. Each item explains the impact, the recommended change, and the source evidence.</p></section>
-<section class="summary"><div><strong>${summary.score}<small>/100</small></strong><span data-en="average note health" data-zh-cn="平均笔记健康度">average note health</span></div><div><strong>${summary.files}</strong><span data-en="HTML files" data-zh-cn="HTML 文件">HTML files</span></div><div><strong>${summary.counts.error}</strong><span data-en="errors" data-zh-cn="错误">errors</span></div><div><strong>${summary.counts.warning}</strong><span data-en="warnings" data-zh-cn="警告">warnings</span></div><div><strong>${summary.counts.autoFixable}</strong><span data-en="safe copy fixes" data-zh-cn="安全副本修复">safe copy fixes</span></div></section>
+<section class="summary"><div><strong>${summary.score}<small>/100</small></strong><span data-en="folder readiness · lowest file" data-zh-cn="文件夹就绪度 · 最低文件分">folder readiness · lowest file</span></div><div><strong>${summary.files}</strong><span data-en="HTML files" data-zh-cn="HTML 文件">HTML files</span></div><div><strong>${summary.counts.error}</strong><span data-en="errors" data-zh-cn="错误">errors</span></div><div><strong>${summary.counts.warning}</strong><span data-en="warnings" data-zh-cn="警告">warnings</span></div><div><strong>${summary.counts.autoFixable}</strong><span data-en="safe copy fixes" data-zh-cn="安全副本修复">safe copy fixes</span></div></section>
 <p class="next-step" data-en="Safe fixes create new copies; the checked source files are never overwritten." data-zh-cn="安全修复只生成新副本，绝不会覆盖已检查的源文件。">Safe fixes create new copies; the checked source files are never overwritten.</p>
 <div class="actions"><button type="button" id="copy-all" data-task-en="${escapeHtml(allTaskEn)}" data-task-zh-cn="${escapeHtml(allTaskZh)}" data-en="Copy repair task for AI" data-zh-cn="复制给 AI 的修复任务">Copy repair task for AI</button><a href="report.json" download data-en="Download evidence" data-zh-cn="下载检查证据">Download evidence</a><a href="repair-plan.zh-CN.md" download data-en="Download repair plan" data-zh-cn="下载修复计划">Download repair plan</a></div>
 <div class="filters" role="group" aria-label="Finding filters"><button type="button" data-filter="all" aria-pressed="true" data-en="All findings" data-zh-cn="全部问题">All findings</button><button type="button" data-filter="error" aria-pressed="false" data-en="Errors" data-zh-cn="错误">Errors</button><button type="button" data-filter="warning" aria-pressed="false" data-en="Warnings" data-zh-cn="警告">Warnings</button><button type="button" data-filter="advice" aria-pressed="false" data-en="Advice" data-zh-cn="建议">Advice</button></div>
@@ -220,14 +207,25 @@ export async function runNoteCommand(argv) {
   const htmlFiles = inputStat.isFile() ? [input] : discovered.htmlFiles;
   if (!htmlFiles.length) throw new Error("No .html or .htm notes were found");
   const knownFiles = discovered.truncated ? null : discovered.allFiles.map((path) => portablePath(relative(root, path)));
-  const reports = htmlFiles.map((path) => analyzeHtmlNote({
+  let reports = htmlFiles.map((path) => analyzeHtmlNote({
     path: portablePath(relative(root, path)) || basename(path),
     html: readFileSync(path, "utf8"),
     knownFiles,
   }));
+  if (knownFiles) {
+    const packageEntries = [
+      ...htmlFiles.map((path) => ({ path: portablePath(relative(root, path)) || basename(path), text: readFileSync(path, "utf8"), kind: "html" })),
+      ...discovered.allFiles.filter((path) => extname(path).toLowerCase() === ".css").map((path) => ({ path: portablePath(relative(root, path)), text: lstatSync(path).size <= 5 * 1024 * 1024 ? readFileSync(path, "utf8") : null, kind: "css" })),
+    ];
+    const packageFindings = analyzeNotePackage({ entries: packageEntries, knownFiles });
+    if (packageFindings.length) {
+      const primaryPath = reports[0].path;
+      reports = reports.map((report) => report.path === primaryPath ? mergePackageFindings(report, packageFindings) : report);
+    }
+  }
   reports.sort((left, right) => LEVEL_ORDER[left.findings[0]?.level ?? "advice"] - LEVEL_ORDER[right.findings[0]?.level ?? "advice"] || left.path.localeCompare(right.path));
-  const counts = summaryCounts(reports);
-  const summary = { files: reports.length, score: overallScore(reports), status: reportStatus(counts), counts };
+  const summary = summarizeNoteReports(reports);
+  const { counts } = summary;
   const fingerprint = createHash("sha256").update(`${input}\0${reports.map((report) => report.path).join("\0")}`).digest("hex").slice(0, 8);
   const runId = `${timestamp()}-${fingerprint}`;
   const outputRoot = resolve(options.output);
@@ -307,7 +305,9 @@ export async function runNoteCommand(argv) {
 
 const direct = process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
 if (direct) {
-  runNoteCommand(process.argv.slice(2)).then((code) => { process.exitCode = code; }).catch((error) => {
+  const directArguments = process.argv.slice(2);
+  if (directArguments[0] === "note") directArguments.shift();
+  runNoteCommand(directArguments).then((code) => { process.exitCode = code; }).catch((error) => {
     console.error(`RealityCheck Note error: ${error.message}`);
     process.exitCode = 2;
   });

@@ -7,7 +7,7 @@ Use this workflow for local `.html`/`.htm` notes, AI-generated documents, export
 Prefer the whole folder when the note uses relative images, styles, attachments, or links:
 
 ```bash
-node <skill-dir>/scripts/audit.mjs note <file-or-directory>
+node <skill-dir>/scripts/note-check.mjs <file-or-directory>
 ```
 
 The command writes a timestamped self-contained `report.html`, `report.json`, English and Chinese repair plans, plus `latest.html` and `latest.json` under `.realitycheck/notes` by default. It does not need a server, configuration, Python, or browser executable. It parses source text without loading the note, so note scripts and remote assets are not executed or requested.
@@ -32,13 +32,13 @@ Explain that the score summarizes enabled deterministic rules; it does not prove
 Run `--fix-safe` only after the user requests modification:
 
 ```bash
-node <skill-dir>/scripts/audit.mjs note <file-or-directory> --fix-safe
+node <skill-dir>/scripts/note-check.mjs <file-or-directory> --fix-safe
 ```
 
 This writes new copies below the evidence run and leaves the source byte-for-byte unchanged. Automatic changes are limited to:
 
 1. add `<!doctype html>` when absent;
-2. add `lang="zh-CN"` or `lang="en"` to an existing `html` element using a conservative text heuristic;
+2. add an inferred `lang` (`zh-CN`, `ja`, `ko`, or `en`) to an existing `html` element using a conservative script heuristic;
 3. add `<meta charset="utf-8">` to an existing `head`.
 
 Do not automatically invent titles, heading levels, alternative text, missing resources, or replacement content. Do not remove scripts or remote dependencies without checking whether the user intended interactive behavior. Use the report's copy-ready task for those fixes, inspect the source, make a bounded change after authorization, and rerun the same note check.
@@ -47,7 +47,7 @@ Do not automatically invent titles, heading levels, alternative text, missing re
 
 When the user invokes the Skill with an explicit request to check and repair a bounded note or folder, perform the handoff inside the same Codex task. The user does not need to copy the report prompt back into Codex.
 
-1. Run `node <skill-dir>/scripts/audit.mjs note <file-or-directory> --prepare-repair`. Preserve the initial run as before evidence.
+1. Run `node <skill-dir>/scripts/note-check.mjs <file-or-directory> --prepare-repair`. Preserve the initial run as before evidence.
 2. Use the emitted `repaired` folder, which preserves the bounded relative note-and-asset structure and applies safe metadata fixes. Treat the request as authorization to edit that copy, not the supplied source.
 3. Inspect each remaining finding and its source context, and make only high-confidence changes whose intended result can be established from the note folder.
 4. Rerun the same note command against the repaired folder and retain a separate after report.

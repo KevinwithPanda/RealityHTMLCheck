@@ -108,6 +108,64 @@ test("note CLI keeps the report when a requested quality threshold fails", () =>
   }
 });
 
+test("folder report uses the lowest file score so clean notes cannot hide a broken one", () => {
+  const root = mkdtempSync(join(tmpdir(), "realitycheck-note-lowest-"));
+  try {
+    const clean = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Clean note</title></head><body><h1>Clean note</h1><p>This complete portable note has enough useful text for a clean deterministic check.</p></body></html>';
+    for (let index = 0; index < 12; index += 1) writeFileSync(join(root, `clean-${index}.html`), clean, "utf8");
+    writeFileSync(join(root, "broken.html"), "<html><body><h1>TODO �</h1></body></html>", "utf8");
+    const output = join(root, "evidence");
+    const result = run([root, "--output", output, "--language", "en"]);
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    const latest = JSON.parse(readFileSync(join(output, "latest.json"), "utf8"));
+    const lowest = Math.min(...latest.reports.map((report) => report.score));
+    assert.equal(latest.summary.score, lowest);
+    assert.equal(latest.summary.scoreBasis, "lowest-file");
+    assert.equal(latest.summary.status, "needs-fix");
+    assert.match(readFileSync(join(output, "latest.html"), "utf8"), /folder readiness · lowest file/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("note CLI checks CSS dependency chains and cross-document fragments", () => {
+  const root = mkdtempSync(join(tmpdir(), "realitycheck-note-package-"));
+  try {
+    mkdirSync(join(root, "styles"));
+    const metadata = '<meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Package note</title>';
+    writeFileSync(join(root, "index.html"), `<!doctype html><html lang="en"><head>${metadata}<link rel="stylesheet" href="styles/main.css"></head><body><h1>Index</h1><p>This is a complete entry note with a linked section and local stylesheet.</p><a href="guide.html#missing">Guide section</a></body></html>`, "utf8");
+    writeFileSync(join(root, "guide.html"), `<!doctype html><html lang="en"><head>${metadata}</head><body><h1 id="present">Guide</h1><p>This destination note has enough readable content for the package check.</p></body></html>`, "utf8");
+    writeFileSync(join(root, "styles", "main.css"), '.hero{background:url("../images/missing.png")}', "utf8");
+    const output = join(root, "evidence");
+    const result = run([root, "--output", output, "--language", "en"]);
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    const latest = JSON.parse(readFileSync(join(output, "latest.json"), "utf8"));
+    const rules = new Set(latest.reports.flatMap((report) => report.findings.map((finding) => finding.ruleId)));
+    assert.equal(rules.has("css-missing-local-file"), true);
+    assert.equal(rules.has("broken-cross-document-fragment"), true);
+    assert.equal(latest.summary.status, "needs-fix");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("note CLI discloses a reachable stylesheet above its safe read limit", () => {
+  const root = mkdtempSync(join(tmpdir(), "realitycheck-note-large-css-"));
+  try {
+    const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Large style note</title><link rel="stylesheet" href="large.css"></head><body><h1>Large style note</h1><p>This note links a stylesheet whose contents cannot be safely inspected.</p></body></html>';
+    writeFileSync(join(root, "index.html"), html, "utf8");
+    writeFileSync(join(root, "large.css"), " ".repeat(5 * 1024 * 1024 + 1), "utf8");
+    const output = join(root, "evidence");
+    const result = run([root, "--output", output, "--language", "en"]);
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    const latest = JSON.parse(readFileSync(join(output, "latest.json"), "utf8"));
+    assert.equal(latest.summary.status, "review");
+    assert.equal(latest.reports.some((report) => report.findings.some((finding) => finding.ruleId === "package-content-not-verified")), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("note CLI help presents the zero-config boundary", () => {
   const result = run(["--help"]);
   assert.equal(result.status, 0, result.stderr);
