@@ -240,7 +240,8 @@ jobs:
           assert not any(item["ruleId"] == "broken-cross-document-fragment" for item in report["packageFindings"]), report
           summary = (root / "github-summary.md").read_text(encoding="utf-8")
           assert "HTML exclusions" in summary, summary
-          assert "remain in the package inventory" in summary, summary
+          assert "remain known package entries and cross-note targets" in summary, summary
+          assert "Matched path preview: `archive/old.html`" in summary, summary
           PY
 
       - name: Prove the browser-free effective audit plan

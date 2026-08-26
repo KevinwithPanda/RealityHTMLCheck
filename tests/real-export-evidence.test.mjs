@@ -58,6 +58,7 @@ test("frozen Pandoc inputs, outputs, commands, licenses, and fresh RealityCheck 
   assert.match(notice, /Copyright \(c\) 2014–2024, John MacFarlane/);
   assert.match(notice, /BSD 3-clause license/);
   const attributes = readFileSync(".gitattributes", "utf8");
+  assert.match(attributes, /\*\.css text eol=lf/);
   assert.match(attributes, /examples\/real-export-evidence\/\*\*\/generated\/\*\.html -text whitespace=cr-at-eol/);
 });
 

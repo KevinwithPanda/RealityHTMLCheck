@@ -18,7 +18,7 @@ test("HTML note Action adoption has a complete copy-ready workflow", () => {
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /permissions:\n  contents: read/);
   assert.match(workflow, /actions\/checkout@v7/);
-  assert.match(workflow, /KevinwithPanda\/RealityHTMLCheck@v0\.7\.0/);
+  assert.match(workflow, /KevinwithPanda\/RealityHTMLCheck@v0\.7\.1/);
   assert.match(workflow, /kind: note/);
   assert.match(workflow, /path: exported-notes/);
   assert.match(workflow, /artifact-name: realitycheck-html-notes/);
