@@ -2,9 +2,9 @@ function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 }
 
-function findingMarkup(report, finding, buildRepairTask) {
-  const taskEn = buildRepairTask({ ...report, findings: [finding] }, "en");
-  const taskZh = buildRepairTask({ ...report, findings: [finding] }, "zh-CN");
+function findingMarkup(finding, taskForFinding) {
+  const taskEn = taskForFinding(finding, "en");
+  const taskZh = taskForFinding(finding, "zh-CN");
   const evidence = finding.evidence.map((item) => `<li><code>${escapeHtml(item.path)}:${Number(item.line) || 1}</code><span>${escapeHtml(item.excerpt)}</span></li>`).join("");
   const levelZh = { error: "错误", warning: "警告", advice: "建议" }[finding.level] ?? "信息";
   return `<article class="finding" data-level="${escapeHtml(finding.level)}">
@@ -18,18 +18,29 @@ function findingMarkup(report, finding, buildRepairTask) {
 }
 
 /** Build a self-contained report from browser-only findings without sources. */
-export function buildPortableNoteReport(bundle, { buildRepairTask, noteDecision }) {
+export function buildPortableNoteReport(bundle, { buildRepairTask, buildPackageRepairTask, noteDecision }) {
   if (typeof buildRepairTask !== "function" || typeof noteDecision !== "function") throw new TypeError("report helpers are required");
-  const { summary, reports } = bundle;
+  const { summary, reports, packageFindings = [], packageSummary = null } = bundle;
+  if (packageFindings.length && typeof buildPackageRepairTask !== "function") throw new TypeError("package repair helper is required when package findings exist");
   const decision = noteDecision(summary.status);
-  const allTaskEn = reports.map((report) => buildRepairTask(report, "en")).join("\n\n---\n\n");
-  const allTaskZh = reports.map((report) => buildRepairTask(report, "zh-CN")).join("\n\n---\n\n");
+  const repairTasks = (language) => [
+    ...reports.map((report) => buildRepairTask(report, language)),
+    ...(packageFindings.length ? [buildPackageRepairTask(packageFindings, language)] : []),
+  ].join("\n\n---\n\n");
+  const allTaskEn = repairTasks("en");
+  const allTaskZh = repairTasks("zh-CN");
   const generatedAt = new Date(bundle.generatedAt);
   const safeGeneratedAt = Number.isNaN(generatedAt.getTime()) ? "" : generatedAt.toISOString();
   const fileCards = reports.map((report) => `<section class="file-card">
     <header><div><p>${escapeHtml(report.path)}</p><h2>${report.score}<small>/100</small></h2></div><div class="file-metrics"><span>${report.counts.error}<i data-en="errors" data-zh-cn="错误">errors</i></span><span>${report.counts.warning}<i data-en="warnings" data-zh-cn="警告">warnings</i></span><span>${report.metrics.words}<i data-en="words/characters" data-zh-cn="词/字">words/characters</i></span></div></header>
-    <div class="findings">${report.findings.map((finding) => findingMarkup(report, finding, buildRepairTask)).join("") || '<p class="clean" data-en="No problems found by the enabled rules." data-zh-cn="启用的规则没有发现问题。">No problems found by the enabled rules.</p>'}</div>
+    <div class="findings">${report.findings.map((finding) => findingMarkup(finding, (item, language) => buildRepairTask({ ...report, findings: [item] }, language))).join("") || '<p class="clean" data-en="No problems found by the enabled rules." data-zh-cn="启用的规则没有发现问题。">No problems found by the enabled rules.</p>'}</div>
   </section>`).join("");
+  const packageCard = packageFindings.length ? `<section class="file-card package-card">
+    <header><div><p data-en="FILE PACKAGE DEPENDENCIES" data-zh-cn="文件包依赖">FILE PACKAGE DEPENDENCIES</p><h2 data-en="PACKAGE" data-zh-cn="文件包">PACKAGE</h2></div><div class="file-metrics"><span>${packageSummary?.counts?.error ?? 0}<i data-en="errors" data-zh-cn="错误">errors</i></span><span>${packageSummary?.counts?.warning ?? 0}<i data-en="warnings" data-zh-cn="警告">warnings</i></span><span>${packageSummary?.affected ?? 0}<i data-en="affected references" data-zh-cn="受影响引用">affected references</i></span></div></header>
+    <div class="findings">${packageFindings.map((finding) => findingMarkup(finding, (item, language) => buildPackageRepairTask([item], language))).join("")}</div>
+  </section>` : "";
+  const readinessLabelEn = packageFindings.length ? "folder readiness · lowest HTML file adjusted by package findings" : "folder readiness · lowest file";
+  const readinessLabelZh = packageFindings.length ? "文件夹就绪度 · 最低 HTML 分并计入文件包问题" : "文件夹就绪度 · 最低文件分";
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>RealityCheck HTML Note Report</title>
 <style>
@@ -38,10 +49,10 @@ export function buildPortableNoteReport(bundle, { buildRepairTask, noteDecision 
 <header class="top"><div class="wrap"><b>RealityCheck Note</b><span data-en="Portable local inspection report" data-zh-cn="可携带的本地检查报告">Portable local inspection report</span><div class="language" role="group" aria-label="Language"><button type="button" data-language="en" aria-pressed="true">EN</button><button type="button" data-language="zh-CN" aria-pressed="false">中文</button></div></div></header>
 <main class="wrap"><section class="hero"><p class="eyebrow" data-en="HTML NOTE CHECK" data-zh-cn="HTML 笔记检查">HTML NOTE CHECK</p><h1 data-en="Sharing readiness report" data-zh-cn="分享就绪度报告">Sharing readiness report</h1><p data-en="A decision-oriented snapshot you can keep, print, or send with the note." data-zh-cn="一份可保存、打印或随笔记发送的决策型结果。">A decision-oriented snapshot you can keep, print, or send with the note.</p></section>
 <section class="decision" data-tone="${decision.tone}"><div><span class="eyebrow" data-en="${decision.label.en}" data-zh-cn="${decision.label.zhCN}">${decision.label.en}</span><h2 data-en="${decision.title.en}" data-zh-cn="${decision.title.zhCN}">${decision.title.en}</h2></div><p data-en="${decision.detail.en}" data-zh-cn="${decision.detail.zhCN}">${decision.detail.en}</p></section>
-<section class="summary"><div><strong>${summary.score}<small>/100</small></strong><span data-en="folder readiness · lowest file" data-zh-cn="文件夹就绪度 · 最低文件分">folder readiness · lowest file</span></div><div><strong>${summary.files}</strong><span data-en="HTML files" data-zh-cn="HTML 文件">HTML files</span></div><div><strong>${summary.counts.error}</strong><span data-en="errors" data-zh-cn="错误">errors</span></div><div><strong>${summary.counts.warning}</strong><span data-en="warnings" data-zh-cn="警告">warnings</span></div><div><strong>${summary.counts.autoFixable}</strong><span data-en="safe copy fixes" data-zh-cn="安全副本修复">safe copy fixes</span></div></section>
+<section class="summary"><div><strong>${summary.score}<small>/100</small></strong><span data-en="${readinessLabelEn}" data-zh-cn="${readinessLabelZh}">${readinessLabelEn}</span></div><div><strong>${summary.files}</strong><span data-en="HTML files" data-zh-cn="HTML 文件">HTML files</span></div><div><strong>${summary.counts.error}</strong><span data-en="errors" data-zh-cn="错误">errors</span></div><div><strong>${summary.counts.warning}</strong><span data-en="warnings" data-zh-cn="警告">warnings</span></div><div><strong>${summary.counts.autoFixable}</strong><span data-en="safe copy fixes" data-zh-cn="安全副本修复">safe copy fixes</span></div></section>
 <div class="actions"><button type="button" id="copy-all" data-task-en="${escapeHtml(allTaskEn)}" data-task-zh-cn="${escapeHtml(allTaskZh)}" data-en="Copy repair task for AI" data-zh-cn="复制给 AI 的修复任务">Copy repair task for AI</button><button type="button" onclick="window.print()" data-en="Print / save as PDF" data-zh-cn="打印 / 另存为 PDF">Print / save as PDF</button></div>
 <div class="filters" role="group" aria-label="Finding filters"><button type="button" data-filter="all" aria-pressed="true" data-en="All findings" data-zh-cn="全部问题">All findings</button><button type="button" data-filter="error" aria-pressed="false" data-en="Errors" data-zh-cn="错误">Errors</button><button type="button" data-filter="warning" aria-pressed="false" data-en="Warnings" data-zh-cn="警告">Warnings</button><button type="button" data-filter="advice" aria-pressed="false" data-en="Advice" data-zh-cn="建议">Advice</button></div>
-${fileCards}<p class="boundary" data-en="Scope: deterministic inspection of selected HTML text and the selected folder inventory. This is not proof of factual accuracy, malware absence, standards conformance, or behavior in every browser. The report contains finding excerpts; review it before sharing publicly." data-zh-cn="范围：对所选 HTML 文本与所选文件夹清单进行确定性检查。本报告不证明事实准确、绝无恶意内容、符合全部标准或在所有浏览器中都正常。报告包含问题证据片段，公开分享前请先复核。">Scope: deterministic inspection of selected HTML text and the selected folder inventory. This is not proof of factual accuracy, malware absence, standards conformance, or behavior in every browser. The report contains finding excerpts; review it before sharing publicly.</p></main>
+${packageCard}${fileCards}<p class="boundary" data-en="Scope: deterministic inspection of selected HTML text and the selected folder inventory. This is not proof of factual accuracy, malware absence, standards conformance, or behavior in every browser. The report contains finding excerpts; review it before sharing publicly." data-zh-cn="范围：对所选 HTML 文本与所选文件夹清单进行确定性检查。本报告不证明事实准确、绝无恶意内容、符合全部标准或在所有浏览器中都正常。报告包含问题证据片段，公开分享前请先复核。">Scope: deterministic inspection of selected HTML text and the selected folder inventory. This is not proof of factual accuracy, malware absence, standards conformance, or behavior in every browser. The report contains finding excerpts; review it before sharing publicly.</p></main>
 <footer class="footer wrap"><span data-en="Generated locally; no note content was uploaded or modified." data-zh-cn="报告在本地生成；没有上传或修改笔记内容。">Generated locally; no note content was uploaded or modified.</span>${safeGeneratedAt ? ` · <time datetime="${safeGeneratedAt}">${safeGeneratedAt}</time>` : ""}</footer><div class="toast" role="status" aria-live="polite"></div>
 <script>
 const buttons=[...document.querySelectorAll('[data-language]')],items=[...document.querySelectorAll('[data-en][data-zh-cn]')],toast=document.querySelector('.toast');let language='en';function setLanguage(next){language=next;document.documentElement.lang=next;for(const item of items)item.textContent=next==='zh-CN'?item.dataset.zhCn:item.dataset.en;for(const button of buttons)button.setAttribute('aria-pressed',String(button.dataset.language===next))}function notify(en,zh){toast.textContent=language==='zh-CN'?zh:en;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1600)}async function copy(button){const task=language==='zh-CN'?button.dataset.taskZhCn:button.dataset.taskEn;try{await navigator.clipboard.writeText(task);notify('Repair task copied.','修复任务已复制。')}catch(_){notify('Copy was blocked.','浏览器阻止了复制。')}}function filter(level){for(const item of document.querySelectorAll('.finding'))item.hidden=level!=='all'&&item.dataset.level!==level;for(const item of document.querySelectorAll('[data-filter]'))item.setAttribute('aria-pressed',String(item.dataset.filter===level))}for(const button of buttons)button.addEventListener('click',()=>setLanguage(button.dataset.language));for(const button of document.querySelectorAll('.copy-task,#copy-all'))button.addEventListener('click',()=>copy(button));for(const button of document.querySelectorAll('[data-filter]'))button.addEventListener('click',()=>filter(button.dataset.filter));setLanguage((navigator.language||'').toLowerCase().startsWith('zh')?'zh-CN':'en');filter('${summary.counts.error ? "error" : summary.counts.warning ? "warning" : "all"}');

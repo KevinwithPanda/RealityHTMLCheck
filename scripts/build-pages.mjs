@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { verifyCompatibilityArtifacts } from "./note-compatibility-evidence.mjs";
+import { verifyRealExportEvidence } from "./real-export-evidence.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const output = join(root, "_site");
@@ -16,6 +17,8 @@ const copy = (source, destination) => {
 
 const compatibility = verifyCompatibilityArtifacts();
 if (!compatibility.ok) throw new Error(`Representative note compatibility evidence is stale: ${compatibility.problems.join("; ")}`);
+const realExport = verifyRealExportEvidence();
+if (!realExport.ok) throw new Error(`Real export evidence is invalid: ${realExport.problems.join("; ")}`);
 
 rmSync(output, { recursive: true, force: true });
 mkdirSync(output, { recursive: true });
@@ -28,6 +31,7 @@ copy("realitycheck/scripts/note-summary.mjs", "note-summary.mjs");
 copy("examples/public-evidence", "evidence");
 copy("examples/reference-run", "reference");
 copy("examples/note-compatibility", "evidence/note-compatibility");
+copy("examples/real-export-evidence", "evidence/real-export");
 copy("examples/journey-lab", "labs/journey");
 copy("examples/link-lab", "labs/links");
 copy("examples/network-lab", "labs/network");
@@ -39,6 +43,11 @@ copy("examples/accessibility-lab", "labs/accessibility");
 copy("examples/viewport-lab", "labs/viewport");
 copy("examples/policy-review-lab", "labs/policy-review");
 copy("examples/issue-drafts-lab", "labs/issue-drafts");
+// The committed release-decision artifact preserves the source-relative paths
+// used when it was generated. Publish matching aliases so those immutable
+// evidence links remain reviewable without rewriting the artifact.
+copy("examples/policy-review-lab", "labs/policy-review-lab");
+copy("examples/issue-drafts-lab", "labs/issue-drafts-lab");
 copy("examples/release-decision-lab", "labs/release-decision");
 copy("examples/audit-plan-lab", "labs/audit-plan");
 copy("examples/reference-run", "labs/reference-run");

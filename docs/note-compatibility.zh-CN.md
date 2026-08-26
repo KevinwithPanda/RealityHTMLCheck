@@ -15,6 +15,16 @@ RealityCheck 不把“支持某某工具”写成没有证据的口号。本仓�
 
 因此，目前可以严谨地说“这些代表性结构与故障已经被自动测试”，不能说“官方支持上述产品的所有版本”。本证据也不覆盖浏览器运行效果、笔记事实是否正确、第三方插件、主题全集或所有真实导出变体。
 
+## 与合成夹具分层的真实工具导出
+
+仓库另行保存了一个由本机 **Pandoc 3.8.2.1** 实际生成的 standalone HTML，而不是手写成 Pandoc 风格。最小 Markdown 源文档由本仓库编写，不含第三方用户内容或个人信息；清单记录了精确命令、源文件/输出文件 SHA-256、Pandoc 可执行文件 SHA-256、换行格式和第三方模板许可边界。
+
+该真实导出经过当前 RealityCheck 重新核查为 **100/100、0 错误、0 警告**，并已用同版 Pandoc 逐字节复现。它只证明这一条命令、这一版本和这一份输出，不构成 Pandoc 官方认证，也不代表所有参数、模板、平台或版本都兼容。证据位于 [`examples/real-export-evidence`](../examples/real-export-evidence/README.md)，可运行：
+
+```powershell
+node scripts/real-export-evidence.mjs --verify
+```
+
 ## 当前可复现结果
 
 | 代表性结构 | 夹具 | 实测判断 | 被证明的能力 |

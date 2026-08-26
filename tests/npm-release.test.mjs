@@ -13,6 +13,8 @@ test("npm package has a memorable npx entry and complete public metadata", () =>
   });
   assert.equal(packageJson.scripts.note, "node realitycheck/scripts/audit.mjs note");
   assert.equal(packageJson.scripts["package:smoke"], "node scripts/verify-packed-package.mjs");
+  assert.ok(packageJson.files.includes("docs/assets"));
+  assert.ok(packageJson.files.includes("docs/README.zh-CN.md"));
   assert.equal(packageJson.repository.type, "git");
   assert.equal(packageJson.repository.url, "git+https://github.com/KevinwithPanda/RealityHTMLCheck.git");
   assert.equal(packageJson.homepage, "https://kevinwithpanda.github.io/RealityHTMLCheck/");

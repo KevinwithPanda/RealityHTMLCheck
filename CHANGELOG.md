@@ -2,6 +2,19 @@
 
 All notable changes are documented here. This project follows Semantic Versioning.
 
+## [0.6.0] - 2026-08-27
+
+### Added
+
+- One byte-for-byte reproducible Pandoc 3.8.2.1 HTML export with exact command, source/output/tool hashes, privacy boundary, and third-party template notice, published separately from synthetic representative fixtures.
+- A deterministic, product-generated HTML note checker screenshot that shows the actual sharing decision, score, findings, and repair actions in the README.
+- HTML note baseline comparison with bilingual HTML/JSON evidence, five explicit change states, fail-closed scope checks, and regression-only CLI/Action gates that do not keep known persistent debt permanently red.
+
+### Fixed
+
+- Package-level CSS and cross-file dependency findings now have their own report scope, score deduction, repair tasks, and GitHub annotations instead of being attributed to the first HTML file.
+- Note evidence run directories now use millisecond timestamps plus atomic collision suffixes, so rapid or concurrent rechecks cannot overwrite immutable history.
+
 ## [0.5.0] - 2026-08-27
 
 ### Added

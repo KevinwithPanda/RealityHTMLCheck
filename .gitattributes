@@ -6,3 +6,4 @@
 *.svg text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+examples/real-export-evidence/**/generated/*.html -text whitespace=cr-at-eol

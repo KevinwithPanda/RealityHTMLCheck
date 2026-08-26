@@ -80,6 +80,8 @@ class SkillStructureTests(unittest.TestCase):
             "scripts/note-analyzer.mjs",
             "scripts/note-package.mjs",
             "scripts/note-summary.mjs",
+            "scripts/note-compare.mjs",
+            "scripts/note-comparison-report.mjs",
             "scripts/note-check.mjs",
             "scripts/note-github-summary.mjs",
             "scripts/action-paths.mjs",
@@ -196,19 +198,25 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn('output="${RC_OUTPUT_INPUT:-.realitycheck/notes}"', action)
         self.assertIn("note-report-path", action)
         self.assertIn("note-report-json-path", action)
+        self.assertIn("note-comparison-path", action)
+        self.assertIn("note-comparison-json-path", action)
         self.assertIn("HTML note gate failed", action)
         self.assertIn("steps.resolve.outputs.artifact-path", action)
         self.assertIn("if-no-files-found: error", action)
         self.assertNotIn('path: ${{ github.workspace }}/${{ inputs.working-directory }}', action)
         self.assertIn("normalized to operational error 2", action)
-        self.assertIn('rm -f -- "$RC_OUTPUT/latest.html" "$RC_OUTPUT/latest.json" "$RC_OUTPUT/github-summary.md"', action)
+        self.assertIn('rm -f -- "$RC_OUTPUT/report.json" "$RC_OUTPUT/repair-plan.md" "$RC_OUTPUT/repair-plan.zh-CN.md" "$RC_OUTPUT/latest.html" "$RC_OUTPUT/latest.json" "$RC_OUTPUT/comparison.html" "$RC_OUTPUT/comparison.json" "$RC_OUTPUT/github-summary.md"', action)
+        self.assertIn("steps.resolve.outputs.kind == 'web' || steps.note.outputs.exit-code == '0' || steps.note.outputs.exit-code == '1'", action)
+        self.assertIn('args+=(--baseline "$RC_BASELINE")', action)
         self.assertIn("steps.note.outputs.exit-code == '0' || steps.note.outputs.exit-code == '1'", action)
         self.assertLess(action.index("Upload RealityCheck evidence"), action.index("Enforce the RealityCheck result"))
 
         workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "validate.yml").read_text(encoding="utf-8")
         self.assertIn("Prove the HTML note Action gate and artifact handoff", workflow)
+        self.assertIn("Prove the HTML note baseline does not keep known debt red", workflow)
         self.assertIn("kind: note", workflow)
         self.assertIn("path: note-action-fixture", workflow)
+        self.assertIn("baseline: .realitycheck/ci-note-action/latest.json", workflow)
         self.assertIn('RC_ACTION_EXIT_CODE" = "1', workflow)
         self.assertIn('report["kind"] == "html-note-check-bundle"', workflow)
         self.assertIn("HTML note Action without repository dependencies", workflow)

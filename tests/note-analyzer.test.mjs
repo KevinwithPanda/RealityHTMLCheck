@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "../realitycheck/scripts/note-analyzer.mjs";
-import { analyzeNotePackage, mergePackageFindings } from "../realitycheck/scripts/note-package.mjs";
+import { analyzeNotePackage } from "../realitycheck/scripts/note-package.mjs";
+import { summarizeNoteReports, summarizePackageFindings } from "../realitycheck/scripts/note-summary.mjs";
 
 const healthyNote = `<!doctype html>
 <html lang="zh-CN">
@@ -107,6 +108,19 @@ test("path casing is portable only when the HTML and file agree exactly", () => 
   assert.equal(report.findings.some((finding) => finding.ruleId === "missing-local-file"), false);
 });
 
+test("ambiguous case-only HTML targets fail closed instead of selecting an arbitrary file", () => {
+  const report = analyzeHtmlNote({
+    path: "index.html",
+    html: healthyNote.replace("assets/chart.svg", "GUIDE.html"),
+    knownFiles: ["index.html", "Guide.html", "guide.html"],
+  });
+  const unsafe = report.findings.find((finding) => finding.ruleId === "unsafe-package-path");
+  assert.equal(unsafe?.level, "error");
+  assert.equal(unsafe?.affectedCount, 1);
+  assert.equal(report.findings.some((finding) => finding.ruleId === "path-case-mismatch"), false);
+  assert.equal(report.findings.some((finding) => finding.ruleId === "missing-local-file"), false);
+});
+
 test("HTML resource paths cannot escape the selected package or use a root shortcut", () => {
   for (const reference of ["../../private/x.png", "/assets/x.png"]) {
     const report = analyzeHtmlNote({
@@ -181,9 +195,12 @@ test("folder package check follows CSS resources and imported stylesheets", () =
   assert.equal(rules.has("css-path-case-mismatch"), true);
   assert.equal(rules.has("external-css-wide-fixed-layout"), true);
   const base = analyzeHtmlNote({ path: "index.html", html: '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Note</title></head><body><h1>Note</h1><p>This note has enough useful content for package-check scoring.</p></body></html>', knownFiles: ["index.html"] });
-  const merged = mergePackageFindings(base, findings);
-  assert.equal(merged.status, "needs-fix");
-  assert.ok(merged.score < base.score);
+  const packageSummary = summarizePackageFindings(findings);
+  const summary = summarizeNoteReports([base], packageSummary);
+  assert.equal(packageSummary.status, "needs-fix");
+  assert.equal(summary.status, "needs-fix");
+  assert.ok(summary.score < base.score);
+  assert.deepEqual(base.findings.some((finding) => finding.ruleId.startsWith("css-")), false);
 });
 
 test("folder package check verifies fragments in linked HTML notes", () => {
@@ -191,10 +208,54 @@ test("folder package check verifies fragments in linked HTML notes", () => {
     { path: "index.html", kind: "html", text: '<!doctype html><html><body><a href="guide.html#missing">Guide</a></body></html>' },
     { path: "guide.html", kind: "html", text: '<!doctype html><html><body><h1 id="present">Guide</h1></body></html>' },
   ];
+  const htmlReport = analyzeHtmlNote({ path: "index.html", html: entries[0].text, knownFiles: ["index.html", "guide.html"] });
+  assert.equal(htmlReport.findings.some((finding) => finding.ruleId === "broken-cross-document-fragment"), false);
   const broken = analyzeNotePackage({ entries, knownFiles: ["index.html", "guide.html"] });
-  assert.equal(broken.some((finding) => finding.ruleId === "broken-cross-document-fragment"), true);
+  assert.equal(broken.find((finding) => finding.ruleId === "broken-cross-document-fragment")?.affectedCount, 1);
   const fixed = analyzeNotePackage({ entries: entries.map((entry) => entry.path === "guide.html" ? { ...entry, text: entry.text.replace("present", "missing") } : entry), knownFiles: ["index.html", "guide.html"] });
   assert.equal(fixed.some((finding) => finding.ruleId === "broken-cross-document-fragment"), false);
+});
+
+test("HTML stylesheet entry paths are scored once while package traversal still follows a unique case match", () => {
+  const document = (href) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Portable note</title><link rel="stylesheet" href="${href}"></head><body><h1>Portable note</h1><p>This complete note isolates ownership of its stylesheet entry path.</p></body></html>`;
+  const cases = [
+    {
+      href: "../outside.css",
+      knownFiles: ["index.html", "outside.css"],
+      entries: [{ path: "index.html", kind: "html", text: document("../outside.css") }, { path: "outside.css", kind: "css", text: "body{color:#222}" }],
+      ruleId: "unsafe-package-path",
+      level: "error",
+      score: 93,
+    },
+    {
+      href: "styles/MAIN.css",
+      knownFiles: ["index.html", "styles/main.css"],
+      entries: [{ path: "index.html", kind: "html", text: document("styles/MAIN.css") }, { path: "styles/main.css", kind: "css", text: "body{color:#222}" }],
+      ruleId: "path-case-mismatch",
+      level: "warning",
+      score: 98,
+    },
+  ];
+  for (const item of cases) {
+    const report = analyzeHtmlNote({ path: "index.html", html: item.entries[0].text, knownFiles: item.knownFiles });
+    const packageFindings = analyzeNotePackage({ entries: item.entries, knownFiles: item.knownFiles });
+    const summary = summarizeNoteReports([report], summarizePackageFindings(packageFindings));
+    assert.equal(report.findings.filter((finding) => finding.ruleId === item.ruleId).reduce((count, finding) => count + finding.affectedCount, 0), 1, item.href);
+    assert.deepEqual(packageFindings, [], item.href);
+    assert.equal(summary.counts[item.level], 1, item.href);
+    assert.equal(summary.packageDeduction, 0, item.href);
+    assert.equal(summary.score, item.score, item.href);
+  }
+
+  const caseHtml = document("styles/MAIN.css");
+  const downstream = analyzeNotePackage({
+    knownFiles: ["index.html", "styles/main.css"],
+    entries: [
+      { path: "index.html", kind: "html", text: caseHtml },
+      { path: "styles/main.css", kind: "css", text: "main{min-width:860px}" },
+    ],
+  });
+  assert.deepEqual(downstream.map((finding) => finding.ruleId), ["external-css-wide-fixed-layout"]);
 });
 
 test("package graph ignores unreachable CSS and follows only reachable imports", () => {
@@ -265,14 +326,17 @@ test("a unique case-only stylesheet import is inspected after being reported", (
   assert.equal(findings.some((finding) => finding.ruleId === "css-missing-local-file"), true);
 });
 
-test("ambiguous case-only cross-note targets are blocked instead of guessed", () => {
+test("ambiguous case-only cross-note targets are owned by HTML analysis and not duplicated by package analysis", () => {
   const entries = [
     { path: "index.html", kind: "html", text: '<html><body><a href="GUIDE.html#methods">Guide</a></body></html>' },
     { path: "Guide.html", kind: "html", text: '<html><body><h1 id="methods">A</h1></body></html>' },
     { path: "guide.html", kind: "html", text: '<html><body><h1 id="methods">B</h1></body></html>' },
   ];
-  const findings = analyzeNotePackage({ entries, knownFiles: entries.map((entry) => entry.path) });
-  assert.equal(findings.some((finding) => finding.ruleId === "unsafe-package-path"), true);
+  const knownFiles = entries.map((entry) => entry.path);
+  const report = analyzeHtmlNote({ path: "index.html", html: entries[0].text, knownFiles });
+  const findings = analyzeNotePackage({ entries, knownFiles });
+  assert.equal(report.findings.find((finding) => finding.ruleId === "unsafe-package-path")?.affectedCount, 1);
+  assert.equal(findings.some((finding) => finding.ruleId === "unsafe-package-path"), false);
 });
 
 test("CSS string content and data imports are not treated as missing files", () => {

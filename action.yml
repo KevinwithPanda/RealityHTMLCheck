@@ -32,7 +32,7 @@ inputs:
     required: false
     default: ""
   baseline:
-    description: Optional report.json used as a regression-only baseline.
+    description: Optional report.json used as a regression-only baseline. In note mode it must stay inside working-directory and be an earlier html-note-check-bundle.
     required: false
     default: ""
   output:
@@ -137,6 +137,12 @@ outputs:
   note-report-json-path:
     description: Stable latest.json path when kind is note; empty in web mode.
     value: ${{ steps.note.outputs.report-json-path }}
+  note-comparison-path:
+    description: Self-contained bilingual comparison.html when note baseline mode is active; empty otherwise.
+    value: ${{ steps.note.outputs.comparison-path }}
+  note-comparison-json-path:
+    description: Machine-readable comparison.json when note baseline mode is active; empty otherwise.
+    value: ${{ steps.note.outputs.comparison-json-path }}
   catalog-path:
     description: Portable HTML entry point for all evidence produced in the report root.
     value: ${{ steps.catalog.outputs.catalog-path }}
@@ -197,6 +203,7 @@ runs:
         RC_WORKDIR_INPUT: ${{ inputs.working-directory }}
         RC_FAIL_ON_INPUT: ${{ inputs.fail-on }}
         RC_OUTPUT_INPUT: ${{ inputs.output }}
+        RC_BASELINE_INPUT: ${{ inputs.baseline }}
       run: |
         case "$RC_KIND" in
           web)
@@ -220,6 +227,7 @@ runs:
           --working-directory "$RC_WORKDIR_INPUT" \
           --kind "$RC_KIND" \
           --path "$RC_PATH" \
+          --baseline "$RC_BASELINE_INPUT" \
           --output "$output" \
           --github-output "$GITHUB_OUTPUT"
         echo "fail-on=$fail_on" >> "$GITHUB_OUTPUT"
@@ -247,15 +255,14 @@ runs:
         RC_REPORT_ROOT: ${{ steps.resolve.outputs.report-root }}
         RC_LANGUAGE: ${{ inputs.summary-language }}
         RC_MAX_FILES: ${{ inputs.max-files }}
+        RC_BASELINE: ${{ steps.resolve.outputs.baseline }}
       run: |
         cd "$RC_WORKDIR_ABS"
-        rm -f -- "$RC_OUTPUT/latest.html" "$RC_OUTPUT/latest.json" "$RC_OUTPUT/github-summary.md"
+        rm -f -- "$RC_OUTPUT/report.json" "$RC_OUTPUT/repair-plan.md" "$RC_OUTPUT/repair-plan.zh-CN.md" "$RC_OUTPUT/latest.html" "$RC_OUTPUT/latest.json" "$RC_OUTPUT/comparison.html" "$RC_OUTPUT/comparison.json" "$RC_OUTPUT/github-summary.md"
+        args=("$RC_PATH" --output "$RC_OUTPUT" --fail-on "$RC_FAIL_ON" --language "$RC_LANGUAGE" --max-files "$RC_MAX_FILES")
+        if [ -n "$RC_BASELINE" ]; then args+=(--baseline "$RC_BASELINE"); fi
         set +e
-        node "$GITHUB_ACTION_PATH/realitycheck/scripts/note-check.mjs" "$RC_PATH" \
-          --output "$RC_OUTPUT" \
-          --fail-on "$RC_FAIL_ON" \
-          --language "$RC_LANGUAGE" \
-          --max-files "$RC_MAX_FILES"
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/note-check.mjs" "${args[@]}"
         status=$?
         set -e
         case "$status" in 0|1|2) ;; *) echo "RealityCheck note command returned unexpected status $status; normalized to operational error 2." >&2; status=2 ;; esac
@@ -264,6 +271,10 @@ runs:
         if [ -f "$RC_OUTPUT/latest.html" ]; then
           echo "report-path=$RC_REPORT_ROOT/latest.html" >> "$GITHUB_OUTPUT"
           echo "report-json-path=$RC_REPORT_ROOT/latest.json" >> "$GITHUB_OUTPUT"
+        fi
+        if [ -f "$RC_OUTPUT/comparison.html" ] && [ -f "$RC_OUTPUT/comparison.json" ]; then
+          echo "comparison-path=$RC_REPORT_ROOT/comparison.html" >> "$GITHUB_OUTPUT"
+          echo "comparison-json-path=$RC_REPORT_ROOT/comparison.json" >> "$GITHUB_OUTPUT"
         fi
 
     - name: Publish the HTML note job summary
@@ -619,7 +630,7 @@ runs:
         fi
 
     - name: Upload RealityCheck evidence
-      if: always() && steps.resolve.outcome == 'success' && inputs.upload-artifact == 'true'
+      if: always() && steps.resolve.outcome == 'success' && inputs.upload-artifact == 'true' && (steps.resolve.outputs.kind == 'web' || steps.note.outputs.exit-code == '0' || steps.note.outputs.exit-code == '1')
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}

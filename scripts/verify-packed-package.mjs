@@ -111,6 +111,12 @@ try {
     realitycheck: "realitycheck/scripts/audit.mjs",
   });
   assert.equal(existsSync(join(installedRoot, "realitycheck", "assets", "config.schema.json")), true);
+  for (const documentationPath of [
+    join("docs", "README.zh-CN.md"),
+    join("docs", "note-compatibility.zh-CN.md"),
+    join("docs", "assets", "hero.svg"),
+    join("docs", "assets", "note-checker-preview.png"),
+  ]) assert.equal(existsSync(join(installedRoot, documentationPath)), true, `published documentation is missing ${documentationPath}`);
   for (const command of ["realityhtmlcheck", "realitycheck"]) {
     assert.equal(
       existsSync(join(consumerDirectory, "node_modules", ".bin", command))

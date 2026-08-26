@@ -83,7 +83,9 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add a browser-free HTML note GitHub Action with bounded annotations, canonical artifact paths, an uploaded report, and error/warning gates.
 - [x] Prove the packed `realityhtmlcheck` CLI through an isolated npx-style consumer and add a guarded checksum/OIDC release workflow.
 - [x] Publish hashed representative export structures and before/after decision cases with an explicit non-certification boundary.
+- [x] Freeze and byte-for-byte reproduce one actual Pandoc 3.8.2.1 HTML export with command, hashes, privacy, and license provenance.
 - [x] Add a privacy-safe intake path for community-contributed, versioned real export samples.
+- [x] Add fail-closed note baseline comparison with new/resolved/worsened/persistent/unverified states and regression-only Action gates.
 - [ ] Bootstrap the public npm package and bind `release.yml` to npm trusted publishing.
 - [ ] Collect at least 20 licensed, de-identified real export samples across multiple tool versions and platforms.
 - [ ] Publish a separate real-export compatibility matrix with static results plus bounded browser visual/interaction evidence.

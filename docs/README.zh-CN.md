@@ -4,7 +4,7 @@
 
 RealityCheck 现在首先是一款面向普通用户的本地 HTML 笔记体检工具，同时保留面向 Codex、开发者和产品团队的真实浏览器 Web 核查能力。笔记检查无需账号、无需服务器，不会上传文件；专业 Web 核查则继续提供压力场景、证据、修复任务和修复前后证明。
 
-当前版本：`v0.5.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
+当前版本：`v0.6.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
 
 ## 一分钟内获得价值：检查 HTML 笔记
 
@@ -23,7 +23,7 @@ RealityCheck 现在首先是一款面向普通用户的本地 HTML 笔记体检�
 需要批量检查整个笔记文件夹时，无需克隆仓库或全局安装：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
   realityhtmlcheck note ./我的笔记
 # 打开 .realitycheck/notes/latest.html
 ```
@@ -31,14 +31,14 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" \
 生成保守修复副本，但保持所有源文件逐字节不变：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
   realityhtmlcheck note ./我的笔记 --fix-safe
 ```
 
 持续导出时，可把同一检查器放进 GitHub Actions；note 模式不启动服务器、不安装浏览器依赖，也不执行笔记脚本：
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.5.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.6.0
   with:
     kind: note
     path: exported-notes
@@ -47,6 +47,17 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" \
 ```
 
 RealityCheck 不上传源笔记。启用 artifact 时，工作流会保存生成报告，其中可能包含有限证据摘录；把 artifact 公开前仍应复核。
+
+第二次及后续导出可以与一份不可变的历史报告比较：
+
+```bash
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
+  realityhtmlcheck note ./我的笔记 \
+  --baseline .realitycheck/notes/历史运行/report.json \
+  --fail-on error
+```
+
+差异报告区分“新增、已解决、恶化、仍存在、未核验”。基线模式只按所选级别阻止新增、恶化和未核验回归；历史中持续存在的问题仍会展示，但不会让 CI 永久失败。删除 HTML 或缩小文件包范围只能判为未核验，不能伪装成修复。GitHub Action 使用同一个仓库内 `baseline` 输入，并随普通报告上传 `comparison.html` 与 `comparison.json`。
 
 如果在 Codex 中要求 `$realitycheck` “检查并修复”，Skill 会使用 `--prepare-repair` 把有上限的完整笔记文件夹、图片、样式、附件和关联笔记复制到证据目录，再由 Codex 直接修改该工作副本并复检。用户会在同一个任务中得到修复前报告、修复版 HTML 文件夹、修复后报告和仍需判断的问题，不需要把静态报告里的提示词再次粘贴回 Codex。
 

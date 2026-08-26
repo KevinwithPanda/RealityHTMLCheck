@@ -37,6 +37,9 @@ test("matrix proves concrete portability, navigation, script-review, and CSS dep
   assert.deepEqual(fixtures.get("obsidian-like-after").detectedRules, []);
   assert.deepEqual(fixtures.get("jupyter-like-review").detectedRules, ["executable-script"]);
   assert.deepEqual(fixtures.get("quarto-like-before").detectedRules, ["css-missing-local-file", "external-css-wide-fixed-layout"]);
+  assert.equal(fixtures.get("quarto-like-before").findings.every((finding) => finding.scope === "package" && finding.reportPath === null), true);
+  assert.equal(fixtures.get("quarto-like-before").packageSummary.status, "needs-fix");
+  assert.equal(fixtures.get("quarto-like-before").entryFiles.length, 1);
   assert.deepEqual(fixtures.get("quarto-like-after").detectedRules, []);
   assert.equal(fixtures.get("notion-like-before").status, "needs-fix");
   assert.equal(fixtures.get("jupyter-like-review").status, "review");
@@ -71,6 +74,9 @@ test("checked-in JSON and bilingual public page match a fresh analysis byte for 
   assert.match(page, /建议修改/);
   assert.match(page, /Open machine-readable matrix/);
   assert.match(page, /Contribute a sanitized real export/);
+  assert.match(page, /ACTUAL TOOL OUTPUT/);
+  assert.match(page, /Pandoc 3\.8\.2\.1/);
+  assert.match(page, /not hand-written to resemble it/);
   assert.match(page, /data-en="Do not share yet" data-zh-cn="暂不建议分享"/);
   assert.doesNotMatch(page, /<script[^>]+src=/i);
   assert.doesNotMatch(page, /<link[^>]+rel="stylesheet"[^>]+href="https?:/i);

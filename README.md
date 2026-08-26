@@ -72,6 +72,12 @@ inspect the real artifact → expose hidden failure → explain the evidence
 
 It complements compilers and AI models rather than competing with them. The model supplies judgment where judgment is necessary; deterministic checks and browser evidence prevent confident guesses from becoming the quality gate.
 
+<p align="center">
+  <img src="docs/assets/note-checker-preview.png" alt="RealityCheck HTML note result showing a conservative sharing decision, lowest-file readiness, bilingual evidence, and repair actions" width="100%" />
+</p>
+
+The public evidence is deliberately layered: one checked-in HTML file was emitted and byte-for-byte reproduced with **Pandoc 3.8.2.1** (100/100 in the current static check), while seven separately labelled `-like` packages exercise representative failure shapes. Neither layer is presented as official or universal vendor compatibility. [Inspect the real-export manifest, hashes, findings, and boundaries.](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)
+
 ## Use it as software or as a Codex Skill
 
 | Experience | Best for | What happens |
@@ -140,14 +146,14 @@ It is **not** an “all problems fixed” download. Headings, image descriptions
 ### No-clone note CLI
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
   realityhtmlcheck note ./my-notes
 ```
 
 Open `.realitycheck/notes/latest.html`. To generate only the three conservative metadata repairs without touching the originals:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
   realityhtmlcheck note ./my-notes --fix-safe
 ```
 
@@ -156,7 +162,7 @@ Use `--fail-on error` or `--fail-on warning` in an export pipeline. This command
 ### HTML note gate in GitHub Actions
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.5.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.6.0
   with:
     kind: note
     path: exported-notes
@@ -165,6 +171,17 @@ Use `--fail-on error` or `--fail-on warning` in an export pipeline. This command
 ```
 
 Note mode does not start a server, install browser dependencies, execute note scripts, or upload source note files. When artifact upload is enabled, it stores the generated report—including bounded evidence excerpts—so review the artifact before making a workflow public.
+
+For the second and later export, compare against an immutable earlier report:
+
+```bash
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
+  realityhtmlcheck note ./my-notes \
+  --baseline .realitycheck/notes/PRIOR-RUN/report.json \
+  --fail-on error
+```
+
+The comparison report separates **new, resolved, worsened, persistent, and unverified** findings. Baseline mode gates only new/worsened/unverified regressions at the requested level; persistent known debt remains visible without keeping CI permanently red. Removing an HTML file or shrinking the checked package is unverified, never a fake resolution. The Action accepts the same repository-local `baseline` input and uploads `comparison.html` / `comparison.json` with the ordinary report.
 
 ### Real-browser Web audit
 
@@ -223,7 +240,7 @@ npm run audit -- http://localhost:3000 \
 For a reusable GitHub Action:
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.5.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.6.0
   with:
     url: http://127.0.0.1:3000
     mode: quick
@@ -244,7 +261,7 @@ RealityCheck reports exactly what it tested, what failed, and what it could not 
 
 ## Project status
 
-RealityCheck is a **v0.5.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
+RealityCheck is a **v0.6.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
 
 - [Representative export evidence and explicit compatibility boundary](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)
 - [HTML note Action and browser Action](action.yml)

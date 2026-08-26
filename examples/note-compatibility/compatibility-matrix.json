@@ -49,11 +49,24 @@
         "advice": 0,
         "autoFixable": 0
       },
+      "packageSummary": {
+        "findings": 0,
+        "affected": 0,
+        "scoreDeduction": 0,
+        "status": "ready",
+        "counts": {
+          "error": 0,
+          "warning": 0,
+          "advice": 0,
+          "autoFixable": 0
+        }
+      },
       "detectedRules": [
         "missing-local-file"
       ],
       "findings": [
         {
+          "scope": "html-file",
           "reportPath": "index.html",
           "id": "NOTE-MISSING-LOCAL-FILE",
           "ruleId": "missing-local-file",
@@ -111,6 +124,18 @@
         "advice": 0,
         "autoFixable": 0
       },
+      "packageSummary": {
+        "findings": 0,
+        "affected": 0,
+        "scoreDeduction": 0,
+        "status": "ready",
+        "counts": {
+          "error": 0,
+          "warning": 0,
+          "advice": 0,
+          "autoFixable": 0
+        }
+      },
       "detectedRules": [],
       "findings": [],
       "expected": {
@@ -144,12 +169,25 @@
         "advice": 0,
         "autoFixable": 0
       },
+      "packageSummary": {
+        "findings": 1,
+        "affected": 1,
+        "scoreDeduction": 7,
+        "status": "needs-fix",
+        "counts": {
+          "error": 1,
+          "warning": 0,
+          "advice": 0,
+          "autoFixable": 0
+        }
+      },
       "detectedRules": [
         "broken-cross-document-fragment"
       ],
       "findings": [
         {
-          "reportPath": "index.html",
+          "scope": "package",
+          "reportPath": null,
           "id": "NOTE-BROKEN-CROSS-DOCUMENT-FRAGMENT",
           "ruleId": "broken-cross-document-fragment",
           "level": "error",
@@ -207,6 +245,18 @@
         "advice": 0,
         "autoFixable": 0
       },
+      "packageSummary": {
+        "findings": 0,
+        "affected": 0,
+        "scoreDeduction": 0,
+        "status": "ready",
+        "counts": {
+          "error": 0,
+          "warning": 0,
+          "advice": 0,
+          "autoFixable": 0
+        }
+      },
       "detectedRules": [],
       "findings": [],
       "expected": {
@@ -239,11 +289,24 @@
         "advice": 0,
         "autoFixable": 0
       },
+      "packageSummary": {
+        "findings": 0,
+        "affected": 0,
+        "scoreDeduction": 0,
+        "status": "ready",
+        "counts": {
+          "error": 0,
+          "warning": 0,
+          "advice": 0,
+          "autoFixable": 0
+        }
+      },
       "detectedRules": [
         "executable-script"
       ],
       "findings": [
         {
+          "scope": "html-file",
           "reportPath": "notebook.html",
           "id": "NOTE-EXECUTABLE-SCRIPT",
           "ruleId": "executable-script",
@@ -301,13 +364,26 @@
         "advice": 0,
         "autoFixable": 0
       },
+      "packageSummary": {
+        "findings": 2,
+        "affected": 2,
+        "scoreDeduction": 9,
+        "status": "needs-fix",
+        "counts": {
+          "error": 1,
+          "warning": 1,
+          "advice": 0,
+          "autoFixable": 0
+        }
+      },
       "detectedRules": [
         "css-missing-local-file",
         "external-css-wide-fixed-layout"
       ],
       "findings": [
         {
-          "reportPath": "index.html",
+          "scope": "package",
+          "reportPath": null,
           "id": "NOTE-CSS-MISSING-LOCAL-FILE",
           "ruleId": "css-missing-local-file",
           "level": "error",
@@ -332,7 +408,8 @@
           ]
         },
         {
-          "reportPath": "index.html",
+          "scope": "package",
+          "reportPath": null,
           "id": "NOTE-EXTERNAL-CSS-WIDE-FIXED-LAYOUT",
           "ruleId": "external-css-wide-fixed-layout",
           "level": "warning",
@@ -389,6 +466,18 @@
         "warning": 0,
         "advice": 0,
         "autoFixable": 0
+      },
+      "packageSummary": {
+        "findings": 0,
+        "affected": 0,
+        "scoreDeduction": 0,
+        "status": "ready",
+        "counts": {
+          "error": 0,
+          "warning": 0,
+          "advice": 0,
+          "autoFixable": 0
+        }
       },
       "detectedRules": [],
       "findings": [],

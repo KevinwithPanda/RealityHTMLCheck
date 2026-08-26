@@ -1,0 +1,64 @@
+{
+  "kind": "locally-generated-real-html-export-evidence",
+  "schemaVersion": 1,
+  "capturedOn": "2026-08-27",
+  "evidenceBoundary": {
+    "sourceType": "locally-generated-real-export",
+    "syntheticHtmlFixture": false,
+    "generatedByActualTool": true,
+    "containsThirdPartyUserContent": false,
+    "containsPersonalData": false,
+    "officialCompatibilityClaim": false,
+    "statement": "The source is a minimal repository-authored note, while the checked-in HTML bytes were emitted by the recorded locally installed exporter. This proves one bounded export, not product-wide compatibility.",
+    "statementZhCN": "源文件是本仓库编写的最小笔记，随仓库提交的 HTML 字节则由已记录的本机真实导出器生成；这只证明一个有限导出，不代表产品级全面兼容。"
+  },
+  "generator": {
+    "name": "Pandoc",
+    "version": "3.8.2.1",
+    "platform": "windows-x64",
+    "versionProbe": "pandoc --version",
+    "observedExecutableSha256": "2fad335e682975e6f6183a37e675ddfa292d998a02d3acc7828fe2803578af3e",
+    "programLicense": "GPL-2.0-or-later",
+    "templateLicense": "GPL-2.0-or-later OR BSD-3-Clause",
+    "binaryRedistributed": false,
+    "thirdPartyNotice": "THIRD_PARTY_NOTICES.md"
+  },
+  "samples": [
+    {
+      "id": "pandoc-3.8.2.1-standalone-gfm",
+      "source": "pandoc-3.8.2.1/source/note.md",
+      "output": "pandoc-3.8.2.1/generated/note.html",
+      "command": {
+        "cwd": "examples/real-export-evidence/pandoc-3.8.2.1",
+        "program": "pandoc",
+        "arguments": [
+          "source/note.md",
+          "--from=gfm",
+          "--to=html5",
+          "--standalone",
+          "--output=generated/note.html"
+        ],
+        "display": "pandoc source/note.md --from=gfm --to=html5 --standalone --output=generated/note.html"
+      },
+      "hashes": {
+        "sourceRawSha256": "ec677df9fda8e95a0b52f0abaf28c0a2741defa598448e6f8de9717c86d21edd",
+        "outputRawSha256": "7256420ce20ae8a5488db4ad396fe7ba0be0ceb2928f1c012614f9016ffdfff3",
+        "outputCanonicalLfSha256": "473023a219817af57767e1e487fde7a7f46b072ffea72be3a08c089cad63679d"
+      },
+      "outputProfile": {
+        "capturedLineEndings": "CRLF",
+        "crossPlatformComparison": "Normalize CRLF and CR to LF before hashing; no other transformation is allowed."
+      },
+      "realityCheckExpectation": {
+        "score": 100,
+        "status": "ready",
+        "counts": {
+          "error": 0,
+          "warning": 0,
+          "advice": 0,
+          "autoFixable": 0
+        }
+      }
+    }
+  ]
+}

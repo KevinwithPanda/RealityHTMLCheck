@@ -1,5 +1,7 @@
 # Representative export fixtures / 合成代表性导出夹具
 
+For separately preserved HTML emitted by an actual local exporter—with command, hashes, reproduction, privacy, and license provenance—see [`../real-export-evidence`](../real-export-evidence/README.md). 实际工具生成的分层证据见 [`../real-export-evidence`](../real-export-evidence/README.md)。
+
 This directory contains invented, repository-owned HTML packages used to test RealityCheck's note workflow. The fixtures model selected file and dependency shapes commonly associated with one-page exports, linked knowledge notes, executable notebooks, and nested publishing libraries.
 
 本目录包含完全虚构、由本仓库自行维护的 HTML 文件包，用于测试 RealityCheck 的笔记核查流程。夹具只模拟单页导出、互链知识笔记、可执行笔记本和嵌套发布依赖中的部分常见结构。

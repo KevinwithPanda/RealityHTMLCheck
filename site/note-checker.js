@@ -1,7 +1,7 @@
-import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "./note-analyzer.mjs?v=0.5.0-adoption";
-import { analyzeNotePackage, mergePackageFindings } from "./note-package.mjs?v=0.5.0-adoption";
-import { summarizeNoteReports, noteDecision } from "./note-summary.mjs?v=0.5.0-adoption";
-import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.5.0-adoption";
+import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "./note-analyzer.mjs?v=0.6.0-baseline";
+import { analyzeNotePackage } from "./note-package.mjs?v=0.6.0-baseline";
+import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "./note-summary.mjs?v=0.6.0-baseline";
+import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.6.0-baseline";
 
 const elements = {
   dropZone: document.querySelector("#drop-zone"),
@@ -92,6 +92,7 @@ async function inspectFiles(fileList, folderMode = false) {
   const knownFiles = folderMode || allFiles.some((file) => file.webkitRelativePath) || allFiles.length > htmlFiles.length ? allFiles.map(pathFor) : null;
   const sources = new Map();
   let reports = [];
+  let packageFindings = [];
   const packageEntries = [];
   for (const file of htmlFiles) {
     const html = await file.text();
@@ -103,21 +104,22 @@ async function inspectFiles(fileList, folderMode = false) {
   if (knownFiles) {
     const cssFiles = allFiles.filter((file) => /\.css$/i.test(file.name));
     for (const file of cssFiles) packageEntries.push({ path: pathFor(file), text: file.size <= 5 * 1024 * 1024 ? await file.text() : null, kind: "css" });
-    const packageFindings = analyzeNotePackage({ entries: packageEntries, knownFiles });
-    if (packageFindings.length) {
-      const primaryPath = reports[0].path;
-      reports = reports.map((report) => report.path === primaryPath ? mergePackageFindings(report, packageFindings) : report);
-    }
+    const order = { error: 0, warning: 1, advice: 2 };
+    packageFindings = analyzeNotePackage({ entries: packageEntries, knownFiles })
+      .sort((left, right) => order[left.level] - order[right.level] || left.ruleId.localeCompare(right.ruleId));
   }
   reports.sort((left, right) => left.score - right.score || left.path.localeCompare(right.path));
+  const packageSummary = summarizePackageFindings(packageFindings);
   current = {
     schemaVersion: "1",
     kind: "html-note-browser-check",
     generatedAt: new Date().toISOString(),
     privacy: { uploaded: false, sourceModified: false },
     knownFiles: knownFiles ? knownFiles.length : null,
-    summary: summarizeNoteReports(reports),
+    summary: summarizeNoteReports(reports, packageSummary),
     reports,
+    packageFindings,
+    packageSummary,
     sources,
   };
   render(current);
@@ -129,7 +131,9 @@ async function inspectFiles(fileList, folderMode = false) {
 function renderSummary(bundle) {
   elements.summary.replaceChildren();
   const cards = [
-    [bundle.summary.score, "/100", { en: "folder readiness · lowest file", zhCN: "文件夹就绪度 · 最低文件分" }],
+    [bundle.summary.score, "/100", bundle.packageFindings?.length
+      ? { en: "folder readiness · lowest HTML file adjusted by package findings", zhCN: "文件夹就绪度 · 最低 HTML 分并计入文件包问题" }
+      : { en: "folder readiness · lowest file", zhCN: "文件夹就绪度 · 最低文件分" }],
     [bundle.summary.files, "", { en: "HTML files", zhCN: "HTML 文件" }],
     [bundle.summary.counts.error, "", { en: "errors", zhCN: "错误" }],
     [bundle.summary.counts.warning, "", { en: "warnings", zhCN: "警告" }],
@@ -153,7 +157,7 @@ function renderDecision(bundle) {
   elements.decision.append(heading, create("p", "", translate(decision.detail)));
 }
 
-function renderFinding(report, finding) {
+function renderFinding(report, finding, packageScope = false) {
   const article = create("article", "finding");
   article.dataset.level = finding.level;
   const top = create("div", "finding-top");
@@ -175,9 +179,38 @@ function renderFinding(report, finding) {
   details.append(list);
   const button = create("button", "copy-one", language === "zh-CN" ? "复制此项修复任务" : "Copy this repair task");
   button.type = "button";
-  button.addEventListener("click", () => copy(buildRepairTask({ ...report, findings: [finding] }, language)));
+  button.addEventListener("click", () => copy(packageScope
+    ? buildPackageRepairTask([finding], language)
+    : buildRepairTask({ ...report, findings: [finding] }, language)));
   article.append(top, heading, summary, remedy, details, button);
   return article;
+}
+
+function renderPackage(bundle) {
+  if (!bundle.packageFindings?.length) return null;
+  const section = create("section", "file-result package-result");
+  const header = create("header", "file-header");
+  const path = create("div", "file-path");
+  path.append(
+    create("code", "", language === "zh-CN" ? "文件包依赖" : "FILE PACKAGE DEPENDENCIES"),
+    create("strong", "", language === "zh-CN" ? "文件包" : "PACKAGE"),
+  );
+  const stats = create("div", "file-stats");
+  const packageSummary = bundle.packageSummary || summarizePackageFindings(bundle.packageFindings);
+  for (const [value, label] of [
+    [packageSummary.counts.error, { en: "errors", zhCN: "错误" }],
+    [packageSummary.counts.warning, { en: "warnings", zhCN: "警告" }],
+    [packageSummary.affected, { en: "affected references", zhCN: "受影响引用" }],
+  ]) {
+    const item = create("span", "", String(value));
+    item.append(create("small", "", translate(label)));
+    stats.append(item);
+  }
+  header.append(path, stats);
+  const list = create("div", "finding-list");
+  for (const finding of bundle.packageFindings) list.append(renderFinding(null, finding, true));
+  section.append(header, list);
+  return section;
 }
 
 function repairedName(path) {
@@ -219,7 +252,8 @@ function renderFile(report, bundle) {
 function render(bundle) {
   renderDecision(bundle);
   renderSummary(bundle);
-  elements.files.replaceChildren(...bundle.reports.map((report) => renderFile(report, bundle)));
+  const packageCard = renderPackage(bundle);
+  elements.files.replaceChildren(...[packageCard, ...bundle.reports.map((report) => renderFile(report, bundle))].filter(Boolean));
   applyFilter(bundle.summary.counts.error ? "error" : bundle.summary.counts.warning ? "warning" : "all");
 }
 
@@ -247,10 +281,13 @@ for (const event of ["dragenter", "dragover"]) elements.dropZone.addEventListene
 for (const event of ["dragleave", "drop"]) elements.dropZone.addEventListener(event, (input) => { input.preventDefault(); elements.dropZone.classList.remove("drag"); });
 elements.dropZone.addEventListener("drop", (event) => inspectFiles(event.dataTransfer.files, false));
 elements.reset.addEventListener("click", reset);
-elements.copyAll.addEventListener("click", () => current && copy(current.reports.map((report) => buildRepairTask(report, language)).join("\n\n---\n\n")));
+elements.copyAll.addEventListener("click", () => current && copy([
+  ...current.reports.map((report) => buildRepairTask(report, language)),
+  ...(current.packageFindings?.length ? [buildPackageRepairTask(current.packageFindings, language)] : []),
+].join("\n\n---\n\n")));
 elements.downloadReport.addEventListener("click", () => {
   if (!current) return;
-  download(`realitycheck-note-report-${new Date().toISOString().slice(0, 10)}.html`, buildPortableNoteReport(current, { buildRepairTask, noteDecision }), "text/html;charset=utf-8");
+  download(`realitycheck-note-report-${new Date().toISOString().slice(0, 10)}.html`, buildPortableNoteReport(current, { buildRepairTask, buildPackageRepairTask, noteDecision }), "text/html;charset=utf-8");
   notify("Portable bilingual report downloaded.", "中英双语可携带报告已下载。");
 });
 elements.downloadJson.addEventListener("click", () => {

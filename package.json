@@ -1,6 +1,6 @@
 {
   "name": "realityhtmlcheck",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Check AI-generated HTML notes and Web UIs locally — portable content, real-browser evidence, and reviewable fixes.",
   "type": "module",
   "bin": {
@@ -77,6 +77,9 @@
     "registry": "https://registry.npmjs.org/"
   },
   "files": [
+    "docs/README.zh-CN.md",
+    "docs/note-compatibility.zh-CN.md",
+    "docs/assets",
     "realitycheck/SKILL.md",
     "realitycheck/agents",
     "realitycheck/assets",

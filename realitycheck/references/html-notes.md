@@ -14,6 +14,18 @@ The command writes a timestamped self-contained `report.html`, `report.json`, En
 
 If only one file is available, report local attachments as unverified instead of falsely claiming they are missing. Ask for the folder only when attachment integrity matters to the request.
 
+## Compare a later export
+
+When the user supplies an immutable earlier note `report.json`, run:
+
+```bash
+node <skill-dir>/scripts/note-check.mjs <file-or-directory> \
+  --baseline <prior-run>/report.json \
+  --fail-on error
+```
+
+The run writes `comparison.json` and a self-contained bilingual `comparison.html`. Explain `new`, `resolved`, `worsened`, `persistent`, and `unverified` separately. In baseline mode, only new/worsened/unverified findings participate in the requested error/warning gate; persistent baseline debt remains visible without keeping CI permanently red. A removed HTML file, truncated discovery, missing package inventory, or contracted package scope is unverified rather than resolved.
+
 ## Interpret the result
 
 Distinguish these rule families:

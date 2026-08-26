@@ -27,6 +27,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "sitemap.xml",
     "assets/icon.svg",
     "assets/social-preview.png",
+    "assets/note-checker-preview.png",
     "assets/report-preview.png",
     "assets/finding-preview.png",
     "reference/report.html",
@@ -37,6 +38,9 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "evidence/note-compatibility/fixtures/obsidian-like/before/notes/method.html",
     "evidence/note-compatibility/fixtures/jupyter-like/review/notebook.html",
     "evidence/note-compatibility/fixtures/quarto-like/after/site_libs/quarto-html/theme.css",
+    "evidence/real-export/manifest.json",
+    "evidence/real-export/THIRD_PARTY_NOTICES.md",
+    "evidence/real-export/pandoc-3.8.2.1/generated/note.html",
     "evidence/viewport/latest.html",
     "evidence/journey/latest.html",
     "evidence/links/latest.html",
@@ -53,8 +57,10 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "labs/viewport/fixed.html",
     "labs/policy-review/review/policy-review.html",
     "labs/policy-review/review/policy-review.json",
+    "labs/policy-review-lab/review/policy-review.json",
     "labs/issue-drafts/github-issue-drafts.html",
     "labs/issue-drafts/github-issue-drafts.json",
+    "labs/issue-drafts-lab/github-issue-drafts.json",
     "labs/issue-drafts/github-issue-drafts.csv",
     "labs/release-decision/release-decision.html",
     "labs/release-decision/release-decision.json",
@@ -84,7 +90,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   const compatibilityHtml = readFileSync(resolve(output, "compatibility.html"), "utf8");
   const styles = readFileSync(resolve(output, "styles.css"), "utf8");
   assert.match(styles, /\.profile-grid button\{min-height:40px;/);
-  for (const [name, width, height] of [["report-preview.png", 1440, 900], ["finding-preview.png", 1440, 900]]) {
+  for (const [name, width, height] of [["report-preview.png", 1440, 900], ["finding-preview.png", 1440, 900], ["note-checker-preview.png", 1440, 1000]]) {
     const png = readFileSync(resolve(output, "assets", name));
     assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10], `${name} has an invalid PNG signature`);
     assert.equal(png.readUInt32BE(16), width, `${name} width changed`);
@@ -102,7 +108,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.ok(structuredDataMatch, "Pages homepage is missing JSON-LD product metadata");
   const structuredData = JSON.parse(structuredDataMatch[1]);
   assert.equal(structuredData["@type"], "SoftwareApplication");
-  assert.equal(structuredData.softwareVersion, "0.5.0");
+  assert.equal(structuredData.softwareVersion, "0.6.0");
   assert.equal(structuredData.codeRepository, "https://github.com/KevinwithPanda/RealityHTMLCheck");
   assert.equal(structuredData.image, "https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png");
   assert.ok(structuredData.featureList.includes("Policy anti-weakening review"));
@@ -114,7 +120,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /Check AI-made HTML before you trust or share it/);
   assert.match(html, /AI 生成的 HTML，使用和分享前先体检/);
   assert.match(html, /<article><strong>30<\/strong><span[^>]+>HTML note integrity and portability rules/);
-  assert.match(html, /github:KevinwithPanda\/RealityHTMLCheck#v0\.5\.0/);
+  assert.match(html, /github:KevinwithPanda\/RealityHTMLCheck#v0\.6\.0/);
   assert.match(html, /realityhtmlcheck note \.\/my-notes/);
   assert.match(html, /data-language="zh-CN"/);
   assert.match(html, /init --profile product --base-url/);
@@ -166,10 +172,21 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     assert.equal(path.startsWith(output), true, `Compatibility reference escapes output: ${reference}`);
     assert.equal(existsSync(path), true, `Compatibility reference is missing: ${reference}`);
   }
+  const releaseDecisionHtml = readFileSync(resolve(output, "labs/release-decision/release-decision.html"), "utf8");
+  const releaseReferences = [...releaseDecisionHtml.matchAll(/href="([^"]+)"/g)].map((match) => match[1])
+    .filter((value) => !/^(?:https?:|#|mailto:|data:)/.test(value));
+  for (const reference of releaseReferences) {
+    const path = resolve(output, "labs/release-decision", reference.split(/[?#]/)[0]);
+    assert.equal(path.startsWith(output), true, `Release-decision reference escapes output: ${reference}`);
+    assert.equal(existsSync(path), true, `Release-decision reference is missing: ${reference}`);
+  }
   assert.deepEqual(
     JSON.parse(readFileSync(resolve(output, "evidence/note-compatibility/compatibility-matrix.json"), "utf8")),
     JSON.parse(readFileSync("examples/note-compatibility/compatibility-matrix.json", "utf8")),
   );
+  assert.match(compatibilityHtml, /ACTUAL TOOL OUTPUT/);
+  assert.match(compatibilityHtml, /Pandoc 3\.8\.2\.1/);
+  assert.match(compatibilityHtml, /evidence\/real-export\/pandoc-3\.8\.2\.1\/generated\/note\.html/);
 
   const robots = readFileSync(resolve(output, "robots.txt"), "utf8");
   assert.match(robots, /Sitemap: https:\/\/kevinwithpanda\.github\.io\/RealityHTMLCheck\/sitemap\.xml/);
@@ -185,9 +202,15 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(llms, /evidence\/security-headers-fixed\/latest\.html/);
   assert.match(llms, /npm run realitycheck -- plan/);
   assert.match(llms, /Zero-install HTML note checker/);
-  assert.match(llms, /github:KevinwithPanda\/RealityHTMLCheck#v0\.5\.0/);
+  assert.match(llms, /github:KevinwithPanda\/RealityHTMLCheck#v0\.6\.0/);
   assert.match(llms, /realityhtmlcheck note \.\/my-notes/);
   assert.match(llms, /compatibility\.html/);
+  assert.match(llms, /evidence\/real-export\/manifest\.json/);
+  const previewRenderer = readFileSync("scripts/render-note-preview.mjs", "utf8");
+  assert.match(previewRenderer, /overflow-anchor:none/);
+  assert.match(previewRenderer, /unexpectedOrigins\.size/);
+  assert.match(previewRenderer, /animations: "disabled", caret: "hide"/);
+  assert.match(previewRenderer, /sha256\(first\) !== sha256\(second\)/);
 });
 
 test("Pages workflow uses the supported deployment artifact path", () => {

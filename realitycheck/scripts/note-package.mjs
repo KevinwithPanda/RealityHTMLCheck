@@ -148,14 +148,12 @@ export function analyzeNotePackage({ entries, knownFiles }) {
     const resolved = resolveKnown(reference.value, entry.path);
     if (reference.kind === "stylesheet") {
       if (resolved.state === "exact") enqueue(resolved.path);
-      else if (resolved.state === "case") { caseMismatch.push({ path: entry.path, line: reference.line, excerpt: compact(`${reference.value} → ${resolved.path}`) }); enqueue(resolved.path); }
-      else if (resolved.state === "unsafe" || resolved.state === "ambiguous") unsafe.push({ path: entry.path, line: reference.line, excerpt: compact(reference.excerpt) });
+      else if (resolved.state === "case") enqueue(resolved.path);
     } else if (reference.kind === "fragment" && ["exact", "case"].includes(resolved.state)) {
-      if (resolved.state === "case") caseMismatch.push({ path: entry.path, line: reference.line, excerpt: compact(`${reference.value} → ${resolved.path}`) });
       const target = textByPath.get(resolved.path);
       if (!target || target.kind !== "html") unverified.push({ path: entry.path, line: reference.line, excerpt: compact(reference.excerpt) });
       else if (!anchors(target.text).has(reference.fragment)) crossFragment.push({ path: entry.path, line: reference.line, excerpt: compact(reference.excerpt) });
-    } else if (reference.kind === "fragment" && resolved.state === "ambiguous") unsafe.push({ path: entry.path, line: reference.line, excerpt: compact(reference.excerpt) });
+    }
   }
   while (queue.length) {
     const cssPath = queue.shift();

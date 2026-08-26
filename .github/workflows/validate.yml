@@ -46,6 +46,8 @@ jobs:
           node --check realitycheck/scripts/audit-plan.mjs
           node --check realitycheck/scripts/security-headers.mjs
           node --check realitycheck/scripts/note-analyzer.mjs
+          node --check realitycheck/scripts/note-compare.mjs
+          node --check realitycheck/scripts/note-comparison-report.mjs
           node --check realitycheck/scripts/note-check.mjs
           node --check realitycheck/scripts/note-github-summary.mjs
           node --check realitycheck/scripts/action-paths.mjs
@@ -148,6 +150,48 @@ jobs:
           assert report["sourceModified"] is False, report
           assert (root / "latest.html").is_file()
           assert (root / "github-summary.md").is_file()
+          PY
+
+      - name: Prove the HTML note baseline does not keep known debt red
+        id: note-baseline-action
+        uses: ./
+        with:
+          kind: note
+          path: note-action-fixture
+          baseline: .realitycheck/ci-note-action/latest.json
+          output: .realitycheck/ci-note-baseline
+          fail-on: error
+          summary-language: en
+          max-annotations: "5"
+          artifact-name: realitycheck-note-baseline-report
+
+      - name: Verify the HTML note baseline comparison handoff
+        shell: bash
+        env:
+          RC_ACTION_EXIT_CODE: ${{ steps.note-baseline-action.outputs.exit-code }}
+          RC_COMPARISON_PATH: ${{ steps.note-baseline-action.outputs.note-comparison-path }}
+          RC_COMPARISON_JSON_PATH: ${{ steps.note-baseline-action.outputs.note-comparison-json-path }}
+        run: |
+          test "$RC_ACTION_EXIT_CODE" = "0"
+          test "$RC_COMPARISON_PATH" = ".realitycheck/ci-note-baseline/comparison.html"
+          test "$RC_COMPARISON_JSON_PATH" = ".realitycheck/ci-note-baseline/comparison.json"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path(".realitycheck/ci-note-baseline")
+          comparison = json.loads((root / "comparison.json").read_text(encoding="utf-8"))
+          assert comparison["counts"]["regressions"] == 0, comparison
+          assert comparison["counts"]["persistent"] > 0, comparison
+          assert comparison["gate"] == {
+              "mode": "baseline-regressions-only",
+              "failOn": "error",
+              "failed": False,
+              "states": ["new", "worsened", "unverified"],
+          }, comparison
+          assert (root / "comparison.html").is_file()
+          summary = (root / "github-summary.md").read_text(encoding="utf-8")
+          assert "Regression gate passed" in summary, summary
+          assert "do not keep the job red" in summary, summary
           PY
 
       - name: Prove the browser-free effective audit plan

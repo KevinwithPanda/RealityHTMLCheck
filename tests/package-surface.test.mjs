@@ -16,11 +16,17 @@ test("npm publication whitelist covers every security and governance runtime sur
   const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
   assert.equal(packageJson.scripts.realitycheck, "node realitycheck/scripts/audit.mjs");
   const required = [
+    "docs/README.zh-CN.md",
+    "docs/note-compatibility.zh-CN.md",
+    "docs/assets/hero.svg",
+    "docs/assets/note-checker-preview.png",
     "realitycheck/SKILL.md",
     "realitycheck/scripts/audit.mjs",
     "realitycheck/scripts/note-analyzer.mjs",
     "realitycheck/scripts/note-package.mjs",
     "realitycheck/scripts/note-summary.mjs",
+    "realitycheck/scripts/note-compare.mjs",
+    "realitycheck/scripts/note-comparison-report.mjs",
     "realitycheck/scripts/note-check.mjs",
     "realitycheck/scripts/note-github-summary.mjs",
     "realitycheck/scripts/action-paths.mjs",

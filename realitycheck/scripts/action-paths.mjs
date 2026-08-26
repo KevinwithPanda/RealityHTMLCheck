@@ -50,7 +50,7 @@ function workspaceRelative(workspace, target) {
   return path || ".";
 }
 
-export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "web", notePath = "", output }) {
+export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "web", notePath = "", baseline = "", output }) {
   if (!new Set(["web", "note"]).has(kind)) throw new Error("kind must be web or note");
   const workspaceRaw = String(workspace ?? "");
   if (!workspaceRaw || FORBIDDEN_ARTIFACT_PATTERN.test(workspaceRaw)) throw new Error("workspace is invalid");
@@ -65,6 +65,8 @@ export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "
 
   let targetInput = "";
   let targetCanonical = "";
+  let baselineInput = "";
+  let baselineCanonical = "";
   let sourceRootCanonical = workdirCanonical;
   if (kind === "note") {
     targetInput = relativeInput("path", notePath);
@@ -73,6 +75,16 @@ export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "
     if (targetCanonical === outputCanonical) throw new Error("path and output cannot resolve to the same location");
     const targetIsFile = existsSync(targetCanonical) && lstatSync(targetCanonical).isFile();
     sourceRootCanonical = targetIsFile ? dirname(targetCanonical) : targetCanonical;
+    if (baseline) {
+      baselineInput = relativeInput("baseline", baseline);
+      baselineCanonical = canonicalAllowMissing(resolve(workdirCanonical, baselineInput));
+      if (!contained(workdirCanonical, baselineCanonical)) throw new Error("baseline resolves outside working-directory");
+      if (!existsSync(baselineCanonical) || !lstatSync(baselineCanonical).isFile()) throw new Error("baseline must resolve to an existing regular file");
+      if (!/\.json$/i.test(baselineCanonical)) throw new Error("baseline must be a JSON report");
+      if (new Set([resolve(outputCanonical, "latest.json"), resolve(outputCanonical, "report.json"), resolve(outputCanonical, "comparison.json")]).has(baselineCanonical)) {
+        throw new Error("baseline cannot use a mutable top-level report inside output; use a timestamped report or a separate baseline path");
+      }
+    }
   }
 
   return {
@@ -81,6 +93,8 @@ export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "
     workingDirectoryAbsolute: workdirCanonical,
     notePath: targetInput,
     notePathAbsolute: targetCanonical,
+    baseline: baselineInput,
+    baselineAbsolute: baselineCanonical,
     output: portable(relative(workdirCanonical, outputCanonical)),
     artifactPath: outputCanonical,
     reportRoot: workspaceRelative(workspaceCanonical, outputCanonical),
@@ -93,7 +107,7 @@ function parseArguments(argv) {
   const args = [...argv];
   while (args.length) {
     const name = args.shift();
-    if (!["--workspace", "--working-directory", "--kind", "--path", "--output", "--github-output"].includes(name)) {
+    if (!["--workspace", "--working-directory", "--kind", "--path", "--baseline", "--output", "--github-output"].includes(name)) {
       throw new Error(`Unknown option: ${name}`);
     }
     const value = args.shift();
@@ -110,6 +124,7 @@ export function run(argv) {
     workingDirectory: options["working-directory"] ?? ".",
     kind: options.kind ?? "web",
     notePath: options.path ?? "",
+    baseline: options.baseline ?? "",
     output: options.output,
   });
   const lines = [
@@ -118,6 +133,8 @@ export function run(argv) {
     `working-directory-absolute=${resolved.workingDirectoryAbsolute}`,
     `path=${resolved.notePath}`,
     `path-absolute=${resolved.notePathAbsolute}`,
+    `baseline=${resolved.baseline}`,
+    `baseline-absolute=${resolved.baselineAbsolute}`,
     `output=${resolved.output}`,
     `artifact-path=${resolved.artifactPath}`,
     `report-root=${resolved.reportRoot}`,

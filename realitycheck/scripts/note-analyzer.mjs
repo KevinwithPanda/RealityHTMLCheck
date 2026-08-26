@@ -253,7 +253,14 @@ export function analyzeHtmlNote({ path = "note.html", html, knownFiles = null })
   const tags = scanTags(html);
   const openTags = tags.filter((tag) => !tag.closing);
   const known = knownFiles ? new Set([...knownFiles].map(normalizePath)) : null;
-  const knownLower = known ? new Map([...known].map((item) => [item.toLowerCase(), item])) : null;
+  const knownLower = known ? new Map() : null;
+  if (knownLower) {
+    for (const item of known) {
+      const key = item.toLowerCase();
+      if (!knownLower.has(key)) knownLower.set(key, []);
+      knownLower.get(key).push(item);
+    }
+  }
   const findings = [];
   const add = (definition) => {
     if (definition.occurrences.length) findings.push(createFinding(definition));
@@ -453,14 +460,16 @@ export function analyzeHtmlNote({ path = "note.html", html, knownFiles = null })
       }
       if (resolved.endsWith("/")) continue;
       if (known.has(resolved)) continue;
-      if (knownLower.has(resolved.toLowerCase())) caseMismatch.push(evidence(documentPath, item.line, `${item.value} → ${knownLower.get(resolved.toLowerCase())}`));
+      const candidates = knownLower.get(resolved.toLowerCase()) ?? [];
+      if (candidates.length === 1) caseMismatch.push(evidence(documentPath, item.line, `${item.value} → ${candidates[0]}`));
+      else if (candidates.length > 1) unsafePaths.push(evidence(documentPath, item.line, `${item.value} → ambiguous: ${candidates.join(", ")}`));
       else missing.push(evidence(documentPath, item.line, item.raw));
     }
     add({
       ruleId: "unsafe-package-path", level: "error", category: "portability",
-      title: ["A reference escapes the selected note folder", "引用越过了所选笔记文件夹"],
-      summary: ["Root-relative or parent traversal paths can point outside the shared note package and behave differently after moving it.", "根相对路径或越级父目录路径可能指向共享笔记包之外，移动后行为也会变化。"],
-      remediation: ["Copy the dependency inside the selected note folder and use an exact relative path that stays within it.", "把依赖复制到所选笔记文件夹内，并使用不会越界且大小写准确的相对路径。"],
+      title: ["A reference escapes the selected note folder or is ambiguous", "引用越过所选笔记文件夹或存在歧义"],
+      summary: ["Root-relative paths, parent traversal, or multiple case-only matches cannot identify one portable file safely.", "根相对路径、越级父目录，或多个仅大小写不同的候选，都无法安全地确定唯一且可移植的文件。"],
+      remediation: ["Keep the dependency inside the selected folder and use one exact relative path with unambiguous letter casing.", "把依赖保留在所选文件夹内，并使用唯一、大小写准确的相对路径。"],
       occurrences: unsafePaths,
     });
     add({
