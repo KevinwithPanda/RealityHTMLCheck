@@ -1182,22 +1182,48 @@ jobs:
           RC_ARTIFACT_URL: ${{ steps.publish-ready.outputs.publish-artifact-url }}
           RC_ARTIFACT_DIGEST: ${{ steps.publish-ready.outputs.publish-artifact-digest }}
         run: |
-          test "$RC_EXIT_CODE" = "0"
-          case "$RC_PUBLISH_STATUS" in ready|warnings) ;; *) exit 1 ;; esac
-          test "$RC_PUBLISH_READY" = "true"
-          test -n "$RC_ARCHIVE_PATH" && test -f "$RC_ARCHIVE_PATH"
-          test -z "$RC_WORKING_COPY_PATH"
-          for path in "$RC_REPORT_PATH" "$RC_RECEIPT_PATH" "$RC_MANIFEST_PATH" "$RC_TECHNICAL_PATH" "$RC_BROWSER_PROOF_PATH" "$RC_CHECKSUM_PATH"; do test -f "$path"; done
-          test -n "$RC_DEPLOY_ID"
-          test -n "$RC_ARTIFACT_ID"
-          case "$RC_ARTIFACT_URL" in https://github.com/*) ;; *) exit 1 ;; esac
-          case "$RC_ARTIFACT_DIGEST" in sha256:*) ;; *) exit 1 ;; esac
-          test ! -e downloaded-publish-ready/sentinel.txt
-          test -z "$(find downloaded-publish-ready -name sentinel.txt -print -quit)"
-          node realitycheck/scripts/audit.mjs validate downloaded-publish-ready
+          fail() {
+            printf '::error title=Verified Publish Action contract::%s\n' "$1"
+            exit 1
+          }
+          require_equal() {
+            [ "$2" = "$3" ] || fail "$1: expected '$3', received '${2:-<empty>}'"
+          }
+          require_nonempty() {
+            [ -n "$2" ] || fail "$1 output is empty"
+          }
+          require_file() {
+            [ -n "$2" ] || fail "$1 output is empty"
+            [ -f "$2" ] || fail "$1 does not resolve to a file: $2"
+          }
+
+          echo "checkpoint=action-outputs"
+          require_equal "exit-code" "$RC_EXIT_CODE" "0"
+          case "$RC_PUBLISH_STATUS" in ready|warnings) ;; *) fail "publish-status must be ready or warnings; received '${RC_PUBLISH_STATUS:-<empty>}'" ;; esac
+          require_equal "publish-ready" "$RC_PUBLISH_READY" "true"
+          require_file "publish-archive-path" "$RC_ARCHIVE_PATH"
+          [ -z "$RC_WORKING_COPY_PATH" ] || fail "publish-working-copy-path must be empty for a ready result"
+          require_file "publish-report-path" "$RC_REPORT_PATH"
+          require_file "publish-receipt-path" "$RC_RECEIPT_PATH"
+          require_file "publish-manifest-path" "$RC_MANIFEST_PATH"
+          require_file "publish-technical-report-path" "$RC_TECHNICAL_PATH"
+          require_file "publish-browser-proof-path" "$RC_BROWSER_PROOF_PATH"
+          require_file "publish-checksum-path" "$RC_CHECKSUM_PATH"
+          require_nonempty "publish-deploy-content-id" "$RC_DEPLOY_ID"
+          require_nonempty "publish-artifact-id" "$RC_ARTIFACT_ID"
+          case "$RC_ARTIFACT_URL" in https://github.com/*) ;; *) fail "publish-artifact-url is empty or is not an authenticated GitHub URL" ;; esac
+          case "$RC_ARTIFACT_DIGEST" in sha256:*) ;; *) fail "publish-artifact-digest is empty or does not use the sha256 prefix" ;; esac
+
+          echo "checkpoint=downloaded-artifact-boundary"
+          [ ! -e downloaded-publish-ready/sentinel.txt ] || fail "the stale sentinel was uploaded at the artifact root"
+          [ -z "$(find downloaded-publish-ready -name sentinel.txt -print -quit)" ] || fail "the Artifact contains bytes from an older publish run"
+          node realitycheck/scripts/audit.mjs validate downloaded-publish-ready || fail "the downloaded exact-run Artifact failed artifact validation"
           downloaded_archive="$(find downloaded-publish-ready -type f -name '*.realitycheck-publish.zip' -print -quit)"
-          test -n "$downloaded_archive"
-          test "$(sha256sum "$downloaded_archive" | cut -d' ' -f1)" = "$RC_ARCHIVE_SHA"
+          require_nonempty "downloaded publish archive" "$downloaded_archive"
+          downloaded_archive_sha="$(sha256sum "$downloaded_archive" | cut -d' ' -f1)"
+          require_equal "downloaded publish archive SHA-256" "$downloaded_archive_sha" "$RC_ARCHIVE_SHA"
+
+          echo "checkpoint=downloaded-browser-proof"
           DOWNLOAD_ROOT="$PWD/downloaded-publish-ready" RC_ARCHIVE_SHA="$RC_ARCHIVE_SHA" RC_DEPLOY_ID="$RC_DEPLOY_ID" python - <<'PY'
           import json, os
           from pathlib import Path
@@ -1217,10 +1243,13 @@ jobs:
           }, proof
           assert all(item["status"] == "passed" for item in proof["scenarios"]), proof
           PY
-          sha256sum -c good-source.sha256
+          echo "checkpoint=source-immutability"
+          sha256sum -c good-source.sha256 || fail "the Action changed the source note bytes"
+          echo "checkpoint=verified-publish-action-complete"
 
       - name: Build a blocked working copy without executing its script
         id: publish-blocked
+        if: always()
         continue-on-error: true
         uses: ./
         with:
@@ -1251,16 +1280,24 @@ jobs:
           RC_ARTIFACT_ID: ${{ steps.publish-blocked.outputs.publish-artifact-id }}
           RC_ARTIFACT_DIGEST: ${{ steps.publish-blocked.outputs.publish-artifact-digest }}
         run: |
-          test "$RC_ACTION_OUTCOME" = "failure"
-          test "$RC_EXIT_CODE" = "1"
-          test "$RC_PUBLISH_STATUS" = "working-copy"
-          test "$RC_PUBLISH_READY" = "false"
-          test -z "$RC_ARCHIVE_PATH"
-          test -n "$RC_WORKING_COPY_PATH" && test -f "$RC_WORKING_COPY_PATH"
-          test -n "$RC_ARTIFACT_ID"
-          case "$RC_ARTIFACT_DIGEST" in sha256:*) ;; *) exit 1 ;; esac
-          node realitycheck/scripts/audit.mjs validate downloaded-publish-blocked
-          test -n "$(find downloaded-publish-blocked -type f -name '*.realitycheck-working-copy.zip' -print -quit)"
+          fail() {
+            printf '::error title=Blocked Publish Action contract::%s\n' "$1"
+            exit 1
+          }
+          require_equal() {
+            [ "$2" = "$3" ] || fail "$1: expected '$3', received '${2:-<empty>}'"
+          }
+          require_equal "Action outcome" "$RC_ACTION_OUTCOME" "failure"
+          require_equal "exit-code" "$RC_EXIT_CODE" "1"
+          require_equal "publish-status" "$RC_PUBLISH_STATUS" "working-copy"
+          require_equal "publish-ready" "$RC_PUBLISH_READY" "false"
+          [ -z "$RC_ARCHIVE_PATH" ] || fail "publish-archive-path must be empty for a blocked result"
+          [ -n "$RC_WORKING_COPY_PATH" ] || fail "publish-working-copy-path output is empty"
+          [ -f "$RC_WORKING_COPY_PATH" ] || fail "publish-working-copy-path does not resolve to a file: $RC_WORKING_COPY_PATH"
+          [ -n "$RC_ARTIFACT_ID" ] || fail "publish-artifact-id output is empty"
+          case "$RC_ARTIFACT_DIGEST" in sha256:*) ;; *) fail "publish-artifact-digest is empty or does not use the sha256 prefix" ;; esac
+          node realitycheck/scripts/audit.mjs validate downloaded-publish-blocked || fail "the downloaded blocked Artifact failed artifact validation"
+          [ -n "$(find downloaded-publish-blocked -type f -name '*.realitycheck-working-copy.zip' -print -quit)" ] || fail "the blocked Artifact has no working-copy ZIP"
           DOWNLOAD_ROOT="$PWD/downloaded-publish-blocked" python - <<'PY'
           import json, os
           from pathlib import Path
