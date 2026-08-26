@@ -109,7 +109,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.ok(structuredDataMatch, "Pages homepage is missing JSON-LD product metadata");
   const structuredData = JSON.parse(structuredDataMatch[1]);
   assert.equal(structuredData["@type"], "SoftwareApplication");
-  assert.equal(structuredData.softwareVersion, "0.7.1");
+  assert.equal(structuredData.softwareVersion, "0.7.2");
   assert.equal(structuredData.codeRepository, "https://github.com/KevinwithPanda/RealityHTMLCheck");
   assert.equal(structuredData.image, "https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png");
   assert.ok(structuredData.featureList.includes("Policy anti-weakening review"));
@@ -122,7 +122,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /AI 生成的 HTML，使用和分享前先体检/);
   assert.match(html, /<article><strong>30<\/strong><span[^>]+>HTML note integrity and portability rules/);
   assert.match(html, /<article><strong>4<\/strong><span[^>]+>byte-reproducible real Pandoc exports/);
-  assert.match(html, /github:KevinwithPanda\/RealityHTMLCheck#v0\.7\.1/);
+  assert.match(html, /github:KevinwithPanda\/RealityHTMLCheck#v0\.7\.2/);
   assert.match(html, /realityhtmlcheck note \.\/my-notes/);
   assert.match(html, /data-language="zh-CN"/);
   assert.match(html, /init --profile product --base-url/);
@@ -204,7 +204,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(llms, /evidence\/security-headers-fixed\/latest\.html/);
   assert.match(llms, /npm run realitycheck -- plan/);
   assert.match(llms, /Zero-install HTML note checker/);
-  assert.match(llms, /github:KevinwithPanda\/RealityHTMLCheck#v0\.7\.1/);
+  assert.match(llms, /github:KevinwithPanda\/RealityHTMLCheck#v0\.7\.2/);
   assert.match(llms, /realityhtmlcheck note \.\/my-notes/);
   assert.match(llms, /compatibility\.html/);
   assert.match(llms, /evidence\/real-export\/manifest\.json/);

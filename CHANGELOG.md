@@ -4,12 +4,17 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-08-27
+
+### Fixed
+
+- The composite Action exclusion proof derives its expected path from report JSON instead of hard-coding a different fixture filename.
+
 ## [0.7.1] - 2026-08-27
 
 ### Fixed
 
 - Textual CSS inputs are pinned to LF checkouts so real-export evidence hashes reproduce on Windows runners instead of depending on `core.autocrlf`.
-- The composite Action exclusion proof now asserts the current bounded-path summary wording and preview.
 
 ## [0.7.0] - 2026-08-27
 

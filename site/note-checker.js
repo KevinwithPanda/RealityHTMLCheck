@@ -1,8 +1,8 @@
-import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask, normalizeNotePath } from "./note-analyzer.mjs?v=0.7.1";
-import { analyzeNotePackage } from "./note-package.mjs?v=0.7.1";
-import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "./note-summary.mjs?v=0.7.1";
-import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.7.1";
-import { analyzeBrowserNoteSources, duplicateBrowserNotePaths, safeRepairDownloadName, safeRepairDownloadPayload, verifySafeNoteRepair } from "./note-repair-verification.mjs?v=0.7.1";
+import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask, normalizeNotePath } from "./note-analyzer.mjs?v=0.7.2";
+import { analyzeNotePackage } from "./note-package.mjs?v=0.7.2";
+import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "./note-summary.mjs?v=0.7.2";
+import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.7.2";
+import { analyzeBrowserNoteSources, duplicateBrowserNotePaths, safeRepairDownloadName, safeRepairDownloadPayload, verifySafeNoteRepair } from "./note-repair-verification.mjs?v=0.7.2";
 
 const noteAnalysisHelpers = {
   analyzeHtmlNote,

@@ -146,14 +146,14 @@ Before downloading, the checker runs the same full in-memory detector again and 
 ### No-clone note CLI
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.1" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.2" \
   realityhtmlcheck note ./my-notes
 ```
 
 Open `.realitycheck/notes/latest.html`. To generate only the three conservative metadata repairs without touching the originals:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.1" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.2" \
   realityhtmlcheck note ./my-notes --fix-safe
 ```
 
@@ -162,7 +162,7 @@ Use `--fail-on error` or `--fail-on warning` in an export pipeline. This command
 ### HTML note gate in GitHub Actions
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.7.1
+- uses: KevinwithPanda/RealityHTMLCheck@v0.7.2
   with:
     kind: note
     path: exported-notes
@@ -177,7 +177,7 @@ Note mode does not start a server, install browser dependencies, execute note sc
 For the second and later export, compare against an immutable earlier report:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.1" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.2" \
   realityhtmlcheck note ./my-notes \
   --baseline .realitycheck/notes/PRIOR-RUN/report.json \
   --fail-on error
@@ -244,7 +244,7 @@ npm run audit -- http://localhost:3000 \
 For a reusable GitHub Action:
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.7.1
+- uses: KevinwithPanda/RealityHTMLCheck@v0.7.2
   with:
     url: http://127.0.0.1:3000
     mode: quick
@@ -265,7 +265,7 @@ RealityCheck reports exactly what it tested, what failed, and what it could not 
 
 ## Project status
 
-RealityCheck is a **v0.7.1 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
+RealityCheck is a **v0.7.2 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
 
 - [Representative export evidence and explicit compatibility boundary](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)
 - [HTML note Action and browser Action](action.yml)

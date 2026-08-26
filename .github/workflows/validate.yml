@@ -241,7 +241,9 @@ jobs:
           summary = (root / "github-summary.md").read_text(encoding="utf-8")
           assert "HTML exclusions" in summary, summary
           assert "remain known package entries and cross-note targets" in summary, summary
-          assert "Matched path preview: `archive/old.html`" in summary, summary
+          assert "Matched path preview:" in summary, summary
+          for path in report["selection"]["html"]["excludedFiles"][:10]:
+              assert f"`{path}`" in summary, summary
           PY
 
       - name: Prove the browser-free effective audit plan
