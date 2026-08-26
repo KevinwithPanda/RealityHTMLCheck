@@ -22,6 +22,8 @@ test("npm publication whitelist covers every security and governance runtime sur
     "realitycheck/scripts/note-package.mjs",
     "realitycheck/scripts/note-summary.mjs",
     "realitycheck/scripts/note-check.mjs",
+    "realitycheck/scripts/note-github-summary.mjs",
+    "realitycheck/scripts/action-paths.mjs",
     "realitycheck/scripts/demo-server.mjs",
     "realitycheck/scripts/github-summary.mjs",
     "realitycheck/scripts/policy-review.mjs",

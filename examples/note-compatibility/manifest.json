@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "title": "Representative HTML export fixture matrix",
+  "titleZhCN": "代表性 HTML 导出夹具矩阵",
+  "evidenceBoundary": {
+    "sourceType": "synthetic-representative",
+    "containsOfficialVendorExports": false,
+    "officialCompatibilityClaim": false,
+    "browserRuntimeTested": false,
+    "statement": "These fixtures reproduce selected package shapes and failure modes commonly seen in exported HTML notes. They are not copied vendor exports and do not certify compatibility with any product or version.",
+    "statementZhCN": "这些夹具只复现 HTML 笔记导出中常见的部分文件包结构与故障模式；它们不是复制的厂商导出文件，也不构成对任何产品或版本的兼容认证。"
+  },
+  "fixtures": [
+    {
+      "id": "notion-like-before",
+      "family": "Notion-like",
+      "label": "One-page export with a sibling asset folder",
+      "labelZhCN": "单页 HTML 与同级资源文件夹",
+      "directory": "fixtures/notion-like/before",
+      "phase": "before",
+      "expectedStatus": "needs-fix",
+      "requiredRules": ["missing-local-file"],
+      "purpose": "Prove that a missing image in a sibling export-assets folder blocks sharing.",
+      "purposeZhCN": "证明同级导出资源文件夹中缺失图片会阻止分享。"
+    },
+    {
+      "id": "notion-like-after",
+      "family": "Notion-like",
+      "label": "Repaired one-page export package",
+      "labelZhCN": "修复后的单页导出包",
+      "directory": "fixtures/notion-like/after",
+      "phase": "after",
+      "expectedStatus": "ready",
+      "requiredRules": [],
+      "purpose": "Prove that restoring the exact relative asset path clears the portability blocker.",
+      "purposeZhCN": "证明恢复准确的相对资源路径后，可消除可移植性阻断项。"
+    },
+    {
+      "id": "obsidian-like-before",
+      "family": "Obsidian-like",
+      "label": "Linked-note folder with a stale section fragment",
+      "labelZhCN": "包含失效章节片段的互链笔记文件夹",
+      "directory": "fixtures/obsidian-like/before",
+      "phase": "before",
+      "expectedStatus": "needs-fix",
+      "requiredRules": ["broken-cross-document-fragment"],
+      "purpose": "Prove that an existing linked note can still contain a broken section destination.",
+      "purposeZhCN": "证明链接目标笔记存在时，其章节锚点仍可能失效。"
+    },
+    {
+      "id": "obsidian-like-after",
+      "family": "Obsidian-like",
+      "label": "Linked-note folder with corrected section navigation",
+      "labelZhCN": "章节导航已修复的互链笔记文件夹",
+      "directory": "fixtures/obsidian-like/after",
+      "phase": "after",
+      "expectedStatus": "ready",
+      "requiredRules": [],
+      "purpose": "Prove that pointing to the destination's real ID clears the cross-note error.",
+      "purposeZhCN": "证明链接改为目标文档的真实 ID 后，可消除跨笔记错误。"
+    },
+    {
+      "id": "jupyter-like-review",
+      "family": "Jupyter-like",
+      "label": "Notebook-style HTML with intentional local interactivity",
+      "labelZhCN": "保留有意本地交互的笔记本式 HTML",
+      "directory": "fixtures/jupyter-like/review",
+      "phase": "review",
+      "expectedStatus": "review",
+      "requiredRules": ["executable-script"],
+      "purpose": "Prove that executable notebook behavior is disclosed for human review instead of silently removed.",
+      "purposeZhCN": "证明笔记本的可执行行为会交由人工复核，而不是被静默删除。"
+    },
+    {
+      "id": "quarto-like-before",
+      "family": "Quarto-like",
+      "label": "Nested site library with a missing CSS import and phone-width risk",
+      "labelZhCN": "存在 CSS 导入缺失与手机宽度风险的嵌套站点库",
+      "directory": "fixtures/quarto-like/before",
+      "phase": "before",
+      "expectedStatus": "needs-fix",
+      "requiredRules": ["css-missing-local-file", "external-css-wide-fixed-layout"],
+      "purpose": "Prove that dependency crawling follows a nested stylesheet and evaluates its mobile width.",
+      "purposeZhCN": "证明依赖爬取会进入嵌套样式表，并检查其中的移动端宽度。"
+    },
+    {
+      "id": "quarto-like-after",
+      "family": "Quarto-like",
+      "label": "Complete nested site library with fluid layout",
+      "labelZhCN": "依赖完整且采用流式布局的嵌套站点库",
+      "directory": "fixtures/quarto-like/after",
+      "phase": "after",
+      "expectedStatus": "ready",
+      "requiredRules": [],
+      "purpose": "Prove that restoring the imported theme and replacing the fixed floor clears both findings.",
+      "purposeZhCN": "证明补全导入主题并移除固定宽度下限后，两项问题都会消失。"
+    }
+  ],
+  "cases": [
+    {
+      "id": "sibling-asset-repair",
+      "title": "Missing sibling asset → restore exact relative file",
+      "titleZhCN": "同级资源缺失 → 恢复准确相对文件",
+      "before": "notion-like-before",
+      "after": "notion-like-after",
+      "expectedResolvedRules": ["missing-local-file"]
+    },
+    {
+      "id": "cross-note-anchor-repair",
+      "title": "Dead cross-note section → point to the real destination ID",
+      "titleZhCN": "跨笔记章节失效 → 改为真实目标 ID",
+      "before": "obsidian-like-before",
+      "after": "obsidian-like-after",
+      "expectedResolvedRules": ["broken-cross-document-fragment"]
+    },
+    {
+      "id": "interactive-notebook-decision",
+      "title": "Executable notebook behavior → human review, no blind removal",
+      "titleZhCN": "可执行笔记本行为 → 人工复核，不盲目删除",
+      "before": "jupyter-like-review",
+      "decision": "review-intended-interactivity",
+      "expectedRemainingRules": ["executable-script"]
+    },
+    {
+      "id": "nested-css-repair",
+      "title": "Missing nested CSS import and phone-width floor → complete fluid package",
+      "titleZhCN": "嵌套 CSS 导入缺失与手机宽度下限 → 补全流式文件包",
+      "before": "quarto-like-before",
+      "after": "quarto-like-after",
+      "expectedResolvedRules": ["css-missing-local-file", "external-css-wide-fixed-layout"]
+    }
+  ]
+}

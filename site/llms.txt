@@ -11,6 +11,7 @@ RealityCheck never treats an unsupported check as passed. Audit mode is read-onl
 - Project: https://github.com/KevinwithPanda/RealityHTMLCheck
 - Live product page: https://kevinwithpanda.github.io/RealityHTMLCheck/
 - Zero-install HTML note checker: https://kevinwithpanda.github.io/RealityHTMLCheck/note.html
+- Reproducible representative note evidence: https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html
 - Real reference report: https://kevinwithpanda.github.io/RealityHTMLCheck/reference/report.html
 - Public evidence catalog: https://kevinwithpanda.github.io/RealityHTMLCheck/evidence/journey/latest.html
 - Policy anti-weakening example: https://kevinwithpanda.github.io/RealityHTMLCheck/labs/policy-review/review/policy-review.html
@@ -27,7 +28,7 @@ RealityCheck never treats an unsupported check as passed. Audit mode is read-onl
 
 ## Quick start
 
-Open the zero-install checker and choose an HTML file or note folder. For the CLI, clone the repository, run `npm install`, then run `npm run note -- ./my-notes`. Add `--fix-safe` for only the three conservative metadata repairs, or let the `$realitycheck` Skill use `--prepare-repair` for a complete agentic working copy without modifying the originals. To preview an existing Web project policy without browser access, run `npm run realitycheck -- plan --config realitycheck.config.json`. To audit an authorized local app, run `npm run audit -- http://localhost:3000`.
+Open the zero-install checker and choose an HTML file or note folder. For a no-clone CLI run, execute `npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" realityhtmlcheck note ./my-notes`. Add `--fix-safe` for only the three conservative metadata repairs, use the composite Action with `kind: note` for CI, or let the `$realitycheck` Skill use `--prepare-repair` for a complete agentic working copy without modifying the originals. To preview an existing Web project policy without browser access, run `npm run realitycheck -- plan --config realitycheck.config.json`. To audit an authorized local app, run `npm run audit -- http://localhost:3000`.
 
 ## Licensing
 

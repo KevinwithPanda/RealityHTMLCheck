@@ -10,7 +10,7 @@ import { validateArtifactFiles } from "../realitycheck/scripts/artifact-validato
 import { PROFILE_NAMES, buildProjectProfile, formatProfileList } from "../realitycheck/scripts/profiles.mjs";
 
 const CLI = resolve("realitycheck/scripts/audit.mjs");
-const SCHEMA = "./node_modules/realitycheck-web-audit/realitycheck/assets/config.schema.json";
+const SCHEMA = "./node_modules/realityhtmlcheck/realitycheck/assets/config.schema.json";
 
 test("starter, product, and strict profiles are valid independent project policies", () => {
   assert.deepEqual(PROFILE_NAMES, ["starter", "product", "strict"]);

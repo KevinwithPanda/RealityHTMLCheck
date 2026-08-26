@@ -1,9 +1,10 @@
 {
-  "name": "realitycheck-web-audit",
-  "version": "0.4.0",
+  "name": "realityhtmlcheck",
+  "version": "0.5.0",
   "description": "Check AI-generated HTML notes and Web UIs locally — portable content, real-browser evidence, and reviewable fixes.",
   "type": "module",
   "bin": {
+    "realityhtmlcheck": "realitycheck/scripts/audit.mjs",
     "realitycheck": "realitycheck/scripts/audit.mjs"
   },
   "scripts": {
@@ -12,6 +13,7 @@
     "audit": "node realitycheck/scripts/audit.mjs audit",
     "demo": "node realitycheck/scripts/audit.mjs demo",
     "site:build": "node scripts/build-pages.mjs",
+    "package:smoke": "node scripts/verify-packed-package.mjs",
     "test": "python -m unittest discover -s tests -v && node --test tests/*.test.mjs",
     "test:python": "python -m unittest discover -s tests -v",
     "test:node": "node --test tests/*.test.mjs"
@@ -60,6 +62,20 @@
     "knowledge-management"
   ],
   "license": "MIT",
+  "author": "KevinwithPanda",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KevinwithPanda/RealityHTMLCheck.git"
+  },
+  "homepage": "https://kevinwithpanda.github.io/RealityHTMLCheck/",
+  "bugs": {
+    "url": "https://github.com/KevinwithPanda/RealityHTMLCheck/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
   "files": [
     "realitycheck/SKILL.md",
     "realitycheck/agents",

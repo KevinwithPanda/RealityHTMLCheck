@@ -12,6 +12,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   for (const path of [
     "index.html",
     "note.html",
+    "compatibility.html",
     "note.css",
     "note-checker.js",
     "note-analyzer.mjs",
@@ -29,6 +30,13 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "assets/report-preview.png",
     "assets/finding-preview.png",
     "reference/report.html",
+    "evidence/note-compatibility/manifest.json",
+    "evidence/note-compatibility/compatibility-matrix.json",
+    "evidence/note-compatibility/fixtures/notion-like/before/index.html",
+    "evidence/note-compatibility/fixtures/notion-like/after/export_assets/workflow.svg",
+    "evidence/note-compatibility/fixtures/obsidian-like/before/notes/method.html",
+    "evidence/note-compatibility/fixtures/jupyter-like/review/notebook.html",
+    "evidence/note-compatibility/fixtures/quarto-like/after/site_libs/quarto-html/theme.css",
     "evidence/viewport/latest.html",
     "evidence/journey/latest.html",
     "evidence/links/latest.html",
@@ -73,6 +81,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   ]) assert.equal(existsSync(resolve(output, path)), true, `Pages output is missing ${path}`);
 
   const html = readFileSync(resolve(output, "index.html"), "utf8");
+  const compatibilityHtml = readFileSync(resolve(output, "compatibility.html"), "utf8");
   const styles = readFileSync(resolve(output, "styles.css"), "utf8");
   assert.match(styles, /\.profile-grid button\{min-height:40px;/);
   for (const [name, width, height] of [["report-preview.png", 1440, 900], ["finding-preview.png", 1440, 900]]) {
@@ -93,24 +102,26 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.ok(structuredDataMatch, "Pages homepage is missing JSON-LD product metadata");
   const structuredData = JSON.parse(structuredDataMatch[1]);
   assert.equal(structuredData["@type"], "SoftwareApplication");
-  assert.equal(structuredData.softwareVersion, "0.4.0");
+  assert.equal(structuredData.softwareVersion, "0.5.0");
   assert.equal(structuredData.codeRepository, "https://github.com/KevinwithPanda/RealityHTMLCheck");
   assert.equal(structuredData.image, "https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png");
   assert.ok(structuredData.featureList.includes("Policy anti-weakening review"));
   assert.ok(structuredData.featureList.includes("Browser-free bilingual audit plan previews"));
   assert.ok(structuredData.featureList.includes("Zero-upload HTML note and folder checks"));
   assert.match(html, /href="note\.html"/);
+  assert.match(html, /href="compatibility\.html"/);
+  assert.match(html, /Open reproducible note evidence/);
   assert.match(html, /Check AI-made HTML before you trust or share it/);
   assert.match(html, /AI 生成的 HTML，使用和分享前先体检/);
   assert.match(html, /<article><strong>30<\/strong><span[^>]+>HTML note integrity and portability rules/);
-  assert.match(html, /npm run note -- \.\/my-notes/);
+  assert.match(html, /github:KevinwithPanda\/RealityHTMLCheck#v0\.5\.0/);
+  assert.match(html, /realityhtmlcheck note \.\/my-notes/);
   assert.match(html, /data-language="zh-CN"/);
   assert.match(html, /init --profile product --base-url/);
-  assert.match(html, /git clone --depth 1 https:\/\/github\.com\/KevinwithPanda\/RealityHTMLCheck\.git/);
   assert.match(html, /npm run realitycheck -- init --profile product/);
-  assert.match(html, /npm run note -- \.\/my-notes/);
-  assert.doesNotMatch(html, /npx realitycheck(?:-web-audit)?/);
-  assert.match(html, /不需要服务器，也不需要配置/);
+  assert.doesNotMatch(html, /npx realitycheck-web-audit/);
+  assert.match(html, /无需克隆 · 无需全局安装/);
+  assert.match(html, /ADVANCED WEB QA · REAL BROWSER/);
   assert.match(html, /Issue drafts, anti-weakening policy review, before\/after proof, GitHub annotations/);
   assert.match(html, /工单草稿、防弱化策略审查、前后证明、GitHub 注释/);
   assert.match(html, /Choose a transparent starting policy/);
@@ -148,9 +159,22 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     assert.equal(path.startsWith(output), true, `Pages reference escapes output: ${reference}`);
     assert.equal(existsSync(path), true, `Pages reference is missing: ${reference}`);
   }
+  const compatibilityReferences = [...compatibilityHtml.matchAll(/(?:href|src)="([^"]+)"/g)].map((match) => match[1])
+    .filter((value) => !/^(?:https?:|#|mailto:|data:)/.test(value));
+  for (const reference of compatibilityReferences) {
+    const path = resolve(output, reference.split(/[?#]/)[0]);
+    assert.equal(path.startsWith(output), true, `Compatibility reference escapes output: ${reference}`);
+    assert.equal(existsSync(path), true, `Compatibility reference is missing: ${reference}`);
+  }
+  assert.deepEqual(
+    JSON.parse(readFileSync(resolve(output, "evidence/note-compatibility/compatibility-matrix.json"), "utf8")),
+    JSON.parse(readFileSync("examples/note-compatibility/compatibility-matrix.json", "utf8")),
+  );
 
   const robots = readFileSync(resolve(output, "robots.txt"), "utf8");
   assert.match(robots, /Sitemap: https:\/\/kevinwithpanda\.github\.io\/RealityHTMLCheck\/sitemap\.xml/);
+  const sitemap = readFileSync(resolve(output, "sitemap.xml"), "utf8");
+  assert.match(sitemap, /RealityHTMLCheck\/compatibility\.html/);
   const manifest = JSON.parse(readFileSync(resolve(output, "site.webmanifest"), "utf8"));
   assert.equal(manifest.start_url, "./");
   assert.equal(manifest.icons[0].src, "assets/icon.svg");
@@ -161,8 +185,9 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(llms, /evidence\/security-headers-fixed\/latest\.html/);
   assert.match(llms, /npm run realitycheck -- plan/);
   assert.match(llms, /Zero-install HTML note checker/);
-  assert.match(llms, /npm run note -- \.\/my-notes/);
-  assert.doesNotMatch(llms, /npx realitycheck(?:-web-audit)?/);
+  assert.match(llms, /github:KevinwithPanda\/RealityHTMLCheck#v0\.5\.0/);
+  assert.match(llms, /realityhtmlcheck note \.\/my-notes/);
+  assert.match(llms, /compatibility\.html/);
 });
 
 test("Pages workflow uses the supported deployment artifact path", () => {

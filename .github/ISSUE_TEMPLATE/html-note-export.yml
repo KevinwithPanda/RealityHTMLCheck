@@ -1,0 +1,64 @@
+name: HTML export compatibility sample
+description: Contribute a sanitized HTML note export shape or report a reproducible portability gap.
+title: "[HTML export]: "
+labels: ["html-notes", "compatibility", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping RealityCheck move from representative fixtures to real-world compatibility evidence.
+        Submit only content you own or are authorized to share. Remove names, private notes, credentials, tokens,
+        account identifiers, proprietary attachments, and personal paths before linking a fixture.
+  - type: input
+    id: exporter
+    attributes:
+      label: Exporting tool and version
+      description: Use an exact version when available; write “unknown” instead of guessing.
+      placeholder: ExampleTool 4.2.1
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform where the export was created
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Web service
+        - Other or unknown
+    validations:
+      required: true
+  - type: textarea
+    id: package_shape
+    attributes:
+      label: Export package shape
+      description: Describe the entry HTML, asset folders, linked notes, stylesheets, and whether the package is expected to work offline.
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: RealityCheck result and expected behavior
+      description: Include rule IDs, score, and the smallest explanation of what is wrong or missing. Do not paste private report content.
+    validations:
+      required: true
+  - type: input
+    id: fixture
+    attributes:
+      label: Public sanitized fixture or reproduction link
+      description: Link a minimal public repository or archive with no private content. A textual reproduction is acceptable when files cannot be shared.
+      placeholder: https://github.com/example/minimal-sanitized-export
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Sharing and evidence boundary
+      options:
+        - label: I own this material or am authorized to share it publicly.
+          required: true
+        - label: I removed personal, confidential, credential, account, and proprietary content.
+          required: true
+        - label: I understand acceptance proves only the checked export shape and version, not official or universal vendor compatibility.
+          required: true
+        - label: I permit the minimal sanitized fixture to be adapted into MIT-licensed regression evidence if maintainers accept it.
+          required: true

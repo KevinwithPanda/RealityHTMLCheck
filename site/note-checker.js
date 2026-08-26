@@ -1,7 +1,7 @@
-import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "./note-analyzer.mjs?v=0.4.0-readiness";
-import { analyzeNotePackage, mergePackageFindings } from "./note-package.mjs?v=0.4.0-readiness";
-import { summarizeNoteReports, noteDecision } from "./note-summary.mjs?v=0.4.0-readiness";
-import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.4.0-readiness";
+import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "./note-analyzer.mjs?v=0.5.0-adoption";
+import { analyzeNotePackage, mergePackageFindings } from "./note-package.mjs?v=0.5.0-adoption";
+import { summarizeNoteReports, noteDecision } from "./note-summary.mjs?v=0.5.0-adoption";
+import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.5.0-adoption";
 
 const elements = {
   dropZone: document.querySelector("#drop-zone"),

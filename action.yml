@@ -1,5 +1,5 @@
-name: RealityCheck browser quality gate
-description: Audit a running web application, upload evidence, and fail on verified browser regressions.
+name: RealityCheck HTML note and browser quality gate
+description: Check an HTML note folder or audit a running Web app, preserve evidence, and enforce a deterministic quality gate.
 author: RealityCheck contributors
 
 branding:
@@ -7,6 +7,14 @@ branding:
   color: orange
 
 inputs:
+  kind:
+    description: Target kind. Use web for a running application or note for a local HTML file/folder.
+    required: false
+    default: web
+  path:
+    description: HTML file or note folder, relative to working-directory. Required when kind is note.
+    required: false
+    default: ""
   url:
     description: Target URL. May be omitted when baseUrl exists in the project config.
     required: false
@@ -20,17 +28,17 @@ inputs:
     required: false
     default: quick
   fail-on:
-    description: critical, major, minor, or never.
+    description: Gate threshold. Web accepts critical, major, minor, or never; note accepts error, warning, or never. Empty selects major for web and error for note.
     required: false
-    default: major
+    default: ""
   baseline:
     description: Optional report.json used as a regression-only baseline.
     required: false
     default: ""
   output:
-    description: Artifact directory, relative to working-directory.
+    description: Artifact directory, relative to working-directory. Empty selects .realitycheck/runs for web and .realitycheck/notes for note.
     required: false
-    default: .realitycheck/runs
+    default: ""
   working-directory:
     description: Directory containing the target project.
     required: false
@@ -39,6 +47,10 @@ inputs:
     description: Optional Chrome, Edge, or Chromium executable path.
     required: false
     default: ""
+  max-files:
+    description: Note mode only. Maximum HTML files to inspect, from 1 to 500.
+    required: false
+    default: "200"
   allow-remote:
     description: Confirm authorization to test a public target.
     required: false
@@ -109,10 +121,22 @@ outputs:
     value: ${{ steps.plan.outputs.plan-exit-code }}
   exit-code:
     description: RealityCheck exit code (0 passed, 1 quality gate, 2 operational error).
-    value: ${{ steps.audit.outputs.exit-code }}
+    value: ${{ steps.result.outputs.exit-code }}
   report-root:
     description: Configured report root relative to the workspace.
-    value: ${{ steps.audit.outputs.report-root }}
+    value: ${{ steps.result.outputs.report-root }}
+  report-path:
+    description: Stable bilingual HTML report path for the selected target kind.
+    value: ${{ steps.result.outputs.report-path }}
+  report-json-path:
+    description: Stable machine-readable JSON report path for the selected target kind.
+    value: ${{ steps.result.outputs.report-json-path }}
+  note-report-path:
+    description: Stable bilingual latest.html path when kind is note; empty in web mode.
+    value: ${{ steps.note.outputs.report-path }}
+  note-report-json-path:
+    description: Stable latest.json path when kind is note; empty in web mode.
+    value: ${{ steps.note.outputs.report-json-path }}
   catalog-path:
     description: Portable HTML entry point for all evidence produced in the report root.
     value: ${{ steps.catalog.outputs.catalog-path }}
@@ -136,10 +160,10 @@ outputs:
     value: ${{ steps.trust.outputs.trust-exit-code }}
   github-summary-path:
     description: Markdown job summary containing latest-target gates and prioritized findings.
-    value: ${{ steps.summary.outputs.github-summary-path }}
+    value: ${{ steps.result.outputs.github-summary-path }}
   summary-exit-code:
     description: Workflow-summary generation exit code (0 generated, 2 unavailable or invalid input).
-    value: ${{ steps.summary.outputs.summary-exit-code }}
+    value: ${{ steps.result.outputs.summary-exit-code }}
   policy-review-path:
     description: Bilingual HTML policy-change review when policy-before and policy-after are configured.
     value: ${{ steps.policy.outputs.policy-review-path }}
@@ -164,25 +188,129 @@ runs:
       with:
         node-version: "22"
 
+    - name: Resolve target kind and defaults
+      id: resolve
+      shell: bash
+      env:
+        RC_KIND: ${{ inputs.kind }}
+        RC_PATH: ${{ inputs.path }}
+        RC_WORKDIR_INPUT: ${{ inputs.working-directory }}
+        RC_FAIL_ON_INPUT: ${{ inputs.fail-on }}
+        RC_OUTPUT_INPUT: ${{ inputs.output }}
+      run: |
+        case "$RC_KIND" in
+          web)
+            fail_on="${RC_FAIL_ON_INPUT:-major}"
+            output="${RC_OUTPUT_INPUT:-.realitycheck/runs}"
+            case "$fail_on" in critical|major|minor|never) ;; *) echo "Web mode fail-on must be critical, major, minor, or never." >&2; exit 2 ;; esac
+            ;;
+          note)
+            fail_on="${RC_FAIL_ON_INPUT:-error}"
+            output="${RC_OUTPUT_INPUT:-.realitycheck/notes}"
+            if [ -z "$RC_PATH" ]; then echo "Note mode requires path: with an HTML file or folder relative to working-directory." >&2; exit 2; fi
+            case "$fail_on" in error|warning|never) ;; *) echo "Note mode fail-on must be error, warning, or never." >&2; exit 2 ;; esac
+            ;;
+          *)
+            echo "RealityCheck kind must be web or note." >&2
+            exit 2
+            ;;
+        esac
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/action-paths.mjs" \
+          --workspace "$GITHUB_WORKSPACE" \
+          --working-directory "$RC_WORKDIR_INPUT" \
+          --kind "$RC_KIND" \
+          --path "$RC_PATH" \
+          --output "$output" \
+          --github-output "$GITHUB_OUTPUT"
+        echo "fail-on=$fail_on" >> "$GITHUB_OUTPUT"
+
     - name: Set up Python
+      if: steps.resolve.outputs.kind == 'web'
       uses: actions/setup-python@v7
       with:
         python-version: "3.12"
 
     - name: Install the pinned RealityCheck adapter
+      if: steps.resolve.outputs.kind == 'web'
       shell: bash
       run: npm ci --omit=dev --ignore-scripts --prefix "$GITHUB_ACTION_PATH"
 
+    - name: Run the browser-free HTML note check
+      id: note
+      if: steps.resolve.outputs.kind == 'note'
+      shell: bash
+      env:
+        RC_PATH: ${{ steps.resolve.outputs.path }}
+        RC_FAIL_ON: ${{ steps.resolve.outputs.fail-on }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
+        RC_WORKDIR_ABS: ${{ steps.resolve.outputs.working-directory-absolute }}
+        RC_REPORT_ROOT: ${{ steps.resolve.outputs.report-root }}
+        RC_LANGUAGE: ${{ inputs.summary-language }}
+        RC_MAX_FILES: ${{ inputs.max-files }}
+      run: |
+        cd "$RC_WORKDIR_ABS"
+        rm -f -- "$RC_OUTPUT/latest.html" "$RC_OUTPUT/latest.json" "$RC_OUTPUT/github-summary.md"
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/note-check.mjs" "$RC_PATH" \
+          --output "$RC_OUTPUT" \
+          --fail-on "$RC_FAIL_ON" \
+          --language "$RC_LANGUAGE" \
+          --max-files "$RC_MAX_FILES"
+        status=$?
+        set -e
+        case "$status" in 0|1|2) ;; *) echo "RealityCheck note command returned unexpected status $status; normalized to operational error 2." >&2; status=2 ;; esac
+        echo "exit-code=$status" >> "$GITHUB_OUTPUT"
+        echo "report-root=$RC_REPORT_ROOT" >> "$GITHUB_OUTPUT"
+        if [ -f "$RC_OUTPUT/latest.html" ]; then
+          echo "report-path=$RC_REPORT_ROOT/latest.html" >> "$GITHUB_OUTPUT"
+          echo "report-json-path=$RC_REPORT_ROOT/latest.json" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Publish the HTML note job summary
+      id: note-summary
+      if: always() && steps.resolve.outputs.kind == 'note' && (steps.note.outputs.exit-code == '0' || steps.note.outputs.exit-code == '1')
+      shell: bash
+      env:
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
+        RC_WORKDIR_ABS: ${{ steps.resolve.outputs.working-directory-absolute }}
+        RC_REPORT_ROOT: ${{ steps.resolve.outputs.report-root }}
+        RC_SOURCE_ROOT: ${{ steps.resolve.outputs.source-root }}
+        RC_LANGUAGE: ${{ inputs.summary-language }}
+        RC_MAX_ANNOTATIONS: ${{ inputs.max-annotations }}
+      run: |
+        cd "$RC_WORKDIR_ABS"
+        summary_path="$RC_OUTPUT/github-summary.md"
+        annotation_log="$RUNNER_TEMP/realitycheck-note-annotations-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.log"
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/note-github-summary.mjs" "$RC_OUTPUT/latest.json" \
+          --output "$summary_path" \
+          --language "$RC_LANGUAGE" \
+          --max-annotations "$RC_MAX_ANNOTATIONS" \
+          --source-root "$RC_SOURCE_ROOT" > "$annotation_log"
+        summary_status=$?
+        set -e
+        case "$summary_status" in 0|2) ;; *) echo "RealityCheck note summary returned unexpected status $summary_status; normalized to operational error 2." >&2; summary_status=2 ;; esac
+        echo "summary-exit-code=$summary_status" >> "$GITHUB_OUTPUT"
+        if [ "$summary_status" -eq 0 ]; then
+          cat "$annotation_log"
+          echo "github-summary-path=$RC_REPORT_ROOT/github-summary.md" >> "$GITHUB_OUTPUT"
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then cat "$summary_path" >> "$GITHUB_STEP_SUMMARY"; fi
+        else
+          cat "$annotation_log" >&2
+          echo "RealityCheck could not build the HTML note job summary; any generated note report remains available." >&2
+        fi
+
     - name: Preview the effective audit plan without a browser
       id: plan
+      if: steps.resolve.outputs.kind == 'web'
       shell: bash
       env:
         RC_URL: ${{ inputs.url }}
         RC_CONFIG: ${{ inputs.config }}
         RC_MODE: ${{ inputs.mode }}
-        RC_FAIL_ON: ${{ inputs.fail-on }}
+        RC_FAIL_ON: ${{ steps.resolve.outputs.fail-on }}
         RC_BASELINE: ${{ inputs.baseline }}
-        RC_OUTPUT: ${{ inputs.output }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
         RC_WORKDIR: ${{ inputs.working-directory }}
         RC_ALLOW_REMOTE: ${{ inputs.allow-remote }}
         RC_SUMMARY_LANGUAGE: ${{ inputs.summary-language }}
@@ -216,14 +344,15 @@ runs:
 
     - name: Run browser audit
       id: audit
+      if: steps.resolve.outputs.kind == 'web'
       shell: bash
       env:
         RC_URL: ${{ inputs.url }}
         RC_CONFIG: ${{ inputs.config }}
         RC_MODE: ${{ inputs.mode }}
-        RC_FAIL_ON: ${{ inputs.fail-on }}
+        RC_FAIL_ON: ${{ steps.resolve.outputs.fail-on }}
         RC_BASELINE: ${{ inputs.baseline }}
-        RC_OUTPUT: ${{ inputs.output }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
         RC_WORKDIR: ${{ inputs.working-directory }}
         RC_BROWSER: ${{ inputs.browser }}
         RC_ALLOW_REMOTE: ${{ inputs.allow-remote }}
@@ -245,10 +374,10 @@ runs:
 
     - name: Publish bounded workflow annotations
       id: summary
-      if: always()
+      if: always() && steps.resolve.outputs.kind == 'web'
       shell: bash
       env:
-        RC_OUTPUT: ${{ inputs.output }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
         RC_WORKDIR: ${{ inputs.working-directory }}
         RC_MAX_ANNOTATIONS: ${{ inputs.max-annotations }}
         RC_SUMMARY_LANGUAGE: ${{ inputs.summary-language }}
@@ -275,12 +404,12 @@ runs:
 
     - name: Review project policy changes
       id: policy
-      if: always()
+      if: always() && steps.resolve.outputs.kind == 'web'
       shell: bash
       env:
         RC_POLICY_BEFORE: ${{ inputs.policy-before }}
         RC_POLICY_AFTER: ${{ inputs.policy-after }}
-        RC_OUTPUT: ${{ inputs.output }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
         RC_WORKDIR: ${{ inputs.working-directory }}
         RC_SUMMARY_LANGUAGE: ${{ inputs.summary-language }}
       run: |
@@ -315,12 +444,12 @@ runs:
 
     - name: Sign completed evidence manifests
       id: attest
-      if: always()
+      if: always() && steps.resolve.outputs.kind == 'web'
       shell: bash
       env:
         RC_ATTESTATION_PRIVATE_KEY: ${{ inputs.attestation-private-key }}
         RC_ATTESTATION_TRUSTED_KEY_ID: ${{ inputs.attestation-trusted-key-id }}
-        RC_OUTPUT: ${{ inputs.output }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
         RC_WORKDIR: ${{ inputs.working-directory }}
       run: |
         if [ -z "$RC_ATTESTATION_PRIVATE_KEY" ]; then
@@ -348,11 +477,11 @@ runs:
 
     - name: Evaluate evidence trust
       id: trust
-      if: always()
+      if: always() && steps.resolve.outputs.kind == 'web'
       shell: bash
       env:
         RC_TRUST_POLICY: ${{ inputs.trust-policy }}
-        RC_OUTPUT: ${{ inputs.output }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
         RC_WORKDIR: ${{ inputs.working-directory }}
       run: |
         if [ -z "$RC_TRUST_POLICY" ]; then
@@ -376,10 +505,10 @@ runs:
 
     - name: Build reviewable GitHub issue drafts
       id: issues
-      if: always()
+      if: always() && steps.resolve.outputs.kind == 'web'
       shell: bash
       env:
-        RC_OUTPUT: ${{ inputs.output }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
         RC_WORKDIR: ${{ inputs.working-directory }}
       run: |
         cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
@@ -397,10 +526,10 @@ runs:
 
     - name: Build the longitudinal risk register
       id: risks
-      if: always()
+      if: always() && steps.resolve.outputs.kind == 'web'
       shell: bash
       env:
-        RC_OUTPUT: ${{ inputs.output }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
         RC_WORKDIR: ${{ inputs.working-directory }}
         RC_MAX_OPEN_RISK_AGE_DAYS: ${{ inputs.max-open-risk-age-days }}
         RC_MAX_OPEN_RISKS: ${{ inputs.max-open-risks }}
@@ -430,10 +559,10 @@ runs:
 
     - name: Assemble the release decision
       id: release
-      if: always()
+      if: always() && steps.resolve.outputs.kind == 'web'
       shell: bash
       env:
-        RC_OUTPUT: ${{ inputs.output }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
         RC_WORKDIR: ${{ inputs.working-directory }}
         RC_RELEASE_REQUIRED: ${{ inputs.release-required-controls }}
         RC_RELEASE_MAX_AGE_HOURS: ${{ inputs.release-max-age-hours }}
@@ -467,10 +596,10 @@ runs:
 
     - name: Build the evidence catalog
       id: catalog
-      if: always()
+      if: always() && steps.resolve.outputs.kind == 'web'
       shell: bash
       env:
-        RC_OUTPUT: ${{ inputs.output }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
         RC_WORKDIR: ${{ inputs.working-directory }}
       run: |
         cd "$GITHUB_WORKSPACE/$RC_WORKDIR"
@@ -490,17 +619,28 @@ runs:
         fi
 
     - name: Upload RealityCheck evidence
-      if: always() && inputs.upload-artifact == 'true'
+      if: always() && steps.resolve.outcome == 'success' && inputs.upload-artifact == 'true'
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}
-        path: ${{ github.workspace }}/${{ inputs.working-directory }}/${{ inputs.output }}
-        if-no-files-found: warn
+        path: ${{ steps.resolve.outputs.artifact-path }}
+        if-no-files-found: error
 
     - name: Enforce the RealityCheck result
+      id: result
       if: always()
       shell: bash
       env:
+        RC_KIND: ${{ steps.resolve.outputs.kind }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
+        RC_REPORT_ROOT: ${{ steps.resolve.outputs.report-root }}
+        RC_ARTIFACT_PATH: ${{ steps.resolve.outputs.artifact-path }}
+        RC_NOTE_EXIT_CODE: ${{ steps.note.outputs.exit-code }}
+        RC_NOTE_SUMMARY_EXIT_CODE: ${{ steps.note-summary.outputs.summary-exit-code }}
+        RC_NOTE_REPORT_PATH: ${{ steps.note.outputs.report-path }}
+        RC_NOTE_REPORT_JSON_PATH: ${{ steps.note.outputs.report-json-path }}
+        RC_NOTE_SUMMARY_PATH: ${{ steps.note-summary.outputs.github-summary-path }}
+        RC_WEB_SUMMARY_PATH: ${{ steps.summary.outputs.github-summary-path }}
         RC_PLAN_EXIT_CODE: ${{ steps.plan.outputs.plan-exit-code }}
         RC_EXIT_CODE: ${{ steps.audit.outputs.exit-code }}
         RC_SUMMARY_EXIT_CODE: ${{ steps.summary.outputs.summary-exit-code }}
@@ -510,6 +650,49 @@ runs:
         RC_POLICY_EXIT_CODE: ${{ steps.policy.outputs.policy-exit-code }}
         RC_RELEASE_EXIT_CODE: ${{ steps.release.outputs.release-decision-exit-code }}
       run: |
+        if [ -z "$RC_KIND" ]; then
+          echo "exit-code=2" >> "$GITHUB_OUTPUT"
+          echo "summary-exit-code=2" >> "$GITHUB_OUTPUT"
+          echo "RealityCheck target-kind preflight failed."
+          exit 2
+        fi
+        echo "report-root=$RC_REPORT_ROOT" >> "$GITHUB_OUTPUT"
+        if [ "$RC_KIND" = "note" ]; then
+          note_status="${RC_NOTE_EXIT_CODE:-2}"
+          summary_status="${RC_NOTE_SUMMARY_EXIT_CODE:-2}"
+          case "$note_status" in 0|1|2) ;; *) echo "RealityCheck HTML note check returned an invalid status; normalized to 2." >&2; note_status=2 ;; esac
+          case "$summary_status" in 0|2) ;; *) echo "RealityCheck HTML note summary returned an invalid status; normalized to 2." >&2; summary_status=2 ;; esac
+          if [ "$note_status" = "2" ]; then summary_status=2; fi
+          if { [ "$note_status" = "0" ] || [ "$note_status" = "1" ]; } && [ "$summary_status" != "0" ]; then
+            echo "RealityCheck HTML note summary generation failed."
+            note_status=2
+            summary_status=2
+          fi
+          echo "exit-code=$note_status" >> "$GITHUB_OUTPUT"
+          echo "summary-exit-code=$summary_status" >> "$GITHUB_OUTPUT"
+          if [ -n "$RC_NOTE_REPORT_PATH" ]; then echo "report-path=$RC_NOTE_REPORT_PATH" >> "$GITHUB_OUTPUT"; fi
+          if [ -n "$RC_NOTE_REPORT_JSON_PATH" ]; then echo "report-json-path=$RC_NOTE_REPORT_JSON_PATH" >> "$GITHUB_OUTPUT"; fi
+          if [ -n "$RC_NOTE_SUMMARY_PATH" ]; then echo "github-summary-path=$RC_NOTE_SUMMARY_PATH" >> "$GITHUB_OUTPUT"; fi
+          if [ "$note_status" = "1" ]; then
+            echo "RealityCheck HTML note gate failed. Download the uploaded evidence and open latest.html for exact findings."
+          elif [ "$note_status" = "2" ]; then
+            echo "RealityCheck could not check the HTML note. Review the input path and note-check diagnostics."
+          fi
+          exit "$note_status"
+        fi
+        web_status="${RC_EXIT_CODE:-2}"
+        web_summary_status="${RC_SUMMARY_EXIT_CODE:-2}"
+        case "$web_status" in 0|1|2) ;; *) echo "RealityCheck Web audit returned an invalid status; normalized to 2." >&2; web_status=2 ;; esac
+        case "$web_summary_status" in 0|2) ;; *) echo "RealityCheck Web summary returned an invalid status; normalized to 2." >&2; web_summary_status=2 ;; esac
+        echo "exit-code=$web_status" >> "$GITHUB_OUTPUT"
+        echo "summary-exit-code=$web_summary_status" >> "$GITHUB_OUTPUT"
+        if [ -f "$RC_ARTIFACT_PATH/latest.html" ]; then
+          echo "report-path=$RC_REPORT_ROOT/latest.html" >> "$GITHUB_OUTPUT"
+        fi
+        if [ -f "$RC_ARTIFACT_PATH/latest.json" ]; then
+          echo "report-json-path=$RC_REPORT_ROOT/latest.json" >> "$GITHUB_OUTPUT"
+        fi
+        if [ -n "$RC_WEB_SUMMARY_PATH" ]; then echo "github-summary-path=$RC_WEB_SUMMARY_PATH" >> "$GITHUB_OUTPUT"; fi
         if [ "$RC_PLAN_EXIT_CODE" != "0" ]; then
           echo "RealityCheck could not validate the browser-free audit plan. Inspect the configuration diagnostics."
           exit 2
@@ -518,7 +701,7 @@ runs:
           echo "RealityCheck evidence signing failed. Check that the configured Secret is a valid Ed25519 private key."
           exit 2
         fi
-        if [ "$RC_SUMMARY_EXIT_CODE" != "0" ]; then
+        if [ "$web_summary_status" != "0" ]; then
           echo "RealityCheck workflow annotation generation failed."
           exit 2
         fi
@@ -538,13 +721,13 @@ runs:
           echo "RealityCheck could not assemble the configured release decision."
           exit 2
         fi
-        if [ "$RC_EXIT_CODE" -eq 1 ]; then
+        if [ "$web_status" -eq 1 ]; then
           echo "RealityCheck quality gate failed. Download the uploaded evidence report for exact findings."
-        elif [ "$RC_EXIT_CODE" -eq 2 ]; then
+        elif [ "$web_status" -eq 2 ]; then
           echo "RealityCheck could not complete. Review the audit log and environment doctor output."
         fi
         if [ "$RC_TRUST_EXIT_CODE" = "1" ]; then echo "RealityCheck evidence trust policy rejected one or more bundles."; fi
         if [ "$RC_POLICY_EXIT_CODE" = "1" ]; then echo "RealityCheck blocked one or more structural policy weakenings."; fi
         if [ "$RC_RELEASE_EXIT_CODE" = "3" ]; then echo "RealityCheck release evidence requires human review; inspect the decision artifact."; fi
-        if [ "$RC_EXIT_CODE" -eq 1 ] || [ "$RC_RISK_EXIT_CODE" = "1" ] || [ "$RC_TRUST_EXIT_CODE" = "1" ] || [ "$RC_POLICY_EXIT_CODE" = "1" ] || [ "$RC_RELEASE_EXIT_CODE" = "1" ]; then exit 1; fi
-        exit "$RC_EXIT_CODE"
+        if [ "$web_status" -eq 1 ] || [ "$RC_RISK_EXIT_CODE" = "1" ] || [ "$RC_TRUST_EXIT_CODE" = "1" ] || [ "$RC_POLICY_EXIT_CODE" = "1" ] || [ "$RC_RELEASE_EXIT_CODE" = "1" ]; then exit 1; fi
+        exit "$web_status"

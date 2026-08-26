@@ -17,7 +17,7 @@ Use Python 3.11 or newer for local tooling.
 ```bash
 python -m unittest discover -s tests -v
 npm test
-npx realitycheck validate examples/reference-run/report.json
+npm run realitycheck -- validate examples/reference-run/report.json
 python realitycheck/scripts/report.py validate examples/reference-run/report.json --fail-on critical
 python /path/to/skill-creator/scripts/quick_validate.py realitycheck
 ```

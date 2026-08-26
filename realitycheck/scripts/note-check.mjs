@@ -144,7 +144,7 @@ function renderHtml(bundle) {
 <div class="actions"><button type="button" id="copy-all" data-task-en="${escapeHtml(allTaskEn)}" data-task-zh-cn="${escapeHtml(allTaskZh)}" data-en="Copy repair task for AI" data-zh-cn="复制给 AI 的修复任务">Copy repair task for AI</button><a href="report.json" download data-en="Download evidence" data-zh-cn="下载检查证据">Download evidence</a><a href="repair-plan.zh-CN.md" download data-en="Download repair plan" data-zh-cn="下载修复计划">Download repair plan</a></div>
 <div class="filters" role="group" aria-label="Finding filters"><button type="button" data-filter="all" aria-pressed="true" data-en="All findings" data-zh-cn="全部问题">All findings</button><button type="button" data-filter="error" aria-pressed="false" data-en="Errors" data-zh-cn="错误">Errors</button><button type="button" data-filter="warning" aria-pressed="false" data-en="Warnings" data-zh-cn="警告">Warnings</button><button type="button" data-filter="advice" aria-pressed="false" data-en="Advice" data-zh-cn="建议">Advice</button></div>
 ${bundle.discovery.truncated ? '<p class="notice" data-en="Discovery reached its safety limit. Unseen local attachments were not falsely reported as missing." data-zh-cn="文件发现达到安全上限；未看到的本地附件不会被误报为缺失。">Discovery reached its safety limit. Unseen local attachments were not falsely reported as missing.</p>' : ""}
-${fileCards}</main><footer class="footer wrap" data-en="Generated locally. No note content was uploaded. Source files were not modified." data-zh-cn="报告在本地生成，没有上传笔记内容，也没有修改源文件。">Generated locally. No note content was uploaded. Source files were not modified.</footer><div class="toast" role="status" aria-live="polite"></div>
+${fileCards}</main><footer class="footer wrap" data-en="Generated locally. The checker did not upload or modify source notes. Reports can contain bounded evidence excerpts; review them before external storage or sharing." data-zh-cn="报告在本地生成；检查器没有上传或修改源笔记。报告可能包含有限证据摘录，外部存储或分享前请先复核。">Generated locally. The checker did not upload or modify source notes. Reports can contain bounded evidence excerpts; review them before external storage or sharing.</footer><div class="toast" role="status" aria-live="polite"></div>
 <script>
 const languageButtons=[...document.querySelectorAll('[data-language]')],translatable=[...document.querySelectorAll('[data-en][data-zh-cn]')],toast=document.querySelector('.toast');let language='en';
 function setLanguage(next){language=next;document.documentElement.lang=next;for(const element of translatable)element.textContent=next==='zh-CN'?element.dataset.zhCn:element.dataset.en;for(const button of languageButtons)button.setAttribute('aria-pressed',String(button.dataset.language===next));}
@@ -299,7 +299,7 @@ export async function runNoteCommand(argv) {
       ? `Codex 修复工作副本：${preparedRepair.root}（共 ${preparedRepair.files} 个文件，已应用 ${preparedRepair.safeFixes} 项安全修复）`
       : `Codex repair working copy: ${preparedRepair.root} (${preparedRepair.files} file(s), ${preparedRepair.safeFixes} safe fix(es) applied)`);
   }
-  console.log(zh ? "源文件未修改，内容未上传。" : "Source files were not modified and content was not uploaded.");
+  console.log(zh ? "检查器未修改或上传源笔记；报告可能包含有限证据摘录。" : "The checker did not modify or upload source notes; reports may contain bounded evidence excerpts.");
   return thresholdFailed(counts, options.failOn) ? 1 : 0;
 }
 

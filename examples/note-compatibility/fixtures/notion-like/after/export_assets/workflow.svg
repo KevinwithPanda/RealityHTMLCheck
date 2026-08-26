@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 180" role="img" aria-labelledby="title description">
+  <title id="title">Three-step project workflow</title>
+  <desc id="description">Collect notes, review evidence, and share a portable copy.</desc>
+  <rect width="720" height="180" rx="24" fill="#eef2ff"/>
+  <g fill="#243b72" font-family="system-ui, sans-serif" font-size="22" text-anchor="middle">
+    <text x="120" y="98">Collect</text><text x="360" y="98">Review</text><text x="600" y="98">Share</text>
+  </g>
+  <path d="M190 90h100m140 0h100" stroke="#5d74b8" stroke-width="8" stroke-linecap="round"/>
+</svg>

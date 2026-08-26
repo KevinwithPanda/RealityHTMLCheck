@@ -1,0 +1,5 @@
+:root { font-family: system-ui, sans-serif; }
+body { margin: 0; color: #20252d; background: #f5f7fa; }
+main { box-sizing: border-box; width: min(100% - 2rem, 52rem); margin: 2rem auto; padding: 1.5rem; background: white; }
+table { border-collapse: collapse; }
+th, td { border: 1px solid #b8c0cc; padding: .5rem .75rem; }

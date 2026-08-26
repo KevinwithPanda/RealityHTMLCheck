@@ -1,0 +1,510 @@
+{
+  "kind": "representative-html-export-compatibility-evidence",
+  "schemaVersion": 1,
+  "title": "Representative HTML export fixture matrix",
+  "titleZhCN": "代表性 HTML 导出夹具矩阵",
+  "generatedBy": "scripts/note-compatibility-evidence.mjs",
+  "evidenceBoundary": {
+    "sourceType": "synthetic-representative",
+    "containsOfficialVendorExports": false,
+    "officialCompatibilityClaim": false,
+    "browserRuntimeTested": false,
+    "statement": "These fixtures reproduce selected package shapes and failure modes commonly seen in exported HTML notes. They are not copied vendor exports and do not certify compatibility with any product or version.",
+    "statementZhCN": "这些夹具只复现 HTML 笔记导出中常见的部分文件包结构与故障模式；它们不是复制的厂商导出文件，也不构成对任何产品或版本的兼容认证。"
+  },
+  "summary": {
+    "familyCount": 4,
+    "fixtureCount": 7,
+    "caseCount": 4,
+    "allExpectationsMatched": true
+  },
+  "families": [
+    "Notion-like",
+    "Obsidian-like",
+    "Jupyter-like",
+    "Quarto-like"
+  ],
+  "fixtures": [
+    {
+      "id": "notion-like-before",
+      "family": "Notion-like",
+      "label": "One-page export with a sibling asset folder",
+      "labelZhCN": "单页 HTML 与同级资源文件夹",
+      "phase": "before",
+      "sourceType": "synthetic-representative",
+      "purpose": "Prove that a missing image in a sibling export-assets folder blocks sharing.",
+      "purposeZhCN": "证明同级导出资源文件夹中缺失图片会阻止分享。",
+      "fixtureDirectory": "fixtures/notion-like/before",
+      "entryFiles": [
+        "index.html"
+      ],
+      "knownFileCount": 2,
+      "sourceDigestSha256": "df6cec9d19acd587f06df30fa2c10f0015ef5cb3461dfcd1bb4136423f4ea656",
+      "score": 93,
+      "scoreBasis": "lowest-file",
+      "status": "needs-fix",
+      "counts": {
+        "error": 1,
+        "warning": 0,
+        "advice": 0,
+        "autoFixable": 0
+      },
+      "detectedRules": [
+        "missing-local-file"
+      ],
+      "findings": [
+        {
+          "reportPath": "index.html",
+          "id": "NOTE-MISSING-LOCAL-FILE",
+          "ruleId": "missing-local-file",
+          "level": "error",
+          "title": {
+            "en": "A referenced local file is missing",
+            "zhCN": "引用的本地文件不存在"
+          },
+          "summary": {
+            "en": "An image, stylesheet, attachment, or linked note was not found in the selected folder.",
+            "zhCN": "在所选文件夹中找不到图片、样式表、附件或被链接的笔记。"
+          },
+          "remediation": {
+            "en": "Restore the file or correct the relative path, including its extension and letter case.",
+            "zhCN": "恢复该文件，或者修正相对路径、扩展名和字母大小写。"
+          },
+          "evidence": [
+            {
+              "path": "index.html",
+              "line": 15,
+              "excerpt": "<img src=\"export_assets/workflow.svg\" alt=\"Three-step project workflow\">"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "needs-fix",
+        "requiredRules": [
+          "missing-local-file"
+        ]
+      },
+      "expectationMatched": true
+    },
+    {
+      "id": "notion-like-after",
+      "family": "Notion-like",
+      "label": "Repaired one-page export package",
+      "labelZhCN": "修复后的单页导出包",
+      "phase": "after",
+      "sourceType": "synthetic-representative",
+      "purpose": "Prove that restoring the exact relative asset path clears the portability blocker.",
+      "purposeZhCN": "证明恢复准确的相对资源路径后，可消除可移植性阻断项。",
+      "fixtureDirectory": "fixtures/notion-like/after",
+      "entryFiles": [
+        "index.html"
+      ],
+      "knownFileCount": 3,
+      "sourceDigestSha256": "5b6f3b45d8c2672bdbd74b0a07d1ce19eada3a7abb2ce9dae32961fb1c41ec88",
+      "score": 100,
+      "scoreBasis": "lowest-file",
+      "status": "ready",
+      "counts": {
+        "error": 0,
+        "warning": 0,
+        "advice": 0,
+        "autoFixable": 0
+      },
+      "detectedRules": [],
+      "findings": [],
+      "expected": {
+        "status": "ready",
+        "requiredRules": []
+      },
+      "expectationMatched": true
+    },
+    {
+      "id": "obsidian-like-before",
+      "family": "Obsidian-like",
+      "label": "Linked-note folder with a stale section fragment",
+      "labelZhCN": "包含失效章节片段的互链笔记文件夹",
+      "phase": "before",
+      "sourceType": "synthetic-representative",
+      "purpose": "Prove that an existing linked note can still contain a broken section destination.",
+      "purposeZhCN": "证明链接目标笔记存在时，其章节锚点仍可能失效。",
+      "fixtureDirectory": "fixtures/obsidian-like/before",
+      "entryFiles": [
+        "index.html",
+        "notes/method.html"
+      ],
+      "knownFileCount": 3,
+      "sourceDigestSha256": "ac1c7090f0227948bf255562c0bd92b59de099f963e7d24b1a2d2cbc10d5a4e5",
+      "score": 93,
+      "scoreBasis": "lowest-file",
+      "status": "needs-fix",
+      "counts": {
+        "error": 1,
+        "warning": 0,
+        "advice": 0,
+        "autoFixable": 0
+      },
+      "detectedRules": [
+        "broken-cross-document-fragment"
+      ],
+      "findings": [
+        {
+          "reportPath": "index.html",
+          "id": "NOTE-BROKEN-CROSS-DOCUMENT-FRAGMENT",
+          "ruleId": "broken-cross-document-fragment",
+          "level": "error",
+          "title": {
+            "en": "A linked note section does not exist",
+            "zhCN": "链接的笔记章节不存在"
+          },
+          "summary": {
+            "en": "A cross-note link opens an existing HTML file but points to a missing ID or named anchor.",
+            "zhCN": "跨笔记链接能打开现有 HTML 文件，但指向的 ID 或命名锚点不存在。"
+          },
+          "remediation": {
+            "en": "Correct the fragment or add the intended unique ID in the destination note.",
+            "zhCN": "修正片段标识，或在目标笔记中添加预期的唯一 ID。"
+          },
+          "evidence": [
+            {
+              "path": "index.html",
+              "line": 14,
+              "excerpt": "<a href=\"notes/method.html#results\">"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "needs-fix",
+        "requiredRules": [
+          "broken-cross-document-fragment"
+        ]
+      },
+      "expectationMatched": true
+    },
+    {
+      "id": "obsidian-like-after",
+      "family": "Obsidian-like",
+      "label": "Linked-note folder with corrected section navigation",
+      "labelZhCN": "章节导航已修复的互链笔记文件夹",
+      "phase": "after",
+      "sourceType": "synthetic-representative",
+      "purpose": "Prove that pointing to the destination's real ID clears the cross-note error.",
+      "purposeZhCN": "证明链接改为目标文档的真实 ID 后，可消除跨笔记错误。",
+      "fixtureDirectory": "fixtures/obsidian-like/after",
+      "entryFiles": [
+        "index.html",
+        "notes/method.html"
+      ],
+      "knownFileCount": 3,
+      "sourceDigestSha256": "fcbed214c5e20633fc5a2de697a4a865b84f068fb03e53a009a5bf3c7ea0456d",
+      "score": 100,
+      "scoreBasis": "lowest-file",
+      "status": "ready",
+      "counts": {
+        "error": 0,
+        "warning": 0,
+        "advice": 0,
+        "autoFixable": 0
+      },
+      "detectedRules": [],
+      "findings": [],
+      "expected": {
+        "status": "ready",
+        "requiredRules": []
+      },
+      "expectationMatched": true
+    },
+    {
+      "id": "jupyter-like-review",
+      "family": "Jupyter-like",
+      "label": "Notebook-style HTML with intentional local interactivity",
+      "labelZhCN": "保留有意本地交互的笔记本式 HTML",
+      "phase": "review",
+      "sourceType": "synthetic-representative",
+      "purpose": "Prove that executable notebook behavior is disclosed for human review instead of silently removed.",
+      "purposeZhCN": "证明笔记本的可执行行为会交由人工复核，而不是被静默删除。",
+      "fixtureDirectory": "fixtures/jupyter-like/review",
+      "entryFiles": [
+        "notebook.html"
+      ],
+      "knownFileCount": 3,
+      "sourceDigestSha256": "58a32b2d563f48c673e2382f919f2d0209a6fcef8af63226ec4f785398cb3f4d",
+      "score": 98,
+      "scoreBasis": "lowest-file",
+      "status": "review",
+      "counts": {
+        "error": 0,
+        "warning": 1,
+        "advice": 0,
+        "autoFixable": 0
+      },
+      "detectedRules": [
+        "executable-script"
+      ],
+      "findings": [
+        {
+          "reportPath": "notebook.html",
+          "id": "NOTE-EXECUTABLE-SCRIPT",
+          "ruleId": "executable-script",
+          "level": "warning",
+          "title": {
+            "en": "The note can execute JavaScript",
+            "zhCN": "笔记可以执行 JavaScript"
+          },
+          "summary": {
+            "en": "Scripts can modify content, access browser storage, make network requests, or behave differently later.",
+            "zhCN": "脚本可以修改内容、访问浏览器存储、发起网络请求，或者在以后产生不同的行为。"
+          },
+          "remediation": {
+            "en": "Remove scripts from archival notes. If interactivity is required, keep only reviewed code and document why it is trusted.",
+            "zhCN": "归档笔记应删除脚本；如果确实需要交互，只保留经过审查的代码并说明信任理由。"
+          },
+          "evidence": [
+            {
+              "path": "notebook.html",
+              "line": 17,
+              "excerpt": "<script src=\"assets/notebook.js\">"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "review",
+        "requiredRules": [
+          "executable-script"
+        ]
+      },
+      "expectationMatched": true
+    },
+    {
+      "id": "quarto-like-before",
+      "family": "Quarto-like",
+      "label": "Nested site library with a missing CSS import and phone-width risk",
+      "labelZhCN": "存在 CSS 导入缺失与手机宽度风险的嵌套站点库",
+      "phase": "before",
+      "sourceType": "synthetic-representative",
+      "purpose": "Prove that dependency crawling follows a nested stylesheet and evaluates its mobile width.",
+      "purposeZhCN": "证明依赖爬取会进入嵌套样式表，并检查其中的移动端宽度。",
+      "fixtureDirectory": "fixtures/quarto-like/before",
+      "entryFiles": [
+        "index.html"
+      ],
+      "knownFileCount": 3,
+      "sourceDigestSha256": "38c860106a443b281237f18c5239a4a59fbbf223ded09bed841effd8ca2e812b",
+      "score": 91,
+      "scoreBasis": "lowest-file",
+      "status": "needs-fix",
+      "counts": {
+        "error": 1,
+        "warning": 1,
+        "advice": 0,
+        "autoFixable": 0
+      },
+      "detectedRules": [
+        "css-missing-local-file",
+        "external-css-wide-fixed-layout"
+      ],
+      "findings": [
+        {
+          "reportPath": "index.html",
+          "id": "NOTE-CSS-MISSING-LOCAL-FILE",
+          "ruleId": "css-missing-local-file",
+          "level": "error",
+          "title": {
+            "en": "A stylesheet dependency is missing",
+            "zhCN": "样式表引用的本地资源不存在"
+          },
+          "summary": {
+            "en": "A reachable CSS file points to an image, font, or imported stylesheet outside the selected package inventory.",
+            "zhCN": "可达 CSS 文件引用的图片、字体或导入样式表不在所选文件包清单中。"
+          },
+          "remediation": {
+            "en": "Restore the dependency or correct the CSS path, then check the whole folder again.",
+            "zhCN": "恢复依赖或修正 CSS 路径，然后重新检查整个文件夹。"
+          },
+          "evidence": [
+            {
+              "path": "site_libs/quarto-html/quarto.css",
+              "line": 1,
+              "excerpt": "@import \"theme.css\""
+            }
+          ]
+        },
+        {
+          "reportPath": "index.html",
+          "id": "NOTE-EXTERNAL-CSS-WIDE-FIXED-LAYOUT",
+          "ruleId": "external-css-wide-fixed-layout",
+          "level": "warning",
+          "title": {
+            "en": "An external stylesheet can force horizontal scrolling",
+            "zhCN": "外部样式表可能强制横向滚动"
+          },
+          "summary": {
+            "en": "A reachable stylesheet sets a minimum width wider than a typical phone viewport outside a matching desktop-only media query.",
+            "zhCN": "可达样式表在匹配的桌面媒体查询之外设置了宽于常见手机视口的最小宽度。"
+          },
+          "remediation": {
+            "en": "Use a fluid width or max-width and confine necessary overflow.",
+            "zhCN": "使用流式宽度或 max-width，并限制必要的溢出范围。"
+          },
+          "evidence": [
+            {
+              "path": "site_libs/quarto-html/quarto.css",
+              "line": 4,
+              "excerpt": "min-width: 760px"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "needs-fix",
+        "requiredRules": [
+          "css-missing-local-file",
+          "external-css-wide-fixed-layout"
+        ]
+      },
+      "expectationMatched": true
+    },
+    {
+      "id": "quarto-like-after",
+      "family": "Quarto-like",
+      "label": "Complete nested site library with fluid layout",
+      "labelZhCN": "依赖完整且采用流式布局的嵌套站点库",
+      "phase": "after",
+      "sourceType": "synthetic-representative",
+      "purpose": "Prove that restoring the imported theme and replacing the fixed floor clears both findings.",
+      "purposeZhCN": "证明补全导入主题并移除固定宽度下限后，两项问题都会消失。",
+      "fixtureDirectory": "fixtures/quarto-like/after",
+      "entryFiles": [
+        "index.html"
+      ],
+      "knownFileCount": 4,
+      "sourceDigestSha256": "e0f1fd72eee85015f4bdaae506cafdc05374cfb4049aaaacf91dc33dba1b3189",
+      "score": 100,
+      "scoreBasis": "lowest-file",
+      "status": "ready",
+      "counts": {
+        "error": 0,
+        "warning": 0,
+        "advice": 0,
+        "autoFixable": 0
+      },
+      "detectedRules": [],
+      "findings": [],
+      "expected": {
+        "status": "ready",
+        "requiredRules": []
+      },
+      "expectationMatched": true
+    }
+  ],
+  "cases": [
+    {
+      "id": "sibling-asset-repair",
+      "title": "Missing sibling asset → restore exact relative file",
+      "titleZhCN": "同级资源缺失 → 恢复准确相对文件",
+      "outcome": "repaired-copy-verified",
+      "before": {
+        "fixture": "notion-like-before",
+        "score": 93,
+        "status": "needs-fix",
+        "rules": [
+          "missing-local-file"
+        ]
+      },
+      "after": {
+        "fixture": "notion-like-after",
+        "score": 100,
+        "status": "ready",
+        "rules": []
+      },
+      "resolvedRules": [
+        "missing-local-file"
+      ],
+      "expectedResolvedRules": [
+        "missing-local-file"
+      ],
+      "expectationMatched": true
+    },
+    {
+      "id": "cross-note-anchor-repair",
+      "title": "Dead cross-note section → point to the real destination ID",
+      "titleZhCN": "跨笔记章节失效 → 改为真实目标 ID",
+      "outcome": "repaired-copy-verified",
+      "before": {
+        "fixture": "obsidian-like-before",
+        "score": 93,
+        "status": "needs-fix",
+        "rules": [
+          "broken-cross-document-fragment"
+        ]
+      },
+      "after": {
+        "fixture": "obsidian-like-after",
+        "score": 100,
+        "status": "ready",
+        "rules": []
+      },
+      "resolvedRules": [
+        "broken-cross-document-fragment"
+      ],
+      "expectedResolvedRules": [
+        "broken-cross-document-fragment"
+      ],
+      "expectationMatched": true
+    },
+    {
+      "id": "interactive-notebook-decision",
+      "title": "Executable notebook behavior → human review, no blind removal",
+      "titleZhCN": "可执行笔记本行为 → 人工复核，不盲目删除",
+      "outcome": "review-intended-interactivity",
+      "before": {
+        "fixture": "jupyter-like-review",
+        "score": 98,
+        "status": "review",
+        "rules": [
+          "executable-script"
+        ]
+      },
+      "after": null,
+      "remainingRules": [
+        "executable-script"
+      ],
+      "expectedRemainingRules": [
+        "executable-script"
+      ],
+      "expectationMatched": true
+    },
+    {
+      "id": "nested-css-repair",
+      "title": "Missing nested CSS import and phone-width floor → complete fluid package",
+      "titleZhCN": "嵌套 CSS 导入缺失与手机宽度下限 → 补全流式文件包",
+      "outcome": "repaired-copy-verified",
+      "before": {
+        "fixture": "quarto-like-before",
+        "score": 91,
+        "status": "needs-fix",
+        "rules": [
+          "css-missing-local-file",
+          "external-css-wide-fixed-layout"
+        ]
+      },
+      "after": {
+        "fixture": "quarto-like-after",
+        "score": 100,
+        "status": "ready",
+        "rules": []
+      },
+      "resolvedRules": [
+        "css-missing-local-file",
+        "external-css-wide-fixed-layout"
+      ],
+      "expectedResolvedRules": [
+        "css-missing-local-file",
+        "external-css-wide-fixed-layout"
+      ],
+      "expectationMatched": true
+    }
+  ]
+}

@@ -1,20 +1,14 @@
 # Changelog
 
-## Unreleased
-
-### Changed
-
-- HTML note folders now use the lowest file score, lead with a conservative sharing decision, and can export a self-contained bilingual report from the zero-upload browser checker.
-- Folder checks follow reachable external CSS imports and assets, verify cross-note fragments, reject package-root escapes, disclose unreadable large stylesheets, and avoid treating CSS comments or code examples as dependencies.
-- The installed Codex Skill now invokes the dependency-free note entry directly, with an isolated installed-Skill smoke test proving the workflow does not depend on repository `node_modules`.
-- Safe-copy repair no longer preserves replacement-character corruption, and language inference distinguishes Chinese, Japanese, and Korean scripts.
-
 All notable changes are documented here. This project follows Semantic Versioning.
 
-## [Unreleased]
+## [0.5.0] - 2026-08-27
 
 ### Added
 
+- A memorable `realityhtmlcheck` npm package surface with `npx`-style isolated-consumer proof, backward-compatible `realitycheck` binary alias, complete package metadata, and a manual checksum/OIDC release workflow. The package remains unpublished until the npm trusted publisher is deliberately bootstrapped.
+- A browser-free `kind: note` path in the composite GitHub Action, including lowest-file gates, bilingual job summaries, bounded annotations, artifact round-trip proof, canonical path containment, and a dedicated no-`npm install` Ubuntu job.
+- Seven hashed representative export fixtures across four explicitly non-certified `-like` structures, four before/after or human-review cases, a bilingual evidence page with inspectable findings, and a privacy-safe community intake template for contributed real exports.
 - A zero-install, zero-upload HTML note checker for AI-generated and exported notes, with local file/folder input, bilingual evidence, filters, JSON export, copy-ready repair tasks, and downloadable repaired copies that never overwrite source files.
 - A zero-configuration `note <file-or-directory>` CLI that statically checks encoding, structure, attachments, internal navigation, portability, script safety, mobile readability, accessibility, and unfinished AI placeholders without starting a server or executing note content.
 - Twenty-two-plus deterministic note rules, case-sensitive portability checks, bounded evidence, batch folder discovery, `--fail-on` export gates, and conservative `--fix-safe` copies limited to doctype, language, and UTF-8 metadata.
@@ -43,6 +37,10 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ### Changed
 
+- HTML note folders now use the lowest file score, lead with a conservative sharing decision, and can export a self-contained bilingual report from the zero-upload browser checker.
+- Folder checks follow reachable external CSS imports and assets, verify cross-note fragments, reject package-root escapes, disclose unreadable large stylesheets, and avoid treating CSS comments or code examples as dependencies.
+- The installed Codex Skill invokes the dependency-free note entry directly, with an isolated installed-Skill smoke test proving the workflow does not depend on repository `node_modules`.
+- Safe-copy repair no longer preserves replacement-character corruption, and language inference distinguishes Chinese, Japanese, and Korean scripts.
 - Individual and batch copy-ready repair tasks now carry each stable rule ID, proving scenario, and language-matched remediation summary, bounded to 700 normalized characters and explicitly labeled as evidence to verify rather than authority over safety boundaries.
 - Detector policy fingerprints and `doctor` output now include network reliability and link-integrity policy so removing an API or navigation gate cannot masquerade as a verified fix.
 - Generated Markdown metadata uses explicit lists instead of invisible hard-break whitespace, keeping repository quality checks clean across editors and GitHub.

@@ -4,6 +4,8 @@ import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { verifyCompatibilityArtifacts } from "./note-compatibility-evidence.mjs";
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const output = join(root, "_site");
 const copy = (source, destination) => {
@@ -11,6 +13,9 @@ const copy = (source, destination) => {
   mkdirSync(dirname(target), { recursive: true });
   cpSync(join(root, source), target, { recursive: true });
 };
+
+const compatibility = verifyCompatibilityArtifacts();
+if (!compatibility.ok) throw new Error(`Representative note compatibility evidence is stale: ${compatibility.problems.join("; ")}`);
 
 rmSync(output, { recursive: true, force: true });
 mkdirSync(output, { recursive: true });
@@ -22,6 +27,7 @@ copy("realitycheck/scripts/note-package.mjs", "note-package.mjs");
 copy("realitycheck/scripts/note-summary.mjs", "note-summary.mjs");
 copy("examples/public-evidence", "evidence");
 copy("examples/reference-run", "reference");
+copy("examples/note-compatibility", "evidence/note-compatibility");
 copy("examples/journey-lab", "labs/journey");
 copy("examples/link-lab", "labs/links");
 copy("examples/network-lab", "labs/network");

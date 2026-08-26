@@ -7,15 +7,17 @@ import test from "node:test";
 import { validateArtifactFiles } from "../realitycheck/scripts/artifact-validator.mjs";
 import { TOOL_VERSION } from "../realitycheck/scripts/version.mjs";
 
-test("all public surfaces use one tool version", () => {
+test("runtime surfaces use one version while immutable evidence keeps its producer version", () => {
   const version = readFileSync(resolve("VERSION"), "utf8").trim();
   const packageVersion = JSON.parse(readFileSync(resolve("package.json"), "utf8")).version;
   const referenceVersion = JSON.parse(readFileSync(resolve("examples/reference-run/report.json"), "utf8")).toolVersion;
   const pythonSource = readFileSync(resolve("realitycheck/scripts/report.py"), "utf8");
   assert.equal(version, TOOL_VERSION);
   assert.equal(packageVersion, TOOL_VERSION);
-  assert.equal(referenceVersion, TOOL_VERSION);
   assert.match(pythonSource, new RegExp(`TOOL_VERSION = ["']${TOOL_VERSION.replaceAll(".", "\\.")}["']`));
+  const numeric = (value) => value.split(".").map(Number).reduce((total, part) => total * 1000 + part, 0);
+  assert.match(referenceVersion, /^\d+\.\d+\.\d+$/);
+  assert.ok(numeric(referenceVersion) <= numeric(TOOL_VERSION), `${referenceVersion} cannot be newer than runtime ${TOOL_VERSION}`);
 });
 
 test("the published page report satisfies its JSON Schema", () => {

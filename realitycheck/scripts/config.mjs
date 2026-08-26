@@ -11,7 +11,7 @@ export const DEFAULT_VIEWPORTS = Object.freeze([
 ]);
 
 export const DEFAULT_PROJECT_CONFIG = Object.freeze({
-  $schema: "./node_modules/realitycheck-web-audit/realitycheck/assets/config.schema.json",
+  $schema: "./node_modules/realityhtmlcheck/realitycheck/assets/config.schema.json",
   baseUrl: "http://127.0.0.1:3000",
   mode: "quick",
   failOn: "major",

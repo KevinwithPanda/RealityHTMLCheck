@@ -10,7 +10,7 @@
 
 Check whether an HTML note is truly portable, and whether a Web UI survives real browser conditions.
 
-[中文文档](docs/README.zh-CN.md) · [Try the HTML note checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html) · [Open a real report](https://kevinwithpanda.github.io/RealityHTMLCheck/reference/report.html) · [Run the demo](https://kevinwithpanda.github.io/RealityHTMLCheck/)
+[中文文档](docs/README.zh-CN.md) · [Try the HTML note checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html) · [Inspect reproducible note evidence](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html) · [Open a real Web report](https://kevinwithpanda.github.io/RealityHTMLCheck/reference/report.html)
 
 [![Validation](https://github.com/KevinwithPanda/RealityHTMLCheck/actions/workflows/validate.yml/badge.svg)](https://github.com/KevinwithPanda/RealityHTMLCheck/actions/workflows/validate.yml)
 [![GitHub Pages](https://github.com/KevinwithPanda/RealityHTMLCheck/actions/workflows/pages.yml/badge.svg)](https://github.com/KevinwithPanda/RealityHTMLCheck/actions/workflows/pages.yml)
@@ -77,7 +77,8 @@ It complements compilers and AI models rather than competing with them. The mode
 | Experience | Best for | What happens |
 | --- | --- | --- |
 | [Online note checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html) | Anyone with an HTML file/folder | Zero install, zero upload, static local inspection in the browser |
-| CLI | Repeatable exports and CI | Bilingual reports, JSON evidence, repair plans, thresholds |
+| GitHub-backed `npx` CLI | Repeatable exports without cloning this repository | Disposable install, bilingual reports, JSON evidence, repair plans, thresholds |
+| GitHub Action | Export and publishing pipelines | Checks a note folder without a server, uploads the generated report, annotates exact files, and enforces error/warning gates |
 | `$realitycheck` Skill | End-to-end work in Codex | Inspect, create a working copy, repair high-confidence issues, recheck, and return the usable output plus both reports |
 
 ### The end-to-end Skill workflow
@@ -85,6 +86,8 @@ It complements compilers and AI models rather than competing with them. The mode
 Install the Skill once from a clone of this repository:
 
 ```bash
+git clone --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git
+cd RealityHTMLCheck
 python scripts/install-skill.py
 python scripts/install-skill.py --status
 ```
@@ -134,22 +137,34 @@ The **Download safe repaired copy** button is deliberately narrow. It creates a 
 
 It is **not** an “all problems fixed” download. Headings, image descriptions, missing files, paths, scripts, and content decisions require review. Use the Skill workflow when you want Codex to carry those repairs through to a verified copy.
 
-### Local note CLI
+### No-clone note CLI
 
 ```bash
-git clone --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git
-cd RealityHTMLCheck
-npm install
-npm run note -- ./my-notes
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" \
+  realityhtmlcheck note ./my-notes
 ```
 
 Open `.realitycheck/notes/latest.html`. To generate only the three conservative metadata repairs without touching the originals:
 
 ```bash
-npm run note -- ./my-notes --fix-safe
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" \
+  realityhtmlcheck note ./my-notes --fix-safe
 ```
 
-Use `--fail-on error` or `--fail-on warning` in an export pipeline.
+Use `--fail-on error` or `--fail-on warning` in an export pipeline. This command uses a tagged GitHub package and leaves no project-local install. The shorter registry command `npx realityhtmlcheck ...` is fully packed and isolated-consumer tested, but it must not be treated as public until the first intentional npm bootstrap is visible at `npmjs.com/package/realityhtmlcheck`.
+
+### HTML note gate in GitHub Actions
+
+```yaml
+- uses: KevinwithPanda/RealityHTMLCheck@v0.5.0
+  with:
+    kind: note
+    path: exported-notes
+    fail-on: error
+    summary-language: zh-CN
+```
+
+Note mode does not start a server, install browser dependencies, execute note scripts, or upload source note files. When artifact upload is enabled, it stores the generated report—including bounded evidence excerpts—so review the artifact before making a workflow public.
 
 ### Real-browser Web audit
 
@@ -208,7 +223,7 @@ npm run audit -- http://localhost:3000 \
 For a reusable GitHub Action:
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@main
+- uses: KevinwithPanda/RealityHTMLCheck@v0.5.0
   with:
     url: http://127.0.0.1:3000
     mode: quick
@@ -229,8 +244,11 @@ RealityCheck reports exactly what it tested, what failed, and what it could not 
 
 ## Project status
 
-RealityCheck is a **v0.4.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
+RealityCheck is a **v0.5.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
 
+- [Representative export evidence and explicit compatibility boundary](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)
+- [HTML note Action and browser Action](action.yml)
+- [Manual checksum/OIDC release workflow](.github/workflows/release.yml)
 - [Changelog](CHANGELOG.md)
 - [Roadmap](ROADMAP.md)
 - [Contributing](CONTRIBUTING.md)

@@ -74,6 +74,20 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add aggregate browser-storage privacy budgets with zero key/value retention, explicit measurement failures, policy anti-weakening coverage, and paired public real-browser proof.
 - [x] Add a browser-free, bilingual effective audit-plan preview with schema validation, semantic binding, safety/data-retention disclosure, and a public demonstration.
 
+## v0.5 - HTML note adoption loop
+
+- [x] Make folder readiness depend on the lowest HTML file instead of an average that can hide one broken note.
+- [x] Follow reachable HTML → CSS → `@import` → asset dependencies and verify cross-note fragments with path-case and package-boundary checks.
+- [x] Export a self-contained bilingual share report with a conservative sharing decision.
+- [x] Run the installed Codex Skill's note workflow without repository dependencies and keep end-to-end repair inside one task.
+- [x] Add a browser-free HTML note GitHub Action with bounded annotations, canonical artifact paths, an uploaded report, and error/warning gates.
+- [x] Prove the packed `realityhtmlcheck` CLI through an isolated npx-style consumer and add a guarded checksum/OIDC release workflow.
+- [x] Publish hashed representative export structures and before/after decision cases with an explicit non-certification boundary.
+- [x] Add a privacy-safe intake path for community-contributed, versioned real export samples.
+- [ ] Bootstrap the public npm package and bind `release.yml` to npm trusted publishing.
+- [ ] Collect at least 20 licensed, de-identified real export samples across multiple tool versions and platforms.
+- [ ] Publish a separate real-export compatibility matrix with static results plus bounded browser visual/interaction evidence.
+
 ## v1.0 criteria
 
 - Stable report and adapter contracts.

@@ -81,6 +81,8 @@ class SkillStructureTests(unittest.TestCase):
             "scripts/note-package.mjs",
             "scripts/note-summary.mjs",
             "scripts/note-check.mjs",
+            "scripts/note-github-summary.mjs",
+            "scripts/action-paths.mjs",
             "scripts/demo-server.mjs",
             "scripts/github-summary.mjs",
             "scripts/policy-review.mjs",
@@ -177,8 +179,42 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("release-decision-path", action)
         self.assertIn("release-decision-exit-code", action)
         self.assertIn('RC_RELEASE_EXIT_CODE" = "3', action)
-        self.assertIn('exit "$RC_EXIT_CODE"', action)
+        self.assertIn('exit "$web_status"', action)
         self.assertNotIn("eval ", action)
+
+    def test_github_action_supports_a_browser_free_html_note_gate(self) -> None:
+        action = (REPOSITORY_ROOT / "action.yml").read_text(encoding="utf-8")
+        self.assertIn("kind:", action)
+        self.assertIn("path:", action)
+        self.assertIn("Run the browser-free HTML note check", action)
+        self.assertIn("realitycheck/scripts/note-check.mjs", action)
+        self.assertIn("realitycheck/scripts/note-github-summary.mjs", action)
+        self.assertIn("realitycheck/scripts/action-paths.mjs", action)
+        self.assertIn("steps.resolve.outputs.kind == 'note'", action)
+        self.assertIn("steps.resolve.outputs.kind == 'web'", action)
+        self.assertIn('fail_on="${RC_FAIL_ON_INPUT:-error}"', action)
+        self.assertIn('output="${RC_OUTPUT_INPUT:-.realitycheck/notes}"', action)
+        self.assertIn("note-report-path", action)
+        self.assertIn("note-report-json-path", action)
+        self.assertIn("HTML note gate failed", action)
+        self.assertIn("steps.resolve.outputs.artifact-path", action)
+        self.assertIn("if-no-files-found: error", action)
+        self.assertNotIn('path: ${{ github.workspace }}/${{ inputs.working-directory }}', action)
+        self.assertIn("normalized to operational error 2", action)
+        self.assertIn('rm -f -- "$RC_OUTPUT/latest.html" "$RC_OUTPUT/latest.json" "$RC_OUTPUT/github-summary.md"', action)
+        self.assertIn("steps.note.outputs.exit-code == '0' || steps.note.outputs.exit-code == '1'", action)
+        self.assertLess(action.index("Upload RealityCheck evidence"), action.index("Enforce the RealityCheck result"))
+
+        workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "validate.yml").read_text(encoding="utf-8")
+        self.assertIn("Prove the HTML note Action gate and artifact handoff", workflow)
+        self.assertIn("kind: note", workflow)
+        self.assertIn("path: note-action-fixture", workflow)
+        self.assertIn('RC_ACTION_EXIT_CODE" = "1', workflow)
+        self.assertIn('report["kind"] == "html-note-check-bundle"', workflow)
+        self.assertIn("HTML note Action without repository dependencies", workflow)
+        self.assertIn("Run the note gate without npm install", workflow)
+        self.assertIn("actions/download-artifact@v8", workflow)
+        self.assertIn("downloaded-note-evidence/latest.html", workflow)
 
     def test_validation_workflow_waits_for_the_browser_fixture_without_hiding_startup_errors(self) -> None:
         workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "validate.yml").read_text(encoding="utf-8")
@@ -190,8 +226,8 @@ class SkillStructureTests(unittest.TestCase):
         workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "validate.yml").read_text(encoding="utf-8")
         self.assertIn("Prove the packed CLI from an isolated consumer", workflow)
         self.assertIn('npm install --ignore-scripts "$package_path"', workflow)
-        self.assertIn('cli="./node_modules/.bin/realitycheck"', workflow)
-        self.assertIn('config["$schema"] == "./node_modules/realitycheck-web-audit/realitycheck/assets/config.schema.json"', workflow)
+        self.assertIn('cli="./node_modules/.bin/realityhtmlcheck"', workflow)
+        self.assertIn('config["$schema"] == "./node_modules/realityhtmlcheck/realitycheck/assets/config.schema.json"', workflow)
         self.assertIn('plan["target"]["inspected"] is False', workflow)
         self.assertIn('"$cli" note note-fixture', workflow)
         self.assertIn('note["kind"] == "html-note-check-bundle"', workflow)

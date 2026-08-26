@@ -46,6 +46,8 @@ jobs:
           node --check realitycheck/scripts/security-headers.mjs
           node --check realitycheck/scripts/note-analyzer.mjs
           node --check realitycheck/scripts/note-check.mjs
+          node --check realitycheck/scripts/note-github-summary.mjs
+          node --check realitycheck/scripts/action-paths.mjs
 
       - name: Verify package contents
         run: npm pack --dry-run
@@ -65,7 +67,7 @@ jobs:
             cd "$consumer_dir"
             npm init --yes > /dev/null
             npm install --ignore-scripts "$package_path" > /dev/null
-            cli="./node_modules/.bin/realitycheck"
+            cli="./node_modules/.bin/realityhtmlcheck"
             "$cli" profiles > profiles.txt
             "$cli" init --profile product --base-url http://127.0.0.1:4300/app
             "$cli" plan --config realitycheck.config.json --output audit-plan
@@ -83,7 +85,7 @@ jobs:
           from pathlib import Path
           config = json.loads(Path("realitycheck.config.json").read_text(encoding="utf-8"))
           plan = json.loads(Path("audit-plan/audit-plan.json").read_text(encoding="utf-8"))
-          assert config["$schema"] == "./node_modules/realitycheck-web-audit/realitycheck/assets/config.schema.json", config
+          assert config["$schema"] == "./node_modules/realityhtmlcheck/realitycheck/assets/config.schema.json", config
           assert Path(config["$schema"]).is_file(), config
           assert plan["target"]["url"] == "http://127.0.0.1:4300/app", plan
           assert plan["target"]["inspected"] is False, plan
@@ -100,6 +102,52 @@ jobs:
           assert all(name in profiles for name in ("starter", "product", "strict")), profiles
           PY
           )
+
+      - name: Prepare the HTML note Action fixture
+        shell: bash
+        run: |
+          mkdir -p note-action-fixture/assets
+          cat > note-action-fixture/index.html <<'HTML'
+          <html><head><title>Broken portable note</title></head><body><h1>TODO: finish this note</h1><p>This intentionally broken HTML note proves that the composite Action preserves a complete report before enforcing its error gate.</p><img src="assets/missing.png"></body></html>
+          HTML
+
+      - name: Prove the HTML note Action gate and artifact handoff
+        id: note-action
+        continue-on-error: true
+        uses: ./
+        with:
+          kind: note
+          path: note-action-fixture
+          output: .realitycheck/ci-note-action
+          fail-on: error
+          summary-language: en
+          max-annotations: "5"
+          artifact-name: realitycheck-note-action-report
+
+      - name: Verify the HTML note Action evidence and exit code
+        if: always()
+        shell: bash
+        env:
+          RC_ACTION_OUTCOME: ${{ steps.note-action.outcome }}
+          RC_ACTION_EXIT_CODE: ${{ steps.note-action.outputs.exit-code }}
+          RC_ACTION_REPORT: ${{ steps.note-action.outputs.note-report-path }}
+        run: |
+          test "$RC_ACTION_OUTCOME" = "failure"
+          test "$RC_ACTION_EXIT_CODE" = "1"
+          test "$RC_ACTION_REPORT" = ".realitycheck/ci-note-action/latest.html"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path(".realitycheck/ci-note-action")
+          report = json.loads((root / "latest.json").read_text(encoding="utf-8"))
+          assert report["kind"] == "html-note-check-bundle", report
+          assert report["summary"]["counts"]["error"] > 0, report
+          assert report["summary"]["status"] == "needs-fix", report
+          assert report["privacy"] == {"uploaded": False, "absolutePathsPersisted": False}, report
+          assert report["sourceModified"] is False, report
+          assert (root / "latest.html").is_file()
+          assert (root / "github-summary.md").is_file()
+          PY
 
       - name: Prove the browser-free effective audit plan
         shell: bash
@@ -843,3 +891,69 @@ jobs:
             .realitycheck/ci-waiver-unwaived
             .realitycheck/ci-waiver-governed
           if-no-files-found: error
+
+  note-action-no-install:
+    name: HTML note Action without repository dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Prepare a nested HTML note fixture
+        shell: bash
+        run: |
+          mkdir -p sample-project/notes/assets
+          cat > sample-project/notes/index.html <<'HTML'
+          <html><head><title>Nested Action note</title></head><body><h1>TODO: nested note</h1><p>This intentionally incomplete note proves the Action runs directly from a checkout without installing repository dependencies.</p><img src="assets/missing.png"></body></html>
+          HTML
+          test ! -d node_modules
+
+      - name: Run the note gate without npm install
+        id: note-action
+        continue-on-error: true
+        uses: ./
+        with:
+          kind: note
+          working-directory: sample-project
+          path: notes
+          output: .realitycheck/note-action
+          fail-on: error
+          summary-language: en
+          artifact-name: realitycheck-note-no-install
+
+      - name: Download the uploaded note evidence
+        if: always()
+        uses: actions/download-artifact@v8
+        with:
+          name: realitycheck-note-no-install
+          path: downloaded-note-evidence
+
+      - name: Verify the isolated Action and artifact round trip
+        if: always()
+        shell: bash
+        env:
+          RC_ACTION_OUTCOME: ${{ steps.note-action.outcome }}
+          RC_EXIT_CODE: ${{ steps.note-action.outputs.exit-code }}
+          RC_REPORT_PATH: ${{ steps.note-action.outputs.report-path }}
+          RC_SUMMARY_PATH: ${{ steps.note-action.outputs.github-summary-path }}
+        run: |
+          test "$RC_ACTION_OUTCOME" = "failure"
+          test "$RC_EXIT_CODE" = "1"
+          test "$RC_REPORT_PATH" = "sample-project/.realitycheck/note-action/latest.html"
+          test "$RC_SUMMARY_PATH" = "sample-project/.realitycheck/note-action/github-summary.md"
+          test ! -d node_modules
+          test -f downloaded-note-evidence/latest.html
+          test -f downloaded-note-evidence/latest.json
+          test -f downloaded-note-evidence/github-summary.md
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("downloaded-note-evidence")
+          report = json.loads((root / "latest.json").read_text(encoding="utf-8"))
+          assert report["kind"] == "html-note-check-bundle", report
+          assert report["summary"]["status"] == "needs-fix", report
+          assert report["sourceModified"] is False, report
+          summary = (root / "github-summary.md").read_text(encoding="utf-8")
+          assert "did not upload source notes" in summary, summary
+          assert "bounded evidence excerpts" in summary, summary
+          PY

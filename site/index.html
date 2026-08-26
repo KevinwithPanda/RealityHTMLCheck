@@ -37,12 +37,14 @@
     "codeRepository": "https://github.com/KevinwithPanda/RealityHTMLCheck",
     "license": "https://opensource.org/license/mit",
     "programmingLanguage": ["JavaScript", "Python"],
-    "softwareVersion": "0.4.0",
+    "softwareVersion": "0.5.0",
     "isAccessibleForFree": true,
     "featureList": [
       "Zero-upload HTML note and folder checks",
       "Broken attachment, outline, internal-link, portability, mobile-readability, and script-safety checks",
       "Downloadable safe-repair copies that never overwrite source notes",
+      "Reproducible representative HTML export evidence with explicit non-certification boundaries",
+      "Browser-free HTML note quality gates for GitHub Actions",
       "Responsive viewport matrix auditing",
       "Visual regression evidence",
       "Accessibility and performance checks",
@@ -58,15 +60,12 @@
 <body>
   <header class="topbar">
     <div class="wrap topbar-inner">
-      <a class="brand" href="#top" aria-label="RealityCheck home"><img src="assets/icon.svg" alt=""><span>RealityCheck</span><small>v0.4</small></a>
+      <a class="brand" href="#top" aria-label="RealityCheck home"><img src="assets/icon.svg" alt=""><span>RealityCheck</span><small>v0.5</small></a>
       <nav aria-label="Primary navigation">
         <a href="note.html" data-en="Check a note" data-zh-cn="检查笔记">Check a note</a>
-        <a href="#plan" data-en="Audit plan" data-zh-cn="核查计划">Audit plan</a>
-        <a href="#evidence" data-en="Live evidence" data-zh-cn="真实证据">Live evidence</a>
-        <a href="#policy" data-en="Policy guard" data-zh-cn="策略守卫">Policy guard</a>
-        <a href="#handoff" data-en="Repair handoff" data-zh-cn="修复交接">Repair handoff</a>
-        <a href="#release" data-en="Release decision" data-zh-cn="发布决策">Release decision</a>
-        <a href="#profiles" data-en="Start" data-zh-cn="开始">Start</a>
+        <a href="compatibility.html" data-en="Note evidence" data-zh-cn="笔记证据">Note evidence</a>
+        <a href="#start" data-en="CLI + Action" data-zh-cn="命令行 + Action">CLI + Action</a>
+        <a href="#evidence" data-en="Advanced Web QA" data-zh-cn="高级网页核查">Advanced Web QA</a>
         <a href="https://github.com/KevinwithPanda/RealityHTMLCheck" data-en="GitHub ↗" data-zh-cn="GitHub ↗">GitHub ↗</a>
       </nav>
       <div class="language" role="group" aria-label="Language"><button type="button" data-language="en" aria-pressed="true">EN</button><button type="button" data-language="zh-CN" aria-pressed="false">中文</button></div>
@@ -79,15 +78,14 @@
         <p class="eyebrow" data-en="AI HTML NOTES · LOCAL FIRST · EVIDENCE ALWAYS" data-zh-cn="AI HTML 笔记 · 本地优先 · 证据为准">AI HTML NOTES · LOCAL FIRST · EVIDENCE ALWAYS</p>
         <h1 data-en="Check AI-made HTML before you trust or share it." data-zh-cn="AI 生成的 HTML，使用和分享前先体检。">Check AI-made HTML before you trust or share it.</h1>
         <p class="hero-lede" data-en="Drop a note or folder to find broken images, dead outlines, machine-only paths, unsafe scripts, phone-reading problems, and unfinished AI placeholders. Nothing is uploaded. Need deeper product QA? The existing real-browser Web audit remains built in." data-zh-cn="拖入笔记或文件夹，即可发现丢失图片、失效目录、仅本机可用路径、危险脚本、手机阅读问题和未完成的 AI 占位内容。文件不会上传；需要更深入的产品 QA 时，原有真实浏览器网页审计仍然保留。">Drop a note or folder to find broken images, dead outlines, machine-only paths, unsafe scripts, phone-reading problems, and unfinished AI placeholders. Nothing is uploaded. Need deeper product QA? The existing real-browser Web audit remains built in.</p>
-        <div class="hero-actions"><a class="button primary" href="note.html" data-en="Check an HTML note now" data-zh-cn="立即检查 HTML 笔记">Check an HTML note now</a><a class="button ghost" href="#start" data-en="Use the CLI" data-zh-cn="使用命令行">Use the CLI</a><a class="button ghost" href="reference/report.html" data-en="Open a real Web report" data-zh-cn="打开真实网页报告">Open a real Web report</a></div>
+        <div class="hero-actions"><a class="button primary" href="note.html" data-en="Check an HTML note now" data-zh-cn="立即检查 HTML 笔记">Check an HTML note now</a><a class="button ghost" href="#start" data-en="Use the CLI" data-zh-cn="使用命令行">Use the CLI</a><a class="button ghost" href="compatibility.html" data-en="Open reproducible note evidence" data-zh-cn="查看可复现笔记证据">Open reproducible note evidence</a></div>
         <div class="trust-row"><span data-en="No upload or account" data-zh-cn="无需上传或账号">No upload or account</span><span data-en="Source never overwritten" data-zh-cn="绝不覆盖源文件">Source never overwritten</span><span data-en="English + 中文" data-zh-cn="中文 + English">English + 中文</span></div>
       </div>
       <aside class="terminal" aria-label="RealityCheck command example">
         <div class="terminal-bar"><span></span><span></span><span></span><b>realitycheck / note</b></div>
-        <pre><code><i>$</i> git clone --depth 1 \
-  https://github.com/KevinwithPanda/RealityHTMLCheck.git
-<i>$</i> cd RealityHTMLCheck &amp;&amp; npm install
-<i>$</i> npm run note -- ./my-notes
+        <pre><code><i>$</i> npx --yes \
+  --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" \
+  realityhtmlcheck note ./my-notes
 
 <em>✓</em> structure + table of contents
 <em>✓</em> local images + attachments
@@ -104,11 +102,11 @@ uploaded   <strong>NO</strong></code></pre>
       <article><strong>30</strong><span data-en="HTML note integrity and portability rules" data-zh-cn="项 HTML 笔记完整性与可迁移规则">HTML note integrity and portability rules</span></article>
       <article><strong>0</strong><span data-en="note bytes uploaded" data-zh-cn="字节笔记内容上传">note bytes uploaded</span></article>
       <article><strong>3</strong><span data-en="conservative safe-copy fixes" data-zh-cn="项保守的安全副本修复">conservative safe-copy fixes</span></article>
-      <article><strong>13+</strong><span data-en="real-browser Web stress scenarios retained" data-zh-cn="个保留的真实浏览器网页压力场景">real-browser Web stress scenarios retained</span></article>
+      <article><strong>7</strong><span data-en="hashed representative export fixtures" data-zh-cn="个哈希固定代表性导出夹具">hashed representative export fixtures</span></article>
     </section>
 
     <section class="section wrap" id="evidence">
-      <div class="section-heading"><div><p class="eyebrow" data-en="DON'T TAKE OUR WORD FOR IT" data-zh-cn="不要只看宣传">DON'T TAKE OUR WORD FOR IT</p><h2 data-en="Open the evidence." data-zh-cn="直接打开证据。">Open the evidence.</h2></div><p data-en="Every card links to a real Chrome run committed with screenshots, JSON, SARIF, JUnit, a repair plan, and a SHA-256 manifest." data-zh-cn="每张卡片都链接到真实 Chrome 运行，包含截图、JSON、SARIF、JUnit、修复计划和 SHA-256 清单。">Every card links to a real Chrome run committed with screenshots, JSON, SARIF, JUnit, a repair plan, and a SHA-256 manifest.</p></div>
+      <div class="section-heading"><div><p class="eyebrow" data-en="ADVANCED WEB QA · REAL BROWSER" data-zh-cn="高级网页核查 · 真实浏览器">ADVANCED WEB QA · REAL BROWSER</p><h2 data-en="Need to audit a running app? Open measured evidence." data-zh-cn="需要核查运行中的应用？直接查看实测证据。">Need to audit a running app? Open measured evidence.</h2></div><p data-en="This advanced mode is separate from the static note check. Every card links to a real Chrome run committed with screenshots, JSON, SARIF, JUnit, a repair plan, and a SHA-256 manifest." data-zh-cn="这个高级模式与静态笔记检查相互独立。每张卡片都链接到真实 Chrome 运行，包含截图、JSON、SARIF、JUnit、修复计划和 SHA-256 清单。">This advanced mode is separate from the static note check. Every card links to a real Chrome run committed with screenshots, JSON, SARIF, JUnit, a repair plan, and a SHA-256 manifest.</p></div>
       <div class="evidence-grid">
         <article class="evidence-card"><span class="tag viewport" data-en="RESPONSIVE MATRIX" data-zh-cn="响应式矩阵">RESPONSIVE MATRIX</span><strong>92</strong><h3 data-en="375px passes; the release action vanishes at 320px" data-zh-cn="375px 正常，320px 发布按钮却消失">375px passes; the release action vanishes at 320px</h3><p data-en="Three isolated phone/tablet checkpoints prove one narrow breakpoint failure with exact dimensions and separate screenshots; the paired fix reaches 100/100." data-zh-cn="三个隔离的手机/平板核查点用精确尺寸和独立截图证明一个窄屏断点失败；修复对照得到 100/100。">Three isolated phone/tablet checkpoints prove one narrow breakpoint failure with exact dimensions and separate screenshots; the paired fix reaches 100/100.</p><div class="card-actions"><a href="evidence/viewport/latest.html" data-en="Open report →" data-zh-cn="打开报告 →">Open report →</a><a href="labs/viewport/broken.html" data-en="Open fixture" data-zh-cn="打开故障页">Open fixture</a></div></article>
         <article class="evidence-card"><span class="tag journey" data-en="KEYBOARD JOURNEY" data-zh-cn="键盘旅程">KEYBOARD JOURNEY</span><strong>96</strong><h3 data-en="ArrowRight changes the tab, but its panel is gone" data-zh-cn="方向键切换标签后，内容面板消失">ArrowRight changes the tab, but its panel is gone</h3><p data-en="A navigation-only key press succeeds, the visible-state assertion fails once with measurements, and no form is submitted." data-zh-cn="仅导航用途的按键成功后，可见状态断言带测量值失败一次，全程不提交表单。">A navigation-only key press succeeds, the visible-state assertion fails once with measurements, and no form is submitted.</p><div class="card-actions"><a href="evidence/journey/latest.html" data-en="Open report →" data-zh-cn="打开报告 →">Open report →</a><a href="labs/journey/broken.html" data-en="Open fixture" data-zh-cn="打开故障页">Open fixture</a></div></article>
@@ -164,7 +162,7 @@ uploaded   <strong>NO</strong></code></pre>
       </div>
     </section>
 
-    <section class="section wrap start" id="start"><div><p class="eyebrow" data-en="START LOCAL" data-zh-cn="从本地开始">START LOCAL</p><h2 data-en="Check a whole note folder with one command." data-zh-cn="一条命令检查整个笔记文件夹。">Check a whole note folder with one command.</h2><p data-en="No server and no configuration are required. The CLI checks HTML notes and their local attachments, writes a bilingual visual report, and can create conservative repaired copies without overwriting the originals." data-zh-cn="不需要服务器，也不需要配置。命令行会检查 HTML 笔记和本地附件，生成双语可视报告，还能创建保守修复副本且绝不覆盖原文件。">No server and no configuration are required. The CLI checks HTML notes and their local attachments, writes a bilingual visual report, and can create conservative repaired copies without overwriting the originals.</p></div><div class="command"><code>git clone --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git<br>cd RealityHTMLCheck<br>npm install<br>npm run note -- ./my-notes<br># open .realitycheck/notes/latest.html</code><button type="button" data-copy="git clone --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git&#10;cd RealityHTMLCheck&#10;npm install&#10;npm run note -- ./my-notes" data-en="Copy" data-zh-cn="复制">Copy</button></div><div class="start-links"><a class="button primary" href="note.html" data-en="Use the no-install checker →" data-zh-cn="打开免安装检查器 →">Use the no-install checker →</a><a class="button ghost" href="reference/report.html" data-en="Inspect the professional Web report" data-zh-cn="查看专业网页报告">Inspect the professional Web report</a></div></section>
+    <section class="section wrap start" id="start"><div><p class="eyebrow" data-en="NO CLONE · NO GLOBAL INSTALL" data-zh-cn="无需克隆 · 无需全局安装">NO CLONE · NO GLOBAL INSTALL</p><h2 data-en="Check a whole note folder with one command." data-zh-cn="一条命令检查整个笔记文件夹。">Check a whole note folder with one command.</h2><p data-en="The tagged GitHub package runs through npx, writes a bilingual report, and leaves no project-local install. For recurring export pipelines, the same checker is available as a browser-free GitHub Action." data-zh-cn="带标签的 GitHub 包可通过 npx 直接运行，生成双语报告且不在项目中留下本地安装。对于持续导出流水线，同一检查器也可作为无需浏览器的 GitHub Action 使用。">The tagged GitHub package runs through npx, writes a bilingual report, and leaves no project-local install. For recurring export pipelines, the same checker is available as a browser-free GitHub Action.</p></div><div class="command"><code>npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" realityhtmlcheck note ./my-notes<br># open .realitycheck/notes/latest.html</code><button type="button" data-copy="npx --yes --package=&quot;github:KevinwithPanda/RealityHTMLCheck#v0.5.0&quot; realityhtmlcheck note ./my-notes" data-en="Copy" data-zh-cn="复制">Copy</button></div><div class="start-links"><a class="button primary" href="note.html" data-en="Use the no-install checker →" data-zh-cn="打开免安装检查器 →">Use the no-install checker →</a><a class="button ghost" href="https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.5.0/action.yml" data-en="Add the HTML note Action" data-zh-cn="接入 HTML 笔记 Action">Add the HTML note Action</a><a class="button ghost" href="compatibility.html" data-en="Inspect note evidence" data-zh-cn="审查笔记证据">Inspect note evidence</a></div></section>
   </main>
 
   <footer><div class="wrap"><span>RealityCheck · MIT</span><span data-en="Evidence first. Local by default." data-zh-cn="证据优先，默认本地。">Evidence first. Local by default.</span><a href="https://github.com/KevinwithPanda/RealityHTMLCheck">GitHub</a></div></footer>

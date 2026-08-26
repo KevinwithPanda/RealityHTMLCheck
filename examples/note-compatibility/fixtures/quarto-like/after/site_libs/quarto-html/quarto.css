@@ -1,0 +1,5 @@
+@import "theme.css";
+:root { font-family: system-ui, sans-serif; }
+body { margin: 0; color: #182230; background: #f4f7fb; }
+main { box-sizing: border-box; width: min(100% - 2rem, 64rem); margin: 2rem auto; padding: 2rem; background: white; }
+img { max-width: 100%; height: auto; }

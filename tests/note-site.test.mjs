@@ -17,7 +17,7 @@ test("zero-install note checker exposes a private file and folder workflow", () 
   assert.match(html, /不上传/);
   assert.match(html, /Never overwrites the original/);
   assert.match(html, /不覆盖原文件/);
-  assert.match(html, /script type="module" src="note-checker\.js\?v=0\.4\.0-readiness"/);
+  assert.match(html, /script type="module" src="note-checker\.js\?v=0\.5\.0-adoption"/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   assert.doesNotMatch(html, /<link[^>]+rel="stylesheet"[^>]+href="https?:/i);
 });

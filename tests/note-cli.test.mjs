@@ -30,7 +30,8 @@ test("note CLI checks a folder without a server, config, or upload", () => {
     const html = readFileSync(join(output, "latest.html"), "utf8");
     assert.match(html, /RealityCheck Note Report/);
     assert.match(html, /data-language="zh-CN"/);
-    assert.match(html, /No note content was uploaded/);
+    assert.match(html, /checker did not upload or modify source notes/);
+    assert.match(html, /Reports can contain bounded evidence excerpts/);
     assert.doesNotMatch(html, new RegExp(root.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
     for (const stable of ["report.json", "repair-plan.md", "repair-plan.zh-CN.md"]) {
       assert.equal(existsSync(join(output, stable)), true, `missing stable ${stable}`);

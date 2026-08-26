@@ -4,7 +4,7 @@
 
 RealityCheck 现在首先是一款面向普通用户的本地 HTML 笔记体检工具，同时保留面向 Codex、开发者和产品团队的真实浏览器 Web 核查能力。笔记检查无需账号、无需服务器，不会上传文件；专业 Web 核查则继续提供压力场景、证据、修复任务和修复前后证明。
 
-当前版本：`v0.4.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
+当前版本：`v0.5.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
 
 ## 一分钟内获得价值：检查 HTML 笔记
 
@@ -20,25 +20,39 @@ RealityCheck 现在首先是一款面向普通用户的本地 HTML 笔记体检�
 
 自动修复刻意限制为三项明确修改：补充 HTML5 doctype、声明文档语言和补充 UTF-8 元数据。浏览器只会下载一个**新副本**，绝不会覆盖你选择的源文件。图片描述、标题结构等需要判断的修改仍保留为可审查任务。
 
-需要批量检查整个笔记文件夹时，使用零配置命令行：
+需要批量检查整个笔记文件夹时，无需克隆仓库或全局安装：
 
 ```bash
-npm install
-npm run note -- ./我的笔记
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" \
+  realityhtmlcheck note ./我的笔记
 # 打开 .realitycheck/notes/latest.html
 ```
 
 生成保守修复副本，但保持所有源文件逐字节不变：
 
 ```bash
-npm run note -- ./我的笔记 --fix-safe
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.5.0" \
+  realityhtmlcheck note ./我的笔记 --fix-safe
 ```
+
+持续导出时，可把同一检查器放进 GitHub Actions；note 模式不启动服务器、不安装浏览器依赖，也不执行笔记脚本：
+
+```yaml
+- uses: KevinwithPanda/RealityHTMLCheck@v0.5.0
+  with:
+    kind: note
+    path: exported-notes
+    fail-on: error
+    summary-language: zh-CN
+```
+
+RealityCheck 不上传源笔记。启用 artifact 时，工作流会保存生成报告，其中可能包含有限证据摘录；把 artifact 公开前仍应复核。
 
 如果在 Codex 中要求 `$realitycheck` “检查并修复”，Skill 会使用 `--prepare-repair` 把有上限的完整笔记文件夹、图片、样式、附件和关联笔记复制到证据目录，再由 Codex 直接修改该工作副本并复检。用户会在同一个任务中得到修复前报告、修复版 HTML 文件夹、修复后报告和仍需判断的问题，不需要把静态报告里的提示词再次粘贴回 Codex。
 
 如果要在导出流水线中阻止错误，可添加 `--fail-on error` 或 `--fail-on warning`。原有 URL 网页核查仍用于响应式交互、接口恢复、可访问性、性能、安全响应头、隐私预算和发布治理。
 
-无需安装也可以打开[产品首页](https://kevinwithpanda.github.io/RealityHTMLCheck/)；仓库内的[演示中心](../examples/index.html)还包含真实浏览器夹具、修复证明、产物目录、风险台账、组合门禁和签名决策。
+无需安装也可以打开[产品首页](https://kevinwithpanda.github.io/RealityHTMLCheck/)；[代表性导出兼容证据](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)公开 7 个哈希固定夹具、4 个修复/决策案例和完整证据边界。仓库内的[演示中心](../examples/index.html)还包含真实浏览器夹具、修复证明、产物目录、风险台账、组合门禁和签名决策。
 
 ## 安装前先看实际效果
 
@@ -81,6 +95,8 @@ npm run note -- ./我的笔记 --fix-safe
 在克隆后的仓库中运行一次：
 
 ```bash
+git clone --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git
+cd RealityHTMLCheck
 python scripts/install-skill.py
 python scripts/install-skill.py --status
 ```
@@ -96,7 +112,7 @@ npm install
 npm run demo
 ```
 
-npm 包尚未发布，因此目前受支持的公开入口是先克隆本仓库。`npm run demo` 会在随机端口启动只监听回环地址的内置故障页，用真实 Chrome 核查，把双语报告写入 `.realitycheck/demo`，然后关闭服务器。报告会如实显示 Major 门禁失败；因为这些夹具问题是预期结果，Demo 命令本身返回成功，但浏览器、渲染器或证据故障仍返回运行错误。
+npm registry 的 `realityhtmlcheck` 首发仍需维护者完成可信发布引导；在此之前，HTML 笔记命令使用上面的带版本 GitHub 包。`demo` 与完整 Web 审计目前仍从仓库源码运行。`npm run demo` 会在随机端口启动只监听回环地址的内置故障页，用真实 Chrome 核查，把双语报告写入 `.realitycheck/demo`，然后关闭服务器。报告会如实显示 Major 门禁失败；因为这些夹具问题是预期结果，Demo 命令本身返回成功，但浏览器、渲染器或证据故障仍返回运行错误。
 
 ## 为什么报告可信
 
@@ -179,7 +195,7 @@ npm run realitycheck -- visual-approve .realitycheck/runs/运行ID/report.json
 
 ```json
 {
-  "$schema": "./node_modules/realitycheck-web-audit/realitycheck/assets/config.schema.json",
+  "$schema": "./node_modules/realityhtmlcheck/realitycheck/assets/config.schema.json",
   "baseUrl": "http://127.0.0.1:3000/",
   "mode": "quick",
   "failOn": "major",
