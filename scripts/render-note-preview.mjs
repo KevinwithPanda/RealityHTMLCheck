@@ -56,6 +56,9 @@ try {
   await page.addStyleTag({ content: "html,body{overflow-anchor:none!important;scroll-behavior:auto!important}*{animation:none!important;transition:none!important;caret-color:transparent!important}" });
   await page.click("#demo-button");
   await page.waitForSelector("#results:not([hidden])");
+  await page.click("#download-folder-zip");
+  await page.click("#download-folder-zip");
+  await page.waitForFunction(() => /ZIP (?:was read back|已回读验证)/.test(document.querySelector("#folder-repair")?.textContent || ""));
   await page.click('[data-language="zh-CN"]');
   await page.evaluate(async () => {
     document.documentElement.style.scrollBehavior = "auto";

@@ -90,6 +90,31 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [ ] Collect at least 20 licensed, de-identified real export samples across multiple tool versions and platforms.
 - [ ] Publish a separate real-export compatibility matrix with static results plus bounded browser visual/interaction evidence.
 
+## v0.6 - Regression and provenance credibility
+
+- [x] Separate package findings from per-HTML findings and prevent score double counting.
+- [x] Compare immutable note baselines without keeping persistent known debt permanently red.
+- [x] Fail closed when HTML/package scope disappears, contracts, or becomes newly excluded.
+- [x] Expand actual Pandoc evidence to four allowlisted, byte-reproducible export shapes.
+- [x] Serialize stable latest aliases across concurrent note processes.
+
+## v0.7 - Repair proof and archive scope
+
+- [x] Recheck the exact in-memory safe-repair bytes before a single HTML download.
+- [x] Show resolved, remaining, introduced, original-folder, and HTML-only evidence separately.
+- [x] Add auditable archive/draft exclusions that preserve known package and cross-note scope.
+- [x] Refuse truncated note results and duplicate/colliding browser paths instead of publishing partial evidence.
+- [x] Require real Pandoc reproduction in a hash-pinned Windows CI job.
+
+## v0.8 - Structure-preserving browser handoff
+
+- [x] Apply safe metadata fixes to all eligible HTML files as one cumulative folder candidate.
+- [x] Recheck the complete HTML/CSS/package scope before archiving.
+- [x] Package every browser-selected file under a new root while retaining unchanged asset bytes.
+- [x] Embed a local proof and after report, bind the analyzed HTML/CSS candidate with a visible SHA-256 ID, then read back and verify ZIP entry paths, sizes, CRC32 values, and SHA-256 hashes before download.
+- [x] Block sensitive files, unsafe/colliding paths, stale async work, and bounded ZIP32/file-size limits without silently omitting selected files.
+- [ ] Add optional cryptographic per-entry hashes without doubling the browser memory ceiling.
+
 ## v1.0 criteria
 
 - Stable report and adapter contracts.

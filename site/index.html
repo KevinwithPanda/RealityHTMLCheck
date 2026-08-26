@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Check AI-generated HTML notes locally for broken attachments, structure, portability, safety, and mobile readability; run evidence-first Web UI audits when you need deeper QA.">
+  <meta name="description" content="Check AI-generated HTML notes locally, repair safe metadata, and download a jointly rechecked folder ZIP with every selected asset; run evidence-first Web UI audits for deeper QA.">
   <meta name="theme-color" content="#15171c">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta property="og:title" content="RealityCheck · Local checks for AI-generated HTML notes">
@@ -37,10 +37,11 @@
     "codeRepository": "https://github.com/KevinwithPanda/RealityHTMLCheck",
     "license": "https://opensource.org/license/mit",
     "programmingLanguage": ["JavaScript", "Python"],
-    "softwareVersion": "0.7.2",
+    "softwareVersion": "0.8.0",
     "isAccessibleForFree": true,
     "featureList": [
       "Zero-upload HTML note and folder checks",
+      "Jointly rechecked safe-metadata folder ZIPs containing every browser-selected file",
       "Broken attachment, outline, internal-link, portability, mobile-readability, and script-safety checks",
       "Safe-repair copies rechecked before download without overwriting source notes",
       "Four byte-reproducible real Pandoc exports with explicit non-certification boundaries",
@@ -61,7 +62,7 @@
 <body>
   <header class="topbar">
     <div class="wrap topbar-inner">
-      <a class="brand" href="#top" aria-label="RealityCheck home"><img src="assets/icon.svg" alt=""><span>RealityCheck</span><small>v0.7</small></a>
+      <a class="brand" href="#top" aria-label="RealityCheck home"><img src="assets/icon.svg" alt=""><span>RealityCheck</span><small>v0.8</small></a>
       <nav aria-label="Primary navigation">
         <a href="note.html" data-en="Check a note" data-zh-cn="检查笔记">Check a note</a>
         <a href="compatibility.html" data-en="Note evidence" data-zh-cn="笔记证据">Note evidence</a>
@@ -78,14 +79,14 @@
       <div class="hero-copy">
         <p class="eyebrow" data-en="AI HTML NOTES · LOCAL FIRST · EVIDENCE ALWAYS" data-zh-cn="AI HTML 笔记 · 本地优先 · 证据为准">AI HTML NOTES · LOCAL FIRST · EVIDENCE ALWAYS</p>
         <h1 data-en="Check AI-made HTML before you trust or share it." data-zh-cn="AI 生成的 HTML，使用和分享前先体检。">Check AI-made HTML before you trust or share it.</h1>
-        <p class="hero-lede" data-en="Drop a note or folder to find broken images, dead outlines, machine-only paths, unsafe scripts, phone-reading problems, and unfinished AI placeholders. Nothing is uploaded. Need deeper product QA? The existing real-browser Web audit remains built in." data-zh-cn="拖入笔记或文件夹，即可发现丢失图片、失效目录、仅本机可用路径、危险脚本、手机阅读问题和未完成的 AI 占位内容。文件不会上传；需要更深入的产品 QA 时，原有真实浏览器网页审计仍然保留。">Drop a note or folder to find broken images, dead outlines, machine-only paths, unsafe scripts, phone-reading problems, and unfinished AI placeholders. Nothing is uploaded. Need deeper product QA? The existing real-browser Web audit remains built in.</p>
+        <p class="hero-lede" data-en="Drop a note or folder to find broken images, dead outlines, machine-only paths, unsafe scripts, phone-reading problems, and unfinished AI placeholders. Apply the three safe metadata fixes to every eligible HTML, jointly recheck the folder, and download a new ZIP with every selected asset. Nothing is uploaded." data-zh-cn="拖入笔记或文件夹，即可发现丢失图片、失效目录、仅本机可用路径、危险脚本、手机阅读问题和未完成的 AI 占位内容；还可对全部可处理 HTML 应用三项安全元数据修复，联合复检后下载包含全部所选资源的新 ZIP。文件始终不会上传。">Drop a note or folder to find broken images, dead outlines, machine-only paths, unsafe scripts, phone-reading problems, and unfinished AI placeholders. Apply the three safe metadata fixes to every eligible HTML, jointly recheck the folder, and download a new ZIP with every selected asset. Nothing is uploaded.</p>
         <div class="hero-actions"><a class="button primary" href="note.html" data-en="Check an HTML note now" data-zh-cn="立即检查 HTML 笔记">Check an HTML note now</a><a class="button ghost" href="#start" data-en="Use the CLI" data-zh-cn="使用命令行">Use the CLI</a><a class="button ghost" href="compatibility.html" data-en="Open reproducible note evidence" data-zh-cn="查看可复现笔记证据">Open reproducible note evidence</a></div>
-        <div class="trust-row"><span data-en="No upload or account" data-zh-cn="无需上传或账号">No upload or account</span><span data-en="Source never overwritten" data-zh-cn="绝不覆盖源文件">Source never overwritten</span><span data-en="English + 中文" data-zh-cn="中文 + English">English + 中文</span></div>
+        <div class="trust-row"><span data-en="No upload or account" data-zh-cn="无需上传或账号">No upload or account</span><span data-en="Source never overwritten" data-zh-cn="绝不覆盖源文件">Source never overwritten</span><span data-en="Folder ZIP read-back verified" data-zh-cn="文件夹 ZIP 回读验证">Folder ZIP read-back verified</span><span data-en="English + 中文" data-zh-cn="中文 + English">English + 中文</span></div>
       </div>
       <aside class="terminal" aria-label="RealityCheck command example">
         <div class="terminal-bar"><span></span><span></span><span></span><b>realitycheck / note</b></div>
         <pre><code><i>$</i> npx --yes \
-  --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.2" \
+  --package="github:KevinwithPanda/RealityHTMLCheck#v0.8.0" \
   realityhtmlcheck note ./my-notes
 
 <em>✓</em> structure + table of contents
@@ -163,7 +164,7 @@ uploaded   <strong>NO</strong></code></pre>
       </div>
     </section>
 
-    <section class="section wrap start" id="start"><div><p class="eyebrow" data-en="NO CLONE · NO GLOBAL INSTALL" data-zh-cn="无需克隆 · 无需全局安装">NO CLONE · NO GLOBAL INSTALL</p><h2 data-en="Check a whole note folder with one command." data-zh-cn="一条命令检查整个笔记文件夹。">Check a whole note folder with one command.</h2><p data-en="The tagged GitHub package runs through npx, writes a bilingual report, and leaves no project-local install. Repeated --exclude-html globs can keep archives out of per-file gates without removing them from package integrity. For recurring exports, the same checker is available as a browser-free GitHub Action." data-zh-cn="带标签的 GitHub 包可通过 npx 直接运行，生成双语报告且不在项目中留下本地安装。可重复使用 --exclude-html 将归档移出逐文件门禁，同时保留文件包完整性核验；持续导出也可使用无需浏览器的 GitHub Action。">The tagged GitHub package runs through npx, writes a bilingual report, and leaves no project-local install. Repeated --exclude-html globs can keep archives out of per-file gates without removing them from package integrity. For recurring exports, the same checker is available as a browser-free GitHub Action.</p></div><div class="command"><code>npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.2" realityhtmlcheck note ./my-notes<br># open .realitycheck/notes/latest.html</code><button type="button" data-copy="npx --yes --package=&quot;github:KevinwithPanda/RealityHTMLCheck#v0.7.2&quot; realityhtmlcheck note ./my-notes" data-en="Copy" data-zh-cn="复制">Copy</button></div><div class="start-links"><a class="button primary" href="note.html" data-en="Use the no-install checker →" data-zh-cn="打开免安装检查器 →">Use the no-install checker →</a><a class="button ghost" href="https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.7.2/action.yml" data-en="Add the HTML note Action" data-zh-cn="接入 HTML 笔记 Action">Add the HTML note Action</a><a class="button ghost" href="compatibility.html" data-en="Inspect note evidence" data-zh-cn="审查笔记证据">Inspect note evidence</a></div></section>
+    <section class="section wrap start" id="start"><div><p class="eyebrow" data-en="NO CLONE · NO GLOBAL INSTALL" data-zh-cn="无需克隆 · 无需全局安装">NO CLONE · NO GLOBAL INSTALL</p><h2 data-en="Check a whole note folder with one command." data-zh-cn="一条命令检查整个笔记文件夹。">Check a whole note folder with one command.</h2><p data-en="The tagged GitHub package runs through npx, writes a bilingual report, and leaves no project-local install. Repeated --exclude-html globs can keep archives out of per-file gates without removing them from package integrity. For recurring exports, the same checker is available as a browser-free GitHub Action." data-zh-cn="带标签的 GitHub 包可通过 npx 直接运行，生成双语报告且不在项目中留下本地安装。可重复使用 --exclude-html 将归档移出逐文件门禁，同时保留文件包完整性核验；持续导出也可使用无需浏览器的 GitHub Action。">The tagged GitHub package runs through npx, writes a bilingual report, and leaves no project-local install. Repeated --exclude-html globs can keep archives out of per-file gates without removing them from package integrity. For recurring exports, the same checker is available as a browser-free GitHub Action.</p></div><div class="command"><code>npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.8.0" realityhtmlcheck note ./my-notes<br># open .realitycheck/notes/latest.html</code><button type="button" data-copy="npx --yes --package=&quot;github:KevinwithPanda/RealityHTMLCheck#v0.8.0&quot; realityhtmlcheck note ./my-notes" data-en="Copy" data-zh-cn="复制">Copy</button></div><div class="start-links"><a class="button primary" href="note.html" data-en="Use the no-install checker →" data-zh-cn="打开免安装检查器 →">Use the no-install checker →</a><a class="button ghost" href="https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.8.0/action.yml" data-en="Add the HTML note Action" data-zh-cn="接入 HTML 笔记 Action">Add the HTML note Action</a><a class="button ghost" href="compatibility.html" data-en="Inspect note evidence" data-zh-cn="审查笔记证据">Inspect note evidence</a></div></section>
   </main>
 
   <footer><div class="wrap"><span>RealityCheck · MIT</span><span data-en="Evidence first. Local by default." data-zh-cn="证据优先，默认本地。">Evidence first. Local by default.</span><a href="https://github.com/KevinwithPanda/RealityHTMLCheck">GitHub</a></div></footer>

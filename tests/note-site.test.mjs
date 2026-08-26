@@ -5,7 +5,8 @@ import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask, normalizeNotePath
 import { analyzeNotePackage } from "../realitycheck/scripts/note-package.mjs";
 import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "../realitycheck/scripts/note-summary.mjs";
 import { buildPortableNoteReport } from "../site/note-share-report.mjs";
-import { analyzeBrowserNoteSources, duplicateBrowserNotePaths, safeRepairDownloadName, safeRepairDownloadPayload, verifySafeNoteRepair } from "../site/note-repair-verification.mjs";
+import { bindSafeFolderCandidate } from "../site/note-folder-repair.mjs";
+import { analyzeBrowserNoteSources, duplicateBrowserNotePaths, safeRepairDownloadName, safeRepairDownloadPayload, verifySafeNotePackageRepair, verifySafeNoteRepair } from "../site/note-repair-verification.mjs";
 
 const analysisHelpers = { analyzeHtmlNote, applySafeNoteFixes, analyzeNotePackage, summarizeNoteReports, summarizePackageFindings, normalizeNotePath };
 
@@ -17,12 +18,16 @@ test("zero-install note checker exposes a private file and folder workflow", () 
   assert.match(html, /id="demo-button"/);
   assert.match(html, /id="decision"/);
   assert.match(html, /id="download-report"/);
+  assert.match(html, /id="download-folder-zip"[^>]+hidden/);
+  assert.match(html, /id="folder-repair"[^>]+aria-live="polite"/);
   assert.match(html, /No upload/);
   assert.match(html, /不上传/);
   assert.match(html, /Never overwrites the original/);
   assert.match(html, /不覆盖原文件/);
-  assert.match(html, /script type="module" src="note-checker\.js\?v=0\.7\.2"/);
-  assert.match(html, /Browser repair downloads one HTML only; folder assets are not bundled/);
+  assert.match(html, /script type="module" src="note-checker\.js\?v=0\.8\.0"/);
+  assert.match(html, /<link rel="manifest" href="site\.webmanifest">/);
+  assert.match(html, /Folder ZIP applies only safe metadata fixes, jointly rechecks every HTML, and includes every browser-selected file/);
+  assert.match(html, /Single-file repair still downloads one HTML only/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   assert.doesNotMatch(html, /<link[^>]+rel="stylesheet"[^>]+href="https?:/i);
 });
@@ -35,6 +40,9 @@ test("browser note checker analyzes untrusted content without rendering or uploa
   assert.match(script, /verifySafeNoteRepair/);
   assert.match(script, /safeRepairDownloadPayload/);
   assert.match(script, /safeRepairDownloadName/);
+  assert.match(script, /verifySafeNotePackageRepair/);
+  assert.match(script, /buildVerifiedFolderRepairZip/);
+  assert.match(script, /prepareFolderRepairInventory/);
   assert.match(script, /duplicateBrowserNotePaths/);
   assert.match(script, /inspectionGeneration/);
   assert.match(script, /clearRenderedResult/);
@@ -52,6 +60,23 @@ test("browser note checker analyzes untrusted content without rendering or uploa
   assert.match(script, /file\.size <= 5 \* 1024 \* 1024 \? await file\.text\(\) : null/);
   assert.match(script, /HTML file\(s\) exceed 25 MiB/);
   assert.match(script, /new Blob/);
+  assert.match(script, /selectedInventoryIncluded/);
+  assert.match(script, /folderInventory/);
+  assert.match(script, /folderZipArtifact/);
+  assert.match(script, /basis: "cumulative-all-eligible-html"/);
+  assert.match(script, /beforeSummary: folderRepairVerification\.before\.summary/);
+  assert.match(script, /afterSummary: folderRepairVerification\.after\.summary/);
+  assert.match(script, /activeFolderRepairController/);
+  assert.match(script, /MAX_HTML_TEXT_BYTES = 32 \* 1024 \* 1024/);
+  assert.match(script, /MAX_CSS_TEXT_BYTES = 16 \* 1024 \* 1024/);
+  assert.match(script, /MAX_SELECTED_FILES = 5000/);
+  assert.match(script, /allFiles\.length > MAX_SELECTED_FILES/);
+  assert.match(script, /Review ZIP inventory/);
+  assert.match(script, /Confirm inventory & build ZIP/);
+  assert.match(script, /Downloaded \$\{bundle\.folderZipArtifact\.filename\}/);
+  assert.match(script, /Downloaded safe-metadata copy still has|safe-metadata copy still has/);
+  assert.match(script, /realitycheck-demo\/guide\.html/);
+  assert.match(script, /realitycheck-demo\/images\/result\.svg/);
   assert.match(readFileSync("site/note-repair-verification.mjs", "utf8"), /\.repaired\.html/);
   assert.doesNotMatch(script, /\.innerHTML\s*=/);
   assert.doesNotMatch(script, /\beval\s*\(/);
@@ -95,6 +120,7 @@ test("safe browser repair is rechecked and the download is exactly the verified 
   assert.equal(verification.findings.remaining.some((entry) => entry.finding.ruleId === "unfinished-placeholder"), true);
   assert.equal(verification.findings.remaining.some((entry) => entry.finding.ruleId === "executable-script"), true);
   assert.deepEqual(verification.findings.introduced, []);
+  assert.deepEqual(verification.findings.worsened, []);
   assert.equal(verification.download.context, "single-html-without-folder-assets");
   assert.equal(verification.download.packageAssetsIncluded, false);
   assert.equal(verification.download.summary.score, verification.after.report.score);
@@ -137,6 +163,61 @@ test("browser repair reports the downloaded HTML without pretending folder asset
   assert.doesNotMatch(portable, /This folder note has enough useful text/);
 });
 
+test("folder repair applies safe metadata fixes once and rechecks the combined package", async () => {
+  const draft = '<html><head><title>Folder draft</title><link rel="stylesheet" href="assets/theme.css"></head><body><h1>Folder draft</h1><p>This folder draft has enough content to prove a combined repair while preserving every selected asset.</p><img src="assets/chart.svg" alt="Chart"></body></html>';
+  const clean = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Clean sibling</title></head><body><h1>Clean sibling</h1><p>This sibling is already complete and must remain unchanged in the repaired folder.</p></body></html>';
+  const analysis = {
+    htmlSources: [{ path: "notes/draft.html", html: draft }, { path: "notes/clean.html", html: clean }],
+    cssSources: [{ path: "notes/assets/theme.css", text: "body{max-width:70rem}" }],
+    knownFiles: ["notes/draft.html", "notes/clean.html", "notes/assets/theme.css", "notes/assets/chart.svg"],
+  };
+  const before = analyzeBrowserNoteSources(analysis, analysisHelpers);
+  assert.throws(() => verifySafeNotePackageRepair({ beforeBundle: { ...before, summary: { ...before.summary, score: 0 } }, analysis }, analysisHelpers), /baseline no longer matches/);
+  const verification = await bindSafeFolderCandidate(verifySafeNotePackageRepair({ beforeBundle: before, analysis }, analysisHelpers));
+  assert.equal(verification.kind, "html-note-safe-package-repair-verification");
+  assert.match(verification.candidateId, /^sha256:[a-f0-9]{64}$/);
+  assert.deepEqual(verification.changes, [{ path: "notes/draft.html", rules: ["missing-doctype", "missing-document-language", "missing-charset"] }]);
+  assert.equal(verification.totalChanges, 3);
+  assert.equal(Object.hasOwn(verification, "packageAssetsIncluded"), false, "analysis alone must not claim that an archive contains the selected assets");
+  assert.equal(verification.originalModified, false);
+  assert.equal(analysis.htmlSources[0].html, draft);
+  assert.equal(analysis.htmlSources[1].html, clean);
+  assert.match(verification.repairedHtmlByPath.get("notes/draft.html"), /^<!doctype html>/);
+  assert.equal(verification.repairedHtmlByPath.has("notes/clean.html"), false);
+  assert.ok(verification.after.summary.score > verification.before.summary.score);
+  assert.deepEqual(verification.findings.introduced, []);
+  assert.deepEqual(verification.findings.worsened, []);
+  const combined = analyzeBrowserNoteSources({
+    ...analysis,
+    htmlSources: analysis.htmlSources.map((source) => verification.repairedHtmlByPath.has(source.path)
+      ? { ...source, html: verification.repairedHtmlByPath.get(source.path) }
+      : source),
+  }, analysisHelpers);
+  assert.deepEqual(combined.summary, verification.after.summary);
+  assert.deepEqual(combined.reports.map((report) => report.findings.map((finding) => finding.ruleId)), verification.after.reports.map((report) => report.findings.map((finding) => finding.ruleId)));
+  const portable = buildPortableNoteReport({
+    ...verification.after,
+    generatedAt: "2026-08-27T00:00:00.000Z",
+    reportContext: "folder-candidate",
+    safePackageRepairVerification: verification,
+  }, { buildRepairTask, buildPackageRepairTask, noteDecision });
+  assert.match(portable, /CUMULATIVE FOLDER PROOF/);
+  assert.match(portable, /CUMULATIVE FOLDER CANDIDATE · AFTER/);
+  assert.match(portable, /realitycheck-report-context" content="folder-candidate/);
+  assert.match(portable, new RegExp(verification.candidateId));
+  assert.match(portable, /Candidate analysis fingerprint/);
+  assert.match(portable, /Copy full ID/);
+  assert.match(portable, /All eligible HTML rechecked together/);
+  assert.match(portable, /Only doctype, language, and UTF-8 metadata were changed/);
+  assert.doesNotMatch(portable, /This folder draft has enough content/);
+  assert.throws(() => buildPortableNoteReport({
+    ...verification.after,
+    generatedAt: "2026-08-27T00:00:00.000Z",
+    reportContext: "folder-candidate",
+    safePackageRepairVerification: { ...verification, candidateId: undefined },
+  }, { buildRepairTask, buildPackageRepairTask, noteDecision }), /requires a bound SHA-256 candidate ID/);
+});
+
 test("folder readiness cannot average away one broken note", () => {
   const clean = analyzeHtmlNote({ path: "clean.html", html: '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Clean note</title></head><body><h1>Clean note</h1><p>This is a complete portable note with enough useful text to pass the deterministic baseline.</p></body></html>', knownFiles: ["clean.html", "broken.html"] });
   const broken = analyzeHtmlNote({ path: "broken.html", html: "<html><body><h1>TODO �</h1></body></html>", knownFiles: ["clean.html", "broken.html"] });
@@ -172,6 +253,8 @@ test("browser checker exports a self-contained bilingual decision report without
   const bundle = { generatedAt: "2026-08-14T00:00:00.000Z", summary: summarizeNoteReports([report]), reports: [report] };
   const html = buildPortableNoteReport(bundle, { buildRepairTask: (value, language) => `${language}:${value.path}`, noteDecision });
   assert.match(html, /Sharing readiness report/);
+  assert.match(html, /ORIGINAL CHECK · BEFORE SAFE-METADATA COPY/);
+  assert.match(html, /No source file was uploaded or overwritten/);
   assert.match(html, /暂不建议分享/);
   assert.match(html, /folder readiness · lowest file/);
   assert.match(html, /data-language="zh-CN"/);

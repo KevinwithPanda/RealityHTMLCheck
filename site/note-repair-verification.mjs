@@ -1,4 +1,5 @@
 const LEVEL_ORDER = Object.freeze({ error: 0, warning: 1, advice: 2 });
+const compareText = (left, right) => left < right ? -1 : left > right ? 1 : 0;
 
 function requireFunction(value, name) {
   if (typeof value !== "function") throw new TypeError(`${name} must be a function`);
@@ -29,7 +30,7 @@ export function duplicateBrowserNotePaths(paths, normalizePath) {
     if (seen.has(path)) duplicates.add(path);
     else seen.add(path);
   }
-  return [...duplicates].sort((left, right) => left.localeCompare(right));
+  return [...duplicates].sort(compareText);
 }
 
 function findingEntries(bundle) {
@@ -43,6 +44,29 @@ function findingEntries(bundle) {
     entries.push({ key: `package:${finding.ruleId}`, scope: "package", path: null, finding });
   }
   return entries;
+}
+
+function compareFindingEntries(beforeBundle, afterBundle) {
+  const beforeEntries = new Map(findingEntries(beforeBundle).map((entry) => [entry.key, entry]));
+  const afterEntries = new Map(findingEntries(afterBundle).map((entry) => [entry.key, entry]));
+  const resolved = [...beforeEntries.values()].filter((entry) => !afterEntries.has(entry.key));
+  const remaining = [...afterEntries.values()].filter((entry) => beforeEntries.has(entry.key)).map((entry) => ({
+    ...entry,
+    beforeAffectedCount: beforeEntries.get(entry.key).finding.affectedCount,
+    afterAffectedCount: entry.finding.affectedCount,
+    beforeLevel: beforeEntries.get(entry.key).finding.level,
+  }));
+  const introduced = [...afterEntries.values()].filter((entry) => !beforeEntries.has(entry.key));
+  const worsened = remaining.filter((entry) => entry.afterAffectedCount > entry.beforeAffectedCount || LEVEL_ORDER[entry.finding.level] < LEVEL_ORDER[entry.beforeLevel]);
+  return { resolved, remaining, introduced, worsened };
+}
+
+function evidenceSignature(bundle) {
+  return JSON.stringify({
+    summary: bundle.summary,
+    findings: findingEntries(bundle).map((entry) => ({ key: entry.key, level: entry.finding.level, affectedCount: entry.finding.affectedCount }))
+      .sort((left, right) => compareText(left.key, right.key)),
+  });
 }
 
 /** Run the exact deterministic browser-note pipeline over in-memory sources. */
@@ -70,9 +94,9 @@ export function analyzeBrowserNoteSources({ htmlSources, cssSources = [], knownF
         ...normalizedCssSources.map((source) => ({ path: source.path, text: source.text, kind: "css" })),
       ],
       knownFiles: normalizedKnownFiles,
-    }).sort((left, right) => LEVEL_ORDER[left.level] - LEVEL_ORDER[right.level] || left.ruleId.localeCompare(right.ruleId));
+    }).sort((left, right) => LEVEL_ORDER[left.level] - LEVEL_ORDER[right.level] || compareText(left.ruleId, right.ruleId));
   }
-  reports.sort((left, right) => left.score - right.score || left.path.localeCompare(right.path));
+  reports.sort((left, right) => left.score - right.score || compareText(left.path, right.path));
   const packageSummary = api.summarizePackageFindings(packageFindings);
   return {
     reports,
@@ -117,15 +141,8 @@ export function verifySafeNoteRepair({ path, beforeBundle, analysis }, helpers) 
     .filter((finding) => !afterFileRules.has(finding.ruleId))
     .map((finding) => ({ key: `download:${canonicalPath}:${finding.ruleId}`, scope: "html", path: canonicalPath, finding }));
 
-  const beforeEntries = new Map(findingEntries(beforeBundle).map((entry) => [entry.key, entry]));
-  const afterEntries = new Map(findingEntries(afterBundle).map((entry) => [entry.key, entry]));
-  const resolved = [...beforeEntries.values()].filter((entry) => !afterEntries.has(entry.key));
-  const remaining = [...afterEntries.values()].filter((entry) => beforeEntries.has(entry.key)).map((entry) => ({
-    ...entry,
-    beforeAffectedCount: beforeEntries.get(entry.key).finding.affectedCount,
-    afterAffectedCount: entry.finding.affectedCount,
-  }));
-  const introduced = [...afterEntries.values()].filter((entry) => !beforeEntries.has(entry.key));
+  const findings = compareFindingEntries(beforeBundle, afterBundle);
+  if (findings.introduced.length || findings.worsened.length) throw new Error("Safe metadata repair introduced or worsened a finding; download is blocked");
 
   return {
     kind: "html-note-safe-repair-verification",
@@ -141,7 +158,84 @@ export function verifySafeNoteRepair({ path, beforeBundle, analysis }, helpers) 
       summary: downloadSummary,
       onlyFindings: downloadOnlyFindings,
     },
-    findings: { resolved, remaining, introduced },
+    findings,
+    originalModified: false,
+  };
+}
+
+/** Apply every available safe metadata fix, then recheck the complete selected package as one immutable candidate. */
+export function verifySafeNotePackageRepair({ beforeBundle, analysis }, helpers) {
+  const api = dependencies(helpers);
+  if (!beforeBundle || !Array.isArray(beforeBundle.reports)) throw new TypeError("beforeBundle must be a browser note result");
+  if (!analysis || !Array.isArray(analysis.htmlSources) || !Array.isArray(analysis.knownFiles)) {
+    throw new TypeError("a complete folder inventory is required for package repair");
+  }
+  const sourcePaths = analysis.htmlSources.map((source) => api.normalizeNotePath(source.path));
+  const reportPaths = beforeBundle.reports.map((report) => api.normalizeNotePath(report.path));
+  const sourceCollisions = duplicateBrowserNotePaths(sourcePaths, api.normalizeNotePath);
+  const reportCollisions = duplicateBrowserNotePaths(reportPaths, api.normalizeNotePath);
+  const inventoryCollisions = duplicateBrowserNotePaths(analysis.knownFiles, api.normalizeNotePath);
+  if (sourceCollisions.length || reportCollisions.length || inventoryCollisions.length) {
+    throw new Error(`Cannot verify a package repair with duplicate scope: ${sourceCollisions[0] || reportCollisions[0] || inventoryCollisions[0]}`);
+  }
+  const expected = [...sourcePaths].sort(compareText);
+  const reported = [...reportPaths].sort(compareText);
+  if (JSON.stringify(expected) !== JSON.stringify(reported)) throw new Error("Package repair sources do not match the checked HTML scope");
+  const known = new Set(analysis.knownFiles.map((path) => api.normalizeNotePath(path)));
+  if (sourcePaths.some((path) => !known.has(path))) throw new Error("Package repair HTML is missing from the known file inventory");
+  const freshBefore = analyzeBrowserNoteSources({
+    htmlSources: analysis.htmlSources,
+    cssSources: analysis.cssSources || [],
+    knownFiles: analysis.knownFiles,
+  }, api);
+  if (evidenceSignature(freshBefore) !== evidenceSignature(beforeBundle)) throw new Error("Package repair baseline no longer matches the selected source analysis");
+
+  const changes = [];
+  const repairedHtmlByPath = new Map();
+  const repairedSources = analysis.htmlSources.map((source) => {
+    const path = api.normalizeNotePath(source.path);
+    const repaired = api.applySafeNoteFixes(source.html);
+    if (repaired.changes.length && repaired.html !== source.html) {
+      changes.push({ path, rules: [...repaired.changes] });
+      repairedHtmlByPath.set(path, repaired.html);
+      return { ...source, path, html: repaired.html };
+    }
+    return { ...source, path };
+  });
+  if (!changes.length) throw new Error("No safe metadata repair is available in this folder");
+  changes.sort((left, right) => compareText(left.path, right.path));
+
+  const afterBundle = analyzeBrowserNoteSources({
+    htmlSources: repairedSources,
+    cssSources: analysis.cssSources || [],
+    knownFiles: analysis.knownFiles,
+  }, api);
+  const findings = compareFindingEntries(freshBefore, afterBundle);
+  if (findings.introduced.length || findings.worsened.length) throw new Error("Safe package repair introduced or worsened a finding; archive generation is blocked");
+  for (const change of changes) {
+    const report = afterBundle.reports.find((item) => item.path === change.path);
+    if (!report || change.rules.some((ruleId) => report.findings.some((finding) => finding.ruleId === ruleId))) {
+      throw new Error(`Safe package repair did not resolve its declared metadata fixes: ${change.path}`);
+    }
+  }
+  const candidateHtmlByPath = new Map(repairedSources.map((source) => [source.path, source.html]));
+  const sourceHtmlByPath = new Map(analysis.htmlSources.map((source) => [api.normalizeNotePath(source.path), source.html]));
+  const candidateCssByPath = new Map((analysis.cssSources || []).map((source) => [api.normalizeNotePath(source.path), source.text]));
+  return {
+    kind: "html-note-safe-package-repair-verification",
+    changes,
+    totalChanges: changes.reduce((sum, item) => sum + item.rules.length, 0),
+    repairedHtmlByPath,
+    candidateHtmlByPath,
+    sourceHtmlByPath,
+    candidateCssByPath,
+    before: { summary: freshBefore.summary },
+    after: afterBundle,
+    scope: {
+      htmlPaths: expected,
+      knownFiles: [...known].sort(compareText),
+    },
+    findings,
     originalModified: false,
   };
 }

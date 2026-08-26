@@ -69,6 +69,8 @@ This writes new copies below the evidence run and leaves the source byte-for-byt
 
 Do not automatically invent titles, heading levels, alternative text, missing resources, or replacement content. Do not remove scripts or remote dependencies without checking whether the user intended interactive behavior. Use the report's copy-ready task for those fixes, inspect the source, make a bounded change after authorization, and rerun the same note check.
 
+The online checker may also create a **verified safe-metadata folder ZIP** when the user selects a complete browser folder. That artifact applies the same three fixes to all eligible HTML files together, reruns one cumulative package check, preserves the original folder root inside a new wrapper, copies every file the browser supplied, and verifies its ZIP entry inventory before download. A candidate SHA-256 binds the exact analyzed HTML/CSS text and evidence state; the archive proof separately binds every packed entry. It does not preserve empty directories, symlinks, or hidden files the browser did not supply; it does not add missing or remote resources; and it does not repair structure, accessibility, scripts, or content. Never substitute it for `--prepare-repair` when the user requests broader agentic repair.
+
 ## Complete an agentic repair
 
 When the user invokes the Skill with an explicit request to check and repair a bounded note or folder, perform the handoff inside the same Codex task. The user does not need to copy the report prompt back into Codex.

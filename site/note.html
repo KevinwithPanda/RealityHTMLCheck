@@ -3,17 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Check AI-generated HTML notes locally for broken attachments, structure, navigation, portability, safety, mobile readability, and unfinished placeholders. No upload or account.">
+  <meta name="description" content="Check AI-generated HTML notes locally, apply safe metadata fixes, and download a jointly rechecked folder ZIP containing every browser-selected asset. No upload or account.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
   <meta property="og:title" content="RealityCheck Note · Local HTML note health check">
-  <meta property="og:description" content="Drop an AI-generated HTML note or folder. Get evidence and repair guidance without uploading the content.">
+  <meta property="og:description" content="Drop an HTML note folder, get local evidence, and build a verified safe-metadata ZIP without uploading the content.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://kevinwithpanda.github.io/RealityHTMLCheck/note.html">
   <meta property="og:image" content="https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="canonical" href="https://kevinwithpanda.github.io/RealityHTMLCheck/note.html">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="note.css?v=0.7.2">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="stylesheet" href="note.css?v=0.8.0">
   <title>RealityCheck Note · Check AI-generated HTML notes locally</title>
 </head>
 <body>
@@ -62,11 +63,13 @@
       <section class="decision" id="decision" aria-live="polite"></section>
       <div class="summary" id="summary"></div>
       <div class="result-actions">
+        <button type="button" class="button primary" id="download-folder-zip" hidden data-en="Build safe-metadata folder ZIP" data-zh-cn="生成安全元数据文件夹 ZIP">Build safe-metadata folder ZIP</button>
         <button type="button" class="button primary" id="copy-all" data-en="Copy repair task for AI" data-zh-cn="复制给 AI 的修复任务">Copy repair task for AI</button>
         <button type="button" class="button" id="download-report" data-en="Download shareable report" data-zh-cn="下载可分享报告">Download shareable report</button>
         <button type="button" class="button" id="download-json" data-en="Download evidence" data-zh-cn="下载检查证据">Download evidence</button>
-        <span data-en="Safe metadata fixes are rechecked before download. The original is never overwritten. Browser repair downloads one HTML only; folder assets are not bundled." data-zh-cn="安全元数据修复会在下载前重新检查，且绝不覆盖原文件。浏览器修复只下载一个 HTML，不会打包文件夹资源。">Safe metadata fixes are rechecked before download. The original is never overwritten. Browser repair downloads one HTML only; folder assets are not bundled.</span>
+        <span data-en="Folder ZIP applies only safe metadata fixes, jointly rechecks every HTML, and includes every browser-selected file. Single-file repair still downloads one HTML only. Originals are never overwritten." data-zh-cn="文件夹 ZIP 只应用安全元数据修复，联合复检全部 HTML，并包含浏览器所选的每个文件。单文件修复仍只下载一个 HTML；原文件绝不覆盖。">Folder ZIP applies only safe metadata fixes, jointly rechecks every HTML, and includes every browser-selected file. Single-file repair still downloads one HTML only. Originals are never overwritten.</span>
       </div>
+      <section class="folder-repair" id="folder-repair" hidden aria-live="polite"></section>
       <div class="filters" role="group" aria-label="Finding filters">
         <button type="button" data-filter="all" aria-pressed="true" data-en="All" data-zh-cn="全部">All</button>
         <button type="button" data-filter="error" aria-pressed="false" data-en="Errors" data-zh-cn="错误">Errors</button>
@@ -89,6 +92,6 @@
 
   <footer><div class="wrap"><span>RealityCheck Note · MIT</span><span data-en="Your files stay on your device." data-zh-cn="你的文件始终留在设备上。">Your files stay on your device.</span><a href="https://github.com/KevinwithPanda/RealityHTMLCheck">GitHub</a></div></footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="note-checker.js?v=0.7.2"></script>
+  <script type="module" src="note-checker.js?v=0.8.0"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@
 
 RealityCheck 现在首先是一款面向普通用户的本地 HTML 笔记体检工具，同时保留面向 Codex、开发者和产品团队的真实浏览器 Web 核查能力。笔记检查无需账号、无需服务器，不会上传文件；专业 Web 核查则继续提供压力场景、证据、修复任务和修复前后证明。
 
-当前版本：`v0.7.2 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
+当前版本：`v0.8.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
 
 ## 一分钟内获得价值：检查 HTML 笔记
 
@@ -16,14 +16,18 @@ RealityCheck 现在首先是一款面向普通用户的本地 HTML 笔记体检�
 - 检查仅本机可用路径、文件名大小写、远程依赖、脚本和内联事件；
 - 检查手机 viewport、固定宽布局、超长文本和未完成的 AI 占位内容；
 - 先给出“暂不建议分享 / 分享前请复核 / 本次检查未发现阻断项”，文件夹采用最低文件分避免平均值掩盖坏文件；
-- 生成中英文证据、可复制修复任务、JSON 结果、可分享离线 HTML 报告和安全修复副本。
+- 生成中英文证据、可复制修复任务、JSON 结果、可分享离线 HTML 报告、单 HTML 安全副本，以及保留全部所选资源结构的安全元数据文件夹 ZIP。
 
-自动修复刻意限制为三项明确修改：补充 HTML5 doctype、声明文档语言和补充 UTF-8 元数据。下载前，检查器会对同一份内存 HTML 再运行一次完整检测，显示原文件夹中的文件/文件夹分数、资源明确未打包的“单 HTML 得分”，以及“已解决 / 仍存在 / 新出现”问题；最终下载的字节就是刚刚复检的内容。浏览器只下载一个 HTML，不会打包文件夹图片、样式或附件；请把它移回原相对目录，或使用 Skill/CLI 生成保持目录结构的修复文件夹。浏览器绝不会覆盖你选择的源文件，也不会把图片描述、标题结构等需要判断的问题伪装成已修复。
+自动修复刻意限制为三项明确修改：补充 HTML5 doctype、声明文档语言和补充 UTF-8 元数据。单文件按钮会显示原文件夹分数、资源未打包的“单 HTML 得分”和问题变化；它只下载一个 HTML，请移回原相对目录，或改用文件夹 ZIP。浏览器绝不会覆盖源文件，也不会把图片描述、标题结构等需要判断的问题伪装成已修复。
+
+选择真实文件夹后，**联合复检并生成 ZIP** 会对所有可安全处理的 HTML 同时应用这三项修改，再对累计候选运行一次完整 HTML/CSS/文件包复检。用户必须先检查完整所选清单并确认构建；ZIP 会在新 wrapper 中保留原根目录，逐字节复制全部浏览器所选图片、样式和附件，因此 `../notes/assets/x.png` 这类跨根引用仍保持原目录语义。它会写入本地 after report 与 proof，并在下载前回读核对 entry 路径、大小、CRC32 和 SHA-256。界面、报告、JSON 与 proof 还会显示同一个可复制候选 ID，用 SHA-256 绑定实际分析的 HTML/CSS 文本、范围、修改、摘要与问题状态；打包前还会重新读取所选 HTML/CSS，且修复映射必须与声明的修改文件完全一致。构建完成后还要再次明确点击才会下载。
+
+该 ZIP 是“已验证的安全元数据工作副本”，不是“全部修好”或“可直接发布”证明。它不会虚构缺失文件、下载远程资源或修复结构/内容/脚本；空目录、符号链接和浏览器没有提供的隐藏文件也无法保留。若发现路径冲突、`.env`/密钥/`.git`/`node_modules`/`.realitycheck` 等潜在敏感内容、超过 4,998 个所选文件、单文件超过 32 MiB 或所选字节超过 62 MiB，打包会失败关闭而不会静默漏文件；普通静态分析还限制浏览器所选文件不超过 5,000 个、HTML 总解码字节不超过 32 MiB、可读 CSS 不超过 16 MiB。需要更广泛且依赖判断的修改时，仍应使用 Skill 工作流。
 
 需要批量检查整个笔记文件夹时，无需克隆仓库或全局安装：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.2" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.8.0" \
   realityhtmlcheck note ./我的笔记
 # 打开 .realitycheck/notes/latest.html
 ```
@@ -31,14 +35,14 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.2" \
 生成保守修复副本，但保持所有源文件逐字节不变：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.2" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.8.0" \
   realityhtmlcheck note ./我的笔记 --fix-safe
 ```
 
 持续导出时，可把同一检查器放进 GitHub Actions；note 模式不启动服务器、不安装浏览器依赖，也不执行笔记脚本：
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.7.2
+- uses: KevinwithPanda/RealityHTMLCheck@v0.8.0
   with:
     kind: note
     path: exported-notes
@@ -53,7 +57,7 @@ RealityCheck 不上传源笔记。启用 artifact 时，工作流会保存生成
 第二次及后续导出可以与一份不可变的历史报告比较：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.2" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.8.0" \
   realityhtmlcheck note ./我的笔记 \
   --baseline .realitycheck/notes/历史运行/report.json \
   --fail-on error

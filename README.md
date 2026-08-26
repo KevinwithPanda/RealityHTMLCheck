@@ -73,7 +73,7 @@ inspect the real artifact → expose hidden failure → explain the evidence
 It complements compilers and AI models rather than competing with them. The model supplies judgment where judgment is necessary; deterministic checks and browser evidence prevent confident guesses from becoming the quality gate.
 
 <p align="center">
-  <img src="docs/assets/note-checker-preview.png" alt="RealityCheck HTML note result showing a conservative sharing decision, lowest-file readiness, bilingual evidence, and repair actions" width="100%" />
+  <img src="docs/assets/note-checker-preview.png" alt="RealityCheck HTML note result showing a conservative sharing decision and a jointly rechecked safe-metadata folder ZIP that still discloses remaining findings" width="100%" />
 </p>
 
 The public evidence is deliberately layered: four checked-in HTML files were emitted and byte-for-byte reproduced with **Pandoc 3.8.2.1** from four allowlisted commands—standalone, embedded local resources, TOC/footnotes/MathML, and multi-source composition. All four currently score 100/100. Seven separately labelled `-like` packages exercise representative failure shapes. Neither layer is presented as official or universal vendor compatibility. [Inspect the real-export manifest, hashes, findings, commands, and boundaries.](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)
@@ -82,7 +82,7 @@ The public evidence is deliberately layered: four checked-in HTML files were emi
 
 | Experience | Best for | What happens |
 | --- | --- | --- |
-| [Online note checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html) | Anyone with an HTML file/folder | Zero install, zero upload, static local inspection in the browser |
+| [Online note checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html) | Anyone with an HTML file/folder | Zero install/upload; local inspection plus a structure-preserving safe-metadata folder ZIP |
 | GitHub-backed `npx` CLI | Repeatable exports without cloning this repository | Disposable install, bilingual reports, JSON evidence, repair plans, thresholds |
 | GitHub Action | Export and publishing pipelines | Checks a note folder without a server, uploads the generated report, annotates exact files, and enforces error/warning gates |
 | `$realitycheck` Skill | End-to-end work in Codex | Inspect, create a working copy, repair high-confidence issues, recheck, and return the usable output plus both reports |
@@ -141,19 +141,23 @@ The **Apply safe fixes, recheck & download** button is deliberately narrow. It c
 2. infer and declare `lang="zh-CN"` or `lang="en"`;
 3. add an early UTF-8 charset declaration.
 
-Before downloading, the checker runs the same full in-memory detector again and shows before/after file and original-folder scores, a separate HTML-only score with assets explicitly unverified, plus resolved, remaining, and newly introduced findings. The downloaded bytes are the exact HTML that was rechecked. A browser download contains one HTML file, not its folder images, styles, or attachments; move it back beside the original relative assets, or use the Skill/CLI for a repaired folder that preserves structure. It is still **not** an “all problems fixed” download: headings, image descriptions, missing files, paths, scripts, and content decisions require review. Use the Skill workflow when you want Codex to carry those repairs through to a verified copy.
+Before downloading, the checker runs the same full in-memory detector again and shows before/after file and original-folder scores, a separate HTML-only score with assets explicitly unverified, plus resolved, remaining, and newly introduced findings. The downloaded bytes are the exact HTML that was rechecked. A per-file browser download contains one HTML file, not its folder images, styles, or attachments; move it back beside the original relative assets, or use the folder ZIP described below. It is still **not** an “all problems fixed” download: headings, image descriptions, missing files, paths, scripts, and content decisions require review. Use the Skill workflow when you want Codex to carry those broader repairs through to a verified copy.
+
+When a real folder is selected, **Recheck & build ZIP** applies those same three metadata fixes to every eligible HTML file at once, reruns the complete HTML/CSS/package check over the cumulative candidate, then creates a new wrapper that retains the original root folder and every file the browser supplied. Unchanged images, styles, and attachments are copied as original bytes, so root-relative sibling patterns such as `../notes/assets/x.png` keep the same folder semantics. After an explicit full-inventory review, the STORE-only ZIP is built but not downloaded until a second confirmation; its entry paths, sizes, CRC32 values, and SHA-256 hashes must match the embedded local proof and cumulative after report. A visible, copyable candidate ID binds the exact analyzed HTML/CSS text, scope, changes, summary, and finding state across the screen, report, JSON, and proof. Before packing, the selected HTML/CSS is read again and must still match that candidate; the repaired HTML key set must exactly equal the declared changes.
+
+This folder ZIP is a **verified safe-metadata working copy**, not a fully repaired or share-ready claim. Missing files are not invented, remote resources are not downloaded, and structural/content/script findings remain visible. Empty directories, symlinks, and hidden files not exposed by the browser cannot be preserved. Archiving fails closed for path conflicts, likely secret material (`.env`, keys, `.git`, `node_modules`, `.realitycheck`), more than 4,998 selected files, a file above 32 MiB, or more than 62 MiB of selected bytes. Static analysis separately caps the browser selection at 5,000 files, decoded HTML at 32 MiB, and readable CSS at 16 MiB. Use the Skill workflow for broader, judgment-dependent repairs.
 
 ### No-clone note CLI
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.2" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.8.0" \
   realityhtmlcheck note ./my-notes
 ```
 
 Open `.realitycheck/notes/latest.html`. To generate only the three conservative metadata repairs without touching the originals:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.2" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.8.0" \
   realityhtmlcheck note ./my-notes --fix-safe
 ```
 
@@ -162,7 +166,7 @@ Use `--fail-on error` or `--fail-on warning` in an export pipeline. This command
 ### HTML note gate in GitHub Actions
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.7.2
+- uses: KevinwithPanda/RealityHTMLCheck@v0.8.0
   with:
     kind: note
     path: exported-notes
@@ -177,7 +181,7 @@ Note mode does not start a server, install browser dependencies, execute note sc
 For the second and later export, compare against an immutable earlier report:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.2" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.8.0" \
   realityhtmlcheck note ./my-notes \
   --baseline .realitycheck/notes/PRIOR-RUN/report.json \
   --fail-on error
@@ -244,7 +248,7 @@ npm run audit -- http://localhost:3000 \
 For a reusable GitHub Action:
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.7.2
+- uses: KevinwithPanda/RealityHTMLCheck@v0.8.0
   with:
     url: http://127.0.0.1:3000
     mode: quick
@@ -265,7 +269,7 @@ RealityCheck reports exactly what it tested, what failed, and what it could not 
 
 ## Project status
 
-RealityCheck is a **v0.7.2 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
+RealityCheck is a **v0.8.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
 
 - [Representative export evidence and explicit compatibility boundary](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)
 - [HTML note Action and browser Action](action.yml)

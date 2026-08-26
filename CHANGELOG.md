@@ -4,6 +4,21 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-27
+
+### Added
+
+- A zero-upload, structure-preserving safe-metadata folder ZIP that applies all available safe metadata fixes together, reruns the complete note/package detector, includes every browser-selected file, embeds a local proof and after report, and verifies ZIP paths, sizes, CRC32 values, and SHA-256 hashes before download.
+- A dependency-free deterministic ZIP32 STORE writer with UTF-8 paths, fixed timestamps, read-back verification, browser/Node support, and independent parser/CRC tests.
+- A visible, copyable SHA-256 candidate ID that binds the exact analyzed HTML/CSS candidate, scope, safe changes, summary, and finding state to the ZIP proof and cumulative after report.
+
+### Security
+
+- Folder archiving fails closed for unsafe, duplicate, Unicode/case-colliding, or Windows-reserved paths; likely secret/development files; unreadable or mismatched File objects; ZIP32/layout violations; and bounded file-count, single-file, or total-size limits before reading file bytes.
+- New selections abort in-progress archive work, unchanged assets retain their original File bytes, and the downloaded proof distinguishes safe metadata fixes from unresolved structure, content, scripts, missing files, and remote resources.
+- Browser analysis now rejects selections above 5,000 files before reading content; folder ZIP limits remain stricter because two evidence entries are reserved.
+- Archive construction re-reads the selected HTML/CSS text and requires the repaired-map keys to equal the declared changes, preventing a re-bound or undeclared candidate from diverging from the bytes and scope that were analyzed.
+
 ## [0.7.2] - 2026-08-27
 
 ### Fixed
