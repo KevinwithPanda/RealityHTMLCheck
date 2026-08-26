@@ -219,7 +219,7 @@ class SkillStructureTests(unittest.TestCase):
         self.assertNotIn('path: ${{ github.workspace }}/${{ inputs.working-directory }}', action)
         self.assertIn("normalized to operational error 2", action)
         self.assertIn('rm -f -- "$RC_OUTPUT/report.json" "$RC_OUTPUT/repair-plan.md" "$RC_OUTPUT/repair-plan.zh-CN.md" "$RC_OUTPUT/latest.html" "$RC_OUTPUT/latest.json" "$RC_OUTPUT/comparison.html" "$RC_OUTPUT/comparison.json" "$RC_OUTPUT/github-summary.md"', action)
-        self.assertIn("steps.resolve.outputs.kind == 'web' || steps.note.outputs.exit-code == '0' || steps.note.outputs.exit-code == '1'", action)
+        self.assertIn("steps.resolve.outputs.kind == 'web' || (steps.resolve.outputs.kind == 'note' && (steps.note.outputs.exit-code == '0' || steps.note.outputs.exit-code == '1'))", action)
         self.assertIn('args+=(--baseline "$RC_BASELINE")', action)
         self.assertIn("steps.note.outputs.exit-code == '0' || steps.note.outputs.exit-code == '1'", action)
         self.assertLess(action.index("Upload RealityCheck evidence"), action.index("Enforce the RealityCheck result"))

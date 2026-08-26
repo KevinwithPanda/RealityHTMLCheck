@@ -829,7 +829,7 @@ runs:
         fi
 
     - name: Upload RealityCheck evidence
-      if: always() && steps.resolve.outcome == 'success' && inputs.upload-artifact == 'true' && (steps.resolve.outputs.kind == 'web' || steps.note.outputs.exit-code == '0' || steps.note.outputs.exit-code == '1')
+      if: always() && steps.resolve.outcome == 'success' && inputs.upload-artifact == 'true' && (steps.resolve.outputs.kind == 'web' || (steps.resolve.outputs.kind == 'note' && (steps.note.outputs.exit-code == '0' || steps.note.outputs.exit-code == '1')))
       uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact-name }}

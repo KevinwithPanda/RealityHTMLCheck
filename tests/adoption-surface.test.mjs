@@ -67,6 +67,7 @@ test("verified publish Action preserves one exact run and never deploys it", () 
     "Validated repair plan",
   ]) assert.match(action, new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(action, /steps\.resolve\.outputs\.kind == 'web' \|\| steps\.resolve\.outputs\.kind == 'publish'/);
+  assert.match(action, /steps\.resolve\.outputs\.kind == 'web' \|\| \(steps\.resolve\.outputs\.kind == 'note'/);
   assert.match(action, /Publish mode does not accept fail-on, baseline, exclude-html, url, or config/);
   assert.match(action, /Publish mode does not accept allow-remote/);
   assert.match(action, /path: \$\{\{ steps\.publish\.outputs\.run-directory-absolute \}\}/);
