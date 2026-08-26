@@ -1,0 +1,31 @@
+name: Check exported HTML notes
+
+on:
+  pull_request:
+    paths:
+      - "exported-notes/**"
+      - ".github/workflows/html-note-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  html-note-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the note package
+        uses: actions/checkout@v7
+
+      - name: Check sharing readiness and preserve the report
+        uses: KevinwithPanda/RealityHTMLCheck@v0.6.0
+        with:
+          kind: note
+          path: exported-notes
+          fail-on: error
+          summary-language: en
+          artifact-name: realitycheck-html-notes
+          # After reviewing and committing an immutable earlier report, enable
+          # regression-only gating so persistent known debt stays visible but
+          # does not keep every pull request red:
+          # baseline: realitycheck-baselines/html-notes/report.json

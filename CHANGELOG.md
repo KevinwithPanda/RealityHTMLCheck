@@ -2,6 +2,12 @@
 
 All notable changes are documented here. This project follows Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+
+- A complete copy-ready HTML note GitHub Action workflow with triggers, read-only permissions, checkout, artifact naming, and an optional immutable baseline.
+
 ## [0.6.0] - 2026-08-27
 
 ### Added

@@ -46,6 +46,8 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
     summary-language: zh-CN
 ```
 
+可直接复制[完整工作流模板](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/examples/github-actions/html-note-gate.yml)，其中已经包含触发条件、只读权限、checkout、artifact 命名和可选的不可变 baseline 路径。
+
 RealityCheck 不上传源笔记。启用 artifact 时，工作流会保存生成报告，其中可能包含有限证据摘录；把 artifact 公开前仍应复核。
 
 第二次及后续导出可以与一份不可变的历史报告比较：

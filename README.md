@@ -170,6 +170,8 @@ Use `--fail-on error` or `--fail-on warning` in an export pipeline. This command
     summary-language: zh-CN
 ```
 
+[Copy the complete workflow](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/main/examples/github-actions/html-note-gate.yml), including triggers, read-only permissions, checkout, artifact naming, and the optional immutable baseline path.
+
 Note mode does not start a server, install browser dependencies, execute note scripts, or upload source note files. When artifact upload is enabled, it stores the generated report—including bounded evidence excerpts—so review the artifact before making a workflow public.
 
 For the second and later export, compare against an immutable earlier report:
