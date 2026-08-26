@@ -31,10 +31,10 @@ test("zero-install note checker exposes a private file and folder workflow", () 
   assert.match(html, /不覆盖原文件/);
   assert.match(html, /Need a deployable ZIP\?/);
   assert.match(html, /exact-final-byte browser proof/);
-  assert.match(html, /script type="module" src="note-checker\.js\?v=0\.10\.0"/);
+  assert.match(html, /script type="module" src="note-checker\.js\?v=0\.11\.0"/);
   assert.match(html, /<link rel="manifest" href="site\.webmanifest">/);
   assert.match(html, /Online ZIP repair is a safe-metadata working copy, not a publish verdict/);
-  assert.match(html, /local v0\.10 publish command/);
+  assert.match(html, /local v0\.11 command or publish Action/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   assert.doesNotMatch(html, /<link[^>]+rel="stylesheet"[^>]+href="https?:/i);
 });

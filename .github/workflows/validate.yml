@@ -60,6 +60,8 @@ jobs:
           node --check realitycheck/scripts/note-publish-browser.mjs
           node --check realitycheck/scripts/note-publish-server.mjs
           node --check realitycheck/scripts/note-publish-report.mjs
+          node --check realitycheck/scripts/note-publish-github-summary.mjs
+          node --check realitycheck/scripts/action-publish-result.mjs
           node --check realitycheck/scripts/note-zip.mjs
           node --check realitycheck/scripts/note-zip-import.mjs
           node --check realitycheck/scripts/note-zip-import-node.mjs
@@ -1108,4 +1110,170 @@ jobs:
           summary = (root / "github-summary.md").read_text(encoding="utf-8")
           assert "did not upload source notes" in summary, summary
           assert "bounded evidence excerpts" in summary, summary
+          PY
+
+  publish-action-no-install:
+    name: Verified publish Action and exact Artifact round trip
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Prepare clean and blocked passive-static exports
+        shell: bash
+        run: |
+          mkdir -p sample-project/good/assets sample-project/good/styles sample-project/broken
+          cat > sample-project/good/index.html <<'HTML'
+          <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Verified Action note</title><link rel="stylesheet" href="styles/note.css"></head><body><main><h1 id="result">Verified Action note</h1><p>This complete passive HTML package proves that a clean checkout can create and upload one exact browser-verified publish capsule without a project-local installation.</p><img src="assets/chart.svg" alt="Four verified publish scenarios"><a href="guide.html#method">Read the method</a></main></body></html>
+          HTML
+          cat > sample-project/good/guide.html <<'HTML'
+          <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Verified method</title><link rel="stylesheet" href="styles/note.css"></head><body><main><h1 id="method">Verified method</h1><p>The Action freezes the final package, checks root and project mounts, replays local bytes offline, and uploads only the validated run directory.</p><a href="index.html#result">Back to the result</a></main></body></html>
+          HTML
+          cat > sample-project/good/styles/note.css <<'CSS'
+          *{box-sizing:border-box}html{font-family:system-ui,sans-serif}body{margin:0;background:#f4f1e9;color:#1d2026}main{width:min(720px,calc(100% - 32px));margin:auto;padding:48px 0}img{display:block;max-width:100%;height:auto}a{display:inline-block;padding:12px 0;color:#245b7d}
+          CSS
+          cat > sample-project/good/assets/chart.svg <<'SVG'
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240" role="img" aria-labelledby="title"><title id="title">Verified publish capsule</title><rect width="640" height="240" rx="20" fill="#20242c"/><text x="42" y="132" fill="#fff" font-family="system-ui,sans-serif" font-size="42">READY · EXACT BYTES</text></svg>
+          SVG
+          cat > sample-project/broken/index.html <<'HTML'
+          <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Blocked Action note</title></head><body><main><h1>Blocked Action note</h1><p>This fixture intentionally contains executable content, so it must produce only a working copy without opening the untrusted script in a browser.</p><script>fetch("https://example.invalid/should-never-run")</script></main></body></html>
+          HTML
+          mkdir -p sample-project/.realitycheck/publish/old-run
+          printf 'must not be uploaded\n' > sample-project/.realitycheck/publish/old-run/sentinel.txt
+          find sample-project/good -type f -print0 | sort -z | xargs -0 sha256sum > good-source.sha256
+          test ! -d node_modules
+
+      - name: Build and upload one exact verified publish run
+        id: publish-ready
+        uses: ./
+        with:
+          kind: publish
+          working-directory: sample-project
+          path: good
+          output: .realitycheck/publish
+          summary-language: en
+          artifact-name: realitycheck-publish-action-ready
+
+      - name: Download the verified publish Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: realitycheck-publish-action-ready
+          path: downloaded-publish-ready
+
+      - name: Revalidate the verified Action outputs and downloaded bytes
+        shell: bash
+        env:
+          RC_EXIT_CODE: ${{ steps.publish-ready.outputs.exit-code }}
+          RC_PUBLISH_STATUS: ${{ steps.publish-ready.outputs.publish-status }}
+          RC_PUBLISH_READY: ${{ steps.publish-ready.outputs.publish-ready }}
+          RC_ARCHIVE_PATH: ${{ steps.publish-ready.outputs.publish-archive-path }}
+          RC_WORKING_COPY_PATH: ${{ steps.publish-ready.outputs.publish-working-copy-path }}
+          RC_REPORT_PATH: ${{ steps.publish-ready.outputs.publish-report-path }}
+          RC_RECEIPT_PATH: ${{ steps.publish-ready.outputs.publish-receipt-path }}
+          RC_MANIFEST_PATH: ${{ steps.publish-ready.outputs.publish-manifest-path }}
+          RC_TECHNICAL_PATH: ${{ steps.publish-ready.outputs.publish-technical-report-path }}
+          RC_BROWSER_PROOF_PATH: ${{ steps.publish-ready.outputs.publish-browser-proof-path }}
+          RC_CHECKSUM_PATH: ${{ steps.publish-ready.outputs.publish-checksum-path }}
+          RC_DEPLOY_ID: ${{ steps.publish-ready.outputs.publish-deploy-content-id }}
+          RC_ARCHIVE_SHA: ${{ steps.publish-ready.outputs.publish-archive-sha256 }}
+          RC_ARTIFACT_ID: ${{ steps.publish-ready.outputs.publish-artifact-id }}
+          RC_ARTIFACT_URL: ${{ steps.publish-ready.outputs.publish-artifact-url }}
+          RC_ARTIFACT_DIGEST: ${{ steps.publish-ready.outputs.publish-artifact-digest }}
+        run: |
+          test "$RC_EXIT_CODE" = "0"
+          case "$RC_PUBLISH_STATUS" in ready|warnings) ;; *) exit 1 ;; esac
+          test "$RC_PUBLISH_READY" = "true"
+          test -n "$RC_ARCHIVE_PATH" && test -f "$RC_ARCHIVE_PATH"
+          test -z "$RC_WORKING_COPY_PATH"
+          for path in "$RC_REPORT_PATH" "$RC_RECEIPT_PATH" "$RC_MANIFEST_PATH" "$RC_TECHNICAL_PATH" "$RC_BROWSER_PROOF_PATH" "$RC_CHECKSUM_PATH"; do test -f "$path"; done
+          test -n "$RC_DEPLOY_ID"
+          test -n "$RC_ARTIFACT_ID"
+          case "$RC_ARTIFACT_URL" in https://github.com/*) ;; *) exit 1 ;; esac
+          case "$RC_ARTIFACT_DIGEST" in sha256:*) ;; *) exit 1 ;; esac
+          test ! -e downloaded-publish-ready/sentinel.txt
+          test -z "$(find downloaded-publish-ready -name sentinel.txt -print -quit)"
+          node realitycheck/scripts/audit.mjs validate downloaded-publish-ready
+          downloaded_archive="$(find downloaded-publish-ready -type f -name '*.realitycheck-publish.zip' -print -quit)"
+          test -n "$downloaded_archive"
+          test "$(sha256sum "$downloaded_archive" | cut -d' ' -f1)" = "$RC_ARCHIVE_SHA"
+          DOWNLOAD_ROOT="$PWD/downloaded-publish-ready" RC_ARCHIVE_SHA="$RC_ARCHIVE_SHA" RC_DEPLOY_ID="$RC_DEPLOY_ID" python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["DOWNLOAD_ROOT"])
+          receipt_path = next(root.rglob("*.receipt.json"))
+          run = receipt_path.parent
+          receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+          proof = json.loads((run / "browser-final-archive" / "browser-proof.json").read_text(encoding="utf-8"))
+          assert receipt["publishReady"] is True, receipt
+          assert receipt["archive"]["sha256"] == os.environ["RC_ARCHIVE_SHA"], receipt
+          assert receipt["deployContentId"] == os.environ["RC_DEPLOY_ID"], receipt
+          assert proof["passed"] is True, proof
+          assert proof["archive"]["sha256"] == receipt["archive"]["sha256"], proof
+          assert {item["id"] for item in proof["scenarios"]} == {
+              "desktop-root", "mobile-375-root", "desktop-project-mount",
+              "mobile-375-project-mount", "offline-exact-replay", "local-pages-and-fragments",
+          }, proof
+          assert all(item["status"] == "passed" for item in proof["scenarios"]), proof
+          PY
+          sha256sum -c good-source.sha256
+
+      - name: Build a blocked working copy without executing its script
+        id: publish-blocked
+        continue-on-error: true
+        uses: ./
+        with:
+          kind: publish
+          working-directory: sample-project
+          path: broken
+          output: .realitycheck/publish
+          summary-language: en
+          artifact-name: realitycheck-publish-action-blocked
+
+      - name: Download the blocked working-copy Artifact
+        if: always()
+        uses: actions/download-artifact@v8
+        with:
+          name: realitycheck-publish-action-blocked
+          path: downloaded-publish-blocked
+
+      - name: Verify the blocked Action remains non-publishable and reviewable
+        if: always()
+        shell: bash
+        env:
+          RC_ACTION_OUTCOME: ${{ steps.publish-blocked.outcome }}
+          RC_EXIT_CODE: ${{ steps.publish-blocked.outputs.exit-code }}
+          RC_PUBLISH_STATUS: ${{ steps.publish-blocked.outputs.publish-status }}
+          RC_PUBLISH_READY: ${{ steps.publish-blocked.outputs.publish-ready }}
+          RC_ARCHIVE_PATH: ${{ steps.publish-blocked.outputs.publish-archive-path }}
+          RC_WORKING_COPY_PATH: ${{ steps.publish-blocked.outputs.publish-working-copy-path }}
+          RC_ARTIFACT_ID: ${{ steps.publish-blocked.outputs.publish-artifact-id }}
+          RC_ARTIFACT_DIGEST: ${{ steps.publish-blocked.outputs.publish-artifact-digest }}
+        run: |
+          test "$RC_ACTION_OUTCOME" = "failure"
+          test "$RC_EXIT_CODE" = "1"
+          test "$RC_PUBLISH_STATUS" = "working-copy"
+          test "$RC_PUBLISH_READY" = "false"
+          test -z "$RC_ARCHIVE_PATH"
+          test -n "$RC_WORKING_COPY_PATH" && test -f "$RC_WORKING_COPY_PATH"
+          test -n "$RC_ARTIFACT_ID"
+          case "$RC_ARTIFACT_DIGEST" in sha256:*) ;; *) exit 1 ;; esac
+          node realitycheck/scripts/audit.mjs validate downloaded-publish-blocked
+          test -n "$(find downloaded-publish-blocked -type f -name '*.realitycheck-working-copy.zip' -print -quit)"
+          DOWNLOAD_ROOT="$PWD/downloaded-publish-blocked" python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["DOWNLOAD_ROOT"])
+          receipt_path = next(root.rglob("*.receipt.json"))
+          run = receipt_path.parent
+          receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+          technical = json.loads((run / "technical-report.json").read_text(encoding="utf-8"))
+          assert receipt["status"] == "working-copy", receipt
+          assert receipt["publishReady"] is False, receipt
+          assert receipt["finalArchiveBrowserProofPassed"] is False, receipt
+          assert any(item["code"] == "active-script" for item in technical["blockers"]), technical
+          assert technical["browser"]["provisional"] is None, technical
+          assert technical["browser"]["finalArchive"] is None, technical
+          assert technical["changes"]["pathRepairSkippedForActiveContent"] is True, technical
           PY

@@ -39,6 +39,45 @@ test("Action paths resolve one canonical note scope and artifact directory", () 
   }
 });
 
+test("Action paths isolate one publish invocation beneath the configured output root", () => {
+  const root = workspace();
+  try {
+    const result = resolveActionPaths({
+      workspace: root,
+      workingDirectory: "project",
+      kind: "publish",
+      notePath: "notes",
+      output: ".realitycheck/publish",
+      publishRunKey: "action-12345-2",
+    });
+    assert.equal(result.workingDirectory, "project");
+    assert.equal(result.notePath, "notes");
+    assert.equal(result.publishRunKey, "action-12345-2");
+    assert.equal(result.output, ".realitycheck/publish/action-12345-2");
+    assert.equal(result.reportRoot, "project/.realitycheck/publish/action-12345-2");
+    assert.equal(result.sourceRoot, "project/notes");
+    assert.match(result.artifactPath, /project[\\/].realitycheck[\\/]publish[\\/]action-12345-2$/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("Action publish paths require an isolated run key and reject note-only baselines", () => {
+  const root = workspace();
+  try {
+    const base = { workspace: root, workingDirectory: "project", kind: "publish", notePath: "notes", output: ".realitycheck/publish" };
+    assert.throws(() => resolveActionPaths(base), /publish-run-key is required/);
+    assert.throws(() => resolveActionPaths({ ...base, publishRunKey: "../escape" }), /cannot escape/);
+    assert.throws(() => resolveActionPaths({ ...base, publishRunKey: "custom/nested" }), /must match action-RUN_ID-RUN_ATTEMPT/);
+    assert.throws(() => resolveActionPaths({ ...base, publishRunKey: "action-1-1", baseline: "prior.json" }), /baseline is not supported/);
+    assert.throws(() => resolveActionPaths({ ...base, notePath: ".", publishRunKey: "action-1-1" }), /separate, non-nested/);
+    assert.throws(() => resolveActionPaths({ ...base, output: "notes/results", publishRunKey: "action-1-1" }), /separate, non-nested/);
+    assert.throws(() => resolveActionPaths({ ...base, kind: "note", publishRunKey: "action-1-1" }), /only valid when kind is publish/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("Action paths reject workflow injection, glob uploads, escapes, and output aliases", () => {
   const root = workspace();
   try {

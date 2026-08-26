@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { createHash } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { createHash, randomBytes } from "node:crypto";
+import { linkSync, lstatSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { loadPublishInput } from "./note-publish-input.mjs";
@@ -30,6 +30,7 @@ Options:
   --browser PATH      Chrome, Edge, or Chromium executable
   --headed            Show browser proof scenarios
   --static-only       Stop after static preflight; output is not publish-ready
+  --result-json PATH  Atomically write the finalized machine result (0/1 only)
   --language en|zh-CN Terminal and repair-plan language (default: zh-CN)
   -h, --help          Show this help
 
@@ -40,19 +41,20 @@ the .realitycheck-publish.zip name; every incomplete result is clearly named
 
 function parseArguments(argv) {
   const args = [...argv];
-  const options = { input: null, entry: null, name: null, output: ".realitycheck/publish", browserPath: null, headed: false, staticOnly: false, language: "zh-CN", help: false };
+  const options = { input: null, entry: null, name: null, output: ".realitycheck/publish", browserPath: null, headed: false, staticOnly: false, resultJson: null, language: "zh-CN", help: false };
   while (args.length) {
     const item = args.shift();
     if (item === "-h" || item === "--help") { options.help = true; continue; }
     if (item === "--headed") { options.headed = true; continue; }
     if (item === "--static-only") { options.staticOnly = true; continue; }
-    if (["--entry", "--name", "--output", "--browser", "--language"].includes(item)) {
+    if (["--entry", "--name", "--output", "--browser", "--result-json", "--language"].includes(item)) {
       const value = args.shift();
       if (!value) throw new Error(`${item} requires a value`);
       if (item === "--entry") options.entry = value.replaceAll("\\", "/");
       else if (item === "--name") options.name = value;
       else if (item === "--output") options.output = value;
       else if (item === "--browser") options.browserPath = value;
+      else if (item === "--result-json") options.resultJson = value;
       else options.language = value;
       continue;
     }
@@ -64,6 +66,44 @@ function parseArguments(argv) {
   if (!new Set(["en", "zh-CN"]).has(options.language)) throw new Error("--language must be en or zh-CN");
   if (options.staticOnly && (options.headed || options.browserPath)) throw new Error("--static-only cannot be combined with --headed or --browser");
   return options;
+}
+
+function lstatIfPresent(path) {
+  try { return lstatSync(path); }
+  catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+function prepareResultTarget(value) {
+  if (!value) return null;
+  if (/\u0000|[\r\n]/.test(value)) throw new Error("--result-json cannot contain control characters");
+  const path = resolve(value);
+  if (extname(path).toLowerCase() !== ".json") throw new Error("--result-json must name a .json file");
+  if (lstatIfPresent(path)) throw new Error(`--result-json refuses to overwrite an existing file or symbolic link: ${path}`);
+  const parent = lstatIfPresent(dirname(path));
+  if (!parent?.isDirectory() || parent.isSymbolicLink()) throw new Error("--result-json parent must be an existing non-symbolic-link directory");
+  return path;
+}
+
+function writeNewJsonAtomically(path, value) {
+  const temporary = join(dirname(path), `.${randomBytes(12).toString("hex")}.realitycheck-result.tmp`);
+  let temporaryCreated = false;
+  try {
+    writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, { encoding: "utf8", flag: "wx" });
+    temporaryCreated = true;
+    // A hard link publishes the already-complete bytes without the overwrite
+    // semantics of POSIX rename. EEXIST therefore remains a fail-closed race.
+    linkSync(temporary, path);
+  } catch (error) {
+    if (error?.code === "EEXIST") throw new Error(`--result-json refuses to overwrite an existing file or symbolic link: ${path}`);
+    throw error;
+  } finally {
+    if (temporaryCreated) {
+      try { unlinkSync(temporary); } catch (_) {}
+    }
+  }
 }
 
 function allocateRunDirectory(outputRoot, slug) {
@@ -216,6 +256,7 @@ function technicalBundle(candidate, loaded, status, platforms, browserError, bro
 export async function runNotePublishCommand(argv, { runBrowserProof = runPublishBrowserProof } = {}) {
   const options = parseArguments(argv);
   if (options.help) { console.log(usage()); return 0; }
+  const resultJsonPath = prepareResultTarget(options.resultJson);
   const loaded = await loadPublishInput(options.input, { name: options.name });
   const candidate = preparePublishCandidate(loaded.entries, { entry: options.entry });
   if (candidate.blockers.some((blocker) => blocker.code === "reserved-proof-path")) {
@@ -259,6 +300,7 @@ export async function runNotePublishCommand(argv, { runBrowserProof = runPublish
   let finalArchive = await makeArchive(finalEntries);
   let finalBrowserResult = null;
   let finalBrowserError = null;
+  let finalBrowserEvidenceDirectory = null;
   if (READY_STATUSES.has(status)) {
     try {
       finalBrowserResult = await runBrowserProof({
@@ -272,6 +314,9 @@ export async function runNotePublishCommand(argv, { runBrowserProof = runPublish
         headed: options.headed,
       });
     } catch (error) { finalBrowserError = error; }
+    if (finalBrowserResult?.proof) finalBrowserEvidenceDirectory = browserPassed(finalBrowserResult)
+      ? "browser-final-archive"
+      : "browser-failed-final-attempt";
     if (!browserPassed(finalBrowserResult)) {
       status = finalBrowserResult?.proof ? "working-copy" : "browser-proof-required";
       findings = findingSummary(candidate, { browserFailed: status === "working-copy" });
@@ -283,6 +328,16 @@ export async function runNotePublishCommand(argv, { runBrowserProof = runPublish
       finalArchive = await makeArchive(finalEntries);
     }
   }
+  if (finalBrowserResult?.proof && !browserPassed(finalBrowserResult)) {
+    // The failed attempt binds the pre-downgrade archive. Preserve it as
+    // diagnostic evidence, but move it away from the authoritative receipt
+    // sibling path so it cannot be mistaken for proof of the rebuilt working
+    // copy's container bytes.
+    renameSync(
+      join(runDirectory, "browser-final-archive"),
+      join(runDirectory, finalBrowserEvidenceDirectory),
+    );
+  }
   const publishReady = READY_STATUSES.has(status) && browserPassed(finalBrowserResult);
   const stem = `${loaded.slug}.${publishReady ? "realitycheck-publish" : "realitycheck-working-copy"}`;
   const archiveName = `${stem}.zip`;
@@ -290,7 +345,7 @@ export async function runNotePublishCommand(argv, { runBrowserProof = runPublish
   writeFileSync(archivePath, finalArchive.archive);
   const archiveSha256 = createHash("sha256").update(finalArchive.archive).digest("hex");
   writeFileSync(`${archivePath}.sha256`, `${archiveSha256}  ${archiveName}\n`, "utf8");
-  const finalProofId = finalBrowserResult?.proof ? proofId(finalBrowserResult.proof) : null;
+  const finalProofId = browserPassed(finalBrowserResult) ? proofId(finalBrowserResult.proof) : null;
   const receipt = {
     schemaVersion: "1",
     kind: "html-note-publish-receipt",
@@ -303,15 +358,48 @@ export async function runNotePublishCommand(argv, { runBrowserProof = runPublish
     embeddedBrowserProofId: publicArtifacts.manifest.browserProofId,
     finalArchiveBrowserProofId: finalProofId,
     finalArchiveBrowserProofPassed: browserPassed(finalBrowserResult),
-    browserProofError: finalBrowserError ? String(finalBrowserError.message || finalBrowserError).slice(0, 500) : browserError ? String(browserError.message || browserError).slice(0, 500) : null,
+    browserProofError: finalBrowserError ? String(finalBrowserError.message || finalBrowserError).slice(0, 500)
+      : browserError ? String(browserError.message || browserError).slice(0, 500)
+        : finalBrowserResult?.proof && !browserPassed(finalBrowserResult) ? "Final archive browser proof did not pass."
+          : browserResult?.proof && !browserPassed(browserResult) ? "Initial deploy-content browser proof did not pass." : null,
     platformDecisions: platforms,
     boundaries: { uploaded: false, deployed: false, archiveSidecarBindsContainerBytes: true, publicManifestBindsDeployContent: true },
   };
-  writeFileSync(join(runDirectory, `${stem}.receipt.json`), `${JSON.stringify(receipt, null, 2)}\n`, "utf8");
-  writeFileSync(join(runDirectory, `${stem}.manifest.json`), `${JSON.stringify(publicArtifacts.manifest, null, 2)}\n`, "utf8");
-  writeFileSync(join(runDirectory, `${stem}.report.html`), publicArtifacts.reportHtml, "utf8");
-  writeFileSync(join(runDirectory, "technical-report.json"), `${JSON.stringify(technicalBundle(candidate, loaded, status, platforms, browserError || finalBrowserError, browserResult, finalBrowserResult), null, 2)}\n`, "utf8");
-  writeFileSync(join(runDirectory, options.language === "zh-CN" ? "repair-plan.zh-CN.md" : "repair-plan.md"), markdownPlan(candidate, status, options.language), "utf8");
+  const receiptPath = join(runDirectory, `${stem}.receipt.json`);
+  const manifestPath = join(runDirectory, `${stem}.manifest.json`);
+  const reportPath = join(runDirectory, `${stem}.report.html`);
+  const technicalReportPath = join(runDirectory, "technical-report.json");
+  const repairPlanPath = join(runDirectory, options.language === "zh-CN" ? "repair-plan.zh-CN.md" : "repair-plan.md");
+  writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, "utf8");
+  writeFileSync(manifestPath, `${JSON.stringify(publicArtifacts.manifest, null, 2)}\n`, "utf8");
+  writeFileSync(reportPath, publicArtifacts.reportHtml, "utf8");
+  writeFileSync(technicalReportPath, `${JSON.stringify(technicalBundle(candidate, loaded, status, platforms, browserError || finalBrowserError, browserResult, finalBrowserResult), null, 2)}\n`, "utf8");
+  writeFileSync(repairPlanPath, markdownPlan(candidate, status, options.language), "utf8");
+  const exitCode = publishReady ? 0 : 1;
+  const browserProofPath = finalBrowserResult?.proof
+    ? join(runDirectory, finalBrowserEvidenceDirectory, "browser-proof.json")
+    : null;
+  if (resultJsonPath) writeNewJsonAtomically(resultJsonPath, {
+    schemaVersion: "1",
+    kind: "html-note-publish-command-result",
+    generatedAt: receipt.generatedAt,
+    status,
+    exitCode,
+    publishReady,
+    runDirectory,
+    artifacts: {
+      archive: archivePath,
+      checksum: `${archivePath}.sha256`,
+      receipt: receiptPath,
+      manifest: manifestPath,
+      report: reportPath,
+      technicalReport: technicalReportPath,
+      repairPlan: repairPlanPath,
+      browserProof: browserProofPath,
+    },
+    deployContentId: candidate.deployContentId,
+    archiveSha256,
+  });
   const zh = options.language === "zh-CN";
   console.log(zh ? `发布判断：${status}` : `Publish decision: ${status}`);
   console.log(zh ? `交付文件：${archivePath}` : `Deliverable: ${archivePath}`);
@@ -320,7 +408,7 @@ export async function runNotePublishCommand(argv, { runBrowserProof = runPublish
   console.log(zh ? `校验收据：${join(runDirectory, `${stem}.receipt.json`)}` : `Verification receipt: ${join(runDirectory, `${stem}.receipt.json`)}`);
   console.log(zh ? `ZIP 校验和：${archivePath}.sha256` : `ZIP checksum: ${archivePath}.sha256`);
   console.log(zh ? "RealityCheck 未上传或部署该文件。" : "RealityCheck did not upload or deploy this file.");
-  return publishReady ? 0 : 1;
+  return exitCode;
 }
 
 const direct = process.argv[1] && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));

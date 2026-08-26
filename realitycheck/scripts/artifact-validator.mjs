@@ -62,6 +62,7 @@ const SCHEMA_BY_ARTIFACT = {
   "html-note-publish-receipt": "html-note-publish-receipt.schema.json",
   "html-note-publish-browser-proof": "html-note-publish-browser-proof.schema.json",
   "html-note-publish-technical-report": "html-note-publish-technical-report.schema.json",
+  "html-note-publish-command-result": "html-note-publish-command-result.schema.json",
   config: "config.schema.json",
 };
 
@@ -784,6 +785,18 @@ function verifyPublishTechnicalReport(report) {
   return errors;
 }
 
+function verifyPublishCommandResult(result) {
+  const errors = [];
+  const ready = new Set(["ready", "warnings"]).has(result.status);
+  if (result.publishReady !== ready) errors.push("/publishReady does not match status");
+  if (result.exitCode !== (ready ? 0 : 1)) errors.push("/exitCode does not match publishReady");
+  const expectedArchiveSuffix = ready ? ".realitycheck-publish.zip" : ".realitycheck-working-copy.zip";
+  if (!result.artifacts?.archive?.endsWith(expectedArchiveSuffix)) errors.push("/artifacts/archive does not match publishReady");
+  if (result.artifacts?.checksum !== `${result.artifacts?.archive}.sha256`) errors.push("/artifacts/checksum does not name the archive sidecar");
+  if (ready && !result.artifacts?.browserProof) errors.push("/artifacts/browserProof is required for a publish-ready command result");
+  return errors;
+}
+
 function verifyBrowserProofSiblings(proof, path) {
   const errors = [];
   for (const screenshot of proof.screenshots || []) {
@@ -868,6 +881,7 @@ export function validateArtifactFiles(inputPaths, { trustedKeyIds = [], requireA
     if (schemaValid && kind === "html-note-publish-receipt") errors.push(...verifyPublishReceipt(value, path));
     if (schemaValid && kind === "html-note-publish-browser-proof") errors.push(...verifyPublishBrowserProof(value), ...verifyBrowserProofSiblings(value, path));
     if (schemaValid && kind === "html-note-publish-technical-report") errors.push(...verifyPublishTechnicalReport(value));
+    if (schemaValid && kind === "html-note-publish-command-result") errors.push(...verifyPublishCommandResult(value));
     if (schemaValid && kind === "evidence-attestation" && trustedKeys.size && !trustedKeys.has(value.signer.keyId)) {
       errors.push(`/signer/keyId is not in the trusted key allowlist: ${value.signer.keyId}`);
     }

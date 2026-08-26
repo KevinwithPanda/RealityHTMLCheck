@@ -85,7 +85,7 @@ node <skill-dir>/scripts/audit.mjs note publish <html-file|directory|zip> \
 An installed Skill copy intentionally contains no vendored `node_modules`. If local `playwright-core` resolution is unavailable, invoke the version-pinned GitHub package instead:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
   realityhtmlcheck publish <html-file|directory|zip>
 ```
 
@@ -103,6 +103,32 @@ Use the repaired working folder from the agentic workflow when repairs were requ
 8. run `node <skill-dir>/scripts/audit.mjs validate <publish-run-directory>` and require every discovered note/publish JSON plus the receipt's sibling ZIP/sidecar/proof bindings to pass before reporting completion.
 
 Only `ready` or `warnings` with every required browser gate complete may use `*.realitycheck-publish.zip`. `browser-proof-required` and `working-copy` must use `*.realitycheck-working-copy.zip` and exit nonzero. Report the archive, `.sha256`, receipt, public report, local `technical-report.json`, repair plan, platform-specific decisions, applied changes, and blockers. A successful local result means no blocker was found for the declared passive Chromium scenarios; it does not mean the file was uploaded, that a host account/quota/domain/CDN is valid, or that malware, secrets, facts, copyright, comprehensive accessibility/SEO, every browser, dynamic behavior, backend features, or PWA offline behavior were certified. Netlify Drop and Cloudflare Direct Upload can consume a successful ZIP/folder within their current limits; GitHub Pages requires extraction into a publishing source or directory deployment through Actions.
+
+## Automate one exact publish run in GitHub Actions
+
+When the user wants a repeatable export pipeline rather than a local one-off command, use the Composite Action:
+
+```yaml
+- uses: KevinwithPanda/RealityHTMLCheck@v0.11.0
+  id: realitycheck
+  with:
+    kind: publish
+    path: exported-site
+    # entry: notes/home.html  # only when no unambiguous root entry exists
+    artifact-name: verified-html-publish-capsule
+```
+
+The Action installs its pinned adapter, runs the same two-stage exact-byte Chromium proof, parses the CLI's create-only structured result, revalidates the complete run, uploads only that exact timestamped directory, then enforces exit `0/1/2`. Use its `publish-ready`, `publish-archive-path`, `publish-working-copy-path`, `publish-archive-sha256`, and `publish-deploy-content-id` outputs in downstream read-only logic. Never parse console text or scan an output root for the newest directory.
+
+Keep these boundaries explicit:
+
+- `upload-artifact: true` uploads the complete HTML, images, styles, and attachments to GitHub Artifact storage; it is not the zero-upload browser/CLI privacy model. Review repository visibility and retention, or set it to `false`.
+- The Action never deploys, never requests `pages: write` / `id-token: write`, and never receives a Netlify or Cloudflare token.
+- Publish input and output must be separate, non-nested workspace locations; do not use checkout root `path: .` because it normally contains `.git` and unrelated files.
+- A valid blocked result exits `1` only after its exact working copy and diagnosis are preserved. Result parsing, cross-artifact validation, dependency, or requested upload failure is operational exit `2`.
+- GitHub Artifact digest and the capsule ZIP SHA-256 are different identities; never substitute one for the other.
+
+Use the checked-in `examples/github-actions/verified-publish.yml` as the copy-ready workflow. If a separate downstream job later deploys the verified bytes, that job owns its permissions, environment approval, account and host-side verification; the RealityCheck Action itself remains a read/check/package boundary.
 
 ## Complete an agentic repair
 

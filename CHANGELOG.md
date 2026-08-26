@@ -4,6 +4,22 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-27
+
+### Added
+
+- `kind: publish` for the Composite GitHub Action: one export file/folder/ZIP now produces an exact browser-verified publish capsule or an explicitly blocked working copy in a repeatable CI pipeline.
+- A create-only `--result-json` command contract plus a fail-closed Action parser that validates workspace/output containment, exact artifact paths, the complete run tree, ZIP/sidecar/receipt/manifest identities, and final browser proof before exposing machine outputs.
+- Stable Action outputs for publish status, exact run/archive/working-copy/report/receipt/manifest/proof paths, deploy-content ID, capsule ZIP SHA-256, and the distinct GitHub Artifact ID/URL/digest.
+- A decision-first bilingual GitHub Job Summary and a copy-ready, permission-bounded verified-publish workflow.
+- Real GitHub-hosted success and active-script-blocked Artifact round-trip jobs that download and independently revalidate the uploaded run.
+
+### Security
+
+- Publish Action input and output must be separate non-nested workspace locations; `path: .`, stale-run scanning, console parsing, symlinked results, escaped artifact paths, and ambiguous newest-directory selection fail closed.
+- Publish dependencies are pinned, browser downloads are never performed silently, and only the parser-validated timestamped run is eligible for Artifact upload.
+- `upload-artifact: true` explicitly discloses that complete site bytes leave the runner for GitHub Artifact storage. The Action requests no deployment, Pages, OIDC, or cloud-provider permissions and always uploads before enforcing a quality failure.
+
 ## [0.10.0] - 2026-08-27
 
 ### Added

@@ -84,7 +84,7 @@ The public evidence is deliberately layered: four checked-in HTML files were emi
 | --- | --- | --- |
 | [Online note checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html) | Anyone with an HTML export ZIP, file, or folder | Zero install/upload; verified ZIP import, local inspection, repeat-check comparison, and a structure-preserving safe-metadata ZIP |
 | GitHub-backed `npx` CLI | Repeatable exports without cloning this repository | Check or build a verified static publish capsule with bilingual reports and exact browser evidence |
-| GitHub Action | Export and publishing pipelines | Checks a note folder without a server, uploads the generated report, annotates exact files, and enforces error/warning gates |
+| GitHub Action | Export and publishing pipelines | Checks notes, or builds one exact browser-verified publish ZIP/working copy and uploads only that validated run |
 | `$realitycheck` Skill | End-to-end work in Codex | Inspect, create a working copy, repair high-confidence issues, recheck, and return the usable output plus both reports |
 
 ### The end-to-end Skill workflow
@@ -156,7 +156,7 @@ This folder ZIP is a **verified safe-metadata working copy**, not a fully repair
 Turn one HTML file, folder, or ordinary STORE/DEFLATE export ZIP into a static-host handoff:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
   realityhtmlcheck publish ./my-notes
 ```
 
@@ -170,7 +170,7 @@ This is different from the online checker's safe-metadata working ZIP. The local
 
 Only a completed gate is named `*.realitycheck-publish.zip`. Static-only, unsupported-browser, or failed results are named `*.realitycheck-working-copy.zip` and retain the exact blockers. Netlify Drop and Cloudflare Pages Direct Upload can accept the successful ZIP/folder subject to their account limits; choose Cloudflare's project type deliberately because a Direct Upload project cannot later switch to Git integration. GitHub Pages requires extracting the ZIP into a configured publishing source or deploying the directory with Actions. RealityCheck never signs in, uploads, or deploys on the user's behalf.
 
-Try the [checked-in publish demo source](https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.10.0/examples/publish-demo-note) or [open its static live preview](https://kevinwithpanda.github.io/RealityHTMLCheck/labs/publish-demo-note/). The proof covers a declared Chromium/passive-static scope; it is not a claim of deployment success, malicious-code absence, factual accuracy, complete accessibility/SEO, every browser, backend behavior, or PWA offline support.
+Try the [checked-in publish demo source](https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.11.0/examples/publish-demo-note) or [open its static live preview](https://kevinwithpanda.github.io/RealityHTMLCheck/labs/publish-demo-note/). The proof covers a declared Chromium/passive-static scope; it is not a claim of deployment success, malicious-code absence, factual accuracy, complete accessibility/SEO, every browser, backend behavior, or PWA offline support.
 
 Every emitted note/publish JSON has a strict contract. Independently re-read the ZIP, sidecar, public manifest, receipt, technical report, and both browser proofs with:
 
@@ -178,17 +178,36 @@ Every emitted note/publish JSON has a strict contract. Independently re-read the
 realityhtmlcheck validate .realitycheck/publish/<RUN>
 ```
 
+### Verified Publish Action
+
+For recurring AI/export pipelines, remove the local Node/browser step entirely:
+
+```yaml
+- uses: KevinwithPanda/RealityHTMLCheck@v0.11.0
+  id: realitycheck
+  with:
+    kind: publish
+    path: exported-site
+    artifact-name: verified-html-publish-capsule
+```
+
+The Action runs the same static gate, safe repairs, final-ZIP read-back and six Chromium scenarios. It parses a create-only machine result, revalidates every bound artifact, uploads only that exact run, writes a decision-first Job Summary, and then enforces the gate. A failed gate still preserves an explicitly named working copy; a parser, integrity, dependency, or requested upload failure is operational—not a quality result.
+
+`upload-artifact: true` transfers the **complete HTML, images, styles, and attachments** to GitHub Artifact storage. Review repository visibility and retention, or set it to `false`. The Action requests only `contents: read`; it never deploys, requests Pages/OIDC permissions, or receives cloud-provider tokens. The GitHub Artifact digest and the capsule ZIP SHA-256 are deliberately separate outputs.
+
+[Copy the complete workflow](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.11.0/examples/github-actions/verified-publish.yml).
+
 ### No-clone note CLI
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
   realityhtmlcheck note ./my-notes
 ```
 
 Open `.realitycheck/notes/latest.html`. To generate only the three conservative metadata repairs without touching the originals:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
   realityhtmlcheck note ./my-notes --fix-safe
 ```
 
@@ -197,7 +216,7 @@ Use `--fail-on error` or `--fail-on warning` in an export pipeline. This command
 ### HTML note gate in GitHub Actions
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.10.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.11.0
   with:
     kind: note
     path: exported-notes
@@ -212,7 +231,7 @@ Note mode does not start a server, install browser dependencies, execute note sc
 For the second and later export, compare against an immutable earlier report:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
   realityhtmlcheck note ./my-notes \
   --baseline .realitycheck/notes/PRIOR-RUN/report.json \
   --fail-on error
@@ -279,7 +298,7 @@ npm run audit -- http://localhost:3000 \
 For a reusable GitHub Action:
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.10.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.11.0
   with:
     url: http://127.0.0.1:3000
     mode: quick
@@ -291,6 +310,7 @@ For a reusable GitHub Action:
 - HTML note checks read selected source as text; they do not upload it, execute its scripts, or request remote assets.
 - Safe automatic note fixes never overwrite the selected file.
 - Skill repair defaults to a separate working copy and exposes unresolved judgment calls.
+- Publish Action artifacts contain the complete selected site bytes when upload is enabled; the local checker/CLI itself still uploads nothing.
 - Public Web targets require explicit ownership or authorization.
 - Safe crawl and journeys exclude logout, delete, purchase, checkout, OAuth, form submission, and other business actions.
 - Secrets, form values, storage contents, and response bodies are not retained in reports.
@@ -300,7 +320,7 @@ RealityCheck reports exactly what it tested, what failed, and what it could not 
 
 ## Project status
 
-RealityCheck is a **v0.10.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
+RealityCheck is a **v0.11.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
 
 - [Representative export evidence and explicit compatibility boundary](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)
 - [HTML note Action and browser Action](action.yml)

@@ -102,6 +102,7 @@ try {
   assert.equal(existsSync(join(zeroInstallDirectory, "node_modules")), false, "npx-style execution must not leave a local install behind");
 
   const publishOutput = join(zeroInstallDirectory, "publish-evidence");
+  const publishResult = join(zeroInstallDirectory, "publish-result.json");
   npm([
     "exec",
     "--yes",
@@ -112,6 +113,8 @@ try {
     fixture,
     "--output",
     publishOutput,
+    "--result-json",
+    publishResult,
     "--static-only",
     "--language",
     "en",
@@ -125,6 +128,10 @@ try {
   const receipt = JSON.parse(readFileSync(join(publishOutput, publishRuns[0], receiptName), "utf8"));
   assert.equal(receipt.status, "browser-proof-required");
   assert.equal(receipt.publishReady, false);
+  const commandResult = JSON.parse(readFileSync(publishResult, "utf8"));
+  assert.equal(commandResult.kind, "html-note-publish-command-result");
+  assert.equal(commandResult.exitCode, 1);
+  assert.equal(commandResult.publishReady, false);
 
   npm(["init", "--yes"], { cwd: consumerDirectory, env: isolatedEnv });
   npm(["install", "--ignore-scripts", archive], { cwd: consumerDirectory, env: isolatedEnv });
@@ -151,6 +158,30 @@ try {
     );
   }
 
+  const parser = spawnSync(process.execPath, [
+    join(installedRoot, "realitycheck", "scripts", "action-publish-result.mjs"),
+    "--result", publishResult,
+    "--output-root", publishOutput,
+    "--workspace", zeroInstallDirectory,
+  ], { cwd: zeroInstallDirectory, env: isolatedEnv, encoding: "utf8", windowsHide: true });
+  assert.equal(parser.status, 0, `${parser.stdout}\n${parser.stderr}`);
+  assert.match(parser.stdout, /result-valid=true/);
+  assert.match(parser.stdout, /exit-code=1/);
+  assert.match(parser.stdout, /working-copy-path=/);
+  assert.doesNotMatch(parser.stdout, /\narchive-path=/);
+  const summaryOutput = join(zeroInstallDirectory, "publish-summary.md");
+  const summary = spawnSync(process.execPath, [
+    join(installedRoot, "realitycheck", "scripts", "note-publish-github-summary.mjs"),
+    join(publishOutput, publishRuns[0], receiptName),
+    "--output", summaryOutput,
+    "--language", "en",
+    "--artifact-upload", "false",
+  ], { cwd: zeroInstallDirectory, env: isolatedEnv, encoding: "utf8", windowsHide: true });
+  assert.equal(summary.status, 0, `${summary.stdout}\n${summary.stderr}`);
+  const summaryText = readFileSync(summaryOutput, "utf8");
+  assert.match(summaryText, /BROWSER PROOF REQUIRED/);
+  assert.match(summaryText, /no GitHub Artifact upload was requested/);
+
   npm(["exec", "--offline", "--", "realitycheck", "--help"], {
     cwd: consumerDirectory,
     env: isolatedEnv,
@@ -171,7 +202,7 @@ try {
   assert.equal(existsSync(join(consumerDirectory, config.$schema)), true, "generated schema reference must resolve in the consumer project");
 
   console.log(`Packed zero-install smoke passed: ${archives[0]}`);
-  console.log("Verified: npx-style note check, explicit static-only publish working copy, no local install residue, both CLI aliases, and a resolvable generated schema.");
+  console.log("Verified: npx-style note check, structured publish result/parser/summary, explicit working copy, no local install residue, both CLI aliases, and a resolvable generated schema.");
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

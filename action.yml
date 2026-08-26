@@ -1,5 +1,5 @@
-name: RealityCheck HTML note and browser quality gate
-description: Check an HTML note folder or audit a running Web app, preserve evidence, and enforce a deterministic quality gate.
+name: RealityCheck HTML publish, note, and browser quality gate
+description: Verify a static HTML publish package, check an HTML note folder, or audit a running Web app with deterministic evidence.
 author: RealityCheck contributors
 
 branding:
@@ -8,11 +8,19 @@ branding:
 
 inputs:
   kind:
-    description: Target kind. Use web for a running application or note for a local HTML file/folder.
+    description: Target kind. Use publish for a verified static handoff, note for a local HTML check, or web for a running application.
     required: false
     default: web
   path:
-    description: HTML file or note folder, relative to working-directory. Required when kind is note.
+    description: HTML file, export ZIP, or note folder relative to working-directory. Required for note and publish.
+    required: false
+    default: ""
+  entry:
+    description: Publish only. Exact relative HTML entry when the package has no root index.html.
+    required: false
+    default: ""
+  publish-name:
+    description: Publish only. Output slug; internal package paths are not renamed.
     required: false
     default: ""
   url:
@@ -36,7 +44,7 @@ inputs:
     required: false
     default: ""
   output:
-    description: Artifact directory, relative to working-directory. Empty selects .realitycheck/runs for web and .realitycheck/notes for note.
+    description: Artifact root relative to working-directory. Publish adds a unique action run subroot to the selected or default .realitycheck/publish root.
     required: false
     default: ""
   working-directory:
@@ -60,7 +68,7 @@ inputs:
     required: false
     default: "false"
   upload-artifact:
-    description: Upload the complete local evidence directory even when the gate fails.
+    description: Upload the complete evidence directory even when the gate fails. Publish artifacts include the full HTML/site bytes and are stored by GitHub, but are never deployed by this Action.
     required: false
     default: "true"
   artifact-name:
@@ -135,11 +143,59 @@ outputs:
   report-json-path:
     description: Stable machine-readable JSON report path for the selected target kind.
     value: ${{ steps.result.outputs.report-json-path }}
+  publish-status:
+    description: Publish decision from the validated result (ready, warnings, browser-proof-required, working-copy, or operational-error).
+    value: ${{ steps.publish.outputs.publish-status }}
+  publish-ready:
+    description: true only when the exact final archive completed every required publish gate.
+    value: ${{ steps.publish.outputs.publish-ready }}
+  publish-run-path:
+    description: Workspace-relative path to the exact validated publish run directory.
+    value: ${{ steps.publish.outputs.run-directory }}
+  publish-archive-path:
+    description: Workspace-relative verified publish ZIP path; empty for a working-copy result.
+    value: ${{ steps.publish.outputs.archive-path }}
+  publish-working-copy-path:
+    description: Workspace-relative working-copy ZIP path; empty for a publish-ready result.
+    value: ${{ steps.publish.outputs.working-copy-path }}
+  publish-report-path:
+    description: Workspace-relative bilingual public publish report path.
+    value: ${{ steps.publish.outputs.report-path }}
+  publish-receipt-path:
+    description: Workspace-relative publish receipt path.
+    value: ${{ steps.publish.outputs.receipt-path }}
+  publish-manifest-path:
+    description: Workspace-relative public publish manifest path.
+    value: ${{ steps.publish.outputs.manifest-path }}
+  publish-technical-report-path:
+    description: Workspace-relative local technical report path.
+    value: ${{ steps.publish.outputs.technical-report-path }}
+  publish-browser-proof-path:
+    description: Workspace-relative final-archive browser proof path when browser proof completed.
+    value: ${{ steps.publish.outputs.browser-proof-path }}
+  publish-checksum-path:
+    description: Workspace-relative SHA-256 sidecar path for the final ZIP.
+    value: ${{ steps.publish.outputs.checksum-path }}
+  publish-deploy-content-id:
+    description: Stable SHA-256 content identity for the deployable package entries.
+    value: ${{ steps.publish.outputs.deploy-content-id }}
+  publish-archive-sha256:
+    description: SHA-256 of the exact final ZIP container, distinct from the GitHub Artifact digest.
+    value: ${{ steps.publish.outputs.archive-sha256 }}
+  publish-artifact-id:
+    description: GitHub Artifact ID for the exact publish run; empty when upload-artifact is false.
+    value: ${{ steps.publish-upload.outputs.artifact-id }}
+  publish-artifact-url:
+    description: Authenticated GitHub Artifact download URL for the exact publish run; empty when upload-artifact is false.
+    value: ${{ steps.publish-upload.outputs.artifact-url }}
+  publish-artifact-digest:
+    description: GitHub Artifact archive digest, which is distinct from publish-archive-sha256; empty when upload-artifact is false.
+    value: ${{ steps.publish-upload.outputs.artifact-digest }}
   note-report-path:
-    description: Stable bilingual latest.html path when kind is note; empty in web mode.
+    description: Stable bilingual latest.html path when kind is note; empty otherwise.
     value: ${{ steps.note.outputs.report-path }}
   note-report-json-path:
-    description: Stable latest.json path when kind is note; empty in web mode.
+    description: Stable latest.json path when kind is note; empty otherwise.
     value: ${{ steps.note.outputs.report-json-path }}
   note-comparison-path:
     description: Self-contained bilingual comparison.html when note baseline mode is active; empty otherwise.
@@ -204,25 +260,50 @@ runs:
       env:
         RC_KIND: ${{ inputs.kind }}
         RC_PATH: ${{ inputs.path }}
+        RC_ENTRY: ${{ inputs.entry }}
+        RC_PUBLISH_NAME: ${{ inputs.publish-name }}
         RC_WORKDIR_INPUT: ${{ inputs.working-directory }}
         RC_FAIL_ON_INPUT: ${{ inputs.fail-on }}
         RC_OUTPUT_INPUT: ${{ inputs.output }}
         RC_BASELINE_INPUT: ${{ inputs.baseline }}
+        RC_EXCLUDE_HTML_INPUT: ${{ inputs.exclude-html }}
+        RC_URL_INPUT: ${{ inputs.url }}
+        RC_CONFIG_INPUT: ${{ inputs.config }}
+        RC_ALLOW_REMOTE_INPUT: ${{ inputs.allow-remote }}
       run: |
+        publish_run_key=""
         case "$RC_KIND" in
           web)
+            if [ -n "$RC_ENTRY" ] || [ -n "$RC_PUBLISH_NAME" ]; then echo "entry and publish-name are only valid when kind is publish." >&2; exit 2; fi
             fail_on="${RC_FAIL_ON_INPUT:-major}"
             output="${RC_OUTPUT_INPUT:-.realitycheck/runs}"
             case "$fail_on" in critical|major|minor|never) ;; *) echo "Web mode fail-on must be critical, major, minor, or never." >&2; exit 2 ;; esac
             ;;
           note)
+            if [ -n "$RC_ENTRY" ] || [ -n "$RC_PUBLISH_NAME" ]; then echo "entry and publish-name are only valid when kind is publish." >&2; exit 2; fi
             fail_on="${RC_FAIL_ON_INPUT:-error}"
             output="${RC_OUTPUT_INPUT:-.realitycheck/notes}"
             if [ -z "$RC_PATH" ]; then echo "Note mode requires path: with an HTML file or folder relative to working-directory." >&2; exit 2; fi
             case "$fail_on" in error|warning|never) ;; *) echo "Note mode fail-on must be error, warning, or never." >&2; exit 2 ;; esac
             ;;
+          publish)
+            if [ -z "$RC_PATH" ]; then echo "Publish mode requires path: with an HTML file, export ZIP, or folder relative to working-directory." >&2; exit 2; fi
+            if [ -n "$RC_FAIL_ON_INPUT" ] || [ -n "$RC_BASELINE_INPUT" ] || [ -n "$RC_EXCLUDE_HTML_INPUT" ] || [ -n "$RC_URL_INPUT" ] || [ -n "$RC_CONFIG_INPUT" ]; then
+              echo "Publish mode does not accept fail-on, baseline, exclude-html, url, or config." >&2
+              exit 2
+            fi
+            if [ -n "$RC_ALLOW_REMOTE_INPUT" ] && [ "$RC_ALLOW_REMOTE_INPUT" != "false" ]; then
+              echo "Publish mode does not accept allow-remote; it never requests or deploys a remote target." >&2
+              exit 2
+            fi
+            case "${GITHUB_RUN_ID:-}" in ''|*[!0-9]*) echo "Publish mode requires a numeric GITHUB_RUN_ID." >&2; exit 2 ;; esac
+            case "${GITHUB_RUN_ATTEMPT:-}" in ''|*[!0-9]*) echo "Publish mode requires a numeric GITHUB_RUN_ATTEMPT." >&2; exit 2 ;; esac
+            fail_on=""
+            output="${RC_OUTPUT_INPUT:-.realitycheck/publish}"
+            publish_run_key="action-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            ;;
           *)
-            echo "RealityCheck kind must be web or note." >&2
+            echo "RealityCheck kind must be web, note, or publish." >&2
             exit 2
             ;;
         esac
@@ -233,6 +314,7 @@ runs:
           --path "$RC_PATH" \
           --baseline "$RC_BASELINE_INPUT" \
           --output "$output" \
+          --publish-run-key "$publish_run_key" \
           --github-output "$GITHUB_OUTPUT"
         echo "fail-on=$fail_on" >> "$GITHUB_OUTPUT"
 
@@ -243,7 +325,7 @@ runs:
         python-version: "3.12"
 
     - name: Install the pinned RealityCheck adapter
-      if: steps.resolve.outputs.kind == 'web'
+      if: steps.resolve.outputs.kind == 'web' || steps.resolve.outputs.kind == 'publish'
       shell: bash
       run: npm ci --omit=dev --ignore-scripts --prefix "$GITHUB_ACTION_PATH"
 
@@ -324,6 +406,109 @@ runs:
           cat "$annotation_log" >&2
           echo "RealityCheck could not build the HTML note job summary; any generated note report remains available." >&2
         fi
+
+    - name: Build the exact verified publish handoff
+      id: publish
+      if: steps.resolve.outputs.kind == 'publish'
+      shell: bash
+      env:
+        RC_PATH: ${{ steps.resolve.outputs.path }}
+        RC_ENTRY: ${{ inputs.entry }}
+        RC_PUBLISH_NAME: ${{ inputs.publish-name }}
+        RC_OUTPUT: ${{ steps.resolve.outputs.output }}
+        RC_OUTPUT_ROOT_ABS: ${{ steps.resolve.outputs.artifact-path }}
+        RC_WORKDIR_ABS: ${{ steps.resolve.outputs.working-directory-absolute }}
+        RC_BROWSER: ${{ inputs.browser }}
+        RC_LANGUAGE: ${{ inputs.summary-language }}
+      run: |
+        cd "$RC_WORKDIR_ABS"
+        result_dir="$(mktemp -d "$RUNNER_TEMP/realitycheck-publish-result.XXXXXX")"
+        result_json="$result_dir/result.json"
+        cleanup_publish_result() {
+          rm -f -- "$result_json"
+          rmdir -- "$result_dir" 2>/dev/null || true
+        }
+        trap cleanup_publish_result EXIT
+        args=(publish "$RC_PATH" --output "$RC_OUTPUT" --result-json "$result_json" --language "$RC_LANGUAGE")
+        if [ -n "$RC_ENTRY" ]; then args+=(--entry "$RC_ENTRY"); fi
+        if [ -n "$RC_PUBLISH_NAME" ]; then args+=(--name "$RC_PUBLISH_NAME"); fi
+        if [ -n "$RC_BROWSER" ]; then args+=(--browser "$RC_BROWSER"); fi
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" "${args[@]}"
+        command_status=$?
+        set -e
+        case "$command_status" in 0|1|2) ;; *) echo "RealityCheck publish command returned unexpected status $command_status; normalized to operational error 2." >&2; command_status=2 ;; esac
+        echo "command-exit-code=$command_status" >> "$GITHUB_OUTPUT"
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/action-publish-result.mjs" \
+          --result "$result_json" \
+          --output-root "$RC_OUTPUT_ROOT_ABS" \
+          --workspace "$GITHUB_WORKSPACE" \
+          --github-output "$GITHUB_OUTPUT"
+        parser_status=$?
+        set -e
+        if [ "$parser_status" -ne 0 ]; then
+          echo "result-valid=false" >> "$GITHUB_OUTPUT"
+          echo "exit-code=2" >> "$GITHUB_OUTPUT"
+          echo "publish-status=operational-error" >> "$GITHUB_OUTPUT"
+          echo "publish-ready=false" >> "$GITHUB_OUTPUT"
+          echo "RealityCheck could not validate the structured publish result; no publish artifact will be uploaded." >&2
+        else
+          echo "result-valid=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Publish the verified capsule job summary
+      id: publish-summary
+      if: always() && steps.resolve.outputs.kind == 'publish' && steps.publish.outputs.result-valid == 'true' && (steps.publish.outputs.exit-code == '0' || steps.publish.outputs.exit-code == '1')
+      shell: bash
+      env:
+        RC_REPAIR_PLAN: ${{ steps.publish.outputs.repair-plan-path-absolute }}
+        RC_RECEIPT_PATH: ${{ steps.publish.outputs.receipt-path }}
+        RC_LANGUAGE: ${{ inputs.summary-language }}
+        RC_UPLOAD_ARTIFACT: ${{ inputs.upload-artifact }}
+      run: |
+        if [ ! -f "$RC_REPAIR_PLAN" ]; then
+          echo "summary-exit-code=2" >> "$GITHUB_OUTPUT"
+          echo "RealityCheck validated the publish result but could not find its exact repair plan." >&2
+          exit 0
+        fi
+        summary_dir="$(mktemp -d "$RUNNER_TEMP/realitycheck-publish-summary.XXXXXX")"
+        summary_markdown="$summary_dir/summary.md"
+        cleanup_publish_summary() {
+          rm -f -- "$summary_markdown"
+          rmdir -- "$summary_dir" 2>/dev/null || true
+        }
+        trap cleanup_publish_summary EXIT
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/note-publish-github-summary.mjs" \
+          "$GITHUB_WORKSPACE/$RC_RECEIPT_PATH" \
+          --output "$summary_markdown" \
+          --language "$RC_LANGUAGE" \
+          --artifact-upload "$RC_UPLOAD_ARTIFACT"
+        summary_status=$?
+        set -e
+        if [ "$summary_status" -ne 0 ] || [ ! -f "$summary_markdown" ]; then
+          echo "summary-exit-code=2" >> "$GITHUB_OUTPUT"
+          echo "RealityCheck could not render the validated publish Job Summary." >&2
+          exit 0
+        fi
+        if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+          printf '\n' >> "$GITHUB_STEP_SUMMARY"
+          cat "$summary_markdown" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$RC_LANGUAGE" = "zh-CN" ]; then
+            printf '\n### 已验证的修复计划\n\n' >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '\n### Validated repair plan\n\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          cat "$RC_REPAIR_PLAN" >> "$GITHUB_STEP_SUMMARY"
+          printf '\n' >> "$GITHUB_STEP_SUMMARY"
+          if [ "$RC_LANGUAGE" = "zh-CN" ]; then
+            printf '> RealityCheck Action 绝不会部署这些文件。\n' >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '> RealityCheck Action never deploys these files.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+        fi
+        echo "summary-exit-code=0" >> "$GITHUB_OUTPUT"
 
     - name: Preview the effective audit plan without a browser
       id: plan
@@ -651,6 +836,16 @@ runs:
         path: ${{ steps.resolve.outputs.artifact-path }}
         if-no-files-found: error
 
+    - name: Upload the exact RealityCheck publish run
+      id: publish-upload
+      if: always() && steps.resolve.outcome == 'success' && steps.resolve.outputs.kind == 'publish' && inputs.upload-artifact == 'true' && steps.publish.outputs.result-valid == 'true' && (steps.publish.outputs.exit-code == '0' || steps.publish.outputs.exit-code == '1')
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ steps.publish.outputs.run-directory-absolute }}
+        if-no-files-found: error
+        compression-level: 0
+
     - name: Enforce the RealityCheck result
       id: result
       if: always()
@@ -665,6 +860,16 @@ runs:
         RC_NOTE_REPORT_PATH: ${{ steps.note.outputs.report-path }}
         RC_NOTE_REPORT_JSON_PATH: ${{ steps.note.outputs.report-json-path }}
         RC_NOTE_SUMMARY_PATH: ${{ steps.note-summary.outputs.github-summary-path }}
+        RC_PUBLISH_EXIT_CODE: ${{ steps.publish.outputs.exit-code }}
+        RC_PUBLISH_COMMAND_EXIT_CODE: ${{ steps.publish.outputs.command-exit-code }}
+        RC_PUBLISH_RESULT_VALID: ${{ steps.publish.outputs.result-valid }}
+        RC_PUBLISH_READY: ${{ steps.publish.outputs.publish-ready }}
+        RC_PUBLISH_RUN_PATH: ${{ steps.publish.outputs.run-directory }}
+        RC_PUBLISH_REPORT_PATH: ${{ steps.publish.outputs.report-path }}
+        RC_PUBLISH_RECEIPT_PATH: ${{ steps.publish.outputs.receipt-path }}
+        RC_PUBLISH_SUMMARY_EXIT_CODE: ${{ steps.publish-summary.outputs.summary-exit-code }}
+        RC_PUBLISH_UPLOAD_REQUESTED: ${{ inputs.upload-artifact }}
+        RC_PUBLISH_UPLOAD_OUTCOME: ${{ steps.publish-upload.outcome }}
         RC_WEB_SUMMARY_PATH: ${{ steps.summary.outputs.github-summary-path }}
         RC_PLAN_EXIT_CODE: ${{ steps.plan.outputs.plan-exit-code }}
         RC_EXIT_CODE: ${{ steps.audit.outputs.exit-code }}
@@ -681,8 +886,8 @@ runs:
           echo "RealityCheck target-kind preflight failed."
           exit 2
         fi
-        echo "report-root=$RC_REPORT_ROOT" >> "$GITHUB_OUTPUT"
         if [ "$RC_KIND" = "note" ]; then
+          echo "report-root=$RC_REPORT_ROOT" >> "$GITHUB_OUTPUT"
           note_status="${RC_NOTE_EXIT_CODE:-2}"
           summary_status="${RC_NOTE_SUMMARY_EXIT_CODE:-2}"
           case "$note_status" in 0|1|2) ;; *) echo "RealityCheck HTML note check returned an invalid status; normalized to 2." >&2; note_status=2 ;; esac
@@ -705,6 +910,48 @@ runs:
           fi
           exit "$note_status"
         fi
+        if [ "$RC_KIND" = "publish" ]; then
+          if [ -n "$RC_PUBLISH_RUN_PATH" ]; then echo "report-root=$RC_PUBLISH_RUN_PATH" >> "$GITHUB_OUTPUT"; fi
+          publish_status="${RC_PUBLISH_EXIT_CODE:-2}"
+          command_status="${RC_PUBLISH_COMMAND_EXIT_CODE:-2}"
+          summary_status="${RC_PUBLISH_SUMMARY_EXIT_CODE:-2}"
+          case "$publish_status" in 0|1|2) ;; *) echo "RealityCheck publish result returned an invalid status; normalized to 2." >&2; publish_status=2 ;; esac
+          case "$command_status" in 0|1|2) ;; *) echo "RealityCheck publish command returned an invalid status; normalized to 2." >&2; command_status=2 ;; esac
+          case "$summary_status" in 0|2) ;; *) echo "RealityCheck publish summary returned an invalid status; normalized to 2." >&2; summary_status=2 ;; esac
+          if [ "$RC_PUBLISH_RESULT_VALID" != "true" ]; then
+            echo "RealityCheck structured publish result validation failed."
+            publish_status=2
+          elif [ "$publish_status" != "$command_status" ]; then
+            echo "RealityCheck publish command and validated result disagree on the exit status."
+            publish_status=2
+          fi
+          if [ "$publish_status" = "0" ] && [ "$RC_PUBLISH_READY" != "true" ]; then
+            echo "RealityCheck refused a contradictory successful publish result."
+            publish_status=2
+          fi
+          if { [ "$publish_status" = "0" ] || [ "$publish_status" = "1" ]; } && [ "$summary_status" != "0" ]; then
+            echo "RealityCheck could not append the validated publish repair plan to the job summary."
+            publish_status=2
+            summary_status=2
+          fi
+          if [ "$RC_PUBLISH_UPLOAD_REQUESTED" = "true" ] && { [ "$publish_status" = "0" ] || [ "$publish_status" = "1" ]; } && [ "$RC_PUBLISH_UPLOAD_OUTCOME" != "success" ]; then
+            echo "RealityCheck requested an exact-run Artifact upload, but GitHub did not complete it."
+            publish_status=2
+          fi
+          echo "exit-code=$publish_status" >> "$GITHUB_OUTPUT"
+          echo "summary-exit-code=$summary_status" >> "$GITHUB_OUTPUT"
+          if [ -n "$RC_PUBLISH_REPORT_PATH" ]; then echo "report-path=$RC_PUBLISH_REPORT_PATH" >> "$GITHUB_OUTPUT"; fi
+          if [ -n "$RC_PUBLISH_RECEIPT_PATH" ]; then echo "report-json-path=$RC_PUBLISH_RECEIPT_PATH" >> "$GITHUB_OUTPUT"; fi
+          if [ "$publish_status" = "0" ]; then
+            echo "RealityCheck verified the exact final publish archive. The Action uploaded evidence only when requested and never deployed the site."
+          elif [ "$publish_status" = "1" ]; then
+            echo "RealityCheck publish gate did not pass. The exact working copy and blockers were preserved; no deployment occurred."
+          else
+            echo "RealityCheck could not complete the publish handoff. Review the publish and Artifact diagnostics; no deployment occurred."
+          fi
+          exit "$publish_status"
+        fi
+        echo "report-root=$RC_REPORT_ROOT" >> "$GITHUB_OUTPUT"
         web_status="${RC_EXIT_CODE:-2}"
         web_summary_status="${RC_SUMMARY_EXIT_CODE:-2}"
         case "$web_status" in 0|1|2) ;; *) echo "RealityCheck Web audit returned an invalid status; normalized to 2." >&2; web_status=2 ;; esac

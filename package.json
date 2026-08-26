@@ -1,7 +1,7 @@
 {
   "name": "realityhtmlcheck",
-  "version": "0.10.0",
-  "description": "Check, repair, and prove AI-generated HTML notes as portable static publish packages with exact-browser evidence.",
+  "version": "0.11.0",
+  "description": "Check, repair, and continuously prove AI-generated HTML notes as exact-browser-verified publish packages.",
   "type": "module",
   "bin": {
     "realityhtmlcheck": "realitycheck/scripts/audit.mjs",
@@ -47,6 +47,8 @@
     "audit-plan",
     "test-plan",
     "github-actions",
+    "continuous-delivery",
+    "artifact-verification",
     "responsive",
     "responsive-testing",
     "policy-as-code",

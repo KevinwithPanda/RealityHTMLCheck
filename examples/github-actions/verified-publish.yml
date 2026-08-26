@@ -1,0 +1,41 @@
+name: Build a verified HTML publish capsule
+
+on:
+  push:
+    paths:
+      - "exported-site/**"
+      - ".github/workflows/verified-publish.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-publish-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the exported HTML package
+        uses: actions/checkout@v7
+
+      - name: Repair only provable issues and verify the exact final ZIP
+        id: realitycheck
+        uses: KevinwithPanda/RealityHTMLCheck@v0.11.0
+        with:
+          kind: publish
+          path: exported-site
+          # If the folder has several HTML files but no root index.html:
+          # entry: notes/home.html
+          artifact-name: verified-html-publish-capsule
+          summary-language: en
+
+      - name: Expose the bound identities to later read-only jobs
+        shell: bash
+        run: |
+          printf 'Publish status: %s\n' '${{ steps.realitycheck.outputs.publish-status }}'
+          printf 'Archive SHA-256: %s\n' '${{ steps.realitycheck.outputs.publish-archive-sha256 }}'
+          printf 'Deploy content ID: %s\n' '${{ steps.realitycheck.outputs.publish-deploy-content-id }}'
+
+# The uploaded GitHub Artifact contains the complete HTML, images, styles, and
+# attachments. Review repository visibility and retention before enabling it.
+# This workflow verifies and uploads one exact run; it never deploys a site and
+# requests no Pages, cloud-provider, or identity-token permissions.

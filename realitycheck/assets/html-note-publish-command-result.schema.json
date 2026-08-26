@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/html-note-publish-command-result-v1.json",
+  "title": "RealityCheck HTML Note Publish Command Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "generatedAt",
+    "status",
+    "exitCode",
+    "publishReady",
+    "runDirectory",
+    "artifacts",
+    "deployContentId",
+    "archiveSha256"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "kind": { "const": "html-note-publish-command-result" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "status": { "$ref": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json#/$defs/publishStatus" },
+    "exitCode": { "enum": [0, 1] },
+    "publishReady": { "type": "boolean" },
+    "runDirectory": { "$ref": "#/$defs/localPath" },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["archive", "checksum", "receipt", "manifest", "report", "technicalReport", "repairPlan", "browserProof"],
+      "properties": {
+        "archive": { "$ref": "#/$defs/localPath" },
+        "checksum": { "$ref": "#/$defs/localPath" },
+        "receipt": { "$ref": "#/$defs/localPath" },
+        "manifest": { "$ref": "#/$defs/localPath" },
+        "report": { "$ref": "#/$defs/localPath" },
+        "technicalReport": { "$ref": "#/$defs/localPath" },
+        "repairPlan": { "$ref": "#/$defs/localPath" },
+        "browserProof": {
+          "anyOf": [
+            { "$ref": "#/$defs/localPath" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "deployContentId": { "$ref": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json#/$defs/sha256Id" },
+    "archiveSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "publishReady": { "const": true } }, "required": ["publishReady"] },
+      "then": {
+        "type": "object",
+        "properties": {
+          "status": { "enum": ["ready", "warnings"] },
+          "exitCode": { "const": 0 },
+          "artifacts": {
+            "type": "object",
+            "properties": {
+              "archive": { "type": "string", "pattern": "\\.realitycheck-publish\\.zip$" },
+              "browserProof": { "$ref": "#/$defs/localPath" }
+            }
+          }
+        }
+      },
+      "else": {
+        "type": "object",
+        "properties": {
+          "status": { "enum": ["browser-proof-required", "working-copy"] },
+          "exitCode": { "const": 1 },
+          "artifacts": {
+            "type": "object",
+            "properties": {
+              "archive": { "type": "string", "pattern": "\\.realitycheck-working-copy\\.zip$" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "localPath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32768,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+    }
+  }
+}

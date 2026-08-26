@@ -3,4 +3,4 @@
  * Keep this value aligned with VERSION and package.json; the release contract
  * test intentionally fails when any public version marker drifts.
  */
-export const TOOL_VERSION = "0.10.0";
+export const TOOL_VERSION = "0.11.0";

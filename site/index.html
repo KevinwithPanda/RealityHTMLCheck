@@ -37,11 +37,12 @@
     "codeRepository": "https://github.com/KevinwithPanda/RealityHTMLCheck",
     "license": "https://opensource.org/license/mit",
     "programmingLanguage": ["JavaScript", "Python"],
-    "softwareVersion": "0.10.0",
+    "softwareVersion": "0.11.0",
     "isAccessibleForFree": true,
     "featureList": [
       "Zero-upload HTML note and folder checks",
       "Verified passive-static publish ZIPs with exact-final-byte desktop, mobile, project-path, fragment, and browser-offline proof",
+      "Verified Publish GitHub Action with exact-run Artifact upload and stable machine outputs",
       "Direct local import of bounded ZIP32 STORE and DEFLATE HTML exports",
       "Jointly rechecked safe-metadata folder ZIPs containing every browser-selected file",
       "Portable browser evidence and bilingual repeat-check comparisons",
@@ -65,7 +66,7 @@
 <body>
   <header class="topbar">
     <div class="wrap topbar-inner">
-      <a class="brand" href="#top" aria-label="RealityCheck home"><img src="assets/icon.svg" alt=""><span>RealityCheck</span><small>v0.10</small></a>
+      <a class="brand" href="#top" aria-label="RealityCheck home"><img src="assets/icon.svg" alt=""><span>RealityCheck</span><small>v0.11</small></a>
       <nav aria-label="Primary navigation">
         <a href="note.html" data-en="Check a note" data-zh-cn="检查笔记">Check a note</a>
         <a href="compatibility.html" data-en="Note evidence" data-zh-cn="笔记证据">Note evidence</a>
@@ -89,7 +90,7 @@
       <aside class="terminal" aria-label="RealityCheck command example">
         <div class="terminal-bar"><span></span><span></span><span></span><b>realitycheck / publish</b></div>
         <pre><code><i>$</i> npx --yes \
-  --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
+  --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
   realityhtmlcheck publish ./my-notes
 
 <em>✓</em> static errors + active code gate
@@ -167,7 +168,7 @@ uploaded   <strong>NO</strong></code></pre>
       </div>
     </section>
 
-    <section class="section wrap start" id="start"><div><p class="eyebrow" data-en="NO CLONE · NO GLOBAL INSTALL" data-zh-cn="无需克隆 · 无需全局安装">NO CLONE · NO GLOBAL INSTALL</p><h2 data-en="Check—or prove—a whole note package with one command." data-zh-cn="一条命令检查，或证明整个笔记文件包。">Check—or prove—a whole note package with one command.</h2><p data-en="Use the online checker for a zero-upload preflight. Use the tagged local CLI when you need a verified publish ZIP: it freezes the full package, applies only unique safe repairs, and proves the exact final bytes in desktop, mobile, project-path, fragment, and browser-offline scenarios. RealityCheck never uploads or deploys it." data-zh-cn="在线检查器用于零上传预检；需要可验证发布 ZIP 时，使用带版本的本地 CLI：它冻结完整文件包，只应用唯一安全修复，并在桌面、手机、项目子路径、片段和浏览器离线场景中证明最终精确字节。RealityCheck 不会上传或部署文件。">Use the online checker for a zero-upload preflight. Use the tagged local CLI when you need a verified publish ZIP: it freezes the full package, applies only unique safe repairs, and proves the exact final bytes in desktop, mobile, project-path, fragment, and browser-offline scenarios. RealityCheck never uploads or deploys it.</p></div><div class="command"><code>npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" realityhtmlcheck publish ./my-notes<br># outputs publish ZIP or explicit working copy</code><button type="button" data-copy="npx --yes --package=&quot;github:KevinwithPanda/RealityHTMLCheck#v0.10.0&quot; realityhtmlcheck publish ./my-notes" data-en="Copy" data-zh-cn="复制">Copy</button></div><div class="start-links"><a class="button primary" href="note.html" data-en="Run the zero-upload preflight →" data-zh-cn="运行零上传预检 →">Run the zero-upload preflight →</a><a class="button ghost" href="labs/publish-demo-note/index.html" data-en="Open the publish demo" data-zh-cn="打开发布演示">Open the publish demo</a><a class="button ghost" href="https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.10.0/action.yml" data-en="Add the HTML note Action" data-zh-cn="接入 HTML 笔记 Action">Add the HTML note Action</a><a class="button ghost" href="compatibility.html" data-en="Inspect note evidence" data-zh-cn="审查笔记证据">Inspect note evidence</a></div></section>
+    <section class="section wrap start" id="start"><div><p class="eyebrow" data-en="NO CLONE · NO GLOBAL INSTALL" data-zh-cn="无需克隆 · 无需全局安装">NO CLONE · NO GLOBAL INSTALL</p><h2 data-en="Check—or prove—a whole note package with one command." data-zh-cn="一条命令检查，或证明整个笔记文件包。">Check—or prove—a whole note package with one command.</h2><p data-en="Use the online checker for a zero-upload preflight. Use the tagged local CLI—or kind: publish Action—when you need a verified publish ZIP: both freeze the full package, apply only unique safe repairs, and prove the exact final bytes in desktop, mobile, project-path, fragment, and browser-offline scenarios. Neither path deploys the site." data-zh-cn="在线检查器用于零上传预检；需要可验证发布 ZIP 时，使用带版本的本地 CLI 或 kind: publish Action：两者都会冻结完整文件包，只应用唯一安全修复，并在桌面、手机、项目子路径、片段和浏览器离线场景中证明最终精确字节；它们都不会部署网站。">Use the online checker for a zero-upload preflight. Use the tagged local CLI—or kind: publish Action—when you need a verified publish ZIP: both freeze the full package, apply only unique safe repairs, and prove the exact final bytes in desktop, mobile, project-path, fragment, and browser-offline scenarios. Neither path deploys the site.</p></div><div class="command"><code>npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" realityhtmlcheck publish ./my-notes<br># outputs publish ZIP or explicit working copy</code><button type="button" data-copy="npx --yes --package=&quot;github:KevinwithPanda/RealityHTMLCheck#v0.11.0&quot; realityhtmlcheck publish ./my-notes" data-en="Copy" data-zh-cn="复制">Copy</button></div><div class="start-links"><a class="button primary" href="note.html" data-en="Run the zero-upload preflight →" data-zh-cn="运行零上传预检 →">Run the zero-upload preflight →</a><a class="button ghost" href="labs/publish-demo-note/index.html" data-en="Open the publish demo" data-zh-cn="打开发布演示">Open the publish demo</a><a class="button ghost" href="https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.11.0/examples/github-actions/verified-publish.yml" data-en="Add the verified publish Action" data-zh-cn="接入可验证发布 Action">Add the verified publish Action</a><a class="button ghost" href="compatibility.html" data-en="Inspect note evidence" data-zh-cn="审查笔记证据">Inspect note evidence</a></div></section>
   </main>
 
   <footer><div class="wrap"><span>RealityCheck · MIT</span><span data-en="Evidence first. Local by default." data-zh-cn="证据优先，默认本地。">Evidence first. Local by default.</span><a href="https://github.com/KevinwithPanda/RealityHTMLCheck">GitHub</a></div></footer>

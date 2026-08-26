@@ -125,7 +125,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.ok(structuredDataMatch, "Pages homepage is missing JSON-LD product metadata");
   const structuredData = JSON.parse(structuredDataMatch[1]);
   assert.equal(structuredData["@type"], "SoftwareApplication");
-  assert.equal(structuredData.softwareVersion, "0.10.0");
+  assert.equal(structuredData.softwareVersion, "0.11.0");
   assert.equal(structuredData.codeRepository, "https://github.com/KevinwithPanda/RealityHTMLCheck");
   assert.equal(structuredData.image, "https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png");
   assert.ok(structuredData.featureList.includes("Policy anti-weakening review"));
@@ -146,11 +146,11 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(noteChecker, /compareNoteBundles/);
   assert.match(zipStore, /export async function readStoredZipEntries/);
   assert.match(zipImport, /new DecompressionStream\("deflate-raw"\)/);
-  assert.match(zipImport, /\.\/note-zip\.mjs\?v=0\.10\.0/);
-  assert.match(zipImport, /\.\/note-path-policy\.mjs\?v=0\.10\.0/);
+  assert.match(zipImport, /\.\/note-zip\.mjs\?v=0\.11\.0/);
+  assert.match(zipImport, /\.\/note-path-policy\.mjs\?v=0\.11\.0/);
   assert.match(zipImport, /Potentially sensitive ZIP path is blocked before extraction/);
   assert.doesNotMatch(`${zipStore}\n${zipImport}`, /\.\.\/realitycheck\/scripts/);
-  assert.match(folderRepair, /\.\/note-zip\.mjs\?v=0\.10\.0/);
+  assert.match(folderRepair, /\.\/note-zip\.mjs\?v=0\.11\.0/);
   assert.doesNotMatch(`${noteChecker}\n${folderRepair}\n${zipImport}\n${noteCompare}`, /from\s+["']https?:/);
   assert.match(html, /href="note\.html"/);
   assert.match(html, /href="compatibility\.html"/);
@@ -159,9 +159,11 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /从“本机能打开”，到“带证据可发布”/);
   assert.match(html, /<article><strong>32<\/strong><span[^>]+>HTML note integrity and portability rules/);
   assert.match(html, /<article><strong>4<\/strong><span[^>]+>byte-reproducible real Pandoc exports/);
-  assert.match(html, /github:KevinwithPanda\/RealityHTMLCheck#v0\.10\.0/);
+  assert.match(html, /github:KevinwithPanda\/RealityHTMLCheck#v0\.11\.0/);
   assert.match(html, /realityhtmlcheck publish \.\/my-notes/);
   assert.match(html, /href="labs\/publish-demo-note\/index\.html"/);
+  assert.match(html, /verified-publish\.yml/);
+  assert.match(html, /Add the verified publish Action/);
   assert.match(html, /data-language="zh-CN"/);
   assert.match(html, /init --profile product --base-url/);
   assert.match(html, /npm run realitycheck -- init --profile product/);
@@ -242,7 +244,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(llms, /evidence\/security-headers-fixed\/latest\.html/);
   assert.match(llms, /npm run realitycheck -- plan/);
   assert.match(llms, /Zero-install HTML note checker/);
-  assert.match(llms, /github:KevinwithPanda\/RealityHTMLCheck#v0\.10\.0/);
+  assert.match(llms, /github:KevinwithPanda\/RealityHTMLCheck#v0\.11\.0/);
   assert.match(llms, /realityhtmlcheck note \.\/my-notes/);
   assert.match(llms, /realityhtmlcheck publish \.\/my-notes/);
   assert.match(llms, /compatibility\.html/);

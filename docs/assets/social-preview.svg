@@ -21,6 +21,6 @@
   <rect x="862" y="240" width="294" height="178" rx="25" fill="#F8F9FB"/>
   <text x="895" y="283" fill="#167154" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="800">FINAL ARCHIVE · BROWSER PROVEN</text>
   <text x="893" y="375" fill="#171923" font-family="ui-sans-serif, system-ui, sans-serif" font-size="72" font-weight="820" letter-spacing="-4">READY</text>
-  <rect x="92" y="521" width="488" height="63" rx="14" fill="#030407" stroke="#343948"/>
-  <text x="119" y="561" fill="#D8DCE6" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="18">Pass → publish ZIP · Fail → working copy.</text>
+  <rect x="92" y="521" width="624" height="63" rx="14" fill="#030407" stroke="#343948"/>
+  <text x="119" y="561" fill="#D8DCE6" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="16">CLI / ACTION · PASS → publish ZIP · FAIL → working copy.</text>
 </svg>

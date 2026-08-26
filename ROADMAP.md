@@ -131,6 +131,14 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Mark a capsule publishable only when required deterministic and browser gates pass; otherwise deliver the working copy with exact blockers.
 - [x] Document direct drag-and-drop deployment to static hosts without taking control of user cloud accounts.
 
+## v0.11 - Verified publish pipelines
+
+- [x] Add `kind: publish` to the Composite Action without granting deployment permissions.
+- [x] Bind one create-only CLI command result to one exact validated Action run; never scan a shared output root for the latest directory.
+- [x] Preserve and upload a validated working copy before enforcing deterministic/browser blockers.
+- [x] Expose stable capsule, content, GitHub Artifact, report, proof, and checksum outputs for downstream read-only jobs.
+- [x] Prove success and active-content blocking through real GitHub-hosted Artifact download and independent revalidation.
+
 ## v1.0 criteria
 
 - Stable report and adapter contracts.

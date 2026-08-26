@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-The latest `0.10.x` release receives security fixes while the project is in Beta.
+The latest `0.11.x` release receives security fixes while the project is in Beta.
 
 ## Reporting a vulnerability
 

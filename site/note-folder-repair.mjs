@@ -1,5 +1,5 @@
-import { DEFAULT_ZIP_LIMITS, digestZipSource, preflightStoredZip, verifyStoredZip, writeStoredZipWithManifest } from "./note-zip.mjs?v=0.10.0";
-import { isSensitiveNoteArchivePath } from "./note-path-policy.mjs?v=0.10.0";
+import { DEFAULT_ZIP_LIMITS, digestZipSource, preflightStoredZip, verifyStoredZip, writeStoredZipWithManifest } from "./note-zip.mjs?v=0.11.0";
+import { isSensitiveNoteArchivePath } from "./note-path-policy.mjs?v=0.11.0";
 
 const encoder = new TextEncoder();
 const EVIDENCE_RESERVE_BYTES = 12 * 1024 * 1024;

@@ -50,15 +50,25 @@ function workspaceRelative(workspace, target) {
   return path || ".";
 }
 
-export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "web", notePath = "", baseline = "", output }) {
-  if (!new Set(["web", "note"]).has(kind)) throw new Error("kind must be web or note");
+export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "web", notePath = "", baseline = "", output, publishRunKey = "" }) {
+  if (!new Set(["web", "note", "publish"]).has(kind)) throw new Error("kind must be web, note, or publish");
   const workspaceRaw = String(workspace ?? "");
   if (!workspaceRaw || FORBIDDEN_ARTIFACT_PATTERN.test(workspaceRaw)) throw new Error("workspace is invalid");
   const workspaceCanonical = realpathSync(resolve(workspaceRaw));
   const workdirInput = relativeInput("working-directory", workingDirectory);
   const workdirCanonical = canonicalAllowMissing(resolve(workspaceCanonical, workdirInput));
   if (!contained(workspaceCanonical, workdirCanonical)) throw new Error("working-directory resolves outside the workspace");
-  const outputInput = relativeInput("output", output, { allowDot: false });
+  const outputBaseInput = relativeInput("output", output, { allowDot: false });
+  let normalizedPublishRunKey = "";
+  if (kind === "publish") {
+    normalizedPublishRunKey = relativeInput("publish-run-key", publishRunKey, { allowDot: false });
+    if (!/^action-[1-9][0-9]*-[1-9][0-9]*$/.test(normalizedPublishRunKey)) {
+      throw new Error("publish-run-key must match action-RUN_ID-RUN_ATTEMPT with positive numeric IDs");
+    }
+  } else if (publishRunKey) {
+    throw new Error("publish-run-key is only valid when kind is publish");
+  }
+  const outputInput = normalizedPublishRunKey ? `${outputBaseInput}/${normalizedPublishRunKey}` : outputBaseInput;
   const outputCanonical = canonicalAllowMissing(resolve(workdirCanonical, outputInput));
   if (!contained(workdirCanonical, outputCanonical)) throw new Error("output resolves outside working-directory");
   if (outputCanonical === workdirCanonical) throw new Error("output cannot equal working-directory");
@@ -68,14 +78,18 @@ export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "
   let baselineInput = "";
   let baselineCanonical = "";
   let sourceRootCanonical = workdirCanonical;
-  if (kind === "note") {
+  if (kind === "note" || kind === "publish") {
     targetInput = relativeInput("path", notePath);
     targetCanonical = canonicalAllowMissing(resolve(workdirCanonical, targetInput));
     if (!contained(workdirCanonical, targetCanonical)) throw new Error("path resolves outside working-directory");
     if (targetCanonical === outputCanonical) throw new Error("path and output cannot resolve to the same location");
+    if (kind === "publish" && (contained(targetCanonical, outputCanonical) || contained(outputCanonical, targetCanonical))) {
+      throw new Error("publish path and output must be separate, non-nested locations");
+    }
     const targetIsFile = existsSync(targetCanonical) && lstatSync(targetCanonical).isFile();
     sourceRootCanonical = targetIsFile ? dirname(targetCanonical) : targetCanonical;
-    if (baseline) {
+    if (kind === "publish" && baseline) throw new Error("baseline is not supported when kind is publish");
+    if (kind === "note" && baseline) {
       baselineInput = relativeInput("baseline", baseline);
       baselineCanonical = canonicalAllowMissing(resolve(workdirCanonical, baselineInput));
       if (!contained(workdirCanonical, baselineCanonical)) throw new Error("baseline resolves outside working-directory");
@@ -95,6 +109,7 @@ export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "
     notePathAbsolute: targetCanonical,
     baseline: baselineInput,
     baselineAbsolute: baselineCanonical,
+    publishRunKey: normalizedPublishRunKey,
     output: portable(relative(workdirCanonical, outputCanonical)),
     artifactPath: outputCanonical,
     reportRoot: workspaceRelative(workspaceCanonical, outputCanonical),
@@ -107,7 +122,7 @@ function parseArguments(argv) {
   const args = [...argv];
   while (args.length) {
     const name = args.shift();
-    if (!["--workspace", "--working-directory", "--kind", "--path", "--baseline", "--output", "--github-output"].includes(name)) {
+    if (!["--workspace", "--working-directory", "--kind", "--path", "--baseline", "--output", "--publish-run-key", "--github-output"].includes(name)) {
       throw new Error(`Unknown option: ${name}`);
     }
     const value = args.shift();
@@ -126,6 +141,7 @@ export function run(argv) {
     notePath: options.path ?? "",
     baseline: options.baseline ?? "",
     output: options.output,
+    publishRunKey: options["publish-run-key"] ?? "",
   });
   const lines = [
     `kind=${resolved.kind}`,
@@ -135,6 +151,7 @@ export function run(argv) {
     `path-absolute=${resolved.notePathAbsolute}`,
     `baseline=${resolved.baseline}`,
     `baseline-absolute=${resolved.baselineAbsolute}`,
+    `publish-run-key=${resolved.publishRunKey}`,
     `output=${resolved.output}`,
     `artifact-path=${resolved.artifactPath}`,
     `report-root=${resolved.reportRoot}`,

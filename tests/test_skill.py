@@ -86,6 +86,8 @@ class SkillStructureTests(unittest.TestCase):
             "scripts/note-check.mjs",
             "scripts/note-github-summary.mjs",
             "scripts/action-paths.mjs",
+            "scripts/action-publish-result.mjs",
+            "scripts/note-publish-github-summary.mjs",
             "scripts/demo-server.mjs",
             "scripts/github-summary.mjs",
             "scripts/policy-review.mjs",
@@ -127,6 +129,7 @@ class SkillStructureTests(unittest.TestCase):
             "assets/html-note-publish-receipt.schema.json",
             "assets/html-note-publish-browser-proof.schema.json",
             "assets/html-note-publish-technical-report.schema.json",
+            "assets/html-note-publish-command-result.schema.json",
             "assets/demo/index.html",
             "assets/demo/styles.css",
             "assets/demo/app.js",
@@ -235,6 +238,65 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("Run the note gate without npm install", workflow)
         self.assertIn("actions/download-artifact@v8", workflow)
         self.assertIn("downloaded-note-evidence/latest.html", workflow)
+
+    def test_github_action_supports_an_exact_verified_publish_handoff(self) -> None:
+        action = (REPOSITORY_ROOT / "action.yml").read_text(encoding="utf-8")
+        for required in (
+            "kind is publish",
+            "entry:",
+            "publish-name:",
+            'publish_run_key="action-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"',
+            "Build the exact verified publish handoff",
+            "realitycheck/scripts/action-publish-result.mjs",
+            "realitycheck/scripts/note-publish-github-summary.mjs",
+            "--result-json",
+            "mktemp -d",
+            "trap cleanup_publish_result EXIT",
+            "publish-ready",
+            "publish-run-path",
+            "publish-archive-path",
+            "publish-working-copy-path",
+            "publish-report-path",
+            "publish-receipt-path",
+            "publish-manifest-path",
+            "publish-technical-report-path",
+            "publish-browser-proof-path",
+            "publish-checksum-path",
+            "publish-deploy-content-id",
+            "publish-archive-sha256",
+            "publish-artifact-id",
+            "publish-artifact-url",
+            "publish-artifact-digest",
+            "Upload the exact RealityCheck publish run",
+            "compression-level: 0",
+            "full HTML/site bytes",
+            "Action never deploys",
+            "Validated repair plan",
+            "RC_PUBLISH_UPLOAD_OUTCOME",
+        ):
+            self.assertIn(required, action)
+        self.assertIn("steps.resolve.outputs.kind == 'web' || steps.resolve.outputs.kind == 'publish'", action)
+        self.assertIn("Publish mode does not accept fail-on, baseline, exclude-html, url, or config", action)
+        self.assertIn("Publish mode does not accept allow-remote", action)
+        self.assertIn("value: ${{ steps.publish.outputs.publish-status }}", action)
+        self.assertIn("value: ${{ steps.publish.outputs.run-directory }}", action)
+        self.assertIn("RC_REPAIR_PLAN: ${{ steps.publish.outputs.repair-plan-path-absolute }}", action)
+        self.assertLess(action.index("Upload the exact RealityCheck publish run"), action.index("Enforce the RealityCheck result"))
+        workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "validate.yml").read_text(encoding="utf-8")
+        for required in (
+            "Verified publish Action and exact Artifact round trip",
+            "Build and upload one exact verified publish run",
+            "Download the verified publish Artifact",
+            "Revalidate the verified Action outputs and downloaded bytes",
+            "Build a blocked working copy without executing its script",
+            "Download the blocked working-copy Artifact",
+            "realitycheck-publish-action-ready",
+            "realitycheck-publish-action-blocked",
+            "publish-artifact-digest",
+            "browser-final-archive",
+            "active-script",
+        ):
+            self.assertIn(required, workflow)
 
     def test_validation_workflow_waits_for_the_browser_fixture_without_hiding_startup_errors(self) -> None:
         workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "validate.yml").read_text(encoding="utf-8")
