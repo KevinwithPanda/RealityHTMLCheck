@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import { deflateRawSync } from "node:zlib";
 
@@ -8,7 +11,10 @@ import { buildPackageRepairTask, noteDecision, summarizeNoteReports, summarizePa
 import { bindSafeFolderCandidate, buildVerifiedFolderRepairZip, prepareFolderRepairInventory } from "../site/note-folder-repair.mjs";
 import { analyzeBrowserNoteSources, verifySafeNotePackageRepair } from "../site/note-repair-verification.mjs";
 import { buildPortableNoteReport } from "../site/note-share-report.mjs";
-import { importHtmlNoteZip, ZIP_IMPORT_LIMITS } from "../site/note-zip-import.mjs";
+import { extractHtmlNoteZip, importHtmlNoteZip, ZIP_IMPORT_LIMITS } from "../realitycheck/scripts/note-zip-import.mjs";
+import { extractHtmlNoteZipFile, readPortableZipArchive } from "../realitycheck/scripts/note-zip-import-node.mjs";
+import * as publishedZipImport from "../realitycheck/scripts/note-zip-import.mjs";
+import * as siteZipImport from "../site/note-zip-import.mjs";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -150,6 +156,53 @@ function findSignature(bytes, signature) {
   for (let offset = 0; offset + 4 <= bytes.byteLength; offset += 1) if (view.getUint32(offset, true) === signature) return offset;
   return -1;
 }
+
+test("the browser ZIP-import adapter exposes the npm-published parser API", () => {
+  for (const name of ["ZIP_IMPORT_LIMITS", "extractHtmlNoteZip", "importHtmlNoteZip"]) {
+    assert.equal(siteZipImport[name], publishedZipImport[name], name);
+  }
+});
+
+test("Node file intake extracts ordinary STORE and DEFLATE ZIPs without DOM File", async () => {
+  const root = mkdtempSync(join(tmpdir(), "realitycheck-node-zip-"));
+  try {
+    const html = "<!doctype html><html><body><h1>Node ZIP</h1></body></html>";
+    const binary = new Uint8Array([0, 1, 2, 127, 128, 255]);
+    const path = join(root, "ordinary-export.zip");
+    writeFileSync(path, buildZip([
+      { path: "notes/index.html", bytes: html, method: 8 },
+      { path: "notes/assets/data.bin", bytes: binary, method: 0 },
+    ]));
+    const extracted = await extractHtmlNoteZipFile(path);
+    assert.equal(extracted.kind, "html-note-zip-extract");
+    assert.deepEqual(extracted.manifest.methods, ["deflate", "store"]);
+    assert.deepEqual(extracted.entries.map((entry) => entry.path), ["notes/assets/data.bin", "notes/index.html"]);
+    assert.deepEqual(extracted.entries[0].data, binary);
+    assert.equal(decoder.decode(extracted.entries[1].data), html);
+    assert.equal(Object.hasOwn(extracted.entries[0], "file"), false);
+    assert.equal(Object.hasOwn(extracted.entries[0], "data"), true);
+
+    const archiveBytes = new Uint8Array(await import("node:fs/promises").then(({ readFile }) => readFile(path)));
+    const portable = await readPortableZipArchive(archiveBytes, { name: "ordinary-export.zip" });
+    assert.deepEqual([...portable.entries.keys()], ["notes/assets/data.bin", "notes/index.html"]);
+    assert.deepEqual(portable.entries.get("notes/assets/data.bin"), binary);
+    assert.equal(decoder.decode(portable.entries.get("notes/index.html")), html);
+    assert.equal(portable.manifest.archiveName, "ordinary-export.zip");
+    assert.match(portable.manifest.importContentId, /^sha256:[a-f0-9]{64}$/);
+
+    const bytes = buildZip([{ path: "notes/index.html", bytes: html, method: 0 }]);
+    const fileLike = { name: "memory.zip", size: bytes.byteLength, async arrayBuffer() { return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength); } };
+    const memory = await extractHtmlNoteZip(fileLike);
+    assert.equal(memory.kind, "html-note-zip-extract");
+    assert.equal(decoder.decode(memory.entries[0].data), html);
+
+    const undersized = join(root, "undersized-declaration.zip");
+    writeFileSync(undersized, buildZip([{ path: "notes/index.html", bytes: html, method: 8, uncompressedSize: 4 }]));
+    await assert.rejects(extractHtmlNoteZipFile(undersized), /DEFLATE output exceeds/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("ZIP import opens STORE and DEFLATE entries, preserves a root, and verifies exact bytes", async () => {
   const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Imported</title><link rel="stylesheet" href="assets/note.css"></head><body><h1>Imported</h1><p>A complete exported note is opened directly from its ZIP.</p></body></html>';

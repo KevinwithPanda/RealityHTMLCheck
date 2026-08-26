@@ -37,6 +37,7 @@ import { buildReleaseDecision, parseRequiredControls, releaseDecisionExitCode, w
 import { buildAuditPlan, writeAuditPlan } from "./audit-plan.mjs";
 import { describeSecurityHeaderViolations, evaluateSecurityHeaderPolicies, requiredSecurityHeaders, suggestSecurityHeaderFix } from "./security-headers.mjs";
 import { runNoteCommand } from "./note-check.mjs";
+import { runNotePublishCommand } from "./note-publish.mjs";
 import { TOOL_VERSION } from "./version.mjs";
 
 const require = createRequire(import.meta.url);
@@ -63,6 +64,8 @@ function usage() {
 
 Usage:
   realitycheck note <FILE|DIRECTORY> [--fix-safe|--prepare-repair] [--exclude-html GLOB] [--baseline REPORT] [--output PATH]
+  realitycheck note publish <HTML|DIRECTORY|ZIP> [--entry PATH] [--output PATH] [--browser PATH]
+  realitycheck publish <HTML|DIRECTORY|ZIP> [--entry PATH] [--output PATH] [--browser PATH]
   realitycheck <url> [options]
   realitycheck audit <url> [options]
   realitycheck demo [--output PATH] [--headed] [--browser PATH]
@@ -119,6 +122,8 @@ Examples:
   realitycheck note my-note.html
   realitycheck note ./notes --fix-safe
   realitycheck note ./notes --prepare-repair
+  realitycheck note publish ./notes
+  realitycheck publish notes-export.zip --entry notes/home.html
   realitycheck demo
   realitycheck init
   realitycheck profiles
@@ -2971,6 +2976,14 @@ async function main() {
     if (rawArguments[0] === "--") rawArguments.shift();
     if (rawArguments.length === 1 && new Set(["-V", "--version"]).has(rawArguments[0])) {
       console.log(TOOL_VERSION);
+      return;
+    }
+    if (rawArguments[0] === "note" && rawArguments[1] === "publish") {
+      process.exitCode = await runNotePublishCommand(rawArguments.slice(2));
+      return;
+    }
+    if (rawArguments[0] === "publish") {
+      process.exitCode = await runNotePublishCommand(rawArguments.slice(1));
       return;
     }
     if (rawArguments[0] === "note") {

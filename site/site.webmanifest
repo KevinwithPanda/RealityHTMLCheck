@@ -1,7 +1,7 @@
 {
-  "name": "RealityCheck · Local HTML note checker",
+  "name": "RealityCheck · Verified AI HTML publish packages",
   "short_name": "RealityCheck",
-  "description": "Drop an HTML export ZIP, verify it locally, compare prior evidence, and build a read-back-verified safe-metadata working copy.",
+  "description": "Preflight AI HTML locally, then create an exact-byte browser-proven static publish ZIP or an explicit working copy with blockers.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

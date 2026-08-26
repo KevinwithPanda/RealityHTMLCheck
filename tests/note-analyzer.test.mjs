@@ -108,6 +108,29 @@ test("path casing is portable only when the HTML and file agree exactly", () => 
   assert.equal(report.findings.some((finding) => finding.ruleId === "missing-local-file"), false);
 });
 
+test("HTML entity encoding in local filenames resolves to the actual package path", () => {
+  const report = analyzeHtmlNote({
+    path: "index.html",
+    html: healthyNote.replace("assets/chart.svg", "assets/chart&amp;.svg"),
+    knownFiles: ["index.html", "assets/chart&.svg"],
+  });
+  assert.equal(report.findings.some((finding) => finding.ruleId === "missing-local-file"), false);
+});
+
+test("Windows path separators are reported for HTML and reachable CSS", () => {
+  const html = healthyNote.replace("assets/chart.svg", "assets\\chart.svg");
+  const report = analyzeHtmlNote({ path: "index.html", html, knownFiles: ["index.html", "assets/chart.svg"] });
+  assert.equal(report.findings.find((finding) => finding.ruleId === "path-backslash-separator")?.affectedCount, 1);
+  const packageFindings = analyzeNotePackage({
+    knownFiles: ["index.html", "styles/main.css", "images/hero.png"],
+    entries: [
+      { path: "index.html", kind: "html", text: '<link rel="stylesheet" href="styles/main.css">' },
+      { path: "styles/main.css", kind: "css", text: '.hero{background:url("..\\images\\hero.png")}' },
+    ],
+  });
+  assert.equal(packageFindings.find((finding) => finding.ruleId === "css-path-backslash-separator")?.affectedCount, 1);
+});
+
 test("ambiguous case-only HTML targets fail closed instead of selecting an arbitrary file", () => {
   const report = analyzeHtmlNote({
     path: "index.html",

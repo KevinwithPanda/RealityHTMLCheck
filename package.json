@@ -1,7 +1,7 @@
 {
   "name": "realityhtmlcheck",
-  "version": "0.9.0",
-  "description": "Verify AI-generated HTML exports locally — ZIP intake, portable notes, repeat-check evidence, and real-browser QA.",
+  "version": "0.10.0",
+  "description": "Check, repair, and prove AI-generated HTML notes as portable static publish packages with exact-browser evidence.",
   "type": "module",
   "bin": {
     "realityhtmlcheck": "realitycheck/scripts/audit.mjs",
@@ -10,6 +10,7 @@
   "scripts": {
     "realitycheck": "node realitycheck/scripts/audit.mjs",
     "note": "node realitycheck/scripts/audit.mjs note",
+    "publish-note": "node realitycheck/scripts/audit.mjs publish",
     "audit": "node realitycheck/scripts/audit.mjs audit",
     "demo": "node realitycheck/scripts/audit.mjs demo",
     "site:build": "node scripts/build-pages.mjs",
@@ -59,6 +60,10 @@
     "ai",
     "html-notes",
     "html-export",
+    "html-validator",
+    "static-site",
+    "static-hosting",
+    "publish-verification",
     "zip-import",
     "baseline-comparison",
     "local-first",

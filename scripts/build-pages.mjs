@@ -9,10 +9,20 @@ import { verifyRealExportEvidence } from "./real-export-evidence.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const output = join(root, "_site");
+const releaseVersion = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
 const copy = (source, destination) => {
   const target = join(output, destination);
   mkdirSync(dirname(target), { recursive: true });
   cpSync(join(root, source), target, { recursive: true });
+};
+const copyBrowserModule = (source, destination) => {
+  const target = join(output, destination);
+  mkdirSync(dirname(target), { recursive: true });
+  const code = readFileSync(join(root, source), "utf8").replace(
+    /(from\s+["']\.\/[^"'?]+\.mjs)(["'])/g,
+    `$1?v=${releaseVersion}$2`,
+  );
+  writeFileSync(target, code, "utf8");
 };
 
 const compatibility = verifyCompatibilityArtifacts();
@@ -25,13 +35,18 @@ mkdirSync(output, { recursive: true });
 copy("site", ".");
 copy("docs/assets", "assets");
 copy("realitycheck/assets/icon.svg", "assets/icon.svg");
-copy("realitycheck/scripts/note-analyzer.mjs", "note-analyzer.mjs");
-copy("realitycheck/scripts/note-package.mjs", "note-package.mjs");
-copy("realitycheck/scripts/note-summary.mjs", "note-summary.mjs");
-copy("realitycheck/scripts/note-scope.mjs", "note-scope.mjs");
-copy("realitycheck/scripts/note-compare.mjs", "note-compare.mjs");
-copy("realitycheck/scripts/note-comparison-report.mjs", "note-comparison-report.mjs");
-copy("realitycheck/scripts/note-ruleset.mjs", "note-ruleset.mjs");
+// Replace the source-tree compatibility adapters copied from site/ with the
+// authoritative npm-published implementations at the browser-facing paths.
+copyBrowserModule("realitycheck/scripts/note-zip.mjs", "note-zip.mjs");
+copyBrowserModule("realitycheck/scripts/note-zip-import.mjs", "note-zip-import.mjs");
+copyBrowserModule("realitycheck/scripts/note-path-policy.mjs", "note-path-policy.mjs");
+copyBrowserModule("realitycheck/scripts/note-analyzer.mjs", "note-analyzer.mjs");
+copyBrowserModule("realitycheck/scripts/note-package.mjs", "note-package.mjs");
+copyBrowserModule("realitycheck/scripts/note-summary.mjs", "note-summary.mjs");
+copyBrowserModule("realitycheck/scripts/note-scope.mjs", "note-scope.mjs");
+copyBrowserModule("realitycheck/scripts/note-compare.mjs", "note-compare.mjs");
+copyBrowserModule("realitycheck/scripts/note-comparison-report.mjs", "note-comparison-report.mjs");
+copyBrowserModule("realitycheck/scripts/note-ruleset.mjs", "note-ruleset.mjs");
 copy("examples/public-evidence", "evidence");
 copy("examples/reference-run", "reference");
 copy("examples/note-compatibility", "evidence/note-compatibility");
@@ -45,6 +60,7 @@ copy("examples/security-lab", "labs/security");
 copy("examples/privacy-lab", "labs/privacy");
 copy("examples/accessibility-lab", "labs/accessibility");
 copy("examples/viewport-lab", "labs/viewport");
+copy("examples/publish-demo-note", "labs/publish-demo-note");
 copy("examples/policy-review-lab", "labs/policy-review");
 copy("examples/issue-drafts-lab", "labs/issue-drafts");
 // The committed release-decision artifact preserves the source-relative paths

@@ -19,7 +19,7 @@ function splitReference(reference) {
   const value = String(reference || "");
   const hash = value.indexOf("#");
   const beforeHash = hash < 0 ? value : value.slice(0, hash);
-  return { path: beforeHash.split("?", 1)[0], fragment: hash < 0 ? "" : decodePath(value.slice(hash + 1)) };
+  return { path: decodeEntities(beforeHash.split("?", 1)[0]), fragment: hash < 0 ? "" : decodePath(decodeEntities(value.slice(hash + 1))) };
 }
 function resolveReference(sourcePath, reference) {
   const clean = decodePath(reference).replaceAll("\\", "/");
@@ -133,7 +133,7 @@ export function analyzeNotePackage({ entries, knownFiles }) {
   const reachableCss = new Set();
   const processedCss = new Set();
   const queue = [];
-  const unsafe = [], missing = [], caseMismatch = [], unverified = [], crossFragment = [], wideCss = [], remote = [], insecureRemote = [];
+  const unsafe = [], missing = [], caseMismatch = [], backslash = [], unverified = [], crossFragment = [], wideCss = [], remote = [], insecureRemote = [];
   const enqueue = (path) => { if (!reachableCss.has(path)) { reachableCss.add(path); queue.push(path); } };
   const resolveKnown = (reference, source) => {
     const { path, unsafe: outside } = resolveReference(source, splitReference(reference).path);
@@ -170,6 +170,7 @@ export function analyzeNotePackage({ entries, knownFiles }) {
         if (reference.insecure) insecureRemote.push(item);
         continue;
       }
+      if (splitReference(reference.value).path.includes("\\")) backslash.push({ path: cssPath, line: reference.line, excerpt: compact(`${reference.value} → ${reference.value.replaceAll("\\", "/")}`) });
       const resolved = resolveKnown(reference.value, cssPath);
       const item = { path: cssPath, line: reference.line, excerpt: compact(reference.excerpt) };
       if (resolved.state === "exact") {
@@ -185,6 +186,7 @@ export function analyzeNotePackage({ entries, knownFiles }) {
   if (remote.length) findings.push(packageFinding("css-remote-dependency", "warning", ["A stylesheet depends on remote content", "样式表依赖远程内容"], ["A reachable CSS import, image, or font may fail offline and reveal the reader's IP address.", "可达 CSS 导入、图片或字体离线时可能失效，并可能暴露读者 IP。"], ["Bundle essential content locally or document the intentional privacy and availability trade-off.", "把必要内容放到本地，或明确记录这一隐私与可用性取舍。"], remote));
   if (unsafe.length) findings.push(packageFinding("unsafe-package-path", "error", ["A package reference is unsafe or ambiguous", "文件包引用不安全或存在歧义"], ["A dependency escapes the selected package root, uses a root-relative path, or has multiple case-only matches.", "依赖越过所选文件包根目录、使用根相对路径，或存在多个仅大小写不同的候选。"], ["Keep dependencies inside the note folder and use one exact relative path.", "把依赖保留在笔记文件夹内，并使用唯一且大小写准确的相对路径。"], unsafe));
   if (caseMismatch.length) findings.push(packageFinding("css-path-case-mismatch", "warning", ["A package path uses different letter casing", "文件包路径的字母大小写不一致"], ["The dependency may work on Windows but fail on case-sensitive systems.", "该依赖可能在 Windows 上可用，但在区分大小写的系统中失效。"], ["Match the real file name exactly.", "让引用与真实文件名的大小写完全一致。"], caseMismatch));
+  if (backslash.length) findings.push(packageFinding("css-path-backslash-separator", "warning", ["A stylesheet path uses Windows backslashes", "样式表路径使用了 Windows 反斜杠"], ["CSS URLs require forward slashes for portable browser and static-host behavior.", "CSS URL 需要使用正斜杠，才能在浏览器和静态托管中保持可移植。"], ["After confirming the target is unique, replace only the separators with forward slashes.", "确认目标文件唯一后，只把路径分隔符改为正斜杠。"], backslash));
   if (unverified.length) findings.push(packageFinding("package-content-not-verified", "warning", ["Part of the package could not be inspected", "文件包中有内容未能核验"], ["A linked HTML or stylesheet exists, but its text was unavailable or above the safe read limit.", "关联 HTML 或样式表虽然存在，但文本不可用或超过安全读取上限。"], ["Select the complete readable folder or reduce oversized text files, then check again.", "选择完整且可读取的文件夹，或缩小超大文本文件后重新检查。"], unverified));
   if (crossFragment.length) findings.push(packageFinding("broken-cross-document-fragment", "error", ["A linked note section does not exist", "链接的笔记章节不存在"], ["A cross-note link opens an existing HTML file but points to a missing ID or named anchor.", "跨笔记链接能打开现有 HTML 文件，但指向的 ID 或命名锚点不存在。"], ["Correct the fragment or add the intended unique ID in the destination note.", "修正片段标识，或在目标笔记中添加预期的唯一 ID。"], crossFragment));
   if (wideCss.length) findings.push(packageFinding("external-css-wide-fixed-layout", "warning", ["An external stylesheet can force horizontal scrolling", "外部样式表可能强制横向滚动"], ["A reachable stylesheet sets a minimum width wider than a typical phone viewport outside a matching desktop-only media query.", "可达样式表在匹配的桌面媒体查询之外设置了宽于常见手机视口的最小宽度。"], ["Use a fluid width or max-width and confine necessary overflow.", "使用流式宽度或 max-width，并限制必要的溢出范围。"], wideCss));

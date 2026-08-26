@@ -1,12 +1,12 @@
 <div align="center">
-  <img src="docs/assets/hero.svg" alt="RealityCheck checks portable HTML notes, exposes hidden Web UI failures, and proves repairs with before and after evidence" width="100%" />
+  <img src="docs/assets/hero.svg" alt="RealityCheck turns AI HTML notes into verified publish packages, exposes hidden Web UI failures, and proves repairs with exact browser evidence" width="100%" />
 </div>
 
 <div align="center">
 
 # RealityCheck
 
-**Drop the AI export ZIP. RealityCheck verifies what “it opens on my machine” misses.**
+**Drop the AI export ZIP. Get a verified publish package—or exact blockers, never a fake green check.**
 
 Check whether an HTML note is truly portable, and whether a Web UI survives real browser conditions.
 
@@ -36,7 +36,7 @@ AI agents and export tools increasingly produce research notes, tutorials, repor
 - scripts and remote dependencies make a supposedly local note execute code or contact a server;
 - fixed-width layouts, long strings, missing viewport metadata, or weak structure make the note hard to read and reuse.
 
-RealityCheck checks the **whole note folder**, not just one HTML string. Its 30 deterministic HTML rules cover integrity, structure, navigation, attachments, portability, readability, accessibility markup, unsafe behavior, and unfinished AI placeholders. Package-level analysis additionally follows reachable external CSS imports and assets, checks CSS path case, and verifies cross-note fragments.
+RealityCheck checks the **whole note folder**, not just one HTML string. Its 32 deterministic HTML rules cover integrity, structure, navigation, attachments, portability, readability, accessibility markup, unsafe behavior, and unfinished AI placeholders. Package-level analysis additionally follows reachable external CSS imports and assets, checks CSS path case/backslashes, and verifies cross-note fragments.
 
 ### 2. Cross-platform Web failures hidden by the happy path
 
@@ -83,7 +83,7 @@ The public evidence is deliberately layered: four checked-in HTML files were emi
 | Experience | Best for | What happens |
 | --- | --- | --- |
 | [Online note checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html) | Anyone with an HTML export ZIP, file, or folder | Zero install/upload; verified ZIP import, local inspection, repeat-check comparison, and a structure-preserving safe-metadata ZIP |
-| GitHub-backed `npx` CLI | Repeatable exports without cloning this repository | Disposable install, bilingual reports, JSON evidence, repair plans, thresholds |
+| GitHub-backed `npx` CLI | Repeatable exports without cloning this repository | Check or build a verified static publish capsule with bilingual reports and exact browser evidence |
 | GitHub Action | Export and publishing pipelines | Checks a note folder without a server, uploads the generated report, annotates exact files, and enforces error/warning gates |
 | `$realitycheck` Skill | End-to-end work in Codex | Inspect, create a working copy, repair high-confidence issues, recheck, and return the usable output plus both reports |
 
@@ -151,17 +151,44 @@ When a real folder is selected, **Recheck & build ZIP** applies those same three
 
 This folder ZIP is a **verified safe-metadata working copy**, not a fully repaired or share-ready claim. Missing files are not invented, remote resources are not downloaded, and structural/content/script findings remain visible. Empty directories, symlinks, and hidden files not exposed by the browser cannot be preserved. Archiving fails closed for path conflicts, likely secret material (`.env`, keys, `.git`, `node_modules`, `.realitycheck`), more than 4,998 selected files, a file above 32 MiB, more than 52 MiB of selected bytes, a path above 1 KiB, or more than 512 KiB of aggregate path text. Static analysis separately caps the browser selection at 5,000 files, decoded HTML at 32 MiB, and readable CSS at 16 MiB. Use the Skill workflow for broader, judgment-dependent repairs.
 
+### One command from export to verified publish ZIP
+
+Turn one HTML file, folder, or ordinary STORE/DEFLATE export ZIP into a static-host handoff:
+
+```bash
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
+  realityhtmlcheck publish ./my-notes
+```
+
+This is different from the online checker's safe-metadata working ZIP. The local publish command:
+
+- freezes the complete bounded input and rejects secrets, symlinks, path collisions, unsafe archives, and ambiguous entry pages;
+- applies only the three safe metadata fixes plus uniquely resolvable HTML/CSS case and backslash path repairs, then reruns the complete detector;
+- blocks scripts, event handlers, forms, embedded active content, server runtimes, missing files, and runtime remote dependencies before navigation;
+- reads back the exact final ZIP and proves desktop, 375 px mobile, root hosting, `/project/` hosting, all HTML/fragment coverage, and a true browser-offline exact-byte replay in Chromium with JavaScript disabled;
+- writes a root-ready ZIP, bilingual public proof, local technical report, repair plan, receipt, and archive SHA-256 sidecar.
+
+Only a completed gate is named `*.realitycheck-publish.zip`. Static-only, unsupported-browser, or failed results are named `*.realitycheck-working-copy.zip` and retain the exact blockers. Netlify Drop and Cloudflare Pages Direct Upload can accept the successful ZIP/folder subject to their account limits; choose Cloudflare's project type deliberately because a Direct Upload project cannot later switch to Git integration. GitHub Pages requires extracting the ZIP into a configured publishing source or deploying the directory with Actions. RealityCheck never signs in, uploads, or deploys on the user's behalf.
+
+Try the [checked-in publish demo source](https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.10.0/examples/publish-demo-note) or [open its static live preview](https://kevinwithpanda.github.io/RealityHTMLCheck/labs/publish-demo-note/). The proof covers a declared Chromium/passive-static scope; it is not a claim of deployment success, malicious-code absence, factual accuracy, complete accessibility/SEO, every browser, backend behavior, or PWA offline support.
+
+Every emitted note/publish JSON has a strict contract. Independently re-read the ZIP, sidecar, public manifest, receipt, technical report, and both browser proofs with:
+
+```bash
+realityhtmlcheck validate .realitycheck/publish/<RUN>
+```
+
 ### No-clone note CLI
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.9.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
   realityhtmlcheck note ./my-notes
 ```
 
 Open `.realitycheck/notes/latest.html`. To generate only the three conservative metadata repairs without touching the originals:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.9.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
   realityhtmlcheck note ./my-notes --fix-safe
 ```
 
@@ -170,7 +197,7 @@ Use `--fail-on error` or `--fail-on warning` in an export pipeline. This command
 ### HTML note gate in GitHub Actions
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.9.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.10.0
   with:
     kind: note
     path: exported-notes
@@ -185,7 +212,7 @@ Note mode does not start a server, install browser dependencies, execute note sc
 For the second and later export, compare against an immutable earlier report:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.9.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
   realityhtmlcheck note ./my-notes \
   --baseline .realitycheck/notes/PRIOR-RUN/report.json \
   --fail-on error
@@ -252,7 +279,7 @@ npm run audit -- http://localhost:3000 \
 For a reusable GitHub Action:
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.9.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.10.0
   with:
     url: http://127.0.0.1:3000
     mode: quick
@@ -273,7 +300,7 @@ RealityCheck reports exactly what it tested, what failed, and what it could not 
 
 ## Project status
 
-RealityCheck is a **v0.9.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
+RealityCheck is a **v0.10.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
 
 - [Representative export evidence and explicit compatibility boundary](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)
 - [HTML note Action and browser Action](action.yml)

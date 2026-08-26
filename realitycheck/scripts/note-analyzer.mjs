@@ -31,7 +31,7 @@ function decodePath(value) {
 }
 
 function resolveReference(documentPath, reference) {
-  const clean = decodePath(withoutQueryOrHash(reference)).replaceAll("\\", "/");
+  const clean = decodePath(decodeEntities(withoutQueryOrHash(reference))).replaceAll("\\", "/");
   if (clean.startsWith("/")) return null;
   const directory = normalizePath(documentPath).split("/").slice(0, -1).join("/");
   const output = [];
@@ -449,6 +449,14 @@ export function analyzeHtmlNote({ path = "note.html", html, knownFiles = null })
   const localCandidates = references.filter((item) => {
     const value = item.value.trim();
     return value && !value.startsWith("#") && !SKIPPED_SCHEMES.test(value) && !isExternal(value) && !isAbsoluteLocalPath(value) && !hasScheme(value);
+  });
+  const backslashPaths = localCandidates.filter((item) => withoutQueryOrHash(item.value).includes("\\"));
+  add({
+    ruleId: "path-backslash-separator", level: "warning", category: "portability",
+    title: ["A local path uses Windows backslashes", "本地路径使用了 Windows 反斜杠"],
+    summary: ["Browsers and static hosts use URL forward slashes; a path that happens to work on Windows can fail after publishing.", "浏览器和静态托管使用 URL 正斜杠；在 Windows 上碰巧可用的路径可能在发布后失效。"],
+    remediation: ["Replace only the path separators with forward slashes after confirming the target is unique.", "确认目标文件唯一后，只把路径分隔符改为正斜杠。"],
+    occurrences: backslashPaths.map((item) => evidence(documentPath, item.line, `${item.value} → ${item.value.replaceAll("\\", "/")}`)),
   });
   if (known) {
     const missing = [];

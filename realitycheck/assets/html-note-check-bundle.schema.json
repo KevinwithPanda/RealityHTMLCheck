@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json",
+  "title": "RealityCheck HTML Note Check Bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "id", "generatedAt", "rulesetId", "input", "discovery", "selection", "summary", "reports", "packageFindings", "packageSummary", "sourceModified", "privacy"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "kind": { "const": "html-note-check-bundle" },
+    "id": { "type": "string", "minLength": 1, "maxLength": 300 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "rulesetId": { "$ref": "#/$defs/sha256Id" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "kind"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "kind": { "enum": ["file", "directory"] }
+      }
+    },
+    "discovery": { "$ref": "#/$defs/discovery" },
+    "selection": { "$ref": "#/$defs/selection" },
+    "summary": { "$ref": "#/$defs/summary" },
+    "reports": { "type": "array", "minItems": 1, "maxItems": 500, "items": { "$ref": "#/$defs/report" } },
+    "packageFindings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "packageSummary": { "$ref": "#/$defs/packageSummary" },
+    "sourceModified": { "const": false },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uploaded", "absolutePathsPersisted"],
+      "properties": {
+        "uploaded": { "const": false },
+        "absolutePathsPersisted": { "const": false }
+      }
+    },
+    "comparison": { "$ref": "https://realitycheck.local/schemas/html-note-check-comparison-v1.json" }
+  },
+  "$defs": {
+    "sha256Id": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "portablePath": { "type": "string", "minLength": 1, "maxLength": 1000, "pattern": "^(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))[^\\u0000-\\u001f\\u007f]+$" },
+    "htmlPath": { "allOf": [{ "$ref": "#/$defs/portablePath" }, { "type": "string", "pattern": "\\.[Hh][Tt][Mm][Ll]?$" }] },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["error", "warning", "advice", "autoFixable"],
+      "properties": {
+        "error": { "type": "integer", "minimum": 0 },
+        "warning": { "type": "integer", "minimum": 0 },
+        "advice": { "type": "integer", "minimum": 0 },
+        "autoFixable": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "localized": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "zhCN"],
+      "properties": {
+        "en": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "zhCN": { "type": "string", "minLength": 1, "maxLength": 4000 }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line", "excerpt"],
+      "properties": {
+        "path": { "$ref": "#/$defs/portablePath" },
+        "line": { "type": "integer", "minimum": 1 },
+        "excerpt": { "type": "string", "minLength": 1, "maxLength": 1000 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "ruleId", "level", "category", "title", "summary", "remediation", "affectedCount", "evidence", "evidenceTruncated", "safeFix"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^NOTE-[A-Z0-9][A-Z0-9-]*$", "maxLength": 200 },
+        "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,127}$" },
+        "level": { "enum": ["error", "warning", "advice"] },
+        "category": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" },
+        "title": { "$ref": "#/$defs/localized" },
+        "summary": { "$ref": "#/$defs/localized" },
+        "remediation": { "$ref": "#/$defs/localized" },
+        "affectedCount": { "type": "integer", "minimum": 1 },
+        "evidence": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/evidence" } },
+        "evidenceTruncated": { "type": "boolean" },
+        "safeFix": { "type": "boolean" }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes", "characters", "words", "headings", "links", "images", "localAssets", "remoteAssets"],
+      "properties": {
+        "bytes": { "type": "integer", "minimum": 0 },
+        "characters": { "type": "integer", "minimum": 0 },
+        "words": { "type": "integer", "minimum": 0 },
+        "headings": { "type": "integer", "minimum": 0 },
+        "links": { "type": "integer", "minimum": 0 },
+        "images": { "type": "integer", "minimum": 0 },
+        "localAssets": { "type": "integer", "minimum": 0 },
+        "remoteAssets": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "kind", "path", "score", "status", "counts", "metrics", "findings"],
+      "properties": {
+        "schemaVersion": { "const": "1" },
+        "kind": { "const": "html-note-check" },
+        "path": { "$ref": "#/$defs/htmlPath" },
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "status": { "enum": ["ready", "review", "needs-fix"] },
+        "counts": { "$ref": "#/$defs/counts" },
+        "metrics": { "$ref": "#/$defs/metrics" },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } }
+      }
+    },
+    "discovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["htmlFiles", "knownFiles", "knownFilePaths", "truncated"],
+      "properties": {
+        "htmlFiles": { "type": "integer", "minimum": 0, "maximum": 500 },
+        "knownFiles": { "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 10000 }, { "type": "null" }] },
+        "knownFilePaths": { "anyOf": [{ "type": "array", "maxItems": 10000, "uniqueItems": true, "items": { "$ref": "#/$defs/portablePath" } }, { "type": "null" }] },
+        "truncated": { "type": "boolean" }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["html"],
+      "properties": {
+        "html": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["excludePatterns", "excludedFiles", "excludedCount"],
+          "properties": {
+            "excludePatterns": { "type": "array", "maxItems": 100, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+            "excludedFiles": { "type": "array", "maxItems": 10000, "uniqueItems": true, "items": { "$ref": "#/$defs/htmlPath" } },
+            "excludedCount": { "type": "integer", "minimum": 0, "maximum": 10000 }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files", "score", "scoreBasis", "lowestFileScore", "packageDeduction", "status", "counts"],
+      "properties": {
+        "files": { "type": "integer", "minimum": 1, "maximum": 500 },
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "scoreBasis": { "const": "lowest-file" },
+        "lowestFileScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "packageDeduction": { "type": "integer", "minimum": 0 },
+        "status": { "enum": ["ready", "review", "needs-fix"] },
+        "counts": { "$ref": "#/$defs/counts" }
+      }
+    },
+    "packageSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findings", "affected", "scoreDeduction", "status", "counts"],
+      "properties": {
+        "findings": { "type": "integer", "minimum": 0 },
+        "affected": { "type": "integer", "minimum": 0 },
+        "scoreDeduction": { "type": "integer", "minimum": 0 },
+        "status": { "enum": ["ready", "review", "needs-fix"] },
+        "counts": { "$ref": "#/$defs/counts" }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reports", "packageFindings", "packageSummary", "summary"],
+      "properties": {
+        "reports": { "type": "array", "minItems": 1, "maxItems": 500, "items": { "$ref": "#/$defs/report" } },
+        "packageFindings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+        "packageSummary": { "$ref": "#/$defs/packageSummary" },
+        "summary": { "$ref": "#/$defs/summary" }
+      }
+    }
+  }
+}

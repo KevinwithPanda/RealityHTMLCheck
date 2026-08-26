@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/html-note-check-comparison-v1.json",
+  "title": "RealityCheck HTML Note Check Comparison",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "before", "after", "scopeExclusions", "counts", "new", "resolved", "worsened", "persistent", "unverified", "warnings", "regressionsByLevel", "gate"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "kind": { "const": "html-note-check-comparison" },
+    "before": { "$ref": "#/$defs/bundleReference" },
+    "after": { "$ref": "#/$defs/bundleReference" },
+    "scopeExclusions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["html"],
+      "properties": {
+        "html": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["patterns", "files", "count", "baselineScopesExcluded", "baselineFindingsExcluded", "newlyExcludedScopes"],
+          "properties": {
+            "patterns": { "type": "array", "maxItems": 100, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 500 } },
+            "files": { "type": "array", "maxItems": 10000, "uniqueItems": true, "items": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/htmlPath" } },
+            "count": { "type": "integer", "minimum": 0 },
+            "baselineScopesExcluded": { "type": "integer", "minimum": 0 },
+            "baselineFindingsExcluded": { "type": "integer", "minimum": 0 },
+            "newlyExcludedScopes": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "counts": { "$ref": "#/$defs/comparisonCounts" },
+    "new": { "$ref": "#/$defs/items" },
+    "resolved": { "$ref": "#/$defs/items" },
+    "worsened": { "$ref": "#/$defs/items" },
+    "persistent": { "$ref": "#/$defs/items" },
+    "unverified": { "$ref": "#/$defs/items" },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,127}$" },
+          "message": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/localized" }
+        }
+      }
+    },
+    "regressionsByLevel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["error", "warning", "advice", "total"],
+      "properties": {
+        "error": { "type": "integer", "minimum": 0 },
+        "warning": { "type": "integer", "minimum": 0 },
+        "advice": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "failOn", "failed", "states"],
+      "properties": {
+        "mode": { "const": "baseline-regressions-only" },
+        "failOn": { "enum": ["error", "warning", "never"] },
+        "failed": { "type": "boolean" },
+        "states": { "const": ["new", "worsened", "unverified"] }
+      }
+    }
+  },
+  "$defs": {
+    "importedArchive": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["archiveSha256", "importContentId"],
+          "properties": {
+            "archiveSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "importContentId": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/sha256Id" }
+          }
+        }
+      ]
+    },
+    "bundleReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "generatedAt", "rulesetId", "importedArchive", "discovery", "selection", "htmlPaths"],
+      "properties": {
+        "id": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 300 }, { "type": "null" }] },
+        "kind": { "enum": ["html-note-check-bundle", "html-note-browser-check"] },
+        "generatedAt": { "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] },
+        "rulesetId": { "anyOf": [{ "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/sha256Id" }, { "type": "null" }] },
+        "importedArchive": { "$ref": "#/$defs/importedArchive" },
+        "discovery": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/discovery" },
+        "selection": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/selection" },
+        "htmlPaths": { "type": "array", "minItems": 1, "maxItems": 500, "uniqueItems": true, "items": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/htmlPath" } }
+      }
+    },
+    "scope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "package" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "path"],
+          "properties": {
+            "kind": { "const": "html" },
+            "path": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/htmlPath" }
+          }
+        }
+      ]
+    },
+    "details": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "syntheticCoverage": { "type": "boolean" },
+        "missingHtmlPaths": { "type": "array", "uniqueItems": true, "items": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/htmlPath" } },
+        "newlyExcludedHtmlPaths": { "type": "array", "uniqueItems": true, "items": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/htmlPath" } },
+        "beforeKnownFiles": { "type": "integer", "minimum": 0 },
+        "afterKnownFiles": { "type": "integer", "minimum": 0 },
+        "missingKnownFileCount": { "type": "integer", "minimum": 0 },
+        "missingKnownFilePaths": { "type": "array", "maxItems": 100, "uniqueItems": true, "items": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/portablePath" } },
+        "beforeRulesetId": { "anyOf": [{ "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/sha256Id" }, { "type": "null" }] },
+        "afterRulesetId": { "anyOf": [{ "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/sha256Id" }, { "type": "null" }] },
+        "beforeImportedArchive": { "type": "boolean" },
+        "afterImportedArchive": { "type": "boolean" },
+        "previousState": { "enum": ["new", "resolved", "worsened", "persistent", "unverified"] },
+        "previousReason": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fingerprint", "state", "scope", "ruleId", "beforeAffectedCount", "afterAffectedCount", "affectedCountDelta", "reason", "details", "before", "after"],
+      "properties": {
+        "fingerprint": { "type": "string", "minLength": 1, "maxLength": 1200 },
+        "state": { "enum": ["new", "resolved", "worsened", "persistent", "unverified"] },
+        "scope": { "$ref": "#/$defs/scope" },
+        "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,127}$" },
+        "beforeAffectedCount": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "afterAffectedCount": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "affectedCountDelta": { "anyOf": [{ "type": "integer" }, { "type": "null" }] },
+        "reason": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,127}$" },
+        "details": { "$ref": "#/$defs/details" },
+        "before": { "anyOf": [{ "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/finding" }, { "type": "null" }] },
+        "after": { "anyOf": [{ "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/finding" }, { "type": "null" }] }
+      }
+    },
+    "items": { "type": "array", "items": { "$ref": "#/$defs/item" } },
+    "comparisonCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["new", "resolved", "worsened", "persistent", "unverified", "regressions", "active", "compared"],
+      "properties": {
+        "new": { "type": "integer", "minimum": 0 },
+        "resolved": { "type": "integer", "minimum": 0 },
+        "worsened": { "type": "integer", "minimum": 0 },
+        "persistent": { "type": "integer", "minimum": 0 },
+        "unverified": { "type": "integer", "minimum": 0 },
+        "regressions": { "type": "integer", "minimum": 0 },
+        "active": { "type": "integer", "minimum": 0 },
+        "compared": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

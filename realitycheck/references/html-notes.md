@@ -71,6 +71,39 @@ Do not automatically invent titles, heading levels, alternative text, missing re
 
 The online checker may accept one original export ZIP or a complete browser folder and create a **verified safe-metadata folder ZIP**. ZIP intake is local and bounded: ZIP32 STORE/DEFLATE only, with central/local record, data-descriptor, path, size, CRC32, SHA-256, encryption, Unix file-type, sensitive-path, and collision checks before content is trusted. It records the exact source archive SHA-256, a stable sorted extracted-content ID, the HTML/CSS candidate ID, and the final archive manifest separately. The output applies the same three fixes to all eligible HTML files together, reruns one cumulative package check, preserves the original folder root inside a new wrapper, copies every imported file, and verifies its ZIP inventory before download. It does not preserve empty directories, symlinks, or hidden files the browser did not supply; it does not add missing or remote resources; and it does not repair structure, accessibility, scripts, or content. The browser evidence may be imported on a later run for an explicit new/resolved/worsened/persistent/unverified comparison. Never substitute it for `--prepare-repair` when the user requests broader agentic repair.
 
+## Build a verified passive-static publish capsule
+
+When the user explicitly asks for a deployable package or wants the repaired note made ready for a static host, run:
+
+```bash
+node <skill-dir>/scripts/audit.mjs note publish <html-file|directory|zip> \
+  [--entry <exact-relative-html>] \
+  [--output <evidence-root>] \
+  [--browser <chrome-or-edge-path>]
+```
+
+An installed Skill copy intentionally contains no vendored `node_modules`. If local `playwright-core` resolution is unavailable, invoke the version-pinned GitHub package instead:
+
+```bash
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
+  realityhtmlcheck publish <html-file|directory|zip>
+```
+
+This is still a direct Skill workflow; the user does not copy a prompt into a second Codex task. Do not call `--static-only` a substitute for the requested real-browser proof.
+
+Use the repaired working folder from the agentic workflow when repairs were requested; otherwise the command freezes a new output candidate without changing the source. The authoritative publish flow must:
+
+1. inventory the complete disk or ZIP scope and reject symlinks, special files, likely secrets/development trees, unsafe/colliding paths, damaged ZIP records, or configured byte/file ceilings;
+2. require exact lowercase root `index.html`, use the sole HTML page, or require an explicit `--entry`; a non-root entry receives a generated no-JavaScript gateway, while an existing root entry is never overwritten;
+3. apply only safe metadata changes plus source-offset-verified, non-overlapping case/backslash reference repairs whose target is unique; preserve query strings and fragments, and never guess a missing, ambiguous, escaped, percent-encoded, remote, or dynamic path;
+4. rerun the complete note/package analysis and block error findings, remote runtime dependencies, missing mobile viewport, unreadable package content, active HTML/SVG/code, server runtimes, and the reserved public proof path;
+5. bind the sorted path/size/SHA-256 deploy bytes, build a deterministic STORE ZIP, read it back, and navigate only those exact bytes through a loopback server;
+6. require desktop, 375px mobile, root mount, `/project/` mount, true `offline: true` exact-byte replay, every bounded HTML page, local fragment, response hash, console/page error, failed/HTTP request, overflow, external/unknown request, popup/dialog/download/worker/WebSocket, and truncation gates to pass with JavaScript disabled;
+7. add only a source-free bilingual public proof under `realitycheck-proof/`, rebuild/read back the final ZIP, rerun the browser proof against its exact container, and bind the container SHA-256 with the adjacent sidecar/receipt.
+8. run `node <skill-dir>/scripts/audit.mjs validate <publish-run-directory>` and require every discovered note/publish JSON plus the receipt's sibling ZIP/sidecar/proof bindings to pass before reporting completion.
+
+Only `ready` or `warnings` with every required browser gate complete may use `*.realitycheck-publish.zip`. `browser-proof-required` and `working-copy` must use `*.realitycheck-working-copy.zip` and exit nonzero. Report the archive, `.sha256`, receipt, public report, local `technical-report.json`, repair plan, platform-specific decisions, applied changes, and blockers. A successful local result means no blocker was found for the declared passive Chromium scenarios; it does not mean the file was uploaded, that a host account/quota/domain/CDN is valid, or that malware, secrets, facts, copyright, comprehensive accessibility/SEO, every browser, dynamic behavior, backend features, or PWA offline behavior were certified. Netlify Drop and Cloudflare Direct Upload can consume a successful ZIP/folder within their current limits; GitHub Pages requires extraction into a publishing source or directory deployment through Actions.
+
 ## Complete an agentic repair
 
 When the user invokes the Skill with an explicit request to check and repair a bounded note or folder, perform the handoff inside the same Codex task. The user does not need to copy the report prompt back into Codex.

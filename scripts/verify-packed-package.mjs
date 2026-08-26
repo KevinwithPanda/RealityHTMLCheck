@@ -22,14 +22,14 @@ if (!npmExecPath || !existsSync(npmExecPath)) {
   throw new Error("Run this smoke test through `npm run package:smoke` so the exact npm CLI can be isolated and reused.");
 }
 
-function npm(args, { cwd, env }) {
+function npm(args, { cwd, env, expectedStatus = 0 }) {
   const result = spawnSync(process.execPath, [npmExecPath, ...args], {
     cwd,
     env,
     encoding: "utf8",
     windowsHide: true,
   });
-  assert.equal(result.status, 0, [
+  assert.equal(result.status, expectedStatus, [
     `npm ${args.join(" ")} failed with exit code ${result.status}`,
     result.stdout,
     result.stderr,
@@ -101,6 +101,31 @@ try {
   assert.equal(existsSync(join(fixture, "package.json")), false, "zero-install execution must not initialize or mutate the checked folder");
   assert.equal(existsSync(join(zeroInstallDirectory, "node_modules")), false, "npx-style execution must not leave a local install behind");
 
+  const publishOutput = join(zeroInstallDirectory, "publish-evidence");
+  npm([
+    "exec",
+    "--yes",
+    `--package=${archive}`,
+    "--",
+    "realityhtmlcheck",
+    "publish",
+    fixture,
+    "--output",
+    publishOutput,
+    "--static-only",
+    "--language",
+    "en",
+  ], { cwd: zeroInstallDirectory, env: isolatedEnv, expectedStatus: 1 });
+  const publishRuns = readdirSync(publishOutput);
+  assert.equal(publishRuns.length, 1);
+  const publishFiles = readdirSync(join(publishOutput, publishRuns[0]));
+  assert.equal(publishFiles.some((name) => name.endsWith(".realitycheck-working-copy.zip")), true);
+  const receiptName = publishFiles.find((name) => name.endsWith(".receipt.json"));
+  assert.ok(receiptName, "packed publish output is missing its receipt");
+  const receipt = JSON.parse(readFileSync(join(publishOutput, publishRuns[0], receiptName), "utf8"));
+  assert.equal(receipt.status, "browser-proof-required");
+  assert.equal(receipt.publishReady, false);
+
   npm(["init", "--yes"], { cwd: consumerDirectory, env: isolatedEnv });
   npm(["install", "--ignore-scripts", archive], { cwd: consumerDirectory, env: isolatedEnv });
   const installedRoot = join(consumerDirectory, "node_modules", "realityhtmlcheck");
@@ -146,7 +171,7 @@ try {
   assert.equal(existsSync(join(consumerDirectory, config.$schema)), true, "generated schema reference must resolve in the consumer project");
 
   console.log(`Packed zero-install smoke passed: ${archives[0]}`);
-  console.log("Verified: npx-style note check, 100/100 evidence, no local install residue, both CLI aliases, and a resolvable generated schema.");
+  console.log("Verified: npx-style note check, explicit static-only publish working copy, no local install residue, both CLI aliases, and a resolvable generated schema.");
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

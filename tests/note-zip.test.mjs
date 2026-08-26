@@ -1,10 +1,25 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { DEFAULT_ZIP_LIMITS, verifyStoredZip, writeStoredZip, writeStoredZipWithManifest } from "../site/note-zip.mjs";
+import { DEFAULT_ZIP_LIMITS, readStoredZipEntries, verifyStoredZip, writeStoredZip, writeStoredZipWithManifest } from "../realitycheck/scripts/note-zip.mjs";
+import * as publishedZip from "../realitycheck/scripts/note-zip.mjs";
+import * as siteZip from "../site/note-zip.mjs";
 
 const decoder = new TextDecoder("utf-8", { fatal: true });
 const encoder = new TextEncoder();
+
+test("the browser compatibility adapter exposes the npm-published ZIP API", () => {
+  for (const name of [
+    "DEFAULT_ZIP_LIMITS",
+    "digestZipSource",
+    "preflightStoredZip",
+    "readStoredZipEntries",
+    "validatePortableZipEntryPath",
+    "verifyStoredZip",
+    "writeStoredZip",
+    "writeStoredZipWithManifest",
+  ]) assert.equal(siteZip[name], publishedZip[name], name);
+});
 
 function independentCrc32(bytes) {
   let crc = 0xffffffff;
@@ -124,6 +139,10 @@ test("stored ZIP manifest binds every ordered path to its size, CRC32, and SHA-2
     sha256: await independentSha256(entry.data),
   }))));
   assert.deepEqual(await verifyStoredZip(result.archive, result.manifest), result.manifest);
+  const readBack = await readStoredZipEntries(result.archive, result.manifest);
+  assert.deepEqual(readBack.manifest, result.manifest);
+  assert.equal(decoder.decode(readBack.entries.get("one.txt")), "one");
+  assert.deepEqual(readBack.entries.get("资料/two.bin"), new Uint8Array([2, 0, 2, 6]));
   const corrupted = new Uint8Array(result.archive);
   corrupted[30 + encoder.encode("one.txt").byteLength] ^= 0xff;
   await assert.rejects(verifyStoredZip(corrupted, result.manifest), /CRC verification/);

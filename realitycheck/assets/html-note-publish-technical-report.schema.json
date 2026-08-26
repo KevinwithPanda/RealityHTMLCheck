@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/html-note-publish-technical-report-v1.json",
+  "title": "RealityCheck HTML Note Publish Technical Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "generatedAt", "status", "source", "deploy", "changes", "blockers", "analysis", "platforms", "browser", "boundaries"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "kind": { "const": "html-note-publish-technical-report" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "status": { "$ref": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json#/$defs/publishStatus" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "files", "bytes", "contentId", "rootStripped"],
+      "properties": {
+        "kind": { "enum": ["html-file", "directory", "zip"] },
+        "files": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "bytes": { "type": "integer", "minimum": 1, "maximum": 67108864 },
+        "contentId": { "$ref": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json#/$defs/sha256Id" },
+        "rootStripped": { "type": "boolean" }
+      }
+    },
+    "deploy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contentId", "entry", "gatewayGenerated", "files"],
+      "properties": {
+        "contentId": { "$ref": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json#/$defs/sha256Id" },
+        "entry": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/htmlPath" },
+        "gatewayGenerated": { "type": "boolean" },
+        "files": { "type": "integer", "minimum": 1, "maximum": 1000 }
+      }
+    },
+    "changes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metadata", "references", "pathRepairSkippedForActiveContent"],
+      "properties": {
+        "metadata": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "ruleId"],
+            "properties": {
+              "path": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/htmlPath" },
+              "ruleId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,127}$" }
+            }
+          }
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "line", "attribute", "resolution", "before", "after", "targetPath"],
+            "properties": {
+              "path": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/portablePath" },
+              "line": { "type": "integer", "minimum": 1 },
+              "attribute": { "type": "string", "minLength": 1, "maxLength": 40 },
+              "resolution": { "enum": ["case-only", "backslash-only", "case-and-backslash"] },
+              "before": { "type": "string", "minLength": 1, "maxLength": 2000 },
+              "after": { "type": "string", "minLength": 1, "maxLength": 2000 },
+              "targetPath": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/portablePath" }
+            }
+          }
+        },
+        "pathRepairSkippedForActiveContent": { "type": "boolean" }
+      }
+    },
+    "blockers": { "type": "array", "items": { "$ref": "#/$defs/blocker" } },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/analysis" },
+        "after": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/analysis" }
+      }
+    },
+    "platforms": { "$ref": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json#/$defs/platformDecisions" },
+    "browser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["error", "provisional", "finalArchive"],
+      "properties": {
+        "error": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "provisional": { "anyOf": [{ "$ref": "https://realitycheck.local/schemas/html-note-publish-browser-proof-v1.json" }, { "type": "null" }] },
+        "finalArchive": { "anyOf": [{ "$ref": "https://realitycheck.local/schemas/html-note-publish-browser-proof-v1.json" }, { "type": "null" }] }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uploaded", "deployed", "sourceModified", "sourceExcerptsMayBePresent"],
+      "properties": {
+        "uploaded": { "const": false },
+        "deployed": { "const": false },
+        "sourceModified": { "const": false },
+        "sourceExcerptsMayBePresent": { "const": true }
+      }
+    }
+  },
+  "$defs": {
+    "blocker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,127}$" },
+        "path": { "anyOf": [{ "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/portablePath" }, { "type": "null" }] },
+        "actual": { "type": "integer", "minimum": 0 },
+        "limit": { "type": "integer", "minimum": 0 },
+        "affected": { "type": "integer", "minimum": 1 },
+        "level": { "enum": ["error", "warning", "advice"] },
+        "before": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/counts" },
+        "after": { "$ref": "https://realitycheck.local/schemas/html-note-check-bundle-v1.json#/$defs/counts" }
+      }
+    }
+  }
+}

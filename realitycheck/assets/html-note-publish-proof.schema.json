@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json",
+  "title": "RealityCheck HTML Note Public Publish Proof",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "toolVersion", "kind", "profile", "generatedAt", "status", "deployContentId", "browserProofId", "findingsSummary", "platformPolicy", "platformDecisions", "artifacts", "boundaries", "manifestId"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?$" },
+    "kind": { "const": "html-note-publish-proof" },
+    "profile": { "const": "passive-static-v1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "status": { "$ref": "#/$defs/publishStatus" },
+    "deployContentId": { "$ref": "#/$defs/sha256Id" },
+    "browserProofId": { "anyOf": [{ "$ref": "#/$defs/sha256Id" }, { "type": "null" }] },
+    "findingsSummary": { "$ref": "#/$defs/findingsSummary" },
+    "platformPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkedAt", "sources"],
+      "properties": {
+        "checkedAt": { "type": "string", "format": "date" },
+        "sources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["netlifyDrop", "cloudflarePagesDirectUpload", "githubPages"],
+          "properties": {
+            "netlifyDrop": { "type": "string", "format": "uri", "pattern": "^https://docs\\.netlify\\.com/" },
+            "cloudflarePagesDirectUpload": { "type": "string", "format": "uri", "pattern": "^https://developers\\.cloudflare\\.com/" },
+            "githubPages": { "type": "string", "format": "uri", "pattern": "^https://docs\\.github\\.com/" }
+          }
+        }
+      }
+    },
+    "platformDecisions": { "$ref": "#/$defs/platformDecisions" },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry", "report", "manifest", "browserProof"],
+      "properties": {
+        "entry": { "const": "../index.html" },
+        "report": { "const": "report.html" },
+        "manifest": { "const": "manifest.json" },
+        "browserProof": { "anyOf": [{ "const": "browser-proof.json" }, { "type": "null" }] }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceUploaded", "sourceTextIncluded", "absoluteLocalPathsIncluded", "automaticDeployment", "remoteHostVerified", "javascriptExecuted", "externalRequestsAllowed", "browserProofPresent"],
+      "properties": {
+        "sourceUploaded": { "const": false },
+        "sourceTextIncluded": { "const": false },
+        "absoluteLocalPathsIncluded": { "const": false },
+        "automaticDeployment": { "const": false },
+        "remoteHostVerified": { "const": false },
+        "javascriptExecuted": { "const": false },
+        "externalRequestsAllowed": { "const": false },
+        "browserProofPresent": { "type": "boolean" }
+      }
+    },
+    "manifestId": { "$ref": "#/$defs/sha256Id" }
+  },
+  "$defs": {
+    "sha256Id": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "publishStatus": { "enum": ["ready", "warnings", "browser-proof-required", "working-copy"] },
+    "findingsSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["errors", "warnings", "advice", "unverified"],
+      "properties": {
+        "errors": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+        "warnings": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+        "advice": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+        "unverified": { "type": "integer", "minimum": 0, "maximum": 1000000 }
+      }
+    },
+    "platformReason": {
+      "enum": [
+        "required-gate-failed",
+        "netlify-total-recommendation",
+        "netlify-file-recommendation",
+        "cloudflare-file-count",
+        "cloudflare-file-size",
+        "cloudflare-direct-upload-cannot-switch-to-git",
+        "github-pages-zip-requires-extraction-or-action"
+      ]
+    },
+    "platformDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reasons"],
+      "properties": {
+        "status": { "enum": ["pass", "review", "block"] },
+        "reasons": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/platformReason" } }
+      }
+    },
+    "platformDecisions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["netlifyDrop", "cloudflarePagesDirectUpload", "githubPages"],
+      "properties": {
+        "netlifyDrop": { "$ref": "#/$defs/platformDecision" },
+        "cloudflarePagesDirectUpload": { "$ref": "#/$defs/platformDecision" },
+        "githubPages": { "$ref": "#/$defs/platformDecision" }
+      }
+    }
+  }
+}

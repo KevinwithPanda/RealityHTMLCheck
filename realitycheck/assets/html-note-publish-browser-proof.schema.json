@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/html-note-publish-browser-proof-v1.json",
+  "title": "RealityCheck HTML Note Publish Browser Proof",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "profile", "deploy", "browser", "safety", "archive", "limits", "scenarios", "screenshots", "evidenceTruncated", "passed"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "kind": { "const": "html-note-publish-browser-proof" },
+    "profile": { "const": "passive-static-v1" },
+    "deploy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contentId", "entrypoint", "files", "bytes", "contract"],
+      "properties": {
+        "contentId": { "$ref": "#/$defs/sha256Id" },
+        "entrypoint": { "$ref": "#/$defs/portableHtmlPath" },
+        "files": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "bytes": { "type": "integer", "minimum": 1, "maximum": 52428800 },
+        "contract": { "const": "realitycheck-publish-deploy-content-v1" }
+      }
+    },
+    "browser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "Chromium" },
+        "version": { "type": "string", "pattern": "^\\d+(?:\\.\\d+){1,3}$" }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["javaScriptEnabled", "serviceWorkers", "downloadsAccepted", "externalRequestsAllowed", "businessActionsActivated", "offlineMeaning"],
+      "properties": {
+        "javaScriptEnabled": { "const": false },
+        "serviceWorkers": { "const": "block" },
+        "downloadsAccepted": { "const": false },
+        "externalRequestsAllowed": { "const": false },
+        "businessActionsActivated": { "const": false },
+        "offlineMeaning": { "const": "browser-offline-exact-package-replay" }
+      }
+    },
+    "archive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes", "sha256", "manifestFiles"],
+      "properties": {
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "$ref": "#/$defs/sha256Hex" },
+        "manifestFiles": { "type": "integer", "minimum": 1, "maximum": 1000 }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxHtmlFiles", "maxFragments", "maxLinksPerHtml", "maxTotalLinks", "maxEventRecords", "maxRequestRecords", "maxResponseBodies", "maxRecordedTextCharacters", "maxRecordedPathCharacters"],
+      "properties": {
+        "maxHtmlFiles": { "type": "integer", "minimum": 1, "maximum": 200 },
+        "maxFragments": { "type": "integer", "minimum": 1, "maximum": 500 },
+        "maxLinksPerHtml": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "maxTotalLinks": { "type": "integer", "minimum": 1, "maximum": 5000 },
+        "maxEventRecords": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "maxRequestRecords": { "type": "integer", "minimum": 1, "maximum": 2000 },
+        "maxResponseBodies": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "maxRecordedTextCharacters": { "type": "integer", "minimum": 1, "maximum": 300 },
+        "maxRecordedPathCharacters": { "type": "integer", "minimum": 1, "maximum": 500 }
+      }
+    },
+    "scenarios": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "oneOf": [{ "$ref": "#/$defs/pageScenario" }, { "$ref": "#/$defs/fragmentScenario" }] } },
+    "screenshots": { "type": "array", "maxItems": 2, "items": { "$ref": "#/$defs/screenshot" } },
+    "evidenceTruncated": { "type": "boolean" },
+    "passed": { "type": "boolean" }
+  },
+  "$defs": {
+    "sha256Id": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "sha256Hex": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "portablePath": { "type": "string", "minLength": 1, "maxLength": 500, "pattern": "^(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))[^\\u0000-\\u001f\\u007f]+$" },
+    "portableHtmlPath": { "allOf": [{ "$ref": "#/$defs/portablePath" }, { "type": "string", "pattern": "\\.[Hh][Tt][Mm][Ll]?$" }] },
+    "networkTarget": {
+      "type": "object",
+      "required": ["scope", "origin", "path"],
+      "properties": {
+        "scope": { "enum": ["same-origin", "external", "invalid"] },
+        "origin": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "path": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "unexpectedRequest": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/networkTarget" },
+        { "type": "object", "required": ["method"], "properties": { "method": { "type": "string", "minLength": 1, "maxLength": 20 } } }
+      ],
+      "unevaluatedProperties": false
+    },
+    "requestFailure": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/networkTarget" },
+        { "type": "object", "required": ["error"], "properties": { "error": { "type": "string", "minLength": 1, "maxLength": 300 } } }
+      ],
+      "unevaluatedProperties": false
+    },
+    "httpError": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/networkTarget" },
+        { "type": "object", "required": ["status"], "properties": { "status": { "type": "integer", "minimum": 400, "maximum": 599 } } }
+      ],
+      "unevaluatedProperties": false
+    },
+    "responseVerificationError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": { "$ref": "#/$defs/portablePath" },
+        "expectedBytes": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "actualBytes": { "type": "integer", "minimum": 0 },
+        "error": { "type": "string", "minLength": 1, "maxLength": 300 }
+      },
+      "oneOf": [
+        { "required": ["expectedBytes", "actualBytes"], "properties": { "expectedBytes": true, "actualBytes": true } },
+        { "required": ["error"], "properties": { "error": true } }
+      ]
+    },
+    "responseProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "bytes", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/portablePath" },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/sha256Hex" }
+      }
+    },
+    "serverRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "mount", "path", "status", "bytes", "hadQuery"],
+      "properties": {
+        "method": { "enum": ["GET", "HEAD"] },
+        "mount": { "enum": ["/", "/project/"] },
+        "path": { "$ref": "#/$defs/portablePath" },
+        "status": { "type": "integer", "minimum": 200, "maximum": 399 },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "hadQuery": { "type": "boolean" }
+      }
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["titleLength", "textLength", "scrollWidth", "clientWidth", "scrollHeight", "elementCount", "finalPath", "finalHash"],
+      "properties": {
+        "titleLength": { "type": "integer", "minimum": 0 },
+        "textLength": { "type": "integer", "minimum": 0 },
+        "scrollWidth": { "type": "integer", "minimum": 0 },
+        "clientWidth": { "type": "integer", "minimum": 0 },
+        "scrollHeight": { "type": "integer", "minimum": 0 },
+        "elementCount": { "type": "integer", "minimum": 0, "maximum": 2001 },
+        "finalPath": { "type": "string", "pattern": "^/", "maxLength": 500 },
+        "finalHash": { "type": "string", "maxLength": 500 }
+      }
+    },
+    "observerFields": {
+      "type": "object",
+      "required": ["serverRequestCount", "serverRequests", "coverageTruncated", "consoleTotal", "consoleByType", "consoleErrors", "pageErrors", "requestFailures", "httpErrors", "unexpectedRequests", "responseVerificationErrors", "responseProof", "popups", "dialogs", "downloads", "workers", "websockets", "truncatedKinds"],
+      "properties": {
+        "serverRequestCount": { "type": "integer", "minimum": 0 },
+        "serverRequests": { "type": "array", "maxItems": 2000, "items": { "$ref": "#/$defs/serverRequest" } },
+        "coverageTruncated": { "type": "boolean" },
+        "consoleTotal": { "type": "integer", "minimum": 0 },
+        "consoleByType": { "type": "object", "propertyNames": { "pattern": "^[a-z]+$" }, "additionalProperties": { "type": "integer", "minimum": 1 } },
+        "consoleErrors": { "type": "array", "maxItems": 100, "items": { "type": "string", "maxLength": 300 } },
+        "pageErrors": { "type": "array", "maxItems": 100, "items": { "type": "string", "maxLength": 300 } },
+        "requestFailures": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/requestFailure" } },
+        "httpErrors": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/httpError" } },
+        "unexpectedRequests": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/unexpectedRequest" } },
+        "responseVerificationErrors": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/responseVerificationError" } },
+        "responseProof": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/$defs/responseProof" } },
+        "popups": { "type": "integer", "minimum": 0 },
+        "dialogs": { "type": "integer", "minimum": 0 },
+        "downloads": { "type": "integer", "minimum": 0 },
+        "workers": { "type": "integer", "minimum": 0 },
+        "websockets": { "type": "integer", "minimum": 0 },
+        "truncatedKinds": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 100 } }
+      }
+    },
+    "pageScenario": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/observerFields" },
+        {
+          "type": "object",
+          "required": ["id", "status", "viewport", "source", "mount", "navigationError", "measurement", "overflow"],
+          "properties": {
+            "id": { "enum": ["desktop-root", "mobile-375-root", "desktop-project-mount", "mobile-375-project-mount", "offline-exact-replay"] },
+            "status": { "enum": ["passed", "failed"] },
+            "viewport": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["width", "height"],
+              "properties": {
+                "width": { "type": "integer", "minimum": 240, "maximum": 2560 },
+                "height": { "type": "integer", "minimum": 320, "maximum": 2560 }
+              }
+            },
+            "source": { "enum": ["loopback-exact-bytes", "offline-exact-replay"] },
+            "mount": { "enum": ["/", "/project/", "/offline/"] },
+            "navigationError": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 300 }, { "type": "null" }] },
+            "measurement": { "anyOf": [{ "$ref": "#/$defs/measurement" }, { "type": "null" }] },
+            "overflow": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "fragmentScenario": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/observerFields" },
+        {
+          "type": "object",
+          "required": ["id", "status", "source", "mount", "htmlFiles", "fragments", "failures"],
+          "properties": {
+            "id": { "const": "local-pages-and-fragments" },
+            "status": { "enum": ["passed", "failed"] },
+            "source": { "const": "loopback-exact-bytes" },
+            "mount": { "const": "/project/" },
+            "htmlFiles": { "type": "integer", "minimum": 0 },
+            "totalLinks": { "type": "integer", "minimum": 0 },
+            "fragments": { "type": "integer", "minimum": 0 },
+            "failures": { "type": "array", "maxItems": 100, "items": { "type": "string", "minLength": 1, "maxLength": 1000 } }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "screenshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "path", "bytes", "sha256"],
+      "properties": {
+        "role": { "enum": ["desktop", "mobile"] },
+        "path": { "enum": ["desktop.png", "mobile.png"] },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "$ref": "#/$defs/sha256Hex" }
+      }
+    }
+  }
+}

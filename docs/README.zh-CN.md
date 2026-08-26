@@ -4,7 +4,7 @@
 
 RealityCheck 现在首先是一款面向普通用户的本地 HTML 笔记体检工具，同时保留面向 Codex、开发者和产品团队的真实浏览器 Web 核查能力。笔记检查无需账号、无需服务器，不会上传文件；专业 Web 核查则继续提供压力场景、证据、修复任务和修复前后证明。
 
-当前版本：`v0.9.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
+当前版本：`v0.10.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
 
 ## 一分钟内获得价值：检查 HTML 笔记
 
@@ -27,10 +27,33 @@ ZIP 导入采用失败关闭：只接受有上限的 ZIP32 STORE/DEFLATE，核�
 
 该 ZIP 是“已验证的安全元数据工作副本”，不是“全部修好”或“可直接发布”证明。它不会虚构缺失文件、下载远程资源或修复结构/内容/脚本；空目录、符号链接和浏览器没有提供的隐藏文件也无法保留。若发现路径冲突、`.env`/密钥/`.git`/`node_modules`/`.realitycheck` 等潜在敏感内容、超过 4,998 个所选文件、单文件超过 32 MiB、所选字节超过 52 MiB、单路径超过 1 KiB 或路径总文本超过 512 KiB，打包会失败关闭而不会静默漏文件；普通静态分析还限制浏览器所选文件不超过 5,000 个、HTML 总解码字节不超过 32 MiB、可读 CSS 不超过 16 MiB。需要更广泛且依赖判断的修改时，仍应使用 Skill 工作流。
 
+## 一条命令生成“可验证发布包”
+
+在线检查器适合零安装预检；真正的发布结论需要本地 CLI/Skill 读取完整磁盘范围，并启动真实浏览器验证。把一个 HTML、文件夹或普通 STORE/DEFLATE 导出 ZIP 交给下面的命令：
+
+```bash
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
+  realityhtmlcheck publish ./我的笔记
+```
+
+它会完成一个端到端闭环：
+
+- 冻结完整输入；敏感文件、符号链接、路径冲突、不安全 ZIP 和不明确首页直接阻断；
+- 自动应用三项安全元数据修复，以及目标唯一时的 HTML/CSS 大小写与反斜杠路径修复，并重新运行完整检查；
+- 在打开浏览器前阻断脚本、事件处理器、表单、iframe、服务端文件、缺失附件和运行时远程依赖；
+- 从最终 ZIP 回读精确字节，用禁用 JavaScript 的 Chromium 验证桌面、375px 手机、根路径、`/project/` 项目子路径、全部 HTML/片段，以及浏览器真正离线时的同字节重放；
+- 输出根目录可部署 ZIP、中英双语公开证明、本地技术报告、修改建议、receipt 与 ZIP SHA-256 sidecar。
+
+只有全部必需门禁完成的文件才叫 `*.realitycheck-publish.zip`。静态预检、浏览器不可用或门禁失败只能得到 `*.realitycheck-working-copy.zip`，并保留准确阻断原因。成功 ZIP 可用于 Netlify Drop 或 Cloudflare Pages Direct Upload（仍受账号/额度限制）；选择 Cloudflare 项目类型时要谨慎，因为 Direct Upload 项目之后不能切换为 Git 集成。GitHub Pages 不能直接发布 ZIP，需要解压到已配置发布源，或用 Actions 部署目录。RealityCheck 不登录账号、不替用户上传或部署。
+
+[发布演示源码](https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.10.0/examples/publish-demo-note)是可直接复现的输入，也可以[直接打开静态在线预览](https://kevinwithpanda.github.io/RealityHTMLCheck/labs/publish-demo-note/)。证明范围只覆盖声明的 Chromium 与被动静态场景，不等于已经上线、绝无恶意代码、事实正确、完整无障碍/SEO、所有浏览器兼容、后端可用或 PWA 离线支持。
+
+所有笔记与发布 JSON 都有严格契约。可用 `realityhtmlcheck validate .realitycheck/publish/<运行目录>` 独立回读 ZIP、sidecar、公开 manifest、receipt、技术报告与两轮浏览器证明，检查跨产物身份是否一致。
+
 需要批量检查整个笔记文件夹时，无需克隆仓库或全局安装：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.9.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
   realityhtmlcheck note ./我的笔记
 # 打开 .realitycheck/notes/latest.html
 ```
@@ -38,14 +61,14 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.9.0" \
 生成保守修复副本，但保持所有源文件逐字节不变：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.9.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
   realityhtmlcheck note ./我的笔记 --fix-safe
 ```
 
 持续导出时，可把同一检查器放进 GitHub Actions；note 模式不启动服务器、不安装浏览器依赖，也不执行笔记脚本：
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.9.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.10.0
   with:
     kind: note
     path: exported-notes
@@ -60,7 +83,7 @@ RealityCheck 不上传源笔记。启用 artifact 时，工作流会保存生成
 第二次及后续导出可以与一份不可变的历史报告比较：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.9.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.10.0" \
   realityhtmlcheck note ./我的笔记 \
   --baseline .realitycheck/notes/历史运行/report.json \
   --fail-on error

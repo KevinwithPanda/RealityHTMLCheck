@@ -4,6 +4,23 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-08-27
+
+### Added
+
+- `realitycheck publish` / `realitycheck note publish` turns one HTML file, complete folder, or bounded STORE/DEFLATE export ZIP into a root-ready static-host package, or an explicitly named working copy when any required gate is incomplete.
+- A source-offset reference graph repairs only unique HTML/CSS filename-case and Windows-backslash defects, preserves query/fragment suffixes, and refuses missing, ambiguous, escaping, encoded, remote, overlapping, changed, or non-UTF-8 edits.
+- Exact final-ZIP browser proof covers desktop, 375 px mobile, root and project mounts, browser-offline exact-byte replay, every bounded HTML page and local fragment, response hashes, overflow, console/page/HTTP/request errors, unexpected network activity, dangerous browser events, and coverage truncation with JavaScript disabled.
+- A source-free bilingual public proof, local technical report, repair plan, receipt, deterministic ZIP read-back, deploy-content ID, browser-proof ID, archive SHA-256 sidecar, and separate Netlify Drop, Cloudflare Pages Direct Upload, and GitHub Pages decisions.
+- Independent `realitycheck validate` contracts for note bundles/comparisons and every publish manifest, receipt, browser proof, and technical report, including cross-artifact archive/hash/proof binding checks.
+- A checked-in multi-page publish demo with local CSS/SVG, mobile layout, subpath-safe links, and reproducible real-Chromium proof.
+
+### Security
+
+- Publish intake rejects sensitive/development trees, symlinks, special files, path collisions, unsafe archives, reserved proof paths, active HTML/SVG/code, forms/frames, server runtimes, remote runtime dependencies, ambiguous entry pages, and resource ceilings before untrusted content can navigate.
+- Loopback proof serves immutable in-memory bytes on IPv4 loopback with GET/HEAD only, blocks unknown/external requests, disables JavaScript and service workers, refuses downloads, and fails closed on any bounded evidence truncation.
+- Only completed deterministic and browser gates receive the `*.realitycheck-publish.zip` name. Static-only, unsupported, failed, or blocked output is always `*.realitycheck-working-copy.zip`; no command uploads or deploys content.
+
 ## [0.9.0] - 2026-08-27
 
 ### Added

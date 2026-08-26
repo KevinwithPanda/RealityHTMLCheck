@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>验证方法与证明边界</title>
+  <link rel="stylesheet" href="styles/note.css">
+</head>
+<body>
+  <header class="masthead compact">
+    <p class="kicker">METHOD / 方法</p>
+    <h1 id="method">验证方法与证明边界</h1>
+    <p class="lede">发布结论来自静态规则、最终 ZIP 回读和声明场景中的真实 Chromium 证据，而不是“文件能打开”这一项表面判断。</p>
+  </header>
+  <main>
+    <section aria-labelledby="checks">
+      <h2 id="checks">已验证</h2>
+      <ol>
+        <li>桌面与 375px 手机视口能加载入口且没有明显横向溢出；</li>
+        <li>站点挂载在根路径与项目子路径时，本地资源仍能找到；</li>
+        <li>浏览器离线模式下，从同一份冻结字节精确重放本地资源；</li>
+        <li>所有 HTML 页面与本地片段链接完成有上限、失败即阻断的覆盖。</li>
+      </ol>
+    </section>
+    <section aria-labelledby="limits">
+      <h2 id="limits">没有声称</h2>
+      <p>本证明不代表已经上传，不覆盖托管账号、额度、域名和 CDN，也不等于恶意代码审计、事实核验、版权批准、完整无障碍认证、SEO 认证或所有浏览器兼容性证明。</p>
+      <p><a href="index.html#handoff">← 返回交付内容</a></p>
+    </section>
+  </main>
+</body>
+</html>

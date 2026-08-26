@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="RealityCheck 可验证发布包演示笔记">
+  <title>实验复盘：移动端阅读与本地附件</title>
+  <link rel="stylesheet" href="styles/note.css">
+</head>
+<body>
+  <header class="masthead">
+    <p class="kicker">REALITYCHECK · VERIFIED PUBLISH DEMO</p>
+    <h1>实验复盘：让 HTML 笔记真正可交付</h1>
+    <p class="lede">这份自包含示例展示一篇 AI 辅助生成的 HTML 笔记，如何在桌面、手机、项目子路径和无外部运行依赖的场景中保持可读。</p>
+  </header>
+  <main>
+    <section aria-labelledby="result">
+      <h2 id="result">本次结论</h2>
+      <p>笔记正文、样式、图表和跨页章节全部保存在同一个文件包内。RealityCheck 会冻结最终字节、核查内部引用，并用禁用 JavaScript 的真实浏览器完成复验。</p>
+      <figure>
+        <img src="assets/chart.svg" alt="桌面、手机、项目子路径和离线重放四个验证场景全部通过的示意图">
+        <figcaption>四个关键发布场景使用同一份最终内容字节。</figcaption>
+      </figure>
+    </section>
+    <section aria-labelledby="handoff">
+      <h2 id="handoff">交付内容</h2>
+      <ul>
+        <li>根目录可直接部署的 <code>index.html</code>；</li>
+        <li>公开但不包含源码摘录的双语证明报告；</li>
+        <li>最终 ZIP 的 SHA-256 sidecar 与本地技术报告；</li>
+        <li>遇到脚本、外联资源、缺失附件或歧义入口时，明确降级为工作副本。</li>
+      </ul>
+      <p><a href="guide.html#method">查看验证方法与证明边界 →</a></p>
+    </section>
+  </main>
+  <footer>该示例不会上传内容，也不代表托管平台已经完成部署。</footer>
+</body>
+</html>

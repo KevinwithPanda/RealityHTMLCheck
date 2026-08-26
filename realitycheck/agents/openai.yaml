@@ -1,10 +1,10 @@
 interface:
   display_name: "RealityCheck"
-  short_description: "Check and repair HTML notes; prove Web UI failures"
+  short_description: "Check, repair, and publish-proof HTML; stress Web UIs"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/logo.svg"
   brand_color: "#FF5C35"
-  default_prompt: "Use $realitycheck to check this HTML note or Web app, explain the evidence, and when I request repair create and verify a separate usable copy without overwriting the source."
+  default_prompt: "Use $realitycheck to check this HTML note or Web app, explain the evidence, and when I request repair or publication create and verify a separate usable copy or static publish package without overwriting or uploading the source."
 
 policy:
   allow_implicit_invocation: true

@@ -52,6 +52,17 @@ jobs:
           node --check realitycheck/scripts/note-check.mjs
           node --check realitycheck/scripts/note-github-summary.mjs
           node --check realitycheck/scripts/action-paths.mjs
+          node --check realitycheck/scripts/note-publish.mjs
+          node --check realitycheck/scripts/note-publish-input.mjs
+          node --check realitycheck/scripts/note-publish-candidate.mjs
+          node --check realitycheck/scripts/note-reference-graph.mjs
+          node --check realitycheck/scripts/note-publish-policy.mjs
+          node --check realitycheck/scripts/note-publish-browser.mjs
+          node --check realitycheck/scripts/note-publish-server.mjs
+          node --check realitycheck/scripts/note-publish-report.mjs
+          node --check realitycheck/scripts/note-zip.mjs
+          node --check realitycheck/scripts/note-zip-import.mjs
+          node --check realitycheck/scripts/note-zip-import-node.mjs
 
       - name: Verify package contents
         run: npm pack --dry-run
@@ -84,6 +95,11 @@ jobs:
           (root / "note.html").write_text('''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Packed note</title></head><body><h1>Packed note</h1><p>This portable note contains enough readable content to prove the installed package checks a real folder without a server or configuration.</p><img src="assets/chart.svg" alt="Chart"></body></html>''', encoding="utf-8")
           PY
             "$cli" note note-fixture --output note-evidence --fail-on error --language en
+            set +e
+            "$cli" publish note-fixture --output publish-evidence --static-only --language en
+            publish_status=$?
+            set -e
+            test "$publish_status" -eq 1
             python - <<'PY'
           import json
           from pathlib import Path
@@ -102,6 +118,14 @@ jobs:
           assert note["privacy"] == {"uploaded": False, "absolutePathsPersisted": False}, note
           assert note["sourceModified"] is False, note
           assert Path("note-evidence/latest.html").is_file()
+          publish_runs = [path for path in Path("publish-evidence").iterdir() if path.is_dir()]
+          assert len(publish_runs) == 1, publish_runs
+          publish_files = list(publish_runs[0].iterdir())
+          assert any(path.name.endswith(".realitycheck-working-copy.zip") for path in publish_files), publish_files
+          receipt_path = next(path for path in publish_files if path.name.endswith(".receipt.json"))
+          receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+          assert receipt["status"] == "browser-proof-required", receipt
+          assert receipt["publishReady"] is False, receipt
           profiles = Path("profiles.txt").read_text(encoding="utf-8")
           assert all(name in profiles for name in ("starter", "product", "strict")), profiles
           PY

@@ -125,11 +125,11 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 
 ## v0.10 - Verified publish capsule
 
-- [ ] Produce one deploy-ready ZIP with an explicit root entry page, assets, report, manifest, and portable preview links.
-- [ ] Auto-repair only uniquely resolvable package path/case/backslash defects inside a separate working copy.
-- [ ] Serve the exact final bytes on loopback and prove desktop, mobile, offline, local-resource, fragment, console, and unexpected-network behavior.
-- [ ] Mark a capsule publishable only when required deterministic and browser gates pass; otherwise deliver the working copy with exact blockers.
-- [ ] Document direct drag-and-drop deployment to static hosts without taking control of user cloud accounts.
+- [x] Produce one deploy-ready ZIP with an explicit root entry page, assets, report, manifest, and portable preview links.
+- [x] Auto-repair only uniquely resolvable package path/case/backslash defects inside a separate working copy.
+- [x] Serve the exact final bytes on loopback and prove desktop, mobile, offline, local-resource, fragment, console, and unexpected-network behavior.
+- [x] Mark a capsule publishable only when required deterministic and browser gates pass; otherwise deliver the working copy with exact blockers.
+- [x] Document direct drag-and-drop deployment to static hosts without taking control of user cloud accounts.
 
 ## v1.0 criteria
 

@@ -31,6 +31,9 @@ body { margin: 0; }
 .lede { margin: 20px 0 0; color: var(--muted); font-size: 16px; line-height: 1.65; }
 .trust { display: flex; flex-wrap: wrap; gap: 9px 15px; margin-top: 22px; color: #606671; font-size: 11px; font-weight: 700; }
 .trust span::before { content: "✓"; margin-right: 5px; color: var(--green); font-weight: 900; }
+.publish-handoff { max-width: 620px; margin: 18px 0 0; padding: 11px 12px; border-left: 3px solid #315f8d; color: var(--muted); background: #eef3fa; font-size: 11px; line-height: 1.55; }
+.publish-handoff strong { color: #243f5d; }
+.publish-handoff a { color: #315f8d; font-weight: 850; text-underline-offset: 3px; }
 .drop-zone { padding: 34px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 0 16px 48px rgb(40 35 29 / 8%); transition: border-color .18s, transform .18s; }
 .drop-zone.drag { border-color: var(--accent); transform: translateY(-2px); }
 .drop-icon { width: 48px; height: 48px; display: grid; place-items: center; margin-bottom: 18px; border-radius: 12px; color: #fff; background: #202127; font: 850 10px ui-monospace, monospace; }

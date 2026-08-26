@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/html-note-publish-receipt-v1.json",
+  "title": "RealityCheck HTML Note Publish Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "generatedAt", "status", "publishReady", "archive", "sourceContentId", "deployContentId", "embeddedBrowserProofId", "finalArchiveBrowserProofId", "finalArchiveBrowserProofPassed", "browserProofError", "platformDecisions", "boundaries"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "kind": { "const": "html-note-publish-receipt" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "status": { "$ref": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json#/$defs/publishStatus" },
+    "publishReady": { "type": "boolean" },
+    "archive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filename", "bytes", "sha256", "readBackVerified"],
+      "properties": {
+        "filename": { "type": "string", "pattern": "^[^/\\\\]+\\.realitycheck-(?:publish|working-copy)\\.zip$", "maxLength": 255 },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "readBackVerified": { "const": true }
+      }
+    },
+    "sourceContentId": { "$ref": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json#/$defs/sha256Id" },
+    "deployContentId": { "$ref": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json#/$defs/sha256Id" },
+    "embeddedBrowserProofId": { "anyOf": [{ "$ref": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json#/$defs/sha256Id" }, { "type": "null" }] },
+    "finalArchiveBrowserProofId": { "anyOf": [{ "$ref": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json#/$defs/sha256Id" }, { "type": "null" }] },
+    "finalArchiveBrowserProofPassed": { "type": "boolean" },
+    "browserProofError": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 500 }, { "type": "null" }] },
+    "platformDecisions": { "$ref": "https://realitycheck.local/schemas/html-note-publish-proof-v1.json#/$defs/platformDecisions" },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uploaded", "deployed", "archiveSidecarBindsContainerBytes", "publicManifestBindsDeployContent"],
+      "properties": {
+        "uploaded": { "const": false },
+        "deployed": { "const": false },
+        "archiveSidecarBindsContainerBytes": { "const": true },
+        "publicManifestBindsDeployContent": { "const": true }
+      }
+    }
+  }
+}
