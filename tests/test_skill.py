@@ -218,6 +218,7 @@ class SkillStructureTests(unittest.TestCase):
 
     def test_validation_workflow_waits_for_the_browser_fixture_without_hiding_startup_errors(self) -> None:
         workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "validate.yml").read_text(encoding="utf-8")
+        self.assertIn("workflow_dispatch:", workflow)
         self.assertIn("--retry-connrefused", workflow)
         self.assertIn('cat "$lab_log"', workflow)
         self.assertIn("trap cleanup_lab EXIT", workflow)
