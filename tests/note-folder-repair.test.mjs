@@ -45,7 +45,7 @@ test("folder ZIP includes every selected byte, cumulative repaired HTML, and loc
     { path: "notes/assets/theme.css", file: new File([css], "theme.css", { type: "text/css" }) },
     { path: "notes/assets/chart.svg", file: new File([image], "chart.svg", { type: "image/svg+xml" }) },
   ];
-  const inventory = prepareFolderRepairInventory(selected, { normalizeNotePath });
+  const inventory = await prepareFolderRepairInventory(selected, { normalizeNotePath });
   assert.equal(inventory.eligible, true, JSON.stringify(inventory.blockers));
   assert.equal(inventory.repairedRootName, "notes.realitycheck-safe-metadata");
   const analysis = {
@@ -93,7 +93,7 @@ test("folder ZIP includes every selected byte, cumulative repaired HTML, and loc
   const reportHtml = buildPortableNoteReport({ ...verification.after, generatedAt: "2026-08-27T00:00:00.000Z", reportContext: "folder-candidate", safePackageRepairVerification: verification }, { buildRepairTask, buildPackageRepairTask, noteDecision });
   const first = await buildVerifiedFolderRepairZip({ inventory, verification, reportHtml, generatedAt: "2026-08-27T00:00:00.000Z" });
   const second = await buildVerifiedFolderRepairZip({ inventory, verification, reportHtml, generatedAt: "2026-08-27T00:00:00.000Z" });
-  const reversedInventory = prepareFolderRepairInventory([...selected].reverse(), { normalizeNotePath });
+  const reversedInventory = await prepareFolderRepairInventory([...selected].reverse(), { normalizeNotePath });
   const third = await buildVerifiedFolderRepairZip({ inventory: reversedInventory, verification, reportHtml, generatedAt: "2026-08-27T00:00:00.000Z" });
   assert.equal(first.kind, "html-note-safe-folder-zip");
   assert.equal(first.filename, "notes.realitycheck-safe-metadata.zip");
@@ -144,8 +144,8 @@ test("folder ZIP includes every selected byte, cumulative repaired HTML, and loc
   assert.deepEqual(new Uint8Array(await selected[3].file.arrayBuffer()), image);
 });
 
-test("folder inventory blocks sensitive, non-folder, conflicting, and oversized selections before reads", () => {
-  assert.equal(FOLDER_REPAIR_LIMITS.maxSelectedBytes, 62 * 1024 * 1024);
+test("folder inventory blocks sensitive, non-folder, conflicting, and oversized selections before reads", async () => {
+  assert.equal(FOLDER_REPAIR_LIMITS.maxSelectedBytes, 52 * 1024 * 1024);
   assert.equal(FOLDER_REPAIR_LIMITS.maxFileBytes, 32 * 1024 * 1024);
   let reads = 0;
   const file = (size = 1) => ({ size, async arrayBuffer() { reads += 1; return new ArrayBuffer(size); } });
@@ -164,18 +164,22 @@ test("folder inventory blocks sensitive, non-folder, conflicting, and oversized 
     [[{ path: "notes/CON/file.txt", file: file() }], "zip-path-or-layout"],
     [[{ path: "notes/Index.html", file: file() }, { path: "notes/index.html", file: file() }], "zip-path-or-layout"],
     [[{ path: "notes/large.bin", file: file(33 * 1024 * 1024) }], "file-too-large"],
+    [[{ path: `notes/${"a".repeat(1020)}.html`, file: file() }], "path-too-long"],
   ]) {
-    const inventory = prepareFolderRepairInventory(entries, { normalizeNotePath });
+    const inventory = await prepareFolderRepairInventory(entries, { normalizeNotePath });
     assert.equal(inventory.eligible, false, code);
     assert.equal(inventory.blockers.some((item) => item.code === code), true, JSON.stringify(inventory.blockers));
   }
+  const pathHeavy = Array.from({ length: 600 }, (_, index) => ({ path: `notes/${String(index).padStart(3, "0")}-${"p".repeat(880)}.bin`, file: file() }));
+  const pathHeavyInventory = await prepareFolderRepairInventory(pathHeavy, { normalizeNotePath });
+  assert.equal(pathHeavyInventory.blockers.some((item) => item.code === "paths-too-large"), true);
   assert.equal(reads, 0);
 });
 
 test("folder ZIP refuses a verification whose known inventory differs from selected Files", async () => {
   const draft = "<html><head><title>Draft</title></head><body><h1>Draft</h1><p>This draft has enough content for a safe metadata repair.</p></body></html>";
   const selected = [{ path: "notes/draft.html", file: new File([draft], "draft.html") }];
-  const inventory = prepareFolderRepairInventory(selected, { normalizeNotePath });
+  const inventory = await prepareFolderRepairInventory(selected, { normalizeNotePath });
   const analysis = { htmlSources: [{ path: "notes/draft.html", html: draft }], cssSources: [], knownFiles: ["notes/draft.html"] };
   const before = analyzeBrowserNoteSources(analysis, helpers);
   const verification = await bindSafeFolderCandidate(verifySafeNotePackageRepair({ beforeBundle: before, analysis }, helpers));

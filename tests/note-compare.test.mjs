@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   compareNoteBundles,
   markLegacyPackageScopeUnverified,
+  NOTE_RULESET_ID,
   noteComparisonGateFailed,
   noteComparisonRegressionCounts,
   noteFindingFingerprint,
@@ -40,16 +41,26 @@ function bundle({
   truncated = false,
   kind = "html-note-check-bundle",
   selection,
+  knownFilePaths,
+  rulesetId = NOTE_RULESET_ID,
+  importedArchive,
 } = {}) {
+  const selectedKnownPaths = selection?.html?.excludedFiles || [];
+  const requiredPaths = [...new Set([...reports.map((entry) => entry.path), ...selectedKnownPaths])];
+  const paths = knownFilePaths === undefined
+    ? knownFiles === null ? null : [...requiredPaths, ...Array.from({ length: Math.max(0, knownFiles - requiredPaths.length) }, (_, index) => `__known__/file-${index + 1}.bin`)].sort()
+    : knownFilePaths;
   const value = {
     schemaVersion: "1",
     kind,
     id,
     generatedAt: "2026-08-27T00:00:00.000Z",
-    discovery: { htmlFiles: reports.length, knownFiles, truncated },
+    rulesetId,
+    discovery: { htmlFiles: reports.length, knownFiles, knownFilePaths: paths, truncated },
     reports,
     packageFindings,
   };
+  if (importedArchive !== undefined) value.importedArchive = importedArchive;
   if (selection !== undefined) value.selection = selection;
   return value;
 }
@@ -125,6 +136,37 @@ test("deleting an HTML file cannot turn its finding or package finding into a re
   assert.equal(packageItem.afterAffectedCount, null);
   assert.equal(packageItem.affectedCountDelta, null);
   assert.equal(comparison.unverified.some((item) => item.ruleId === "coverage-scope"), false, "real unverified findings must not be duplicated by synthetic coverage items");
+});
+
+test("same-size package replacement cannot disguise a deleted asset as a resolution", () => {
+  const before = bundle({
+    knownFiles: 2,
+    knownFilePaths: ["index.html", "styles.css"],
+    packageFindings: [finding("css-remote-dependency")],
+  });
+  const after = bundle({
+    knownFiles: 2,
+    knownFilePaths: ["index.html", "replacement.txt"],
+  });
+  const comparison = compareNoteBundles(before, after);
+  assert.equal(comparison.counts.resolved, 0);
+  const item = comparison.unverified.find((entry) => entry.ruleId === "css-remote-dependency");
+  assert.equal(item.reason, "package-file-scope-missing");
+  assert.deepEqual(item.details.missingKnownFilePaths, ["styles.css"]);
+});
+
+test("ruleset drift and missing imported-archive identity remain unverified", () => {
+  const before = bundle({
+    reports: [report("index.html", [finding("missing-title")])],
+    importedArchive: { archiveSha256: "a".repeat(64), importContentId: `sha256:${"b".repeat(64)}` },
+  });
+  const drifted = bundle({ reports: [report("index.html")], rulesetId: `sha256:${"c".repeat(64)}` });
+  const comparison = compareNoteBundles(before, drifted);
+  assert.equal(comparison.counts.resolved, 0);
+  assert.ok(comparison.unverified.some((item) => item.reason === "note-ruleset-drift"));
+  assert.ok(comparison.unverified.some((item) => item.reason === "source-archive-identity-unavailable"));
+  assert.equal(comparison.before.importedArchive.importContentId, `sha256:${"b".repeat(64)}`);
+  assert.equal(comparison.after.importedArchive, null);
 });
 
 test("deleting a clean HTML file creates an error-level synthetic coverage regression", () => {
@@ -288,7 +330,7 @@ test("validation rejects ambiguous, incomplete, and non-JSON comparison inputs",
   assert.throws(() => validateNoteBundleForComparison(bundle({ knownFiles: null, packageFindings: [finding("css-missing-local-file")] })), /complete package scope/);
   assert.throws(() => validateNoteBundleForComparison(bundle({ selection: { html: { excludePatterns: ["../archive/**"], excludedFiles: [], excludedCount: 0 } } })), /relative portable glob|parent/);
   assert.throws(() => validateNoteBundleForComparison(bundle({ selection: { html: { excludePatterns: ["archive/**"], excludedFiles: ["index.html"], excludedCount: 1 } } })), /cannot overlap/);
-  assert.throws(() => validateNoteBundleForComparison(bundle({ knownFiles: 1, selection: { html: { excludePatterns: ["archive/**"], excludedFiles: ["archive/old.html"], excludedCount: 1 } } })), /known file inventory/);
+  assert.throws(() => validateNoteBundleForComparison(bundle({ knownFiles: 1, selection: { html: { excludePatterns: ["archive/**"], excludedFiles: ["archive/old.html"], excludedCount: 1 } } })), /knownFilePaths length|known file inventory/);
   assert.throws(() => validateNoteBundleForComparison(bundle({ knownFiles: 2, selection: { html: { excludePatterns: ["archive/**"], excludedFiles: ["archive/old.html"], excludedCount: 0 } } })), /equal excludedFiles.length/);
   const circular = finding("missing-title");
   circular.extra = circular;

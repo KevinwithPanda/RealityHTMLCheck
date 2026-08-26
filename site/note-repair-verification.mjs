@@ -164,7 +164,7 @@ export function verifySafeNoteRepair({ path, beforeBundle, analysis }, helpers) 
 }
 
 /** Apply every available safe metadata fix, then recheck the complete selected package as one immutable candidate. */
-export function verifySafeNotePackageRepair({ beforeBundle, analysis }, helpers) {
+export function verifySafeNotePackageRepair({ beforeBundle, analysis, allowNoop = false }, helpers) {
   const api = dependencies(helpers);
   if (!beforeBundle || !Array.isArray(beforeBundle.reports)) throw new TypeError("beforeBundle must be a browser note result");
   if (!analysis || !Array.isArray(analysis.htmlSources) || !Array.isArray(analysis.knownFiles)) {
@@ -202,7 +202,7 @@ export function verifySafeNotePackageRepair({ beforeBundle, analysis }, helpers)
     }
     return { ...source, path };
   });
-  if (!changes.length) throw new Error("No safe metadata repair is available in this folder");
+  if (!changes.length && !allowNoop) throw new Error("No safe metadata repair is available in this folder");
   changes.sort((left, right) => compareText(left.path, right.path));
 
   const afterBundle = analyzeBrowserNoteSources({

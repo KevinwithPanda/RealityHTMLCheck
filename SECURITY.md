@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-The latest `0.8.x` release receives security fixes while the project is in Beta.
+The latest `0.9.x` release receives security fixes while the project is in Beta.
 
 ## Reporting a vulnerability
 
@@ -16,6 +16,7 @@ Do not publicly disclose a vulnerability until maintainers have assessed its imp
 - bypasses of local/private target restrictions;
 - secret leakage through URLs, console output, network evidence, screenshots, or reports;
 - evidence path traversal or writes outside the run directory;
+- ZIP import traversal, decompression bombs, hidden/overlapping records, encrypted or special-file entries, sensitive-file bundling, and source/content/proof identity mismatches;
 - HTML/Markdown injection from hostile page content;
 - silent browser or dependency installation;
 - audit mode modifying application source;

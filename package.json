@@ -1,7 +1,7 @@
 {
   "name": "realityhtmlcheck",
-  "version": "0.8.0",
-  "description": "Check AI-generated HTML notes and Web UIs locally — portable content, real-browser evidence, and reviewable fixes.",
+  "version": "0.9.0",
+  "description": "Verify AI-generated HTML exports locally — ZIP intake, portable notes, repeat-check evidence, and real-browser QA.",
   "type": "module",
   "bin": {
     "realityhtmlcheck": "realitycheck/scripts/audit.mjs",
@@ -58,6 +58,9 @@
     "qa",
     "ai",
     "html-notes",
+    "html-export",
+    "zip-import",
+    "baseline-comparison",
     "local-first",
     "knowledge-management"
   ],

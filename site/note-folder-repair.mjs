@@ -1,28 +1,19 @@
-import { DEFAULT_ZIP_LIMITS, digestZipSource, preflightStoredZip, verifyStoredZip, writeStoredZipWithManifest } from "./note-zip.mjs?v=0.8.0";
+import { DEFAULT_ZIP_LIMITS, digestZipSource, preflightStoredZip, verifyStoredZip, writeStoredZipWithManifest } from "./note-zip.mjs?v=0.9.0";
+import { isSensitiveNoteArchivePath } from "./note-path-policy.mjs?v=0.9.0";
 
 const encoder = new TextEncoder();
-const EVIDENCE_RESERVE_BYTES = 2 * 1024 * 1024;
+const EVIDENCE_RESERVE_BYTES = 12 * 1024 * 1024;
 const ANALYZED_CSS_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_SELECTED_PATH_BYTES = 1024;
+const MAX_AGGREGATE_PATH_BYTES = 512 * 1024;
 const compareText = (left, right) => left < right ? -1 : left > right ? 1 : 0;
 
 export const FOLDER_REPAIR_LIMITS = Object.freeze({
   maxSelectedFiles: DEFAULT_ZIP_LIMITS.maxFiles - 2,
   maxFileBytes: DEFAULT_ZIP_LIMITS.maxFileBytes,
   maxSelectedBytes: DEFAULT_ZIP_LIMITS.maxTotalBytes - EVIDENCE_RESERVE_BYTES,
-  maxArchiveBytes: DEFAULT_ZIP_LIMITS.maxTotalBytes,
+  maxArchiveBytes: DEFAULT_ZIP_LIMITS.maxArchiveBytes,
 });
-
-const SENSITIVE_SEGMENTS = new Set([".git", ".hg", ".svn", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".realitycheck", "node_modules"]);
-const SENSITIVE_BASENAME = /^(?:\.env(?:\..*)?|\.netrc|\.npmrc|\.pypirc|\.htpasswd|id_(?:rsa|dsa|ecdsa|ed25519)|(?:credentials?|secrets?|auth|tokens?|oauth|client[_-]?secret|service[_-]?account)(?:\.(?:json|ya?ml|toml))?|cookies?\.json|storage-state\.json|wallet\.dat)$/i;
-const SENSITIVE_EXTENSION = /\.(?:pem|key|p12|pfx|ppk|kdbx|keystore|jks)$/i;
-
-function sensitivePath(path) {
-  const segments = path.split("/");
-  const basename = segments.at(-1);
-  return segments.some((segment) => SENSITIVE_SEGMENTS.has(segment.toLowerCase()))
-    || SENSITIVE_BASENAME.test(basename)
-    || SENSITIVE_EXTENSION.test(basename);
-}
 
 function sourceShape(file) {
   return file && typeof file === "object" && Number.isSafeInteger(file.size) && file.size >= 0 && typeof file.arrayBuffer === "function";
@@ -33,13 +24,14 @@ function archiveContentPath(inventory, item) {
 }
 
 /** Inspect only path and declared-size metadata; no selected file bytes are read. */
-export function prepareFolderRepairInventory(fileEntries, { normalizeNotePath } = {}) {
+export async function prepareFolderRepairInventory(fileEntries, { normalizeNotePath, sourceArchive = null } = {}) {
   if (!Array.isArray(fileEntries) || !fileEntries.length) throw new TypeError("folder repair requires selected files");
   if (typeof normalizeNotePath !== "function") throw new TypeError("normalizeNotePath helper is required");
   const blockers = [];
   const files = [];
   let rootName = null;
   let totalBytes = 0;
+  let aggregatePathBytes = 0;
   for (const entry of fileEntries) {
     const rawPath = String(entry?.path ?? "");
     const path = normalizeNotePath(rawPath);
@@ -59,15 +51,72 @@ export function prepareFolderRepairInventory(fileEntries, { normalizeNotePath } 
       continue;
     }
     if (typeof entry.file.name === "string" && entry.file.name !== segments.at(-1)) blockers.push({ code: "file-name-mismatch", path });
-    if (sensitivePath(path)) blockers.push({ code: "sensitive-path", path });
+    const pathBytes = encoder.encode(path).byteLength;
+    if (pathBytes > MAX_SELECTED_PATH_BYTES) blockers.push({ code: "path-too-long", path, actual: pathBytes, limit: MAX_SELECTED_PATH_BYTES });
+    aggregatePathBytes += pathBytes;
+    if (isSensitiveNoteArchivePath(path)) blockers.push({ code: "sensitive-path", path });
     if (entry.file.size > FOLDER_REPAIR_LIMITS.maxFileBytes) blockers.push({ code: "file-too-large", path, actual: entry.file.size, limit: FOLDER_REPAIR_LIMITS.maxFileBytes });
     totalBytes += entry.file.size;
     files.push({ sourcePath: path, relativePath: segments.slice(1).join("/"), file: entry.file, size: entry.file.size });
   }
   if (files.length > FOLDER_REPAIR_LIMITS.maxSelectedFiles) blockers.push({ code: "too-many-files", actual: files.length, limit: FOLDER_REPAIR_LIMITS.maxSelectedFiles });
   if (totalBytes > FOLDER_REPAIR_LIMITS.maxSelectedBytes) blockers.push({ code: "folder-too-large", actual: totalBytes, limit: FOLDER_REPAIR_LIMITS.maxSelectedBytes });
+  if (aggregatePathBytes > MAX_AGGREGATE_PATH_BYTES) blockers.push({ code: "paths-too-large", actual: aggregatePathBytes, limit: MAX_AGGREGATE_PATH_BYTES });
   const repairedRootName = rootName ? `${rootName}.realitycheck-safe-metadata` : null;
   files.sort((left, right) => compareText(left.sourcePath, right.sourcePath));
+  let preparedSourceArchive = null;
+  if (sourceArchive !== null) {
+    const manifest = sourceArchive?.manifest;
+    const source = sourceArchive?.source;
+    const declaredEntries = Array.isArray(manifest?.entries) ? manifest.entries : [];
+    const declaredPaths = declaredEntries.map((entry) => entry.path).sort(compareText);
+    const selectedPaths = files.map((entry) => entry.sourcePath);
+    const sizes = new Map(files.map((entry) => [entry.sourcePath, entry.size]));
+    const valid = sourceArchive?.kind === "html-note-zip-import"
+      && sourceArchive?.schemaVersion === "1"
+      && sourceShape(source)
+      && typeof manifest?.archiveName === "string"
+      && manifest.archiveBytes === source.size
+      && /^[a-f0-9]{64}$/.test(manifest.archiveSha256 || "")
+      && /^sha256:[a-f0-9]{64}$/.test(manifest.importContentId || "")
+      && manifest.centralDirectoryEntriesOnly === true
+      && Number.isSafeInteger(manifest.ignoredDirectories) && manifest.ignoredDirectories >= 0
+      && typeof manifest.rootWrapped === "boolean"
+      && Array.isArray(manifest.methods) && manifest.methods.length > 0 && manifest.methods.every((method) => ["store", "deflate"].includes(method))
+      && manifest.importedFiles === files.length
+      && manifest.totalUncompressedBytes === totalBytes
+      && manifest.rootName === rootName
+      && JSON.stringify(declaredPaths) === JSON.stringify(selectedPaths)
+      && declaredEntries.every((entry) => sizes.get(entry.path) === entry.bytes && /^[a-f0-9]{64}$/.test(entry.sha256 || "") && /^[a-f0-9]{8}$/.test(entry.crc32Hex || ""));
+    let contentIdMatches = false;
+    if (valid) {
+      const contract = {
+        contract: "realitycheck-import-content-v1",
+        entries: [...declaredEntries].sort((left, right) => compareText(left.path, right.path)).map((entry) => ({ path: entry.path, bytes: entry.bytes, crc32Hex: entry.crc32Hex, sha256: entry.sha256 })),
+      };
+      const digest = await digestZipSource({ bytes: encoder.encode(JSON.stringify(contract)) });
+      contentIdMatches = manifest.importContentId === `sha256:${digest.sha256}`;
+    }
+    if (!valid || !contentIdMatches) blockers.push({ code: "source-archive-invalid", path: String(manifest?.archiveName || "(ZIP)") });
+    else preparedSourceArchive = {
+      file: source,
+      expectedEntries: declaredEntries.map((entry) => ({ path: entry.path, bytes: entry.bytes, crc32Hex: entry.crc32Hex, sha256: entry.sha256 })),
+      evidence: {
+        kind: sourceArchive.kind,
+        archiveName: manifest.archiveName,
+        archiveBytes: manifest.archiveBytes,
+        archiveSha256: manifest.archiveSha256,
+        importContentId: manifest.importContentId,
+        centralDirectoryEntriesOnly: manifest.centralDirectoryEntriesOnly === true,
+        importedFiles: manifest.importedFiles,
+        ignoredDirectories: manifest.ignoredDirectories,
+        totalUncompressedBytes: manifest.totalUncompressedBytes,
+        rootName: manifest.rootName,
+        rootWrapped: manifest.rootWrapped === true,
+        methods: [...manifest.methods],
+      },
+    };
+  }
   if (repairedRootName && !blockers.length) {
     try {
       preflightStoredZip(files.map((item) => ({ path: `${repairedRootName}/${rootName}/${item.relativePath}`, file: item.file })), {
@@ -75,6 +124,7 @@ export function prepareFolderRepairInventory(fileEntries, { normalizeNotePath } 
           maxFiles: FOLDER_REPAIR_LIMITS.maxSelectedFiles,
           maxFileBytes: FOLDER_REPAIR_LIMITS.maxFileBytes,
           maxTotalBytes: FOLDER_REPAIR_LIMITS.maxSelectedBytes,
+          maxArchiveBytes: FOLDER_REPAIR_LIMITS.maxArchiveBytes,
         },
       });
     } catch (error) {
@@ -90,6 +140,7 @@ export function prepareFolderRepairInventory(fileEntries, { normalizeNotePath } 
     selectedFiles: files.length,
     selectedBytes: totalBytes,
     htmlFiles: files.filter((item) => /\.html?$/i.test(item.sourcePath)).length,
+    sourceArchive: preparedSourceArchive,
     limits: { ...FOLDER_REPAIR_LIMITS },
   };
 }
@@ -123,7 +174,7 @@ async function candidateContract(verification, signal) {
     }
   }
   return JSON.stringify({
-    contract: "realitycheck-safe-folder-candidate-v1",
+    contract: "realitycheck-safe-folder-candidate-v2",
     kind: verification.kind,
     scope: {
       htmlPaths: [...(verification.scope?.htmlPaths || [])].sort(compareText),
@@ -135,6 +186,7 @@ async function candidateContract(verification, signal) {
     afterSummary: verification.after.summary,
     candidateHtml,
     candidateCss,
+    sourceArchive: verification.sourceArchive || null,
     findings: {
       resolved: findingContract(verification.findings.resolved),
       remaining: findingContract(verification.findings.remaining),
@@ -156,7 +208,7 @@ export async function bindSafeFolderCandidate(verification, { signal } = {}) {
   return { ...verification, candidateId: await candidateIdFor(verification, signal) };
 }
 
-function proofFor(inventory, verification, generatedAt, entryEvidence, inventorySha256) {
+function proofFor(inventory, verification, generatedAt, entryEvidence, inventorySha256, sourceArchive) {
   return {
     schemaVersion: "1",
     kind: "html-note-safe-folder-archive-proof",
@@ -165,6 +217,7 @@ function proofFor(inventory, verification, generatedAt, entryEvidence, inventory
     bundlePolicy: "all-browser-selected-files",
     sourceModified: false,
     privacy: { uploaded: false, sourceHtmlRetainedInProof: false },
+    sourceArchive,
     selection: {
       originalRootName: inventory.rootName,
       repairedRootName: inventory.repairedRootName,
@@ -215,6 +268,12 @@ export async function buildVerifiedFolderRepairZip({ inventory, verification, re
     `<meta name="realitycheck-folder-candidate-id" content="${verification.candidateId}">`,
     "CUMULATIVE FOLDER PROOF",
   ]) if (!reportHtml.includes(marker)) throw new Error("The after report is not bound to this cumulative folder candidate");
+  if (verification.sourceArchive) {
+    for (const marker of [
+      `<meta name="realitycheck-source-archive-sha256" content="${verification.sourceArchive.archiveSha256}">`,
+      `<meta name="realitycheck-import-content-id" content="${verification.sourceArchive.importContentId}">`,
+    ]) if (!reportHtml.includes(marker)) throw new Error("The after report is not bound to the imported source ZIP");
+  }
   if (typeof generatedAt !== "string" || Number.isNaN(new Date(generatedAt).getTime())) throw new TypeError("A valid generatedAt timestamp is required");
   const selected = new Set(inventory.files.map((item) => item.sourcePath));
   const selectedPaths = [...selected].sort(compareText);
@@ -264,22 +323,45 @@ export async function buildVerifiedFolderRepairZip({ inventory, verification, re
     }
   }
 
+  let sourceArchiveEvidence = null;
+  if (inventory.sourceArchive) {
+    const digest = await digestZipSource({ file: inventory.sourceArchive.file }, { signal });
+    if (digest.size !== inventory.sourceArchive.evidence.archiveBytes || digest.sha256 !== inventory.sourceArchive.evidence.archiveSha256) {
+      throw new Error("The imported source ZIP changed after local extraction");
+    }
+    sourceArchiveEvidence = { ...inventory.sourceArchive.evidence, readBackSha256Verified: true };
+  }
+  const candidateSourceArchive = sourceArchiveEvidence ? {
+    archiveSha256: sourceArchiveEvidence.archiveSha256,
+    importContentId: sourceArchiveEvidence.importContentId,
+  } : null;
+  if (JSON.stringify(verification.sourceArchive || null) !== JSON.stringify(candidateSourceArchive)) {
+    throw new Error("The cumulative candidate is not bound to the imported source ZIP");
+  }
+
   const proofPath = `${inventory.repairedRootName}/.realitycheck/repair-proof.json`;
   const reportPath = `${inventory.repairedRootName}/.realitycheck/after-report.html`;
   const entries = [];
   const entryEvidence = [];
   const changesByPath = new Map(verification.changes.map((item) => [item.path, item.rules]));
+  const importedExpectedByPath = inventory.sourceArchive ? new Map(inventory.sourceArchive.expectedEntries.map((entry) => [entry.path, entry])) : null;
   for (const item of inventory.files) {
     const path = archiveContentPath(inventory, item);
     const repaired = verification.repairedHtmlByPath.get(item.sourcePath);
     const packedEntry = repaired === undefined ? { path, file: item.file } : { path, bytes: encoder.encode(repaired) };
     const sourceDigest = await digestZipSource({ file: item.file }, { signal });
+    const importedExpected = importedExpectedByPath?.get(item.sourcePath) || null;
+    if (inventory.sourceArchive && (!importedExpected || importedExpected.bytes !== sourceDigest.size || importedExpected.crc32Hex !== sourceDigest.crc32Hex || importedExpected.sha256 !== sourceDigest.sha256)) {
+      throw new Error(`Imported file bytes differ from the source ZIP content proof: ${item.sourcePath}`);
+    }
     const packedDigest = repaired === undefined ? sourceDigest : await digestZipSource({ bytes: packedEntry.bytes }, { signal });
     entryEvidence.push({
       sourcePath: item.sourcePath,
       archivePath: path,
       sourceBytes: sourceDigest.size,
       sourceSha256: sourceDigest.sha256,
+      sourceCrc32: sourceDigest.crc32,
+      sourceCrc32Hex: sourceDigest.crc32Hex,
       packedBytes: packedDigest.size,
       packedSha256: packedDigest.sha256,
       packedCrc32: packedDigest.crc32Hex,
@@ -288,8 +370,16 @@ export async function buildVerifiedFolderRepairZip({ inventory, verification, re
     });
     entries.push(packedEntry);
   }
+  if (inventory.sourceArchive) {
+    const importContract = {
+      contract: "realitycheck-import-content-v1",
+      entries: entryEvidence.map((entry) => ({ path: entry.sourcePath, bytes: entry.sourceBytes, crc32Hex: entry.sourceCrc32Hex, sha256: entry.sourceSha256 })),
+    };
+    const digest = await digestZipSource({ bytes: encoder.encode(JSON.stringify(importContract)) }, { signal });
+    if (`sha256:${digest.sha256}` !== inventory.sourceArchive.evidence.importContentId) throw new Error("Imported content ID differs from the files being packed");
+  }
   const inventoryDigest = await digestZipSource({ bytes: encoder.encode(JSON.stringify(entryEvidence)) }, { signal });
-  const proof = proofFor(inventory, verification, generatedAt, entryEvidence, inventoryDigest.sha256);
+  const proof = proofFor(inventory, verification, generatedAt, entryEvidence, inventoryDigest.sha256, sourceArchiveEvidence);
   entries.push(
     { path: proofPath, bytes: encoder.encode(`${JSON.stringify(proof, null, 2)}\n`) },
     { path: reportPath, bytes: encoder.encode(reportHtml) },
@@ -301,6 +391,7 @@ export async function buildVerifiedFolderRepairZip({ inventory, verification, re
       maxFiles: DEFAULT_ZIP_LIMITS.maxFiles,
       maxFileBytes: DEFAULT_ZIP_LIMITS.maxFileBytes,
       maxTotalBytes: DEFAULT_ZIP_LIMITS.maxTotalBytes,
+      maxArchiveBytes: DEFAULT_ZIP_LIMITS.maxArchiveBytes,
     },
   });
   const verifiedManifest = await verifyStoredZip(result.archive, result.manifest, { signal });
@@ -327,5 +418,6 @@ export async function buildVerifiedFolderRepairZip({ inventory, verification, re
     selectedInventoryIncluded: true,
     remoteResourcesBundled: false,
     missingReferencedFilesRestored: false,
+    sourceArchiveVerified: Boolean(sourceArchiveEvidence),
   };
 }

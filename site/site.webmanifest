@@ -1,7 +1,7 @@
 {
   "name": "RealityCheck · Local HTML note checker",
   "short_name": "RealityCheck",
-  "description": "Check AI-generated HTML notes locally, build a read-back-verified safe-metadata folder ZIP, then use real-browser Web audits for deeper product QA.",
+  "description": "Drop an HTML export ZIP, verify it locally, compare prior evidence, and build a read-back-verified safe-metadata working copy.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

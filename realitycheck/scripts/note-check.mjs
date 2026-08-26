@@ -22,6 +22,7 @@ import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "./note-ana
 import {
   compareNoteBundles,
   markLegacyPackageScopeUnverified,
+  NOTE_RULESET_ID,
   noteComparisonGateFailed,
   noteComparisonRegressionCounts,
   prepareNoteBaselineForComparison,
@@ -565,8 +566,9 @@ export async function runNoteCommand(argv) {
     kind: "html-note-check-bundle",
     id: runId,
     generatedAt: new Date().toISOString(),
+    rulesetId: NOTE_RULESET_ID,
     input: { name: basename(input), kind: inputStat.isDirectory() ? "directory" : "file" },
-    discovery: { htmlFiles: reports.length, knownFiles: knownFiles?.length ?? null, truncated: discovered.truncated },
+    discovery: { htmlFiles: reports.length, knownFiles: knownFiles?.length ?? null, knownFilePaths: knownFiles ? [...knownFiles].sort() : null, truncated: discovered.truncated },
     selection: {
       html: {
         excludePatterns: htmlExclusions.patterns,

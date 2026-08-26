@@ -1,14 +1,14 @@
 # RealityCheck
 
-> **AI 生成的 HTML，使用和分享前先体检。**
+> **直接拖入 AI 导出 ZIP，使用和分享前先验证。**
 
 RealityCheck 现在首先是一款面向普通用户的本地 HTML 笔记体检工具，同时保留面向 Codex、开发者和产品团队的真实浏览器 Web 核查能力。笔记检查无需账号、无需服务器，不会上传文件；专业 Web 核查则继续提供压力场景、证据、修复任务和修复前后证明。
 
-当前版本：`v0.8.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
+当前版本：`v0.9.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
 
 ## 一分钟内获得价值：检查 HTML 笔记
 
-直接打开[免安装 HTML 笔记检查器](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html)，选择一个 `.html` 文件或整个笔记文件夹。所有分析都发生在当前浏览器中：
+直接打开[免安装 HTML 笔记检查器](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html)，选择原始导出 `.zip`、一个 `.html` 或整个笔记文件夹，无需先手工解压。所有分析都发生在当前浏览器中：
 
 - 不注册账号，不上传笔记，也不需要启动服务器；
 - 选择文件夹后检查丢失的本地图片、样式、附件和关联笔记，并沿着实际引用递归核验外部 CSS、`@import`、CSS 图片/字体与跨笔记锚点；
@@ -16,18 +16,21 @@ RealityCheck 现在首先是一款面向普通用户的本地 HTML 笔记体检�
 - 检查仅本机可用路径、文件名大小写、远程依赖、脚本和内联事件；
 - 检查手机 viewport、固定宽布局、超长文本和未完成的 AI 占位内容；
 - 先给出“暂不建议分享 / 分享前请复核 / 本次检查未发现阻断项”，文件夹采用最低文件分避免平均值掩盖坏文件；
-- 生成中英文证据、可复制修复任务、JSON 结果、可分享离线 HTML 报告、单 HTML 安全副本，以及保留全部所选资源结构的安全元数据文件夹 ZIP。
+- 验证源 ZIP、解包内容、检查候选与输出 ZIP 四层身份，生成中英文证据、可复制修复任务、JSON、离线 HTML 报告和保留全部导入资源结构的安全元数据 ZIP；
+- 导入上次 JSON 证据后，直接显示新增、已解决、恶化、仍存在和未核验，并下载双语差异 HTML/JSON。
+
+ZIP 导入采用失败关闭：只接受有上限的 ZIP32 STORE/DEFLATE，核对中央/本地记录、data descriptor、UTF-8/CP437/Info-ZIP Unicode 路径、大小、CRC32 和 SHA-256；路径穿越、绝对/冲突路径、敏感文件、加密、ZIP64、未知压缩、Unix/macOS 链接或特殊文件、隐藏记录间隙、损坏和超限都会整包拒绝。源/输出 ZIP 上限 64 MiB，导入内容上限 48 MiB、4,998 个文件、单文件 32 MiB、单路径 1 KiB、路径总文本 512 KiB；上次 JSON 输入上限 32 MiB。空目录占位不会保留；嵌套 ZIP 只作为普通附件，不会递归解压。HTML/CSS 仍按 UTF-8 文本读取，检测到损坏替换字符时不会冒充安全修复。重复检查会绑定精确已知路径集合和规则集 ID；范围交换、改名、缺失或规则策略变化都保持“未核验”。下一次应选择新的原始导出 ZIP 与上次 JSON，而不是带内部 proof/report 的生成结果 ZIP。
 
 自动修复刻意限制为三项明确修改：补充 HTML5 doctype、声明文档语言和补充 UTF-8 元数据。单文件按钮会显示原文件夹分数、资源未打包的“单 HTML 得分”和问题变化；它只下载一个 HTML，请移回原相对目录，或改用文件夹 ZIP。浏览器绝不会覆盖源文件，也不会把图片描述、标题结构等需要判断的问题伪装成已修复。
 
 选择真实文件夹后，**联合复检并生成 ZIP** 会对所有可安全处理的 HTML 同时应用这三项修改，再对累计候选运行一次完整 HTML/CSS/文件包复检。用户必须先检查完整所选清单并确认构建；ZIP 会在新 wrapper 中保留原根目录，逐字节复制全部浏览器所选图片、样式和附件，因此 `../notes/assets/x.png` 这类跨根引用仍保持原目录语义。它会写入本地 after report 与 proof，并在下载前回读核对 entry 路径、大小、CRC32 和 SHA-256。界面、报告、JSON 与 proof 还会显示同一个可复制候选 ID，用 SHA-256 绑定实际分析的 HTML/CSS 文本、范围、修改、摘要与问题状态；打包前还会重新读取所选 HTML/CSS，且修复映射必须与声明的修改文件完全一致。构建完成后还要再次明确点击才会下载。
 
-该 ZIP 是“已验证的安全元数据工作副本”，不是“全部修好”或“可直接发布”证明。它不会虚构缺失文件、下载远程资源或修复结构/内容/脚本；空目录、符号链接和浏览器没有提供的隐藏文件也无法保留。若发现路径冲突、`.env`/密钥/`.git`/`node_modules`/`.realitycheck` 等潜在敏感内容、超过 4,998 个所选文件、单文件超过 32 MiB 或所选字节超过 62 MiB，打包会失败关闭而不会静默漏文件；普通静态分析还限制浏览器所选文件不超过 5,000 个、HTML 总解码字节不超过 32 MiB、可读 CSS 不超过 16 MiB。需要更广泛且依赖判断的修改时，仍应使用 Skill 工作流。
+该 ZIP 是“已验证的安全元数据工作副本”，不是“全部修好”或“可直接发布”证明。它不会虚构缺失文件、下载远程资源或修复结构/内容/脚本；空目录、符号链接和浏览器没有提供的隐藏文件也无法保留。若发现路径冲突、`.env`/密钥/`.git`/`node_modules`/`.realitycheck` 等潜在敏感内容、超过 4,998 个所选文件、单文件超过 32 MiB、所选字节超过 52 MiB、单路径超过 1 KiB 或路径总文本超过 512 KiB，打包会失败关闭而不会静默漏文件；普通静态分析还限制浏览器所选文件不超过 5,000 个、HTML 总解码字节不超过 32 MiB、可读 CSS 不超过 16 MiB。需要更广泛且依赖判断的修改时，仍应使用 Skill 工作流。
 
 需要批量检查整个笔记文件夹时，无需克隆仓库或全局安装：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.8.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.9.0" \
   realityhtmlcheck note ./我的笔记
 # 打开 .realitycheck/notes/latest.html
 ```
@@ -35,14 +38,14 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.8.0" \
 生成保守修复副本，但保持所有源文件逐字节不变：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.8.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.9.0" \
   realityhtmlcheck note ./我的笔记 --fix-safe
 ```
 
 持续导出时，可把同一检查器放进 GitHub Actions；note 模式不启动服务器、不安装浏览器依赖，也不执行笔记脚本：
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.8.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.9.0
   with:
     kind: note
     path: exported-notes
@@ -57,7 +60,7 @@ RealityCheck 不上传源笔记。启用 artifact 时，工作流会保存生成
 第二次及后续导出可以与一份不可变的历史报告比较：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.8.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.9.0" \
   realityhtmlcheck note ./我的笔记 \
   --baseline .realitycheck/notes/历史运行/report.json \
   --fail-on error

@@ -22,6 +22,11 @@ const REASON_TEXT = Object.freeze({
   "package-scope-not-verified": { en: "The current package scope was not completely verified.", zhCN: "本次文件包范围未得到完整核验。" },
   "package-html-scope-missing": { en: "One or more baseline HTML files are missing from the package scope.", zhCN: "文件包范围缺少一个或多个基线 HTML 文件。" },
   "package-scope-contracted": { en: "The current package inventory is smaller than the baseline inventory.", zhCN: "本次文件包清单小于基线清单。" },
+  "package-file-scope-missing": { en: "One or more exact baseline package paths are missing from the current inventory.", zhCN: "本次文件包清单缺少一个或多个基线精确路径。" },
+  "package-scope-identity-unavailable": { en: "An exact package path inventory is unavailable, so disappearance cannot prove resolution.", zhCN: "缺少精确文件包路径清单，因此问题消失不能证明已解决。" },
+  "note-ruleset-drift": { en: "The deterministic note ruleset changed between runs; content changes cannot be classified safely.", zhCN: "两次运行使用的确定性笔记规则集不同，无法安全归类内容变化。" },
+  "note-ruleset-identity-unavailable": { en: "One run does not identify its note ruleset, so changes remain unverified.", zhCN: "其中一次运行没有规则集身份，因此变化保持未核验。" },
+  "source-archive-identity-unavailable": { en: "Only one run identifies an imported source archive, so provenance scope differs.", zhCN: "只有一次运行记录了导入源压缩包，因此来源范围不一致。" },
   "legacy-baseline-package-scope": { en: "The legacy baseline did not record trustworthy package ownership.", zhCN: "旧版基线没有记录可信的文件包问题归属。" },
 });
 

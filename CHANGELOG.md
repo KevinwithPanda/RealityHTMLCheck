@@ -4,6 +4,20 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-27
+
+### Added
+
+- Direct zero-upload import of one bounded HTML export ZIP using ZIP32 STORE or DEFLATE, including UTF-8, CP437, Info-ZIP Unicode paths, and signed/unsigned streaming data descriptors.
+- Four-layer integrity lineage across the exact source archive SHA-256, stable extracted-content ID, cumulative HTML/CSS candidate ID, and final output ZIP manifest.
+- Portable browser evidence that can be imported on a later run for new, resolved, worsened, persistent, and unverified comparison, with downloadable bilingual HTML and JSON.
+
+### Security
+
+- ZIP intake fails closed before extraction for traversal, absolute/backslash/control paths, NFC/case/file-directory conflicts, sensitive files, encryption, ZIP64/multi-disk archives, unknown methods/flags, Unix/macOS links or special files, ambiguous EOCDs, hidden record gaps, CRC/size damage, and bounded archive/file/output limits.
+- DEFLATE output is consumed sequentially and cancelled when it exceeds the central-directory declaration; re-selection or reset aborts pending imports.
+- Source ZIP bytes are re-hashed before repaired-output construction, and the imported content identity is part of the candidate/report/proof binding.
+
 ## [0.8.0] - 2026-08-27
 
 ### Added

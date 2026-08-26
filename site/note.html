@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Check AI-generated HTML notes locally, apply safe metadata fixes, and download a jointly rechecked folder ZIP containing every browser-selected asset. No upload or account.">
+  <meta name="description" content="Drop an AI-generated HTML file, folder, or export ZIP; check it locally and download a jointly rechecked safe-metadata folder ZIP. No upload or account.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
   <meta property="og:title" content="RealityCheck Note · Local HTML note health check">
-  <meta property="og:description" content="Drop an HTML note folder, get local evidence, and build a verified safe-metadata ZIP without uploading the content.">
+  <meta property="og:description" content="Drop an HTML note or export ZIP, get local evidence, and build a verified safe-metadata ZIP without uploading the content.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://kevinwithpanda.github.io/RealityHTMLCheck/note.html">
   <meta property="og:image" content="https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png">
@@ -14,7 +14,7 @@
   <link rel="canonical" href="https://kevinwithpanda.github.io/RealityHTMLCheck/note.html">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="manifest" href="site.webmanifest">
-  <link rel="stylesheet" href="note.css?v=0.8.0">
+  <link rel="stylesheet" href="note.css?v=0.9.0">
   <title>RealityCheck Note · Check AI-generated HTML notes locally</title>
 </head>
 <body>
@@ -41,13 +41,14 @@
       <div class="drop-zone" id="drop-zone" aria-labelledby="checker-title">
         <div class="drop-icon" aria-hidden="true">HTML</div>
         <h2 id="checker-title" data-en="Choose what to check" data-zh-cn="选择要检查的内容">Choose what to check</h2>
-        <p data-en="A folder gives the most accurate result because images, styles, attachments, and linked notes can also be verified." data-zh-cn="建议选择文件夹，这样还能核验图片、样式、附件和关联笔记是否齐全。">A folder gives the most accurate result because images, styles, attachments, and linked notes can also be verified.</p>
+        <p data-en="Use the original export ZIP or folder so images, styles, attachments, and linked notes can be verified together." data-zh-cn="可直接选择原始导出 ZIP 或文件夹，以便一起核验图片、样式、附件和关联笔记。">Use the original export ZIP or folder so images, styles, attachments, and linked notes can be verified together.</p>
         <div class="picker-actions">
-          <label class="button primary"><span data-en="Choose note folder" data-zh-cn="选择笔记文件夹">Choose note folder</span><input id="folder-picker" type="file" webkitdirectory multiple></label>
+          <label class="button primary"><span data-en="Choose export ZIP" data-zh-cn="选择导出 ZIP">Choose export ZIP</span><input id="zip-picker" type="file" accept=".zip,application/zip,application/x-zip-compressed"></label>
+          <label class="button"><span data-en="Choose note folder" data-zh-cn="选择笔记文件夹">Choose note folder</span><input id="folder-picker" type="file" webkitdirectory multiple></label>
           <label class="button"><span data-en="Choose HTML file" data-zh-cn="选择 HTML 文件">Choose HTML file</span><input id="file-picker" type="file" accept=".html,.htm,text/html" multiple></label>
         </div>
-        <button type="button" class="demo-link" id="demo-button" data-en="No file yet? Try the built-in example" data-zh-cn="还没有文件？先体验内置示例">No file yet? Try the built-in example</button>
-        <small data-en="You can also drag HTML files here · up to 200 files" data-zh-cn="也可以把 HTML 文件拖到这里 · 最多 200 个文件">You can also drag HTML files here · up to 200 files</small>
+        <button type="button" class="demo-link" id="demo-button" data-en="No file yet? Try a built-in export ZIP" data-zh-cn="还没有文件？体验内置导出 ZIP">No file yet? Try a built-in export ZIP</button>
+        <small data-en="Or drop one ZIP / HTML files here · ZIP stays local and is never executed" data-zh-cn="也可拖入一个 ZIP / HTML 文件 · ZIP 只在本地读取且绝不执行">Or drop one ZIP / HTML files here · ZIP stays local and is never executed</small>
       </div>
     </section>
 
@@ -67,9 +68,11 @@
         <button type="button" class="button primary" id="copy-all" data-en="Copy repair task for AI" data-zh-cn="复制给 AI 的修复任务">Copy repair task for AI</button>
         <button type="button" class="button" id="download-report" data-en="Download shareable report" data-zh-cn="下载可分享报告">Download shareable report</button>
         <button type="button" class="button" id="download-json" data-en="Download evidence" data-zh-cn="下载检查证据">Download evidence</button>
-        <span data-en="Folder ZIP applies only safe metadata fixes, jointly rechecks every HTML, and includes every browser-selected file. Single-file repair still downloads one HTML only. Originals are never overwritten." data-zh-cn="文件夹 ZIP 只应用安全元数据修复，联合复检全部 HTML，并包含浏览器所选的每个文件。单文件修复仍只下载一个 HTML；原文件绝不覆盖。">Folder ZIP applies only safe metadata fixes, jointly rechecks every HTML, and includes every browser-selected file. Single-file repair still downloads one HTML only. Originals are never overwritten.</span>
+        <label class="button baseline-button"><span data-en="Compare prior evidence" data-zh-cn="对比上次证据">Compare prior evidence</span><input id="baseline-picker" type="file" accept=".json,application/json"></label>
+        <span data-en="ZIP/folder repair applies only safe metadata fixes and includes every imported file. Single-file repair still downloads one HTML only. Prior evidence comparison also stays local. Originals are never overwritten." data-zh-cn="ZIP/文件夹修复只应用安全元数据修改并包含全部导入文件；单文件修复仍只下载一个 HTML；上次证据对比也只在本地进行。原文件绝不覆盖。">ZIP/folder repair applies only safe metadata fixes and includes every imported file. Single-file repair still downloads one HTML only. Prior evidence comparison also stays local. Originals are never overwritten.</span>
       </div>
       <section class="folder-repair" id="folder-repair" hidden aria-live="polite"></section>
+      <section class="baseline-comparison" id="baseline-comparison" hidden aria-live="polite"></section>
       <div class="filters" role="group" aria-label="Finding filters">
         <button type="button" data-filter="all" aria-pressed="true" data-en="All" data-zh-cn="全部">All</button>
         <button type="button" data-filter="error" aria-pressed="false" data-en="Errors" data-zh-cn="错误">Errors</button>
@@ -92,6 +95,6 @@
 
   <footer><div class="wrap"><span>RealityCheck Note · MIT</span><span data-en="Your files stay on your device." data-zh-cn="你的文件始终留在设备上。">Your files stay on your device.</span><a href="https://github.com/KevinwithPanda/RealityHTMLCheck">GitHub</a></div></footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="note-checker.js?v=0.8.0"></script>
+  <script type="module" src="note-checker.js?v=0.9.0"></script>
 </body>
 </html>

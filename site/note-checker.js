@@ -1,9 +1,13 @@
-import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask, normalizeNotePath } from "./note-analyzer.mjs?v=0.8.0";
-import { analyzeNotePackage } from "./note-package.mjs?v=0.8.0";
-import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "./note-summary.mjs?v=0.8.0";
-import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.8.0";
-import { bindSafeFolderCandidate, buildVerifiedFolderRepairZip, prepareFolderRepairInventory } from "./note-folder-repair.mjs?v=0.8.0";
-import { analyzeBrowserNoteSources, duplicateBrowserNotePaths, safeRepairDownloadName, safeRepairDownloadPayload, verifySafeNotePackageRepair, verifySafeNoteRepair } from "./note-repair-verification.mjs?v=0.8.0";
+import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask, normalizeNotePath } from "./note-analyzer.mjs?v=0.9.0";
+import { analyzeNotePackage } from "./note-package.mjs?v=0.9.0";
+import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "./note-summary.mjs?v=0.9.0";
+import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.9.0";
+import { bindSafeFolderCandidate, buildVerifiedFolderRepairZip, prepareFolderRepairInventory } from "./note-folder-repair.mjs?v=0.9.0";
+import { analyzeBrowserNoteSources, duplicateBrowserNotePaths, safeRepairDownloadName, safeRepairDownloadPayload, verifySafeNotePackageRepair, verifySafeNoteRepair } from "./note-repair-verification.mjs?v=0.9.0";
+import { importHtmlNoteZip } from "./note-zip-import.mjs?v=0.9.0";
+import { writeStoredZip } from "./note-zip.mjs?v=0.9.0";
+import { compareNoteBundles, NOTE_RULESET_ID, noteComparisonGateFailed, noteComparisonRegressionCounts } from "./note-compare.mjs?v=0.9.0";
+import { renderNoteComparisonHtml } from "./note-comparison-report.mjs?v=0.9.0";
 
 const noteAnalysisHelpers = {
   analyzeHtmlNote,
@@ -18,6 +22,8 @@ const elements = {
   dropZone: document.querySelector("#drop-zone"),
   filePicker: document.querySelector("#file-picker"),
   folderPicker: document.querySelector("#folder-picker"),
+  zipPicker: document.querySelector("#zip-picker"),
+  baselinePicker: document.querySelector("#baseline-picker"),
   demo: document.querySelector("#demo-button"),
   status: document.querySelector("#status"),
   results: document.querySelector("#results"),
@@ -30,16 +36,20 @@ const elements = {
   downloadJson: document.querySelector("#download-json"),
   downloadReport: document.querySelector("#download-report"),
   folderRepair: document.querySelector("#folder-repair"),
+  comparison: document.querySelector("#baseline-comparison"),
   toast: document.querySelector("#toast"),
 };
 
 let language = "en";
 let current = null;
 let inspectionGeneration = 0;
+let baselineGeneration = 0;
 let activeFolderRepairController = null;
+let activeInspectionController = null;
 const MAX_HTML_TEXT_BYTES = 32 * 1024 * 1024;
 const MAX_CSS_TEXT_BYTES = 16 * 1024 * 1024;
 const MAX_SELECTED_FILES = 5000;
+const MAX_BASELINE_BYTES = 32 * 1024 * 1024;
 
 function translate(value) {
   return language === "zh-CN" ? value.zhCN : value.en;
@@ -91,53 +101,85 @@ async function copy(text, messages = null) {
 }
 
 async function inspectFiles(fileList, folderMode = false) {
-  const selectedFiles = [...fileList];
+  let selectedFiles = [...fileList];
   activeFolderRepairController?.abort();
   activeFolderRepairController = null;
+  activeInspectionController?.abort();
+  const controller = new AbortController();
+  activeInspectionController = controller;
   const generation = ++inspectionGeneration;
+  baselineGeneration += 1;
   clearRenderedResult();
   elements.filePicker.value = "";
   elements.folderPicker.value = "";
+  elements.zipPicker.value = "";
+  elements.baselinePicker.value = "";
   elements.status.textContent = "";
   try {
-    await inspectFilesGeneration(selectedFiles, folderMode, generation);
-  } catch (_) {
+    const zipFiles = selectedFiles.filter((file) => /\.zip$/i.test(file.name));
+    const singleZipSelection = !folderMode && selectedFiles.length === 1 && zipFiles.length === 1;
+    let importedArchive = null;
+    let fileEntries;
+    if (singleZipSelection) {
+      if (selectedFiles.length !== 1 || zipFiles.length !== 1) {
+        elements.status.textContent = language === "zh-CN" ? "请一次只选择或拖入一个 ZIP；不要把 ZIP 与散装文件混合。" : "Choose or drop exactly one ZIP at a time; do not mix a ZIP with loose files.";
+        return;
+      }
+      elements.status.textContent = language === "zh-CN" ? "正在本地验证并解压 ZIP；内容不会上传…" : "Validating and extracting the ZIP locally; nothing is uploaded…";
+      importedArchive = await importHtmlNoteZip(zipFiles[0], { signal: controller.signal });
+      fileEntries = importedArchive.fileEntries;
+      folderMode = true;
+    } else {
+      if (zipFiles.length && !folderMode) {
+        elements.status.textContent = language === "zh-CN" ? "请一次只拖入一个 ZIP；不要把 ZIP 与散装文件混合。文件夹内部的 ZIP 会作为普通附件保留。" : "Drop exactly one ZIP at a time; do not mix it with loose files. ZIPs inside a chosen folder remain ordinary attachments.";
+        return;
+      }
+      const completeFolderPaths = folderMode && selectedFiles.every((file) => typeof file.webkitRelativePath === "string" && file.webkitRelativePath);
+      fileEntries = selectedFiles.map((file) => ({ path: completeFolderPaths ? file.webkitRelativePath : pathFor(file), file }));
+      folderMode = completeFolderPaths;
+    }
+    await inspectFilesGeneration(fileEntries, folderMode, generation, importedArchive);
+  } catch (error) {
     if (generation !== inspectionGeneration) return;
+    if (error?.name === "AbortError") return;
     clearRenderedResult();
+    const detail = String(error?.message || error).slice(0, 260);
     elements.status.textContent = language === "zh-CN"
-      ? "读取或分析这些文件时发生错误，因此没有保留旧报告，也没有生成新报告。请重新选择文件后再试。"
-      : "The files could not be read or analyzed. The previous result was cleared and no new report was created; select the files and try again.";
+      ? `未生成不完整报告：${detail}`
+      : `No incomplete report was created: ${detail}`;
+  } finally {
+    if (activeInspectionController === controller) activeInspectionController = null;
   }
 }
 
-async function inspectFilesGeneration(fileList, folderMode, generation) {
-  const allFiles = [...fileList];
-  if (allFiles.length > MAX_SELECTED_FILES) {
+async function inspectFilesGeneration(fileEntries, folderMode, generation, importedArchive = null) {
+  const allEntries = [...fileEntries];
+  if (allEntries.length > MAX_SELECTED_FILES) {
     elements.status.textContent = language === "zh-CN"
       ? `一次最多检查 ${MAX_SELECTED_FILES} 个浏览器所选文件。本次未读取任何内容；请缩小文件夹范围。`
       : `A check is limited to ${MAX_SELECTED_FILES} browser-selected files. No content was read; choose a smaller folder.`;
     return;
   }
-  const oversizedHtml = allFiles.filter((file) => /\.html?$/i.test(file.name) && file.size > 25 * 1024 * 1024);
+  const oversizedHtml = allEntries.filter((entry) => /\.html?$/i.test(entry.path) && entry.file.size > 25 * 1024 * 1024);
   if (oversizedHtml.length) {
     elements.status.textContent = language === "zh-CN" ? `有 ${oversizedHtml.length} 个 HTML 文件超过 25 MiB，未生成不完整报告。请缩小或拆分文件后重试。` : `${oversizedHtml.length} HTML file(s) exceed 25 MiB. No incomplete report was created; reduce or split them and try again.`;
     return;
   }
-  const htmlFiles = allFiles.filter((file) => /\.html?$/i.test(file.name));
-  if (!htmlFiles.length) {
+  const htmlEntries = allEntries.filter((entry) => /\.html?$/i.test(entry.path));
+  if (!htmlEntries.length) {
     elements.status.textContent = language === "zh-CN" ? "没有找到 .html 或 .htm 文件。" : "No .html or .htm file was found.";
     return;
   }
-  if (htmlFiles.length > 200) {
+  if (htmlEntries.length > 200) {
     elements.status.textContent = language === "zh-CN" ? "一次最多检查 200 个 HTML 文件，请缩小文件夹范围。" : "A check is limited to 200 HTML files. Choose a smaller folder.";
     return;
   }
-  const htmlTextBytes = htmlFiles.reduce((sum, file) => sum + file.size, 0);
+  const htmlTextBytes = htmlEntries.reduce((sum, entry) => sum + entry.file.size, 0);
   if (htmlTextBytes > MAX_HTML_TEXT_BYTES) {
     elements.status.textContent = language === "zh-CN" ? "所选 HTML 总计超过 32 MiB，本次未读取或生成部分报告；请缩小文件夹范围。" : "Selected HTML exceeds the 32 MiB total text budget. No files were read and no partial report was created; choose a smaller folder.";
     return;
   }
-  const duplicatePaths = duplicateBrowserNotePaths(allFiles.map(pathFor), normalizeNotePath);
+  const duplicatePaths = duplicateBrowserNotePaths(allEntries.map((entry) => entry.path), normalizeNotePath);
   if (duplicatePaths.length) {
     const preview = duplicatePaths.slice(0, 3).join(", ");
     elements.status.textContent = language === "zh-CN"
@@ -145,43 +187,48 @@ async function inspectFilesGeneration(fileList, folderMode, generation) {
       : `Duplicate file path(s) found (${preview}). No report was created because same-named content cannot be paired safely; choose the whole folder or make the relative paths unique.`;
     return;
   }
-  const folderInventory = folderMode && allFiles.every((file) => typeof file.webkitRelativePath === "string" && file.webkitRelativePath)
-    ? prepareFolderRepairInventory(allFiles.map((file) => ({ path: file.webkitRelativePath, file })), { normalizeNotePath })
+  const folderInventory = folderMode
+    ? await prepareFolderRepairInventory(allEntries, { normalizeNotePath, sourceArchive: importedArchive })
     : null;
-  elements.status.textContent = language === "zh-CN" ? `正在本地读取 ${htmlFiles.length} 个 HTML 文件…` : `Reading ${htmlFiles.length} HTML file(s) locally…`;
-  const knownFiles = folderMode || allFiles.some((file) => file.webkitRelativePath) || allFiles.length > htmlFiles.length ? allFiles.map(pathFor) : null;
-  const cssFiles = knownFiles ? allFiles.filter((file) => /\.css$/i.test(file.name)) : [];
-  const readableCssBytes = cssFiles.filter((file) => file.size <= 5 * 1024 * 1024).reduce((sum, file) => sum + file.size, 0);
+  elements.status.textContent = language === "zh-CN" ? `正在本地读取 ${htmlEntries.length} 个 HTML 文件…` : `Reading ${htmlEntries.length} HTML file(s) locally…`;
+  const knownFiles = folderMode || allEntries.length > htmlEntries.length ? allEntries.map((entry) => entry.path) : null;
+  const cssEntries = knownFiles ? allEntries.filter((entry) => /\.css$/i.test(entry.path)) : [];
+  const readableCssBytes = cssEntries.filter((entry) => entry.file.size <= 5 * 1024 * 1024).reduce((sum, entry) => sum + entry.file.size, 0);
   if (readableCssBytes > MAX_CSS_TEXT_BYTES) {
     elements.status.textContent = language === "zh-CN" ? "所选可读取 CSS 总计超过 16 MiB，本次未生成不完整的文件包报告；请缩小文件夹范围。" : "Readable selected CSS exceeds the 16 MiB total text budget. No incomplete package report was created; choose a smaller folder.";
     return;
   }
   const sources = new Map();
   const htmlSources = [];
-  for (const file of htmlFiles) {
-    const html = await file.text();
+  for (const entry of htmlEntries) {
+    const html = await entry.file.text();
     if (generation !== inspectionGeneration) return;
-    const path = pathFor(file);
-    sources.set(path, { file, html });
-    htmlSources.push({ path, html });
+    sources.set(entry.path, { file: entry.file, html });
+    htmlSources.push({ path: entry.path, html });
   }
   const cssSources = [];
   if (knownFiles) {
-    for (const file of cssFiles) {
-      const text = file.size <= 5 * 1024 * 1024 ? await file.text() : null;
+    for (const entry of cssEntries) {
+      const text = entry.file.size <= 5 * 1024 * 1024 ? await entry.file.text() : null;
       if (generation !== inspectionGeneration) return;
-      cssSources.push({ path: pathFor(file), text });
+      cssSources.push({ path: entry.path, text });
     }
   }
   const analysis = { htmlSources, cssSources, knownFiles };
   const analyzed = analyzeBrowserNoteSources(analysis, noteAnalysisHelpers);
   if (generation !== inspectionGeneration) return;
+  const generatedAt = new Date().toISOString();
   current = {
     schemaVersion: "1",
     kind: "html-note-browser-check",
-    generatedAt: new Date().toISOString(),
+    id: `browser:${generatedAt}`,
+    generatedAt,
+    rulesetId: NOTE_RULESET_ID,
     privacy: { uploaded: false, sourceModified: false },
+    importedArchive: importedArchive?.manifest || null,
     knownFiles: knownFiles ? knownFiles.length : null,
+    discovery: { htmlFiles: analyzed.reports.length, knownFiles: knownFiles ? knownFiles.length : null, knownFilePaths: knownFiles ? [...knownFiles].sort() : null, truncated: false },
+    selection: { html: { excludePatterns: [], excludedFiles: [], excludedCount: 0 } },
     ...analyzed,
     sources,
     analysis,
@@ -189,10 +236,13 @@ async function inspectFilesGeneration(fileList, folderMode, generation) {
     folderRepairState: folderInventory ? { status: folderInventory.eligible ? "idle" : "blocked", error: null } : null,
     folderRepairVerification: null,
     folderZipArtifact: null,
+    comparison: null,
     repairVerifications: new Map(),
   };
   render(current);
-  elements.status.textContent = language === "zh-CN" ? "检查完成。文件内容没有离开当前浏览器。" : "Check complete. File content never left this browser.";
+  elements.status.textContent = importedArchive
+    ? (language === "zh-CN" ? `ZIP 已在本地验证并检查：导入 ${importedArchive.manifest.importedFiles} 个文件，内容没有离开当前浏览器。` : `ZIP verified and checked locally: ${importedArchive.manifest.importedFiles} files imported; content never left this browser.`)
+    : (language === "zh-CN" ? "检查完成。文件内容没有离开当前浏览器。" : "Check complete. File content never left this browser.");
   elements.results.hidden = false;
   elements.results.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -403,8 +453,11 @@ function folderBlockerText(blocker) {
     "sensitive-path": { en: "A potentially sensitive file or development directory is selected; narrow the folder before archiving.", zhCN: "所选内容包含潜在敏感文件或开发目录；请缩小文件夹范围后再打包。" },
     "file-too-large": { en: "A selected file exceeds the 32 MiB archive limit.", zhCN: "有文件超过 32 MiB 打包上限。" },
     "too-many-files": { en: "The folder exceeds the archive file-count limit.", zhCN: "文件夹超过打包文件数量上限。" },
-    "folder-too-large": { en: "The selected folder exceeds the 62 MiB input limit.", zhCN: "所选文件夹超过 62 MiB 输入上限。" },
+    "folder-too-large": { en: "The selected folder exceeds the 52 MiB input limit.", zhCN: "所选文件夹超过 52 MiB 输入上限。" },
+    "path-too-long": { en: "A selected path exceeds the 1 KiB UTF-8 limit.", zhCN: "有路径超过 1 KiB UTF-8 上限。" },
+    "paths-too-large": { en: "Selected path text exceeds the 512 KiB aggregate limit.", zhCN: "所选路径文本总量超过 512 KiB 上限。" },
     "zip-path-or-layout": { en: "The folder contains a path that cannot be extracted safely across platforms.", zhCN: "文件夹包含无法在不同平台安全解压的路径。" },
+    "source-archive-invalid": { en: "The imported ZIP evidence does not match the extracted file inventory.", zhCN: "导入 ZIP 的证据与解压文件清单不一致。" },
   };
   const message = messages[blocker.code] || { en: "The selected folder cannot be archived safely.", zhCN: "所选文件夹无法安全打包。" };
   return `${translate(message)}${path}`;
@@ -434,7 +487,7 @@ function renderFolderRepair(bundle) {
   );
   const facts = create("div", "folder-repair-facts");
   for (const [value, label] of [
-    [inventory.selectedFiles, language === "zh-CN" ? "浏览器所选文件" : "browser-selected files"],
+    [inventory.selectedFiles, bundle.importedArchive ? (language === "zh-CN" ? "ZIP 导入文件" : "ZIP-imported files") : (language === "zh-CN" ? "浏览器所选文件" : "browser-selected files")],
     [inventory.htmlFiles, "HTML"],
     [formatBytes(inventory.selectedBytes), language === "zh-CN" ? "所选字节" : "selected bytes"],
     [repairableHtml, language === "zh-CN" ? "可安全修复 HTML" : "safe-fixable HTML"],
@@ -444,6 +497,21 @@ function renderFolderRepair(bundle) {
     facts.append(item);
   }
   elements.folderRepair.append(title, facts);
+  if (bundle.importedArchive) {
+    const archive = bundle.importedArchive;
+    const importProof = create("p", "folder-import-proof");
+    const sourceHash = create("code", "", `source · ${archive.archiveSha256.slice(0, 12)}…${archive.archiveSha256.slice(-8)}`);
+    sourceHash.title = `sha256:${archive.archiveSha256}`;
+    const contentHash = create("code", "", `content · ${archive.importContentId.slice(7, 19)}…${archive.importContentId.slice(-8)}`);
+    contentHash.title = archive.importContentId;
+    importProof.append(
+      create("strong", "", language === "zh-CN" ? "ZIP 已在本地验证" : "ZIP VERIFIED LOCALLY"),
+      create("span", "", `${archive.archiveName} · ${formatBytes(archive.archiveBytes)} → ${formatBytes(archive.totalUncompressedBytes)} · ${archive.importedFiles} ${language === "zh-CN" ? "个文件" : "files"}`),
+      sourceHash,
+      contentHash,
+    );
+    elements.folderRepair.append(importProof);
+  }
 
   if (!inventory.eligible) {
     elements.downloadFolderZip.disabled = true;
@@ -453,7 +521,7 @@ function renderFolderRepair(bundle) {
     elements.folderRepair.append(create("p", "folder-repair-boundary", language === "zh-CN" ? "不会静默省略敏感、冲突或超限文件；请处理下列项目后重新选择文件夹。" : "Sensitive, conflicting, or oversized files are never silently omitted. Resolve these items and choose the folder again."), list);
     return;
   }
-  if (!repairableHtml) {
+  if (!repairableHtml && !bundle.importedArchive) {
     elements.downloadFolderZip.disabled = true;
     elements.downloadFolderZip.textContent = language === "zh-CN" ? "没有可应用的安全元数据修复" : "No safe metadata fixes available";
     elements.folderRepair.append(create("p", "folder-repair-boundary", language === "zh-CN" ? "当前文件夹没有可自动应用的三项元数据修复；原检查结果仍可下载。" : "This folder has none of the three automatic metadata fixes to apply; the original inspection report remains available."));
@@ -462,7 +530,9 @@ function renderFolderRepair(bundle) {
   if (state.status === "building") {
     elements.downloadFolderZip.disabled = true;
     elements.downloadFolderZip.textContent = language === "zh-CN" ? "正在联合复检并验证 ZIP…" : "Rechecking and verifying ZIP…";
-    elements.folderRepair.append(create("p", "folder-repair-boundary", language === "zh-CN" ? "正在同时修复所有可处理 HTML、重新检查完整文件包、构建 ZIP，并回读核验每个 entry。" : "Applying every eligible HTML metadata fix together, rechecking the complete package, building the ZIP, and reading every entry back for verification."));
+    elements.folderRepair.append(create("p", "folder-repair-boundary", language === "zh-CN"
+      ? (repairableHtml ? "正在同时修复所有可处理 HTML、重新检查完整文件包、构建 ZIP，并回读核验每个 entry。" : "当前无需元数据修改；正在重新检查完整文件包、按原字节构建 ZIP，并回读核验每个 entry。")
+      : (repairableHtml ? "Applying every eligible HTML metadata fix together, rechecking the complete package, building the ZIP, and reading every entry back for verification." : "No metadata change is needed; rechecking the complete package, copying original bytes into the ZIP, and reading every entry back for verification.")));
     return;
   }
   if (state.status === "review") {
@@ -472,8 +542,8 @@ function renderFolderRepair(bundle) {
     const inventoryList = create("pre", "folder-repair-inventory", inventoryText);
     elements.folderRepair.append(
       create("p", "folder-repair-boundary", language === "zh-CN"
-        ? "请检查下面的完整浏览器所选文件清单。确认后会全部打包，不会静默省略；若看到凭据、密钥或不应分享的附件，请先重新选择更小的文件夹。"
-        : "Review the complete browser-selected inventory below. Confirmation includes every item without silent omission. If you see credentials, keys, or attachments that should not be shared, choose a smaller folder first."),
+        ? (bundle.importedArchive ? "请检查下面从 ZIP 中完整导入的文件清单。确认后会全部打包，不会静默省略；若看到不应分享的附件，请停止并改用更小的压缩包。" : "请检查下面的完整浏览器所选文件清单。确认后会全部打包，不会静默省略；若看到凭据、密钥或不应分享的附件，请先重新选择更小的文件夹。")
+        : (bundle.importedArchive ? "Review every file imported from the ZIP below. Confirmation includes every item without silent omission; stop and use a smaller archive if an attachment should not be shared." : "Review the complete browser-selected inventory below. Confirmation includes every item without silent omission. If you see credentials, keys, or attachments that should not be shared, choose a smaller folder first.")),
       inventoryList,
     );
     return;
@@ -508,8 +578,8 @@ function renderFolderRepair(bundle) {
       copyCandidate,
     );
     const boundary = create("p", "folder-repair-boundary", language === "zh-CN"
-      ? "ZIP 已回读验证，包含浏览器所选的全部文件；修改仅限 doctype、lang、UTF-8 元数据。未创建缺失资源、未下载远程资源、未修复结构/内容/脚本；空目录、符号链接和浏览器未提供的隐藏文件无法保留。"
-      : "The ZIP was read back and contains every browser-selected file. Changes are limited to doctype, lang, and UTF-8 metadata. Missing files were not invented, remote resources were not downloaded, and structure/content/scripts were not repaired. Empty directories, symlinks, and hidden files not supplied by the browser cannot be preserved.");
+      ? `${bundle.importedArchive ? "源 ZIP 与输出 ZIP 均已验证；输出包含全部导入文件" : "ZIP 已回读验证，包含浏览器所选的全部文件"}；修改仅限 doctype、lang、UTF-8 元数据。未创建缺失资源、未下载远程资源、未修复结构/内容/脚本；空目录、符号链接和浏览器未提供的隐藏文件无法保留。`
+      : `${bundle.importedArchive ? "The source and output ZIPs were verified, and the output contains every imported file" : "The ZIP was read back and contains every browser-selected file"}. Changes are limited to doctype, lang, and UTF-8 metadata. Missing files were not invented, remote resources were not downloaded, and structure/content/scripts were not repaired. Empty directories, symlinks, and hidden files not supplied by the browser cannot be preserved.`);
     elements.folderRepair.append(outcome, candidate, changes, boundary);
     return;
   }
@@ -519,17 +589,63 @@ function renderFolderRepair(bundle) {
     : `Review ZIP inventory · ${inventory.selectedFiles} files`;
   if (state.status === "failed") elements.folderRepair.append(create("p", "folder-repair-error", language === "zh-CN" ? "上次 ZIP 构建失败，未下载任何文件；请重新检查文件清单后重试。" : "The previous ZIP build failed and nothing was downloaded; review the inventory before retrying."));
   elements.folderRepair.append(create("p", "folder-repair-boundary", language === "zh-CN"
-    ? "将对全部可安全修复的 HTML 同时应用三项元数据修改，联合复检后把全部浏览器所选文件打包到新顶层目录；其余错误和警告继续保留。"
-    : "All eligible HTML files receive the three safe metadata fixes together, then the complete package is rechecked and every browser-selected file is copied under a new top-level folder. All other errors and warnings remain visible."));
+    ? (repairableHtml ? `将对全部可安全修复的 HTML 同时应用三项元数据修改，联合复检后把${bundle.importedArchive ? "全部 ZIP 导入文件" : "全部浏览器所选文件"}打包到新顶层目录；其余错误和警告继续保留。` : "当前导入 ZIP 无需元数据修改；仍会联合复检全部 HTML、按原字节重打包每个文件、写入证明并回读验证，其他问题继续保留。")
+    : (repairableHtml ? `All eligible HTML files receive the three safe metadata fixes together, then the complete package is rechecked and every ${bundle.importedArchive ? "ZIP-imported" : "browser-selected"} file is copied under a new top-level folder. All other errors and warnings remain visible.` : "This imported ZIP needs no metadata changes; every HTML is still jointly rechecked, every file is repacked byte-for-byte with proof, and all other findings remain visible.")));
 }
 
 function render(bundle) {
   renderDecision(bundle);
   renderSummary(bundle);
   renderFolderRepair(bundle);
+  renderComparison(bundle);
   const packageCard = renderPackage(bundle);
   elements.files.replaceChildren(...[packageCard, ...bundle.reports.map((report) => renderFile(report, bundle))].filter(Boolean));
   applyFilter(bundle.summary.counts.error ? "error" : bundle.summary.counts.warning ? "warning" : "all");
+}
+
+function renderComparison(bundle) {
+  elements.comparison.replaceChildren();
+  const comparison = bundle.comparison;
+  if (!comparison) {
+    elements.comparison.hidden = true;
+    return;
+  }
+  elements.comparison.hidden = false;
+  const regressions = comparison.counts.new + comparison.counts.worsened + comparison.counts.unverified;
+  const heading = create("div", "comparison-heading");
+  heading.append(
+    create("small", "", language === "zh-CN" ? "与上次检查对比" : "COMPARED WITH PRIOR EVIDENCE"),
+    create("h3", "", regressions ? (language === "zh-CN" ? "仍有新增、恶化或未核验项" : "New, worsened, or unverified items remain") : (language === "zh-CN" ? "没有新增或恶化" : "No new or worsened findings")),
+  );
+  const counts = create("div", "comparison-counts");
+  for (const [key, label] of [
+    ["new", language === "zh-CN" ? "新增" : "new"],
+    ["resolved", language === "zh-CN" ? "已解决" : "resolved"],
+    ["worsened", language === "zh-CN" ? "恶化" : "worsened"],
+    ["persistent", language === "zh-CN" ? "仍存在" : "persistent"],
+    ["unverified", language === "zh-CN" ? "未核验" : "unverified"],
+  ]) {
+    const item = create("article");
+    item.append(create("strong", "", String(comparison.counts[key])), create("small", "", label));
+    counts.append(item);
+  }
+  const priority = [...comparison.new, ...comparison.worsened, ...comparison.unverified].slice(0, 8);
+  const list = create("ul", "comparison-list");
+  if (!priority.length) list.append(create("li", "clean", language === "zh-CN" ? "当前完整范围没有新增、恶化或未核验项。" : "The current complete scope has no new, worsened, or unverified items."));
+  for (const item of priority) {
+    const row = create("li");
+    row.append(create("b", item.state, item.state.toUpperCase()), create("code", "", item.fingerprint), create("span", "", item.reason));
+    list.append(row);
+  }
+  const actions = create("div", "comparison-actions");
+  const jsonButton = create("button", "button", language === "zh-CN" ? "下载差异 JSON" : "Download comparison JSON");
+  jsonButton.type = "button";
+  jsonButton.addEventListener("click", () => download(`realitycheck-comparison-${new Date().toISOString().slice(0, 10)}.json`, `${JSON.stringify(comparison, null, 2)}\n`, "application/json;charset=utf-8"));
+  const htmlButton = create("button", "button", language === "zh-CN" ? "下载双语差异报告" : "Download bilingual comparison");
+  htmlButton.type = "button";
+  htmlButton.addEventListener("click", () => download(`realitycheck-comparison-${new Date().toISOString().slice(0, 10)}.html`, renderNoteComparisonHtml(comparison), "text/html;charset=utf-8"));
+  actions.append(jsonButton, htmlButton);
+  elements.comparison.append(heading, counts, list, actions);
 }
 
 function applyFilter(filter) {
@@ -545,16 +661,23 @@ function clearRenderedResult() {
   elements.files.replaceChildren();
   elements.folderRepair.replaceChildren();
   elements.folderRepair.hidden = true;
+  elements.comparison.replaceChildren();
+  elements.comparison.hidden = true;
   elements.downloadFolderZip.hidden = true;
 }
 
 function reset() {
+  activeInspectionController?.abort();
+  activeInspectionController = null;
   activeFolderRepairController?.abort();
   activeFolderRepairController = null;
   inspectionGeneration += 1;
+  baselineGeneration += 1;
   clearRenderedResult();
   elements.filePicker.value = "";
   elements.folderPicker.value = "";
+  elements.zipPicker.value = "";
+  elements.baselinePicker.value = "";
   elements.status.textContent = "";
   elements.dropZone.scrollIntoView({ behavior: "smooth", block: "center" });
 }
@@ -562,6 +685,7 @@ function reset() {
 for (const button of document.querySelectorAll("[data-language]")) button.addEventListener("click", () => setLanguage(button.dataset.language));
 elements.filePicker.addEventListener("change", () => inspectFiles(elements.filePicker.files, false));
 elements.folderPicker.addEventListener("change", () => inspectFiles(elements.folderPicker.files, true));
+elements.zipPicker.addEventListener("change", () => inspectFiles(elements.zipPicker.files, false));
 for (const event of ["dragenter", "dragover"]) elements.dropZone.addEventListener(event, (input) => { input.preventDefault(); elements.dropZone.classList.add("drag"); });
 for (const event of ["dragleave", "drop"]) elements.dropZone.addEventListener(event, (input) => { input.preventDefault(); elements.dropZone.classList.remove("drag"); });
 elements.dropZone.addEventListener("drop", (event) => inspectFiles(event.dataTransfer.files, false));
@@ -593,7 +717,13 @@ elements.downloadFolderZip.addEventListener("click", async () => {
   elements.status.textContent = language === "zh-CN" ? "正在联合复检全部 HTML，并构建、回读验证文件夹 ZIP…" : "Rechecking every HTML together, then building and reading back the folder ZIP…";
   try {
     const verification = await bindSafeFolderCandidate(
-      verifySafeNotePackageRepair({ beforeBundle: bundle, analysis: bundle.analysis }, noteAnalysisHelpers),
+      {
+        ...verifySafeNotePackageRepair({ beforeBundle: bundle, analysis: bundle.analysis, allowNoop: Boolean(bundle.importedArchive) }, noteAnalysisHelpers),
+        sourceArchive: bundle.importedArchive ? {
+          archiveSha256: bundle.importedArchive.archiveSha256,
+          importContentId: bundle.importedArchive.importContentId,
+        } : null,
+      },
       { signal: controller.signal },
     );
     const afterReport = buildPortableNoteReport({
@@ -602,6 +732,7 @@ elements.downloadFolderZip.addEventListener("click", async () => {
       privacy: bundle.privacy,
       reportContext: "folder-candidate",
       safePackageRepairVerification: verification,
+      importedArchive: bundle.importedArchive,
     }, { buildRepairTask, buildPackageRepairTask, noteDecision });
     const artifact = await buildVerifiedFolderRepairZip({
       inventory: bundle.folderInventory,
@@ -640,8 +771,7 @@ elements.downloadReport.addEventListener("click", () => {
   download(`realitycheck-note-report-${new Date().toISOString().slice(0, 10)}.html`, buildPortableNoteReport({ ...current, reportContext: "original" }, { buildRepairTask, buildPackageRepairTask, noteDecision }), "text/html;charset=utf-8");
   notify("Portable bilingual report downloaded.", "中英双语可携带报告已下载。");
 });
-elements.downloadJson.addEventListener("click", () => {
-  if (!current) return;
+function buildSourceFreeEvidence(bundle) {
   const {
     sources: _sources,
     analysis: _analysis,
@@ -650,12 +780,14 @@ elements.downloadJson.addEventListener("click", () => {
     folderRepairVerification,
     folderZipArtifact,
     repairVerifications,
+    comparison: _comparison,
     ...safe
-  } = current;
+  } = bundle;
   safe.folderRepairAvailability = folderInventory ? {
     basis: "all-browser-selected-files",
     eligible: folderInventory.eligible,
     rootName: folderInventory.rootName,
+    sourceArchive: folderInventory.sourceArchive?.evidence || null,
     selectedFiles: folderInventory.selectedFiles,
     selectedBytes: folderInventory.selectedBytes,
     htmlFiles: folderInventory.htmlFiles,
@@ -707,24 +839,63 @@ elements.downloadJson.addEventListener("click", () => {
     worsened: verification.findings.worsened.map((entry) => entry.key),
     originalModified: verification.originalModified,
   }));
+  return safe;
+}
+
+elements.downloadJson.addEventListener("click", () => {
+  if (!current) return;
+  const safe = buildSourceFreeEvidence(current);
   download(`realitycheck-note-${new Date().toISOString().slice(0, 10)}.json`, `${JSON.stringify(safe, null, 2)}\n`, "application/json;charset=utf-8");
+});
+elements.baselinePicker.addEventListener("change", async () => {
+  const file = elements.baselinePicker.files?.[0];
+  elements.baselinePicker.value = "";
+  if (!file || !current) return;
+  const bundle = current;
+  const generation = inspectionGeneration;
+  const baselineToken = ++baselineGeneration;
+  if (file.size > MAX_BASELINE_BYTES) {
+    elements.status.textContent = language === "zh-CN" ? "上次检查证据超过 32 MiB，未读取。" : "Prior evidence exceeds the 32 MiB input limit and was not read.";
+    return;
+  }
+  try {
+    const baseline = JSON.parse(await file.text());
+    if (current !== bundle || inspectionGeneration !== generation || baselineGeneration !== baselineToken) return;
+    const compared = compareNoteBundles(baseline, buildSourceFreeEvidence(bundle));
+    bundle.comparison = {
+      ...compared,
+      regressionsByLevel: noteComparisonRegressionCounts(compared),
+      gate: {
+        mode: "browser-repeat-check",
+        failOn: "error",
+        failed: noteComparisonGateFailed(compared, "error"),
+        states: ["new", "worsened", "unverified"],
+      },
+    };
+    renderComparison(bundle);
+    const counts = bundle.comparison.counts;
+    elements.status.textContent = language === "zh-CN"
+      ? `差异完成：新增 ${counts.new} · 已解决 ${counts.resolved} · 恶化 ${counts.worsened} · 仍存在 ${counts.persistent} · 未核验 ${counts.unverified}。`
+      : `Comparison complete: ${counts.new} new · ${counts.resolved} resolved · ${counts.worsened} worsened · ${counts.persistent} persistent · ${counts.unverified} unverified.`;
+  } catch (error) {
+    if (current !== bundle || inspectionGeneration !== generation || baselineGeneration !== baselineToken) return;
+    bundle.comparison = null;
+    renderComparison(bundle);
+    elements.status.textContent = language === "zh-CN" ? `上次检查证据无效：${String(error.message || error).slice(0, 240)}` : `Prior evidence is invalid: ${String(error.message || error).slice(0, 240)}`;
+  }
 });
 for (const button of document.querySelectorAll("[data-filter]")) button.addEventListener("click", () => {
   applyFilter(button.dataset.filter);
 });
 elements.demo.addEventListener("click", async () => {
-  const withPath = (content, path, type) => {
-    const file = new File([content], path.split("/").at(-1), { type });
-    Object.defineProperty(file, "webkitRelativePath", { value: path });
-    return file;
-  };
-  const files = [
-    withPath(`<!doctype html><html><head><title>AI research draft</title><link rel="stylesheet" href="assets/note.css"></head><body onclick="init()"><main><h1 id="result">Research TODO</h1><h3 id="result">Findings</h3><p>This AI-generated draft contains an unfinished placeholder {{citation}}, a local image, a broken contents link, and enough text to demonstrate a realistic note check.</p><a href="#methods">Read methods</a><img src="images/result.svg"><script src="http://example.invalid/helper.js"></script></main></body></html>`, "realitycheck-demo/ai-research-draft.html", "text/html"),
-    withPath(`<html><head><title>Linked guide</title></head><body><main><h1 id="guide">Linked guide</h1><p>This linked note proves that all eligible HTML files receive their safe metadata fixes together while the selected folder structure remains intact.</p><a href="ai-research-draft.html#result">Back to findings</a></main></body></html>`, "realitycheck-demo/guide.html", "text/html"),
-    withPath(`main{max-width:72rem;margin:auto;min-width:860px}`, "realitycheck-demo/assets/note.css", "text/css"),
-    withPath(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"><rect width="160" height="90" fill="#dfe9ff"/><path d="M20 68 60 32l26 20 52-34" fill="none" stroke="#315f8d" stroke-width="7"/></svg>`, "realitycheck-demo/images/result.svg", "image/svg+xml"),
+  const demoEntries = [
+    { path: "realitycheck-demo/ai-research-draft.html", bytes: new TextEncoder().encode(`<!doctype html><html><head><title>AI research draft</title><link rel="stylesheet" href="assets/note.css"></head><body onclick="init()"><main><h1 id="result">Research TODO</h1><h3 id="result">Findings</h3><p>This AI-generated draft contains an unfinished placeholder {{citation}}, a local image, a broken contents link, and enough text to demonstrate a realistic note check.</p><a href="#methods">Read methods</a><img src="images/result.svg"><script src="http://example.invalid/helper.js"></script></main></body></html>`) },
+    { path: "realitycheck-demo/guide.html", bytes: new TextEncoder().encode(`<html><head><title>Linked guide</title></head><body><main><h1 id="guide">Linked guide</h1><p>This linked note proves that all eligible HTML files receive their safe metadata fixes together while the selected folder structure remains intact.</p><a href="ai-research-draft.html#result">Back to findings</a></main></body></html>`) },
+    { path: "realitycheck-demo/assets/note.css", bytes: new TextEncoder().encode(`main{max-width:72rem;margin:auto;min-width:860px}`) },
+    { path: "realitycheck-demo/images/result.svg", bytes: new TextEncoder().encode(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"><rect width="160" height="90" fill="#dfe9ff"/><path d="M20 68 60 32l26 20 52-34" fill="none" stroke="#315f8d" stroke-width="7"/></svg>`) },
   ];
-  await inspectFiles(files, true);
+  const bytes = await writeStoredZip(demoEntries, { output: "uint8array" });
+  await inspectFiles([new File([bytes], "realitycheck-demo.zip", { type: "application/zip" })], false);
 });
 
 let initial = (navigator.language || "").toLowerCase().startsWith("zh") ? "zh-CN" : "en";

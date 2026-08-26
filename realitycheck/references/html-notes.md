@@ -69,7 +69,7 @@ This writes new copies below the evidence run and leaves the source byte-for-byt
 
 Do not automatically invent titles, heading levels, alternative text, missing resources, or replacement content. Do not remove scripts or remote dependencies without checking whether the user intended interactive behavior. Use the report's copy-ready task for those fixes, inspect the source, make a bounded change after authorization, and rerun the same note check.
 
-The online checker may also create a **verified safe-metadata folder ZIP** when the user selects a complete browser folder. That artifact applies the same three fixes to all eligible HTML files together, reruns one cumulative package check, preserves the original folder root inside a new wrapper, copies every file the browser supplied, and verifies its ZIP entry inventory before download. A candidate SHA-256 binds the exact analyzed HTML/CSS text and evidence state; the archive proof separately binds every packed entry. It does not preserve empty directories, symlinks, or hidden files the browser did not supply; it does not add missing or remote resources; and it does not repair structure, accessibility, scripts, or content. Never substitute it for `--prepare-repair` when the user requests broader agentic repair.
+The online checker may accept one original export ZIP or a complete browser folder and create a **verified safe-metadata folder ZIP**. ZIP intake is local and bounded: ZIP32 STORE/DEFLATE only, with central/local record, data-descriptor, path, size, CRC32, SHA-256, encryption, Unix file-type, sensitive-path, and collision checks before content is trusted. It records the exact source archive SHA-256, a stable sorted extracted-content ID, the HTML/CSS candidate ID, and the final archive manifest separately. The output applies the same three fixes to all eligible HTML files together, reruns one cumulative package check, preserves the original folder root inside a new wrapper, copies every imported file, and verifies its ZIP inventory before download. It does not preserve empty directories, symlinks, or hidden files the browser did not supply; it does not add missing or remote resources; and it does not repair structure, accessibility, scripts, or content. The browser evidence may be imported on a later run for an explicit new/resolved/worsened/persistent/unverified comparison. Never substitute it for `--prepare-repair` when the user requests broader agentic repair.
 
 ## Complete an agentic repair
 
@@ -78,8 +78,8 @@ When the user invokes the Skill with an explicit request to check and repair a b
 1. Run `node <skill-dir>/scripts/note-check.mjs <file-or-directory> --prepare-repair`. Preserve the initial run as before evidence.
 2. Use the emitted `repaired` folder, which preserves the bounded relative note-and-asset structure and applies safe metadata fixes. Treat the request as authorization to edit that copy, not the supplied source.
 3. Inspect each remaining finding and its source context, and make only high-confidence changes whose intended result can be established from the note folder.
-4. Rerun the same note command against the repaired folder and retain a separate after report.
-5. Return both reports, the repaired entry HTML or folder, the change summary, and unresolved decisions.
+4. Rerun the same note command against the repaired folder with the immutable before `report.json` passed as `--baseline`; retain the separate after report plus `comparison.html` and `comparison.json`.
+5. Return both reports, both comparison artifacts, the repaired entry HTML or folder, the change summary, and unresolved decisions.
 
 Do not claim the repaired output is complete when an attachment is unavailable, a factual description would need to be invented, or the after report still contains errors. A remaining warning may be acceptable for use only when it is disclosed and does not break the user's stated sharing target.
 

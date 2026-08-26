@@ -113,7 +113,23 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Package every browser-selected file under a new root while retaining unchanged asset bytes.
 - [x] Embed a local proof and after report, bind the analyzed HTML/CSS candidate with a visible SHA-256 ID, then read back and verify ZIP entry paths, sizes, CRC32 values, and SHA-256 hashes before download.
 - [x] Block sensitive files, unsafe/colliding paths, stale async work, and bounded ZIP32/file-size limits without silently omitting selected files.
-- [ ] Add optional cryptographic per-entry hashes without doubling the browser memory ceiling.
+- [x] Bind every content entry to CRC32 and SHA-256 while keeping explicit browser memory ceilings.
+
+## v0.9 - Direct export ZIP intake and repeat checks
+
+- [x] Accept one bounded ZIP32 STORE/DEFLATE export without manual extraction or upload.
+- [x] Verify central/local records, data descriptors, UTF-8/CP437/Unicode paths, CRC32, SHA-256, sizes, and record coverage before analysis.
+- [x] Fail closed for traversal, conflicts, sensitive paths, encryption, ZIP64, Unix/macOS special files, hidden record gaps, damage, and resource ceilings.
+- [x] Bind source archive SHA-256, stable imported-content ID, analysis candidate ID, and output ZIP manifest through report and proof.
+- [x] Export comparison-compatible browser evidence and import an earlier JSON for new/resolved/worsened/persistent/unverified bilingual comparison.
+
+## v0.10 - Verified publish capsule
+
+- [ ] Produce one deploy-ready ZIP with an explicit root entry page, assets, report, manifest, and portable preview links.
+- [ ] Auto-repair only uniquely resolvable package path/case/backslash defects inside a separate working copy.
+- [ ] Serve the exact final bytes on loopback and prove desktop, mobile, offline, local-resource, fragment, console, and unexpected-network behavior.
+- [ ] Mark a capsule publishable only when required deterministic and browser gates pass; otherwise deliver the working copy with exact blockers.
+- [ ] Document direct drag-and-drop deployment to static hosts without taking control of user cloud accounts.
 
 ## v1.0 criteria
 

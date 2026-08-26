@@ -1,4 +1,7 @@
 import { normalizeHtmlExcludeGlob } from "./note-scope.mjs";
+import { NOTE_RULESET_ID } from "./note-ruleset.mjs";
+
+export { NOTE_RULESET_ID } from "./note-ruleset.mjs";
 
 const BUNDLE_KINDS = new Set(["html-note-check-bundle", "html-note-browser-check"]);
 const FINDING_LEVELS = new Set(["error", "warning", "advice"]);
@@ -45,6 +48,14 @@ function validateHtmlPath(path, label = "HTML path") {
   if (parts.some((part) => !part || part === "." || part === "..") || !/\.html?$/i.test(path)) {
     throw new TypeError(`${label} must identify a relative .html or .htm file without traversal`);
   }
+  return path;
+}
+
+function validateKnownPath(path, label = "known file path") {
+  assertNonEmptyString(path, label);
+  if (path.includes("\\") || path.startsWith("/") || /^[a-z]:/i.test(path) || /^(?:file|https?):/i.test(path)) throw new TypeError(`${label} must be a portable relative path`);
+  const parts = path.split("/");
+  if (parts.some((part) => !part || part === "." || part === "..")) throw new TypeError(`${label} must not contain empty, dot, or parent path segments`);
   return path;
 }
 
@@ -129,7 +140,25 @@ function normalizeDiscovery(discovery, reports, label) {
     throw new TypeError(`${label}.knownFiles must be null or a safe integer at least as large as htmlFiles`);
   }
   if (discovery.truncated && discovery.knownFiles !== null) throw new TypeError(`${label}.knownFiles must be null when discovery is truncated`);
-  return { htmlFiles: discovery.htmlFiles, knownFiles: discovery.knownFiles, truncated: discovery.truncated };
+  let knownFilePaths = null;
+  if (discovery.knownFilePaths !== undefined && discovery.knownFilePaths !== null) {
+    if (!Array.isArray(discovery.knownFilePaths) || discovery.knownFilePaths.length > 10_000) throw new TypeError(`${label}.knownFilePaths must be null or an array of at most 10000 paths`);
+    knownFilePaths = discovery.knownFilePaths.map((path, index) => validateKnownPath(path, `${label}.knownFilePaths[${index}]`)).sort();
+    if (new Set(knownFilePaths).size !== knownFilePaths.length) throw new TypeError(`${label}.knownFilePaths must not contain duplicates`);
+    if (discovery.knownFiles === null || knownFilePaths.length !== discovery.knownFiles) throw new TypeError(`${label}.knownFilePaths length must equal knownFiles`);
+    const knownSet = new Set(knownFilePaths);
+    if (reports.some((report) => !knownSet.has(report.path))) throw new TypeError(`${label}.knownFilePaths must include every checked HTML path`);
+  }
+  if ((discovery.truncated || discovery.knownFiles === null) && knownFilePaths !== null) throw new TypeError(`${label}.knownFilePaths must be null when package scope is unavailable`);
+  return { htmlFiles: discovery.htmlFiles, knownFiles: discovery.knownFiles, knownFilePaths, truncated: discovery.truncated };
+}
+
+function normalizeImportedArchive(value, label) {
+  if (value === undefined || value === null) return null;
+  assertRecord(value, label);
+  if (!/^[a-f0-9]{64}$/.test(value.archiveSha256 || "")) throw new TypeError(`${label}.archiveSha256 must be a SHA-256 hex digest`);
+  if (!/^sha256:[a-f0-9]{64}$/.test(value.importContentId || "")) throw new TypeError(`${label}.importContentId must be a prefixed SHA-256 digest`);
+  return { archiveSha256: value.archiveSha256, importContentId: value.importContentId };
 }
 
 function normalizeSelection(selection, reports, discovery, label) {
@@ -152,6 +181,10 @@ function normalizeSelection(selection, reports, discovery, label) {
   if (files.length && !patterns.length) throw new TypeError(`${label}.html.excludedFiles require at least one exclusion pattern`);
   if (discovery.knownFiles !== null && discovery.knownFiles < reports.length + files.length) {
     throw new TypeError(`${label}.html exclusions exceed the known file inventory`);
+  }
+  if (discovery.knownFilePaths !== null) {
+    const known = new Set(discovery.knownFilePaths);
+    if (files.some((path) => !known.has(path))) throw new TypeError(`${label}.html.excludedFiles must remain present in knownFilePaths`);
   }
   return { html: { excludePatterns: patterns, excludedFiles: files, excludedCount } };
 }
@@ -192,11 +225,16 @@ export function validateNoteBundleForComparison(bundle, label = "bundle") {
     assertNonEmptyString(bundle.generatedAt, `${label}.generatedAt`, 100);
     if (Number.isNaN(Date.parse(bundle.generatedAt))) throw new TypeError(`${label}.generatedAt must be a valid date-time`);
   }
+  const rulesetId = bundle.rulesetId ?? null;
+  if (rulesetId !== null && !/^sha256:[a-f0-9]{64}$/.test(rulesetId)) throw new TypeError(`${label}.rulesetId must be a prefixed SHA-256 digest`);
+  const importedArchive = normalizeImportedArchive(bundle.importedArchive, `${label}.importedArchive`);
   return {
     schemaVersion: "1",
     kind: bundle.kind,
     id: bundle.id ?? null,
     generatedAt: bundle.generatedAt ?? null,
+    rulesetId,
+    importedArchive,
     discovery,
     selection,
     reports,
@@ -330,6 +368,18 @@ function classifyMissingBeforeFinding(entry, before, after, afterHtmlPaths, afte
       details: { beforeKnownFiles: before.discovery.knownFiles, afterKnownFiles: after.discovery.knownFiles },
     };
   }
+  if (before.discovery.knownFilePaths === null || after.discovery.knownFilePaths === null) {
+    return { state: "unverified", reason: "package-scope-identity-unavailable", details: {} };
+  }
+  const afterKnown = new Set(after.discovery.knownFilePaths);
+  const missingKnownFilePaths = before.discovery.knownFilePaths.filter((path) => !afterKnown.has(path));
+  if (missingKnownFilePaths.length) {
+    return {
+      state: "unverified",
+      reason: "package-file-scope-missing",
+      details: { missingKnownFileCount: missingKnownFilePaths.length, missingKnownFilePaths: missingKnownFilePaths.slice(0, 100) },
+    };
+  }
   return { state: "resolved", reason: "not-detected-in-complete-scope", details: {} };
 }
 
@@ -338,6 +388,8 @@ function bundleReference(bundle) {
     id: bundle.id,
     kind: bundle.kind,
     generatedAt: bundle.generatedAt,
+    rulesetId: bundle.rulesetId,
+    importedArchive: bundle.importedArchive ? { ...bundle.importedArchive } : null,
     discovery: { ...bundle.discovery },
     selection: cloneJson(bundle.selection, "bundle selection"),
     htmlPaths: bundle.reports.map((report) => report.path),
@@ -416,6 +468,10 @@ function addCoverageScopeUnverified(output, before, after, afterHtmlPaths, after
 
   let reason = null;
   let details = {};
+  const hasExtraPackageScope = (before.discovery.knownFiles ?? before.reports.length) > before.reports.length
+    || (after.discovery.knownFiles ?? after.reports.length) > after.reports.length
+    || before.packageFindings.length > 0
+    || after.packageFindings.length > 0;
   if (after.discovery.truncated) {
     reason = "after-discovery-truncated";
   } else if (after.discovery.knownFiles === null) {
@@ -423,6 +479,15 @@ function addCoverageScopeUnverified(output, before, after, afterHtmlPaths, after
   } else if (before.discovery.knownFiles !== null && after.discovery.knownFiles < before.discovery.knownFiles) {
     reason = "package-scope-contracted";
     details = { beforeKnownFiles: before.discovery.knownFiles, afterKnownFiles: after.discovery.knownFiles };
+  } else if (hasExtraPackageScope && before.discovery.knownFiles !== null && (before.discovery.knownFilePaths === null || after.discovery.knownFilePaths === null)) {
+    reason = "package-scope-identity-unavailable";
+  } else if (before.discovery.knownFilePaths !== null && after.discovery.knownFilePaths !== null) {
+    const afterKnown = new Set(after.discovery.knownFilePaths);
+    const missingKnownFilePaths = before.discovery.knownFilePaths.filter((path) => !afterKnown.has(path));
+    if (missingKnownFilePaths.length) {
+      reason = "package-file-scope-missing";
+      details = { missingKnownFileCount: missingKnownFilePaths.length, missingKnownFilePaths: missingKnownFilePaths.slice(0, 100) };
+    }
   }
   if (!reason) return;
   const scope = { kind: "package" };
@@ -511,6 +576,10 @@ export function markLegacyPackageScopeUnverified(comparison) {
 export function compareNoteBundles(beforeInput, afterInput) {
   const before = validateNoteBundleForComparison(beforeInput, "before");
   const after = validateNoteBundleForComparison(afterInput, "after");
+  const rulesetReason = before.rulesetId === after.rulesetId
+    ? null
+    : before.rulesetId === null || after.rulesetId === null ? "note-ruleset-identity-unavailable" : "note-ruleset-drift";
+  const archiveIdentityReason = Boolean(before.importedArchive) === Boolean(after.importedArchive) ? null : "source-archive-identity-unavailable";
   const afterExcludedHtmlPaths = new Set(after.selection.html.excludedFiles);
   const beforeFindings = indexFindings(before, afterExcludedHtmlPaths);
   const afterFindings = indexFindings(after);
@@ -521,6 +590,13 @@ export function compareNoteBundles(beforeInput, afterInput) {
   for (const fingerprint of fingerprints) {
     const beforeEntry = beforeFindings.get(fingerprint) || null;
     const afterEntry = afterFindings.get(fingerprint) || null;
+    if (rulesetReason) {
+      output.unverified.push(itemFor("unverified", beforeEntry, afterEntry, rulesetReason, {
+        beforeRulesetId: before.rulesetId,
+        afterRulesetId: after.rulesetId,
+      }));
+      continue;
+    }
     if (!beforeEntry) {
       output.new.push(itemFor("new", null, afterEntry, "not-present-in-baseline"));
       continue;
@@ -545,7 +621,21 @@ export function compareNoteBundles(beforeInput, afterInput) {
     output.persistent.push(itemFor("persistent", beforeEntry, afterEntry, reason));
   }
 
-  addCoverageScopeUnverified(output, before, after, afterHtmlPaths, afterExcludedHtmlPaths);
+  if (!rulesetReason) addCoverageScopeUnverified(output, before, after, afterHtmlPaths, afterExcludedHtmlPaths);
+  else if (!output.unverified.length) {
+    output.unverified.push(itemFor("unverified", null, coverageEntry({ kind: "package" }), rulesetReason, {
+      syntheticCoverage: true,
+      beforeRulesetId: before.rulesetId,
+      afterRulesetId: after.rulesetId,
+    }));
+  }
+  if (archiveIdentityReason && !output.unverified.some((item) => item.scope?.kind === "package")) {
+    output.unverified.push(itemFor("unverified", null, coverageEntry({ kind: "package" }), archiveIdentityReason, {
+      syntheticCoverage: true,
+      beforeImportedArchive: Boolean(before.importedArchive),
+      afterImportedArchive: Boolean(after.importedArchive),
+    }));
+  }
   output.unverified.sort((left, right) => left.fingerprint.localeCompare(right.fingerprint));
 
   const counts = comparisonCounts(output);

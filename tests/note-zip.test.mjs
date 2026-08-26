@@ -146,6 +146,14 @@ test("stored ZIP rejects unsafe, directory, control, and duplicate normalized pa
   ]) {
     await assert.rejects(writeStoredZip(paths.map((path) => ({ path, bytes: new Uint8Array() })), { output: "uint8array" }), /(?:Duplicate normalized|Unicode-normalized|Case-folded) ZIP entry path/);
   }
+  await assert.rejects(writeStoredZip([
+    { path: "notes/page", bytes: new Uint8Array() },
+    { path: "notes/page/index.html", bytes: new Uint8Array() },
+  ], { output: "uint8array" }), /also used as a cross-platform directory prefix/);
+  for (const paths of [
+    ["notes/Page", "notes/page/index.html"],
+    ["notes/café", "notes/café/index.html"],
+  ]) await assert.rejects(writeStoredZip(paths.map((path) => ({ path, bytes: new Uint8Array() })), { output: "uint8array" }), /cross-platform directory prefix/);
   await assert.rejects(writeStoredZip([{ path: "directory", directory: true, bytes: new Uint8Array() }], { output: "uint8array" }), /Directory ZIP entries/);
   await assert.rejects(writeStoredZip([{ path: "secret.txt", encrypted: true, bytes: new Uint8Array() }], { output: "uint8array" }), /Encrypted ZIP entries/);
   await assert.rejects(writeStoredZip([{ path: "compressed.txt", compression: "deflate", bytes: new Uint8Array() }], { output: "uint8array" }), /STORE mode/);
@@ -181,10 +189,25 @@ test("read-back rejects timestamp, version, symlink-attribute, and duplicate-pat
   duplicate[secondCentral + 46] = "a".charCodeAt(0);
   duplicate[secondLocal + 30] = "a".charCodeAt(0);
   await assert.rejects(verifyStoredZip(duplicate), /Case-folded ZIP entry collision/);
+
+  const prefixBase = await writeStoredZip([
+    { path: "notes/page", bytes: encoder.encode("file") },
+    { path: "notes/pagx/index.html", bytes: encoder.encode("nested") },
+  ], { output: "uint8array" });
+  const prefix = new Uint8Array(prefixBase);
+  const prefixView = new DataView(prefix.buffer);
+  const prefixEocd = prefix.byteLength - 22;
+  const prefixCentral = prefixView.getUint32(prefixEocd + 16, true);
+  const prefixFirstName = prefixView.getUint16(prefixCentral + 28, true);
+  const prefixSecondCentral = prefixCentral + 46 + prefixFirstName;
+  const prefixSecondLocal = prefixView.getUint32(prefixSecondCentral + 42, true);
+  prefix[prefixSecondCentral + 46 + 9] = "e".charCodeAt(0);
+  prefix[prefixSecondLocal + 30 + 9] = "e".charCodeAt(0);
+  await assert.rejects(verifyStoredZip(prefix), /also used as a cross-platform directory prefix/);
 });
 
 test("all declared limits and ZIP32 boundaries fail before any Blob or File is read", async () => {
-  assert.deepEqual(DEFAULT_ZIP_LIMITS, { maxFiles: 5000, maxFileBytes: 32 * 1024 * 1024, maxTotalBytes: 64 * 1024 * 1024 });
+  assert.deepEqual(DEFAULT_ZIP_LIMITS, { maxFiles: 5000, maxFileBytes: 32 * 1024 * 1024, maxTotalBytes: 64 * 1024 * 1024, maxArchiveBytes: 64 * 1024 * 1024 });
   let reads = 0;
   const countedBlob = (size) => ({
     size,
@@ -209,6 +232,9 @@ test("all declared limits and ZIP32 boundaries fail before any Blob or File is r
     { path: "a.bin", blob: countedBlob(6) },
     { path: "b.bin", blob: countedBlob(6) },
   ], { output: "uint8array", limits: { maxFileBytes: 10, maxTotalBytes: 10 } }), /total limit/);
+  await assert.rejects(writeStoredZip([{ path: "a.txt", bytes: encoder.encode("1234") }], {
+    output: "uint8array", limits: { maxArchiveBytes: 40 },
+  }), /archive limit/);
   assert.equal(reads, 0);
 
   await assert.rejects(writeStoredZip([{ path: "zip32.bin", blob: countedBlob(0x1_0000_0000) }], {

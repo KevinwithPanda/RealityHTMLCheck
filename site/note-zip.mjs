@@ -15,6 +15,7 @@ export const DEFAULT_ZIP_LIMITS = Object.freeze({
   maxFiles: 5000,
   maxFileBytes: 32 * 1024 * 1024,
   maxTotalBytes: 64 * 1024 * 1024,
+  maxArchiveBytes: 64 * 1024 * 1024,
 });
 
 const CRC_TABLE = (() => {
@@ -89,6 +90,11 @@ function normalizeArchivePath(value) {
   return segments.join("/");
 }
 
+/** Validate one portable file path using the same contract as generated ZIP entries. */
+export function validatePortableZipEntryPath(value) {
+  return normalizeArchivePath(value);
+}
+
 function sourceValue(entry) {
   const fields = ["bytes", "blob", "file"].filter((name) => Object.hasOwn(entry, name) && entry[name] !== undefined);
   if (fields.length !== 1) throw new TypeError("Each ZIP entry must provide exactly one of bytes, blob, or file");
@@ -116,6 +122,7 @@ function preflight(entries, options) {
     maxFiles: checkedLimit(configured.maxFiles, DEFAULT_ZIP_LIMITS.maxFiles, "maxFiles", ZIP32_MAX_FILES),
     maxFileBytes: checkedLimit(configured.maxFileBytes, DEFAULT_ZIP_LIMITS.maxFileBytes, "maxFileBytes", ZIP32_MAX),
     maxTotalBytes: checkedLimit(configured.maxTotalBytes, DEFAULT_ZIP_LIMITS.maxTotalBytes, "maxTotalBytes", ZIP32_MAX),
+    maxArchiveBytes: checkedLimit(configured.maxArchiveBytes, DEFAULT_ZIP_LIMITS.maxArchiveBytes, "maxArchiveBytes", ZIP32_MAX),
   };
   if (entries.length > ZIP32_MAX_FILES) throw new RangeError("ZIP32 supports at most 65535 files");
   if (entries.length > limits.maxFiles) throw new RangeError(`ZIP file count exceeds the ${limits.maxFiles} file limit`);
@@ -161,7 +168,17 @@ function preflight(entries, options) {
     }
     prepared.push({ path, nameBytes, source, size: source.size, localOffset: 0 });
   }
-  return { prepared, archiveBytes: localBytes + centralBytes + EOCD_BYTES, centralOffset: localBytes, centralBytes };
+  const filesByPortableKey = new Map(prepared.map((entry) => [entry.path.normalize("NFC").toUpperCase().toLowerCase(), entry.path]));
+  for (const [key, path] of filesByPortableKey) {
+    const segments = key.split("/");
+    for (let length = 1; length < segments.length; length += 1) {
+      const ancestor = segments.slice(0, length).join("/");
+      if (filesByPortableKey.has(ancestor)) throw new Error(`ZIP file path is also used as a cross-platform directory prefix: ${filesByPortableKey.get(ancestor)} (ancestor of ${path})`);
+    }
+  }
+  const archiveBytes = localBytes + centralBytes + EOCD_BYTES;
+  if (archiveBytes > limits.maxArchiveBytes) throw new RangeError(`ZIP archive exceeds the ${limits.maxArchiveBytes} byte archive limit`);
+  return { prepared, archiveBytes, centralOffset: localBytes, centralBytes };
 }
 
 async function readPreparedSource(source, expectedSize) {
@@ -368,6 +385,14 @@ export async function verifyStoredZip(value, expectedManifest = null, { signal }
     cursor += CENTRAL_HEADER_BYTES + nameLength;
   }
   if (cursor !== eocd || previousLocalEnd !== centralOffset) throw new Error("ZIP record coverage is incomplete");
+  const filesByPortableKey = new Map(entries.map((entry) => [entry.path.normalize("NFC").toUpperCase().toLowerCase(), entry.path]));
+  for (const [key, path] of filesByPortableKey) {
+    const segments = key.split("/");
+    for (let length = 1; length < segments.length; length += 1) {
+      const ancestor = segments.slice(0, length).join("/");
+      if (filesByPortableKey.has(ancestor)) throw new Error(`ZIP file path is also used as a cross-platform directory prefix: ${filesByPortableKey.get(ancestor)} (ancestor of ${path})`);
+    }
+  }
   const manifest = {
     format: "zip32-store",
     modifiedAt: "1980-01-01T00:00:00.000Z",

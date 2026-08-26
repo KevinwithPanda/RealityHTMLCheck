@@ -18,7 +18,13 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "note-analyzer.mjs",
     "note-package.mjs",
     "note-folder-repair.mjs",
+    "note-zip-import.mjs",
+    "note-path-policy.mjs",
     "note-summary.mjs",
+    "note-scope.mjs",
+    "note-compare.mjs",
+    "note-comparison-report.mjs",
+    "note-ruleset.mjs",
     "note-repair-verification.mjs",
     "note-zip.mjs",
     "note-share-report.mjs",
@@ -94,6 +100,8 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   const noteHtml = readFileSync(resolve(output, "note.html"), "utf8");
   const noteChecker = readFileSync(resolve(output, "note-checker.js"), "utf8");
   const folderRepair = readFileSync(resolve(output, "note-folder-repair.mjs"), "utf8");
+  const zipImport = readFileSync(resolve(output, "note-zip-import.mjs"), "utf8");
+  const noteCompare = readFileSync(resolve(output, "note-compare.mjs"), "utf8");
   const styles = readFileSync(resolve(output, "styles.css"), "utf8");
   assert.match(styles, /\.profile-grid button\{min-height:40px;/);
   for (const [name, width, height] of [["report-preview.png", 1440, 900], ["finding-preview.png", 1440, 900], ["note-checker-preview.png", 1440, 1000]]) {
@@ -114,19 +122,27 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.ok(structuredDataMatch, "Pages homepage is missing JSON-LD product metadata");
   const structuredData = JSON.parse(structuredDataMatch[1]);
   assert.equal(structuredData["@type"], "SoftwareApplication");
-  assert.equal(structuredData.softwareVersion, "0.8.0");
+  assert.equal(structuredData.softwareVersion, "0.9.0");
   assert.equal(structuredData.codeRepository, "https://github.com/KevinwithPanda/RealityHTMLCheck");
   assert.equal(structuredData.image, "https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png");
   assert.ok(structuredData.featureList.includes("Policy anti-weakening review"));
   assert.ok(structuredData.featureList.includes("Browser-free bilingual audit plan previews"));
   assert.ok(structuredData.featureList.includes("Zero-upload HTML note and folder checks"));
   assert.ok(structuredData.featureList.includes("Jointly rechecked safe-metadata folder ZIPs containing every browser-selected file"));
+  assert.ok(structuredData.featureList.includes("Direct local import of bounded ZIP32 STORE and DEFLATE HTML exports"));
+  assert.ok(structuredData.featureList.includes("Portable browser evidence and bilingual repeat-check comparisons"));
   assert.match(noteHtml, /id="download-folder-zip"/);
-  assert.match(noteHtml, /includes every browser-selected file/);
+  assert.match(noteHtml, /id="zip-picker"/);
+  assert.match(noteHtml, /id="baseline-picker"/);
+  assert.match(noteHtml, /includes every imported file/);
   assert.match(noteChecker, /buildVerifiedFolderRepairZip/);
   assert.match(noteChecker, /verifySafeNotePackageRepair/);
-  assert.match(folderRepair, /\.\/note-zip\.mjs\?v=0\.8\.0/);
-  assert.doesNotMatch(`${noteChecker}\n${folderRepair}`, /from\s+["']https?:/);
+  assert.match(noteChecker, /importHtmlNoteZip/);
+  assert.match(noteChecker, /compareNoteBundles/);
+  assert.match(zipImport, /new DecompressionStream\("deflate-raw"\)/);
+  assert.match(zipImport, /Potentially sensitive ZIP path is blocked before extraction/);
+  assert.match(folderRepair, /\.\/note-zip\.mjs\?v=0\.9\.0/);
+  assert.doesNotMatch(`${noteChecker}\n${folderRepair}\n${zipImport}\n${noteCompare}`, /from\s+["']https?:/);
   assert.match(html, /href="note\.html"/);
   assert.match(html, /href="compatibility\.html"/);
   assert.match(html, /Open reproducible note evidence/);
@@ -134,7 +150,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(html, /AI 生成的 HTML，使用和分享前先体检/);
   assert.match(html, /<article><strong>30<\/strong><span[^>]+>HTML note integrity and portability rules/);
   assert.match(html, /<article><strong>4<\/strong><span[^>]+>byte-reproducible real Pandoc exports/);
-  assert.match(html, /github:KevinwithPanda\/RealityHTMLCheck#v0\.8\.0/);
+  assert.match(html, /github:KevinwithPanda\/RealityHTMLCheck#v0\.9\.0/);
   assert.match(html, /realityhtmlcheck note \.\/my-notes/);
   assert.match(html, /data-language="zh-CN"/);
   assert.match(html, /init --profile product --base-url/);
@@ -216,13 +232,18 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(llms, /evidence\/security-headers-fixed\/latest\.html/);
   assert.match(llms, /npm run realitycheck -- plan/);
   assert.match(llms, /Zero-install HTML note checker/);
-  assert.match(llms, /github:KevinwithPanda\/RealityHTMLCheck#v0\.8\.0/);
+  assert.match(llms, /github:KevinwithPanda\/RealityHTMLCheck#v0\.9\.0/);
   assert.match(llms, /realityhtmlcheck note \.\/my-notes/);
   assert.match(llms, /compatibility\.html/);
   assert.match(llms, /evidence\/real-export\/manifest\.json/);
   const previewRenderer = readFileSync("scripts/render-note-preview.mjs", "utf8");
   assert.match(previewRenderer, /#download-folder-zip/);
-  assert.match(previewRenderer, /ZIP \(\?:was read back\|已回读验证\)/);
+  assert.match(previewRenderer, /#folder-repair \.folder-candidate-id/);
+  assert.match(previewRenderer, /#baseline-comparison:not\(\[hidden\]\)/);
+  assert.match(previewRenderer, /Self-comparison produced a regression or unverified scope/);
+  assert.match(previewRenderer, /buildBrowserDeflateZipFixture/);
+  assert.match(previewRenderer, /Real Chrome did not report DEFLATE ZIP intake/);
+  assert.match(previewRenderer, /DEFLATE browser evidence is missing source\/import identities/);
   assert.match(previewRenderer, /overflow-anchor:none/);
   assert.match(previewRenderer, /unexpectedOrigins\.size/);
   assert.match(previewRenderer, /animations: "disabled", caret: "hide"/);
