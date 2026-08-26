@@ -39,8 +39,9 @@ function bundle({
   knownFiles = reports.length,
   truncated = false,
   kind = "html-note-check-bundle",
+  selection,
 } = {}) {
-  return {
+  const value = {
     schemaVersion: "1",
     kind,
     id,
@@ -49,6 +50,8 @@ function bundle({
     reports,
     packageFindings,
   };
+  if (selection !== undefined) value.selection = selection;
+  return value;
 }
 
 test("stable fingerprints bind a rule to an exact HTML or package scope", () => {
@@ -139,6 +142,56 @@ test("deleting a clean HTML file creates an error-level synthetic coverage regre
   assert.equal(noteComparisonGateFailed(comparison, "error"), true);
 });
 
+test("an exact current HTML exclusion changes the audited scope without pretending resolution or deletion", () => {
+  const before = bundle({
+    reports: [report("archive/old.html", [finding("replacement-character", 1, { level: "error" })]), report("index.html")],
+    knownFiles: 2,
+  });
+  const after = bundle({
+    reports: [report("index.html")],
+    knownFiles: 2,
+    selection: { html: { excludePatterns: ["archive/**"], excludedFiles: ["archive/old.html"], excludedCount: 1 } },
+  });
+  const comparison = compareNoteBundles(before, after);
+  assert.equal(comparison.counts.resolved, 0);
+  assert.equal(comparison.counts.unverified, 1);
+  assert.equal(comparison.unverified[0].reason, "html-scope-newly-excluded");
+  assert.equal(comparison.unverified[0].before.level, "error");
+  assert.deepEqual(comparison.scopeExclusions.html, {
+    patterns: ["archive/**"],
+    files: ["archive/old.html"],
+    count: 1,
+    baselineScopesExcluded: 1,
+    baselineFindingsExcluded: 1,
+    newlyExcludedScopes: 1,
+  });
+  assert.equal(noteComparisonGateFailed(comparison, "error"), true);
+
+  const accepted = compareNoteBundles(after, after);
+  assert.equal(accepted.counts.unverified, 0, "the same explicit exclusion in an accepted baseline must not keep CI red");
+  assert.equal(accepted.scopeExclusions.html.newlyExcludedScopes, 0);
+  assert.equal(noteComparisonGateFailed(accepted, "error"), false);
+
+  const reIncluded = bundle({
+    reports: [report("archive/old.html", [finding("replacement-character", 1, { level: "error" })]), report("index.html")],
+    knownFiles: 2,
+  });
+  const restoredComparison = compareNoteBundles(after, reIncluded);
+  assert.equal(restoredComparison.counts.new, 1, "removing an exclusion must resume ordinary finding comparison");
+  assert.equal(restoredComparison.new[0].fingerprint, "html:archive/old.html::replacement-character");
+  assert.equal(noteComparisonGateFailed(restoredComparison, "error"), true);
+
+  const absentAfter = bundle({
+    reports: [report("index.html")],
+    knownFiles: 1,
+    selection: { html: { excludePatterns: ["archive/**"], excludedFiles: [], excludedCount: 0 } },
+  });
+  const absentComparison = compareNoteBundles(before, absentAfter);
+  assert.equal(absentComparison.counts.unverified, 1);
+  assert.equal(absentComparison.unverified[0].scope.path, "archive/old.html");
+  assert.equal(noteComparisonGateFailed(absentComparison, "error"), true);
+});
+
 test("incomplete or contracted package coverage is gated even when neither bundle has package findings", () => {
   const before = bundle({ reports: [report("index.html")], knownFiles: 3 });
   const cases = [
@@ -156,6 +209,19 @@ test("incomplete or contracted package coverage is gated even when neither bundl
     assert.equal(coverage.details.syntheticCoverage, true);
     assert.equal(noteComparisonGateFailed(comparison, "error"), true);
   }
+});
+
+test("more than 500 excluded HTML inventory files remain valid as the tool's own baseline", () => {
+  const excludedFiles = Array.from({ length: 501 }, (_, index) => `archive/old-${index}.html`);
+  const evidence = bundle({
+    reports: [report("index.html")],
+    knownFiles: 502,
+    selection: { html: { excludePatterns: ["archive/**"], excludedFiles, excludedCount: excludedFiles.length } },
+  });
+  const comparison = compareNoteBundles(evidence, evidence);
+  assert.equal(comparison.counts.regressions, 0);
+  assert.equal(comparison.scopeExclusions.html.count, 501);
+  assert.equal(comparison.scopeExclusions.html.newlyExcludedScopes, 0);
 });
 
 test("a truncated after discovery leaves disappeared findings unverified even when the HTML path remains", () => {
@@ -220,6 +286,10 @@ test("validation rejects ambiguous, incomplete, and non-JSON comparison inputs",
   assert.throws(() => validateNoteBundleForComparison(bundle({ reports: [report("index.html", [finding("missing-title"), finding("missing-title")])] })), /duplicate ruleId/);
   assert.throws(() => validateNoteBundleForComparison(bundle({ reports: [report("index.html", [finding("missing-title", 0)])] })), /positive safe integer/);
   assert.throws(() => validateNoteBundleForComparison(bundle({ knownFiles: null, packageFindings: [finding("css-missing-local-file")] })), /complete package scope/);
+  assert.throws(() => validateNoteBundleForComparison(bundle({ selection: { html: { excludePatterns: ["../archive/**"], excludedFiles: [], excludedCount: 0 } } })), /relative portable glob|parent/);
+  assert.throws(() => validateNoteBundleForComparison(bundle({ selection: { html: { excludePatterns: ["archive/**"], excludedFiles: ["index.html"], excludedCount: 1 } } })), /cannot overlap/);
+  assert.throws(() => validateNoteBundleForComparison(bundle({ knownFiles: 1, selection: { html: { excludePatterns: ["archive/**"], excludedFiles: ["archive/old.html"], excludedCount: 1 } } })), /known file inventory/);
+  assert.throws(() => validateNoteBundleForComparison(bundle({ knownFiles: 2, selection: { html: { excludePatterns: ["archive/**"], excludedFiles: ["archive/old.html"], excludedCount: 0 } } })), /equal excludedFiles.length/);
   const circular = finding("missing-title");
   circular.extra = circular;
   assert.throws(() => validateNoteBundleForComparison(bundle({ reports: [report("index.html", [circular])] })), /circular references/);

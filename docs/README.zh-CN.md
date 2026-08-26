@@ -4,7 +4,7 @@
 
 RealityCheck 现在首先是一款面向普通用户的本地 HTML 笔记体检工具，同时保留面向 Codex、开发者和产品团队的真实浏览器 Web 核查能力。笔记检查无需账号、无需服务器，不会上传文件；专业 Web 核查则继续提供压力场景、证据、修复任务和修复前后证明。
 
-当前版本：`v0.6.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
+当前版本：`v0.7.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
 
 ## 一分钟内获得价值：检查 HTML 笔记
 
@@ -18,12 +18,12 @@ RealityCheck 现在首先是一款面向普通用户的本地 HTML 笔记体检�
 - 先给出“暂不建议分享 / 分享前请复核 / 本次检查未发现阻断项”，文件夹采用最低文件分避免平均值掩盖坏文件；
 - 生成中英文证据、可复制修复任务、JSON 结果、可分享离线 HTML 报告和安全修复副本。
 
-自动修复刻意限制为三项明确修改：补充 HTML5 doctype、声明文档语言和补充 UTF-8 元数据。浏览器只会下载一个**新副本**，绝不会覆盖你选择的源文件。图片描述、标题结构等需要判断的修改仍保留为可审查任务。
+自动修复刻意限制为三项明确修改：补充 HTML5 doctype、声明文档语言和补充 UTF-8 元数据。下载前，检查器会对同一份内存 HTML 再运行一次完整检测，显示原文件夹中的文件/文件夹分数、资源明确未打包的“单 HTML 得分”，以及“已解决 / 仍存在 / 新出现”问题；最终下载的字节就是刚刚复检的内容。浏览器只下载一个 HTML，不会打包文件夹图片、样式或附件；请把它移回原相对目录，或使用 Skill/CLI 生成保持目录结构的修复文件夹。浏览器绝不会覆盖你选择的源文件，也不会把图片描述、标题结构等需要判断的问题伪装成已修复。
 
 需要批量检查整个笔记文件夹时，无需克隆仓库或全局安装：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.0" \
   realityhtmlcheck note ./我的笔记
 # 打开 .realitycheck/notes/latest.html
 ```
@@ -31,14 +31,14 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
 生成保守修复副本，但保持所有源文件逐字节不变：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.0" \
   realityhtmlcheck note ./我的笔记 --fix-safe
 ```
 
 持续导出时，可把同一检查器放进 GitHub Actions；note 模式不启动服务器、不安装浏览器依赖，也不执行笔记脚本：
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.6.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.7.0
   with:
     kind: note
     path: exported-notes
@@ -53,19 +53,21 @@ RealityCheck 不上传源笔记。启用 artifact 时，工作流会保存生成
 第二次及后续导出可以与一份不可变的历史报告比较：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.0" \
   realityhtmlcheck note ./我的笔记 \
   --baseline .realitycheck/notes/历史运行/report.json \
   --fail-on error
 ```
 
-差异报告区分“新增、已解决、恶化、仍存在、未核验”。基线模式只按所选级别阻止新增、恶化和未核验回归；历史中持续存在的问题仍会展示，但不会让 CI 永久失败。删除 HTML 或缩小文件包范围只能判为未核验，不能伪装成修复。GitHub Action 使用同一个仓库内 `baseline` 输入，并随普通报告上传 `comparison.html` 与 `comparison.json`。
+差异报告区分“新增、已解决、恶化、仍存在、未核验”。基线模式只按所选级别阻止新增、恶化和未核验回归；历史中持续存在的问题仍会展示，但不会让 CI 永久失败。删除 HTML 或缩小文件包范围只能判为未核验，不能伪装成修复。
+
+如果一个文件夹同时包含已发布笔记与归档/草稿，可重复使用 `--exclude-html "archive/**"`，或在 Action 的 `exclude-html` 输入中逐行填写规则。被排除的 HTML 只退出逐文件检测：它仍是已知文件包条目，可继续作为跨笔记目标，也仍会进入 stylesheet/CSS 图；但不会运行该文件自身的逐文件图片/媒体规则。可视报告显示规则、数量和有限路径预览，JSON 保留完整命中路径。若相对旧基线首次新增排除，门禁会以 `html-scope-newly-excluded` 失败一次，避免通过缩小范围隐藏错误；审核并有意接受新基线后，相同排除不会让后续 CI 永久失败。达到 HTML 或 10,000 文件发现上限时会直接返回运行错误，绝不会只检查前半部分却给出绿色报告。
 
 如果在 Codex 中要求 `$realitycheck` “检查并修复”，Skill 会使用 `--prepare-repair` 把有上限的完整笔记文件夹、图片、样式、附件和关联笔记复制到证据目录，再由 Codex 直接修改该工作副本并复检。用户会在同一个任务中得到修复前报告、修复版 HTML 文件夹、修复后报告和仍需判断的问题，不需要把静态报告里的提示词再次粘贴回 Codex。
 
 如果要在导出流水线中阻止错误，可添加 `--fail-on error` 或 `--fail-on warning`。原有 URL 网页核查仍用于响应式交互、接口恢复、可访问性、性能、安全响应头、隐私预算和发布治理。
 
-无需安装也可以打开[产品首页](https://kevinwithpanda.github.io/RealityHTMLCheck/)；[代表性导出兼容证据](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)公开 7 个哈希固定夹具、4 个修复/决策案例和完整证据边界。仓库内的[演示中心](../examples/index.html)还包含真实浏览器夹具、修复证明、产物目录、风险台账、组合门禁和签名决策。
+无需安装也可以打开[产品首页](https://kevinwithpanda.github.io/RealityHTMLCheck/)；[代表性导出兼容证据](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)公开 4 个由真实 Pandoc 3.8.2.1 按固定命令生成并可逐字节重放的导出、7 个明确标注为 `-like` 的代表性夹具、4 个修复/决策案例和完整证据边界。真实导出覆盖 standalone、嵌入本地 CSS/SVG、目录/脚注/MathML 以及多 Markdown 合并；它们是有限证据，不是官方全兼容声明。仓库内的[演示中心](../examples/index.html)还包含真实浏览器夹具、修复证明、产物目录、风险台账、组合门禁和签名决策。
 
 ## 安装前先看实际效果
 

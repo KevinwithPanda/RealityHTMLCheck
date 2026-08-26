@@ -315,6 +315,121 @@ test("note CLI help presents the zero-config boundary", () => {
   assert.match(result.stdout, /never overwrites the source note/);
   assert.match(result.stdout, /--prepare-repair/);
   assert.match(result.stdout, /--baseline PATH/);
+  assert.match(result.stdout, /--exclude-html GLOB/);
+});
+
+test("note CLI exclusions remove only per-file HTML targets and keep package inventory evidence", () => {
+  const root = mkdtempSync(join(tmpdir(), "realitycheck-note-exclude-"));
+  try {
+    const notes = join(root, "notes");
+    mkdirSync(join(notes, "archive"), { recursive: true });
+    mkdirSync(join(notes, "assets"));
+    writeFileSync(join(notes, "assets", "chart.svg"), '<svg xmlns="http://www.w3.org/2000/svg"></svg>', "utf8");
+    writeFileSync(join(notes, "index.html"), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Published note</title></head><body><h1>Published note</h1><p>This complete published note links an archived section that must remain resolvable in the package inventory.</p><a href="archive/old.html#kept">Archived section</a><img src="assets/chart.svg" alt="Chart"></body></html>', "utf8");
+    const archivedSource = '<html><head><title>Archived draft</title></head><body><h1 id="kept">TODO �</h1><p>This archived draft intentionally contains per-file errors and must remain byte-for-byte unchanged in repair preparation.</p></body></html>';
+    writeFileSync(join(notes, "archive", "old.html"), archivedSource, "utf8");
+
+    const withoutExclusion = run([notes, "--output", join(root, "without"), "--fail-on", "error", "--language", "en"]);
+    assert.equal(withoutExclusion.status, 1, `${withoutExclusion.stdout}\n${withoutExclusion.stderr}`);
+
+    const output = join(root, "with");
+    const result = run([
+      notes,
+      "--output", output,
+      "--exclude-html", "archive/**",
+      "--exclude-html", "**/unused-*.html",
+      "--exclude-html", "archive/**",
+      "--prepare-repair",
+      "--fail-on", "error",
+      "--language", "en",
+    ]);
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    assert.match(result.stdout, /HTML exclusions: 2 pattern\(s\) excluded 1 per-file check target\(s\); those files remain in the package inventory/);
+    const latest = JSON.parse(readFileSync(join(output, "latest.json"), "utf8"));
+    assert.deepEqual(latest.selection.html, {
+      excludePatterns: ["archive/**", "**/unused-*.html"],
+      excludedFiles: ["archive/old.html"],
+      excludedCount: 1,
+    });
+    assert.equal(latest.reports.length, 1);
+    assert.equal(latest.reports[0].path, "index.html");
+    assert.equal(latest.discovery.knownFiles, 3, "excluded HTML must remain in knownFiles");
+    assert.equal(latest.packageFindings.some((finding) => finding.ruleId === "broken-cross-document-fragment"), false, "excluded HTML must remain available as a fragment target");
+    const reportHtml = readFileSync(join(output, "latest.html"), "utf8");
+    assert.match(reportHtml, /Auditable HTML exclusions/);
+    assert.match(reportHtml, /archive\/\*\*/);
+    assert.match(reportHtml, /Matched paths preview \(1\/1; complete list in report\.json\)/);
+    assert.match(reportHtml, /archive\/old\.html/);
+    assert.match(reportHtml, /own per-file image\/media rules are not run/);
+    const repairedArchive = join(output, latest.id, "repaired", "archive", "old.html");
+    assert.equal(readFileSync(repairedArchive, "utf8"), archivedSource, "excluded HTML must be copied as inventory, not silently repaired");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("excluded HTML files do not consume the max-files inspection limit", () => {
+  const root = mkdtempSync(join(tmpdir(), "realitycheck-note-exclude-limit-"));
+  try {
+    const notes = join(root, "notes");
+    mkdirSync(join(notes, "archive"), { recursive: true });
+    for (let index = 0; index < 25; index += 1) writeFileSync(join(notes, "archive", `old-${index}.html`), "<html><body><h1>Archived</h1></body></html>", "utf8");
+    writeFileSync(join(notes, "published.html"), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Published</title></head><body><h1>Published</h1><p>This selected note remains inside a one-file inspection limit after archived HTML files are excluded.</p></body></html>', "utf8");
+    const output = join(root, "output");
+    const result = run([notes, "--output", output, "--exclude-html", "archive/**", "--max-files", "1", "--language", "en"]);
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    const latest = JSON.parse(readFileSync(join(output, "latest.json"), "utf8"));
+    assert.equal(latest.discovery.truncated, false);
+    assert.equal(latest.discovery.htmlFiles, 1);
+    assert.equal(latest.discovery.knownFiles, 26);
+    assert.equal(latest.selection.html.excludedCount, 25);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("note CLI refuses an incomplete result instead of letting max-files hide later HTML", () => {
+  const root = mkdtempSync(join(tmpdir(), "realitycheck-note-limit-gate-"));
+  try {
+    const notes = join(root, "notes");
+    mkdirSync(notes);
+    const clean = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Complete note</title></head><body><h1>Complete note</h1><p>This complete note exists only to prove scope truncation cannot become a green partial result.</p></body></html>';
+    writeFileSync(join(notes, "a.html"), clean, "utf8");
+    writeFileSync(join(notes, "z.html"), "<html><body><h1>TODO �</h1></body></html>", "utf8");
+    const output = join(root, "output");
+    const result = run([notes, "--output", output, "--max-files", "1", "--fail-on", "error", "--language", "en"]);
+    assert.equal(result.status, 2, `${result.stdout}\n${result.stderr}`);
+    assert.match(result.stderr, /Refused to publish an incomplete note result/);
+    assert.equal(existsSync(join(output, "latest.json")), false, "an incomplete scope must not publish a stable passing result");
+
+    const oneFileOutput = join(root, "single-file-output");
+    const single = run([join(notes, "a.html"), "--output", oneFileOutput, "--max-files", "1", "--fail-on", "error", "--language", "en"]);
+    assert.equal(single.status, 0, `${single.stdout}\n${single.stderr}`);
+    const report = JSON.parse(readFileSync(join(oneFileOutput, "latest.json"), "utf8"));
+    assert.equal(report.discovery.truncated, false);
+    assert.equal(report.discovery.htmlFiles, 1);
+    assert.equal(report.discovery.knownFiles, 2, "single-file checks keep the complete sibling inventory without treating siblings as targets");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("note CLI rejects unsafe or non-portable HTML exclusion patterns", () => {
+  const root = mkdtempSync(join(tmpdir(), "realitycheck-note-exclude-invalid-"));
+  try {
+    const note = join(root, "note.html");
+    writeFileSync(note, '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Note</title></head><body><h1>Note</h1><p>Portable note.</p></body></html>', "utf8");
+    for (const pattern of ["", "/archive/**", "../archive/**", "archive\\**", "C:/archive/**", "archive/[ab].html", "archive/{a,b}.html", "archive//*.html", "archive/***.html", "~/archive/**", " archive/**", "archive/line\nbreak.html"]) {
+      const result = run([note, "--output", join(root, "output"), "--exclude-html", pattern]);
+      assert.equal(result.status, 2, `${JSON.stringify(pattern)}\n${result.stdout}\n${result.stderr}`);
+      assert.match(result.stderr, /exclude-html|portable|relative|segment|empty|whitespace/);
+    }
+    const excludesEverything = run([note, "--output", join(root, "all-excluded"), "--exclude-html", "**"]);
+    assert.equal(excludesEverything.status, 2);
+    assert.match(excludesEverything.stderr, /No \.html or \.htm notes remain after applying --exclude-html/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("note CLI baseline gates only new or worsened findings at the requested level", () => {
@@ -358,6 +473,61 @@ test("note CLI baseline gates only new or worsened findings at the requested lev
     const worsened = JSON.parse(readFileSync(join(root, "worsened-error", "comparison.json"), "utf8"));
     assert.ok(worsened.counts.worsened > 0);
     assert.ok(worsened.regressionsByLevel.error > 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("baseline comparison audits explicit HTML exclusions without treating a present excluded file as deleted", () => {
+  const root = mkdtempSync(join(tmpdir(), "realitycheck-note-exclude-baseline-"));
+  try {
+    const notes = join(root, "notes");
+    mkdirSync(join(notes, "archive"), { recursive: true });
+    writeFileSync(join(notes, "index.html"), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Published</title></head><body><h1>Published</h1><p>This selected note remains stable while an archived draft is explicitly excluded from later per-file checks.</p></body></html>', "utf8");
+    const archived = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Archive</title></head><body><h1>Archive �</h1><p>This known archived error is present in the inventory but deliberately outside the current HTML check scope.</p></body></html>';
+    const archivedPath = join(notes, "archive", "old.html");
+    writeFileSync(archivedPath, archived, "utf8");
+    const baselineOutput = join(root, "baseline");
+    assert.equal(run([notes, "--output", baselineOutput, "--language", "en"]).status, 0);
+    const baseline = join(baselineOutput, "latest.json");
+
+    const excludedOutput = join(root, "excluded");
+    const excluded = run([notes, "--output", excludedOutput, "--baseline", baseline, "--exclude-html", "archive/**", "--fail-on", "error", "--language", "en"]);
+    assert.equal(excluded.status, 1, `${excluded.stdout}\n${excluded.stderr}`);
+    const comparison = JSON.parse(readFileSync(join(excludedOutput, "comparison.json"), "utf8"));
+    assert.equal(comparison.counts.resolved, 0);
+    assert.equal(comparison.counts.unverified, 1);
+    assert.equal(comparison.unverified[0].reason, "html-scope-newly-excluded");
+    assert.deepEqual(comparison.scopeExclusions.html, {
+      patterns: ["archive/**"],
+      files: ["archive/old.html"],
+      count: 1,
+      baselineScopesExcluded: 1,
+      baselineFindingsExcluded: 2,
+      newlyExcludedScopes: 1,
+    });
+    assert.equal(comparison.gate.failed, true);
+    const exclusionComparisonHtml = readFileSync(join(excludedOutput, "comparison.html"), "utf8");
+    assert.match(exclusionComparisonHtml, /Auditable HTML exclusions/);
+    assert.match(exclusionComparisonHtml, /archive\/old\.html/);
+    assert.match(exclusionComparisonHtml, /complete list in comparison\.json/);
+    assert.match(exclusionComparisonHtml, /1 scope\(s\) are newly excluded versus the baseline/);
+
+    const acceptedOutput = join(root, "accepted");
+    const accepted = run([notes, "--output", acceptedOutput, "--baseline", join(excludedOutput, "latest.json"), "--exclude-html", "archive/**", "--fail-on", "error", "--language", "en"]);
+    assert.equal(accepted.status, 0, `${accepted.stdout}\n${accepted.stderr}`);
+    const acceptedComparison = JSON.parse(readFileSync(join(acceptedOutput, "comparison.json"), "utf8"));
+    assert.equal(acceptedComparison.counts.unverified, 0);
+    assert.equal(acceptedComparison.scopeExclusions.html.newlyExcludedScopes, 0);
+    assert.equal(acceptedComparison.gate.failed, false);
+
+    rmSync(archivedPath);
+    const missingOutput = join(root, "missing");
+    const missing = run([notes, "--output", missingOutput, "--baseline", baseline, "--exclude-html", "archive/**", "--fail-on", "error", "--language", "en"]);
+    assert.equal(missing.status, 1, `${missing.stdout}\n${missing.stderr}`);
+    const missingComparison = JSON.parse(readFileSync(join(missingOutput, "comparison.json"), "utf8"));
+    assert.equal(missingComparison.scopeExclusions.html.count, 0, "a pattern alone must not claim that an absent file was explicitly excluded");
+    assert.ok(missingComparison.unverified.some((item) => item.scope?.path === "archive/old.html"));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

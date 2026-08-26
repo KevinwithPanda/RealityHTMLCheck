@@ -28,6 +28,7 @@ import {
 } from "./note-compare.mjs";
 import { renderNoteComparisonHtml } from "./note-comparison-report.mjs";
 import { analyzeNotePackage } from "./note-package.mjs";
+import { compileHtmlExcludeGlobs } from "./note-scope.mjs";
 import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings } from "./note-summary.mjs";
 
 const HTML_EXTENSIONS = new Set([".htm", ".html"]);
@@ -53,10 +54,11 @@ Options:
   --output PATH            Report root (default: .realitycheck/notes)
   --fix-safe               Write repaired copies for unambiguous metadata fixes
   --prepare-repair         Copy the bounded note bundle and apply safe fixes for Codex repair
+  --exclude-html GLOB      Exclude matching HTML check targets; repeatable, files stay in package inventory
   --baseline PATH          Compare with an earlier html-note-check-bundle; gate regressions only
   --fail-on LEVEL          error|warning|never (default: never)
   --language en|zh-CN      Terminal summary language (default: zh-CN)
-  --max-files NUMBER       Maximum HTML notes, 1-500 (default: 200)
+  --max-files NUMBER       Maximum HTML targets, 1-500; exceeding fails closed (default: 200)
   -h, --help               Show this help
 
 The command never uploads files and never overwrites the source note.`;
@@ -64,7 +66,7 @@ The command never uploads files and never overwrites the source note.`;
 
 function parseArguments(argv) {
   const args = [...argv];
-  const options = { input: null, output: ".realitycheck/notes", baseline: null, fixSafe: false, prepareRepair: false, failOn: "never", language: "zh-CN", maxFiles: 200 };
+  const options = { input: null, output: ".realitycheck/notes", baseline: null, excludeHtml: [], fixSafe: false, prepareRepair: false, failOn: "never", language: "zh-CN", maxFiles: 200 };
   while (args.length) {
     const item = args.shift();
     if (item === "-h" || item === "--help") return { ...options, help: true };
@@ -74,6 +76,12 @@ function parseArguments(argv) {
     }
     if (item === "--prepare-repair") {
       options.prepareRepair = true;
+      continue;
+    }
+    if (item === "--exclude-html") {
+      const value = args.shift();
+      if (value === undefined || value === "") throw new Error("--exclude-html requires a non-empty portable glob");
+      options.excludeHtml.push(value);
       continue;
     }
     if (["--output", "--baseline", "--fail-on", "--language", "--max-files"].includes(item)) {
@@ -94,6 +102,7 @@ function parseArguments(argv) {
   if (!new Set(["error", "warning", "never"]).has(options.failOn)) throw new Error("--fail-on must be error, warning, or never");
   if (!new Set(["en", "zh-CN"]).has(options.language)) throw new Error("--language must be en or zh-CN");
   if (!Number.isInteger(options.maxFiles) || options.maxFiles < 1 || options.maxFiles > 500) throw new Error("--max-files must be an integer from 1 to 500");
+  options.excludeHtml = compileHtmlExcludeGlobs(options.excludeHtml).patterns;
   return options;
 }
 
@@ -101,8 +110,9 @@ function portablePath(value) {
   return value.split(sep).join("/");
 }
 
-function discover(root, { htmlLimit, fileLimit = 10000 }) {
+function discover(root, { htmlLimit, excludeHtml, fileLimit = 10000 }) {
   const htmlFiles = [];
+  const excludedHtmlFiles = [];
   const allFiles = [];
   let truncated = false;
   const walk = (directory) => {
@@ -118,14 +128,18 @@ function discover(root, { htmlLimit, fileLimit = 10000 }) {
       }
       if (!entry.isFile()) continue;
       allFiles.push(fullPath);
-      if (HTML_EXTENSIONS.has(extname(entry.name).toLowerCase()) && htmlFiles.length < htmlLimit) htmlFiles.push(fullPath);
-      else if (HTML_EXTENSIONS.has(extname(entry.name).toLowerCase())) truncated = true;
+      if (HTML_EXTENSIONS.has(extname(entry.name).toLowerCase())) {
+        const path = portablePath(relative(root, fullPath)) || basename(fullPath);
+        if (excludeHtml.matches(path)) excludedHtmlFiles.push(fullPath);
+        else if (htmlFiles.length < htmlLimit) htmlFiles.push(fullPath);
+        else truncated = true;
+      }
       if (allFiles.length >= fileLimit) truncated = true;
       if (truncated) return;
     }
   };
   walk(root);
-  return { htmlFiles, allFiles, truncated };
+  return { htmlFiles, excludedHtmlFiles, allFiles, truncated };
 }
 
 function timestamp() {
@@ -362,6 +376,15 @@ function localized(value, language) {
 
 function renderHtml(bundle) {
   const { reports, summary, packageFindings = [], packageSummary = summarizePackageFindings(packageFindings) } = bundle;
+  const htmlSelection = bundle.selection?.html || { excludePatterns: [], excludedFiles: [], excludedCount: 0 };
+  const visibleExcludedFiles = htmlSelection.excludedFiles.slice(0, 50);
+  const hiddenExcludedFiles = Math.max(0, htmlSelection.excludedCount - visibleExcludedFiles.length);
+  const exclusionNotice = htmlSelection.excludePatterns.length ? `<section class="notice">
+    <b data-en="Auditable HTML exclusions" data-zh-cn="可审计的 HTML 排除规则">Auditable HTML exclusions</b>
+    <p><span data-en="Excluded from per-file HTML checks" data-zh-cn="从逐文件 HTML 检查中排除">Excluded from per-file HTML checks</span>: <strong>${htmlSelection.excludedCount}</strong>. <span data-en="These files remain known package entries and can still serve as cross-note targets; their own per-file image/media rules are not run." data-zh-cn="这些文件仍是已知文件包条目，也可继续作为跨笔记目标；但不会运行其自身的逐文件图片/媒体规则。">These files remain known package entries and can still serve as cross-note targets; their own per-file image/media rules are not run.</span></p>
+    <p><span data-en="Patterns" data-zh-cn="规则">Patterns</span>: ${htmlSelection.excludePatterns.map((pattern) => `<code>${escapeHtml(pattern)}</code>`).join(" · ")}</p>
+    <details><summary data-en="Matched paths preview (${visibleExcludedFiles.length}/${htmlSelection.excludedCount}; complete list in report.json)" data-zh-cn="命中路径预览（${visibleExcludedFiles.length}/${htmlSelection.excludedCount}；完整清单见 report.json）">Matched paths preview (${visibleExcludedFiles.length}/${htmlSelection.excludedCount}; complete list in report.json)</summary>${visibleExcludedFiles.length ? `<ul>${visibleExcludedFiles.map((path) => `<li><code>${escapeHtml(path)}</code></li>`).join("")}</ul>` : '<p data-en="No current file matched these patterns." data-zh-cn="当前没有文件命中这些规则。">No current file matched these patterns.</p>'}${hiddenExcludedFiles ? `<p data-en="${hiddenExcludedFiles} additional path(s) are retained in report.json." data-zh-cn="另有 ${hiddenExcludedFiles} 个路径保留在 report.json 中。">${hiddenExcludedFiles} additional path(s) are retained in report.json.</p>` : ""}</details>
+  </section>` : "";
   const comparisonBanner = bundle.comparison ? `<section class="comparison-banner">
     <div><b data-en="Baseline comparison" data-zh-cn="基线差异">Baseline comparison</b><span data-en="${bundle.comparison.gate.failed ? "Regression gate failed" : "Regression gate passed"}" data-zh-cn="${bundle.comparison.gate.failed ? "回归门禁未通过" : "回归门禁已通过"}">${bundle.comparison.gate.failed ? "Regression gate failed" : "Regression gate passed"}</span></div>
     <p><strong>${bundle.comparison.counts.new}</strong> <span data-en="new" data-zh-cn="新增">new</span> · <strong>${bundle.comparison.counts.worsened}</strong> <span data-en="worsened" data-zh-cn="恶化">worsened</span> · <strong>${bundle.comparison.counts.unverified}</strong> <span data-en="unverified" data-zh-cn="未核验">unverified</span> · <strong>${bundle.comparison.counts.resolved}</strong> <span data-en="resolved" data-zh-cn="已解决">resolved</span> · <strong>${bundle.comparison.counts.persistent}</strong> <span data-en="persistent" data-zh-cn="仍存在">persistent</span></p>
@@ -409,6 +432,7 @@ function renderHtml(bundle) {
 <main class="wrap"><section class="hero"><p class="eyebrow" data-en="CHECK COMPLETE" data-zh-cn="检查完成">CHECK COMPLETE</p><h1 data-en="Results and next steps" data-zh-cn="结果与下一步">Results and next steps</h1><p data-en="Start with errors. Each item explains the impact, the recommended change, and the source evidence." data-zh-cn="先处理错误。每一项都说明影响、建议修改方法和源文件证据。">Start with errors. Each item explains the impact, the recommended change, and the source evidence.</p></section>
 <section class="summary"><div><strong>${summary.score}<small>/100</small></strong><span data-en="${readinessLabelEn}" data-zh-cn="${readinessLabelZh}">${readinessLabelEn}</span></div><div><strong>${summary.files}</strong><span data-en="HTML files" data-zh-cn="HTML 文件">HTML files</span></div><div><strong>${summary.counts.error}</strong><span data-en="errors" data-zh-cn="错误">errors</span></div><div><strong>${summary.counts.warning}</strong><span data-en="warnings" data-zh-cn="警告">warnings</span></div><div><strong>${summary.counts.autoFixable}</strong><span data-en="safe copy fixes" data-zh-cn="安全副本修复">safe copy fixes</span></div></section>
 ${comparisonBanner}
+${exclusionNotice}
 <p class="next-step" data-en="Safe fixes create new copies; the checked source files are never overwritten." data-zh-cn="安全修复只生成新副本，绝不会覆盖已检查的源文件。">Safe fixes create new copies; the checked source files are never overwritten.</p>
 <div class="actions"><button type="button" id="copy-all" data-task-en="${escapeHtml(allTaskEn)}" data-task-zh-cn="${escapeHtml(allTaskZh)}" data-en="Copy repair task for AI" data-zh-cn="复制给 AI 的修复任务">Copy repair task for AI</button><a href="report.json" download data-en="Download evidence" data-zh-cn="下载检查证据">Download evidence</a>${bundle.comparison ? '<a href="comparison.html" data-en="Open baseline comparison" data-zh-cn="打开基线差异">Open baseline comparison</a>' : ""}<a href="repair-plan.zh-CN.md" download data-en="Download repair plan" data-zh-cn="下载修复计划">Download repair plan</a></div>
 <div class="filters" role="group" aria-label="Finding filters"><button type="button" data-filter="all" aria-pressed="true" data-en="All findings" data-zh-cn="全部问题">All findings</button><button type="button" data-filter="error" aria-pressed="false" data-en="Errors" data-zh-cn="错误">Errors</button><button type="button" data-filter="warning" aria-pressed="false" data-en="Warnings" data-zh-cn="警告">Warnings</button><button type="button" data-filter="advice" aria-pressed="false" data-en="Advice" data-zh-cn="建议">Advice</button></div>
@@ -488,20 +512,30 @@ export async function runNoteCommand(argv) {
   if (!inputStat.isFile() && !inputStat.isDirectory()) throw new Error("The note input must be a regular file or directory");
   if (inputStat.isFile() && !HTML_EXTENSIONS.has(extname(input).toLowerCase())) throw new Error("The note input file must end in .html or .htm");
   const baseline = options.baseline ? loadComparisonBaseline(options.baseline) : null;
+  const htmlExclusions = compileHtmlExcludeGlobs(options.excludeHtml);
 
   const root = inputStat.isDirectory() ? input : dirname(input);
-  const discovered = discover(root, { htmlLimit: options.maxFiles });
-  if (options.prepareRepair && inputStat.isDirectory() && discovered.truncated) {
-    throw new Error("Refused to prepare an incomplete repair copy; reduce the folder or raise --max-files within its safe limit");
+  const discovered = discover(root, {
+    htmlLimit: inputStat.isDirectory() ? options.maxFiles : 10000,
+    excludeHtml: htmlExclusions,
+  });
+  if (discovered.truncated) {
+    throw new Error("Refused to publish an incomplete note result: discovery reached the HTML or 10,000-file safety limit. Narrow the folder, add reviewed --exclude-html rules, or raise --max-files up to 500.");
   }
   const repairFilesToCopy = options.prepareRepair ? (inputStat.isFile() ? [input] : discovered.allFiles) : [];
   const repairCopyBytes = repairFilesToCopy.reduce((sum, path) => sum + lstatSync(path).size, 0);
   if (repairCopyBytes > MAX_REPAIR_COPY_BYTES) {
     throw new Error("Refused to prepare a repair copy larger than 512 MiB");
   }
-  const htmlFiles = inputStat.isFile() ? [input] : discovered.htmlFiles;
-  if (!htmlFiles.length) throw new Error("No .html or .htm notes were found");
-  const knownFiles = discovered.truncated ? null : discovered.allFiles.map((path) => portablePath(relative(root, path)));
+  const inputPortablePath = portablePath(relative(root, input)) || basename(input);
+  const inputExcluded = inputStat.isFile() && htmlExclusions.matches(inputPortablePath);
+  const htmlFiles = inputStat.isFile() ? (inputExcluded ? [] : [input]) : discovered.htmlFiles;
+  const excludedHtmlFiles = inputStat.isFile() ? (inputExcluded ? [input] : []) : discovered.excludedHtmlFiles;
+  if (!htmlFiles.length) throw new Error(htmlExclusions.patterns.length
+    ? "No .html or .htm notes remain after applying --exclude-html"
+    : "No .html or .htm notes were found");
+  const knownFiles = discovered.allFiles.map((path) => portablePath(relative(root, path)));
+  const excludedHtmlPaths = excludedHtmlFiles.map((path) => portablePath(relative(root, path)) || basename(path)).sort((left, right) => left.localeCompare(right));
   let reports = htmlFiles.map((path) => analyzeHtmlNote({
     path: portablePath(relative(root, path)) || basename(path),
     html: readFileSync(path, "utf8"),
@@ -509,8 +543,11 @@ export async function runNoteCommand(argv) {
   }));
   let packageFindings = [];
   if (knownFiles) {
+    const inventoryHtmlFiles = inputStat.isFile()
+      ? [input]
+      : discovered.allFiles.filter((path) => HTML_EXTENSIONS.has(extname(path).toLowerCase()));
     const packageEntries = [
-      ...htmlFiles.map((path) => ({ path: portablePath(relative(root, path)) || basename(path), text: readFileSync(path, "utf8"), kind: "html" })),
+      ...inventoryHtmlFiles.map((path) => ({ path: portablePath(relative(root, path)) || basename(path), text: readFileSync(path, "utf8"), kind: "html" })),
       ...discovered.allFiles.filter((path) => extname(path).toLowerCase() === ".css").map((path) => ({ path: portablePath(relative(root, path)), text: lstatSync(path).size <= 5 * 1024 * 1024 ? readFileSync(path, "utf8") : null, kind: "css" })),
     ];
     packageFindings = analyzeNotePackage({ entries: packageEntries, knownFiles })
@@ -520,7 +557,7 @@ export async function runNoteCommand(argv) {
   const packageSummary = summarizePackageFindings(packageFindings);
   const summary = summarizeNoteReports(reports, packageSummary);
   const { counts } = summary;
-  const fingerprint = createHash("sha256").update(`${input}\0${reports.map((report) => report.path).join("\0")}`).digest("hex").slice(0, 8);
+  const fingerprint = createHash("sha256").update(`${input}\0${reports.map((report) => report.path).join("\0")}\0${htmlExclusions.patterns.join("\0")}\0${excludedHtmlPaths.join("\0")}`).digest("hex").slice(0, 8);
   const outputRoot = resolve(options.output);
   const { runId, runDirectory } = createNoteRunDirectory(outputRoot, fingerprint);
   const bundle = {
@@ -530,6 +567,13 @@ export async function runNoteCommand(argv) {
     generatedAt: new Date().toISOString(),
     input: { name: basename(input), kind: inputStat.isDirectory() ? "directory" : "file" },
     discovery: { htmlFiles: reports.length, knownFiles: knownFiles?.length ?? null, truncated: discovered.truncated },
+    selection: {
+      html: {
+        excludePatterns: htmlExclusions.patterns,
+        excludedFiles: excludedHtmlPaths,
+        excludedCount: excludedHtmlPaths.length,
+      },
+    },
     summary,
     reports,
     packageFindings,
@@ -588,7 +632,7 @@ export async function runNoteCommand(argv) {
       const target = resolve(repairRoot, relativePath);
       if (!target.startsWith(`${repairRoot}${sep}`)) throw new Error("Refused repaired output outside the run directory");
       mkdirSync(dirname(target), { recursive: true });
-      if (HTML_EXTENSIONS.has(extname(path).toLowerCase())) {
+      if (HTML_EXTENSIONS.has(extname(path).toLowerCase()) && !htmlExclusions.matches(relativePath)) {
         const repaired = applySafeNoteFixes(readFileSync(path, "utf8"));
         safeFixes += repaired.changes.length;
         writeFileSync(target, repaired.html, "utf8");
@@ -614,6 +658,11 @@ export async function runNoteCommand(argv) {
     ? `已检查 ${summary.files} 个 HTML 笔记：${summary.score}/100，${counts.error} 个错误，${counts.warning} 个警告。`
     : `Checked ${summary.files} HTML note(s): ${summary.score}/100, ${counts.error} error(s), ${counts.warning} warning(s).`);
   console.log(zh ? `可视报告：${join(runDirectory, "report.html")}` : `Visual report: ${join(runDirectory, "report.html")}`);
+  if (htmlExclusions.patterns.length) {
+    console.log(zh
+      ? `HTML 排除：${htmlExclusions.patterns.length} 条规则排除 ${excludedHtmlPaths.length} 个逐文件检查目标；这些文件仍保留在文件包库存中。`
+      : `HTML exclusions: ${htmlExclusions.patterns.length} pattern(s) excluded ${excludedHtmlPaths.length} per-file check target(s); those files remain in the package inventory.`);
+  }
   if (bundle.comparison) {
     const comparison = bundle.comparison;
     console.log(zh

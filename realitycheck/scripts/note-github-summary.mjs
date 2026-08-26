@@ -72,6 +72,7 @@ export function buildNoteGitHubSummary(bundle, language = "en") {
       ? (zh ? "分享前请复核" : "Review before sharing")
       : (zh ? "未发现阻断项" : "No blocking issues found");
   const comparison = bundle.comparison || null;
+  const htmlSelection = bundle.selection?.html || { excludePatterns: [], excludedCount: 0 };
   const findings = (comparisonFindings(bundle) || bundleFindings(bundle))
     .sort((left, right) => (LEVEL_ORDER[left.finding.level] ?? 9) - (LEVEL_ORDER[right.finding.level] ?? 9)
       || String(left.finding.evidence?.[0]?.path || left.report?.path || "").localeCompare(String(right.finding.evidence?.[0]?.path || right.report?.path || ""))
@@ -92,6 +93,18 @@ export function buildNoteGitHubSummary(bundle, language = "en") {
     `| ${counts.error ?? 0} | ${counts.warning ?? 0} | ${counts.advice ?? 0} | ${counts.autoFixable ?? 0} |`,
     "",
   ];
+  if (htmlSelection.excludePatterns.length) {
+    const visiblePatterns = htmlSelection.excludePatterns.slice(0, 10).map((pattern) => `\`${inlineCode(pattern)}\``).join(", ");
+    const remainder = Math.max(0, htmlSelection.excludePatterns.length - 10);
+    const visibleFiles = (htmlSelection.excludedFiles || []).slice(0, 10).map((path) => `\`${inlineCode(path)}\``).join(", ");
+    const fileRemainder = Math.max(0, Number(htmlSelection.excludedCount || 0) - Math.min(10, (htmlSelection.excludedFiles || []).length));
+    lines.push(zh
+      ? `HTML 排除：${htmlSelection.excludePatterns.length} 条规则从逐文件检查中排除 ${htmlSelection.excludedCount} 个文件；这些文件仍是已知文件包条目和跨笔记目标，但不会运行其自身的逐文件规则。规则：${visiblePatterns}${remainder ? `（另有 ${remainder} 条）` : ""}`
+      : `HTML exclusions: ${htmlSelection.excludePatterns.length} pattern(s) excluded ${htmlSelection.excludedCount} file(s) from per-file checks. They remain known package entries and cross-note targets, but their own per-file rules are not run. Patterns: ${visiblePatterns}${remainder ? ` (${remainder} more)` : ""}`, "");
+    lines.push(zh
+      ? `命中路径预览：${visibleFiles || "无"}${fileRemainder ? `（另有 ${fileRemainder} 个，完整清单见报告 JSON）` : "（完整清单见报告 JSON）"}`
+      : `Matched path preview: ${visibleFiles || "none"}${fileRemainder ? ` (${fileRemainder} more; complete list in report JSON)` : " (complete list in report JSON)"}`, "");
+  }
   if (comparison) {
     lines.push(zh ? "## 相较基线" : "## Changes since baseline", "");
     lines.push(`| ${zh ? "新增" : "New"} | ${zh ? "已解决" : "Resolved"} | ${zh ? "恶化" : "Worsened"} | ${zh ? "仍存在" : "Persistent"} | ${zh ? "未核验" : "Unverified"} |`);

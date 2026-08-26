@@ -46,6 +46,7 @@ jobs:
           node --check realitycheck/scripts/audit-plan.mjs
           node --check realitycheck/scripts/security-headers.mjs
           node --check realitycheck/scripts/note-analyzer.mjs
+          node --check realitycheck/scripts/note-scope.mjs
           node --check realitycheck/scripts/note-compare.mjs
           node --check realitycheck/scripts/note-comparison-report.mjs
           node --check realitycheck/scripts/note-check.mjs
@@ -192,6 +193,54 @@ jobs:
           summary = (root / "github-summary.md").read_text(encoding="utf-8")
           assert "Regression gate passed" in summary, summary
           assert "do not keep the job red" in summary, summary
+          PY
+
+      - name: Prepare the auditable HTML exclusion Action fixture
+        shell: bash
+        run: |
+          mkdir -p note-exclusion-fixture/archive
+          cat > note-exclusion-fixture/index.html <<'HTML'
+          <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Published note</title></head><body><h1>Published note</h1><p>This complete selected note proves that Action exclusions affect only per-file HTML checks.</p><a href="archive/draft.html#kept">Archived section</a></body></html>
+          HTML
+          cat > note-exclusion-fixture/archive/draft.html <<'HTML'
+          <html><body><h1 id="kept">TODO �</h1><p>This intentionally broken archived draft remains in the package inventory.</p></body></html>
+          HTML
+
+      - name: Prove auditable HTML exclusions in the composite Action
+        id: note-exclusion-action
+        uses: ./
+        with:
+          kind: note
+          path: note-exclusion-fixture
+          exclude-html: |
+            archive/**
+          output: .realitycheck/ci-note-exclusion
+          fail-on: error
+          summary-language: en
+          artifact-name: realitycheck-note-exclusion-report
+
+      - name: Verify excluded HTML remains in the Action package inventory
+        shell: bash
+        env:
+          RC_ACTION_EXIT_CODE: ${{ steps.note-exclusion-action.outputs.exit-code }}
+        run: |
+          test "$RC_ACTION_EXIT_CODE" = "0"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path(".realitycheck/ci-note-exclusion")
+          report = json.loads((root / "latest.json").read_text(encoding="utf-8"))
+          assert report["selection"]["html"] == {
+              "excludePatterns": ["archive/**"],
+              "excludedFiles": ["archive/draft.html"],
+              "excludedCount": 1,
+          }, report
+          assert report["discovery"]["htmlFiles"] == 1, report
+          assert report["discovery"]["knownFiles"] == 2, report
+          assert not any(item["ruleId"] == "broken-cross-document-fragment" for item in report["packageFindings"]), report
+          summary = (root / "github-summary.md").read_text(encoding="utf-8")
+          assert "HTML exclusions" in summary, summary
+          assert "remain in the package inventory" in summary, summary
           PY
 
       - name: Prove the browser-free effective audit plan
@@ -936,6 +985,37 @@ jobs:
             .realitycheck/ci-waiver-unwaived
             .realitycheck/ci-waiver-governed
           if-no-files-found: error
+
+  reproduce-real-pandoc-exports:
+    name: Reproduce real Pandoc exports
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          package-manager-cache: false
+
+      - name: Download the pinned official Pandoc archive and verify it
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "pandoc-3.8.2.1-windows-x86_64.zip"
+          $expanded = Join-Path $env:RUNNER_TEMP "pandoc-3.8.2.1"
+          Invoke-WebRequest -Uri "https://github.com/jgm/pandoc/releases/download/3.8.2.1/pandoc-3.8.2.1-windows-x86_64.zip" -OutFile $archive
+          $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          $expected = "ded73890567ae71b945c8b36b8b33f89b5ed7357a9156a233445b46f92a5bc82"
+          if ($actual -ne $expected) { throw "Pandoc archive SHA-256 mismatch: $actual" }
+          Expand-Archive -LiteralPath $archive -DestinationPath $expanded
+          $pandoc = Get-ChildItem -LiteralPath $expanded -Filter pandoc.exe -File -Recurse | Select-Object -First 1
+          if (-not $pandoc) { throw "Pinned Pandoc archive did not contain pandoc.exe" }
+          "PANDOC_EXE=$($pandoc.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Require every checked-in real export to reproduce byte for byte
+        shell: pwsh
+        run: node scripts/real-export-evidence.mjs --reproduce --pandoc "$env:PANDOC_EXE"
 
   note-action-no-install:
     name: HTML note Action without repository dependencies

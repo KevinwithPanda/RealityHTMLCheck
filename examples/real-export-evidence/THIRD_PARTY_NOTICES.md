@@ -1,6 +1,6 @@
-# Third-party notice for the captured Pandoc export
+# Third-party notice for the captured Pandoc exports
 
-The executable used to generate the sample is not redistributed. The generated standalone HTML contains material from Pandoc's default templates/styles. The installed Pandoc 3.8.2.1 `COPYRIGHT.txt` states that Pandoc's templates are dual-licensed under GPL version 2 or later or, at the recipient's option, the BSD 3-clause license. This repository selects the BSD 3-clause option for those template portions.
+The executable used to generate the four samples is not redistributed. The generated standalone HTML files contain material from Pandoc's default templates/styles. The installed Pandoc 3.8.2.1 `COPYRIGHT.txt` states that Pandoc's templates are dual-licensed under GPL version 2 or later or, at the recipient's option, the BSD 3-clause license. This repository selects the BSD 3-clause option for those template portions. All Markdown, CSS, and SVG inputs in this evidence set are authored by RealityCheck contributors and covered by the repository's MIT license.
 
 Pandoc templates
 

@@ -101,6 +101,18 @@ test("note Action summary leads with the share decision and lowest-file scope", 
   assert.match(summary, /styles\/main\.css:12/);
 });
 
+test("note Action summary discloses auditable HTML exclusions without claiming files vanished", () => {
+  const bundle = fixture();
+  bundle.selection = { html: { excludePatterns: ["archive/**", "**/draft-?.html"], excludedFiles: ["archive/old.html"], excludedCount: 1 } };
+  const summary = buildNoteGitHubSummary(bundle, "en");
+  assert.match(summary, /HTML exclusions: 2 pattern\(s\) excluded 1 file\(s\)/);
+  assert.match(summary, /remain known package entries and cross-note targets/);
+  assert.match(summary, /own per-file rules are not run/);
+  assert.match(summary, /`archive\/\*\*`/);
+  assert.match(summary, /`\*\*\/draft-\?\.html`/);
+  assert.match(summary, /Matched path preview: `archive\/old\.html`/);
+});
+
 test("note Action annotations encode properties and neutralize workflow-command text", () => {
   const annotations = buildNoteWorkflowAnnotations(fixture(), "en", 20, "exported-notes");
   assert.equal(annotations.length, 3);

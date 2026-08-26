@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { analyzeHtmlNote } from "../realitycheck/scripts/note-analyzer.mjs";
+import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask, normalizeNotePath } from "../realitycheck/scripts/note-analyzer.mjs";
 import { analyzeNotePackage } from "../realitycheck/scripts/note-package.mjs";
 import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "../realitycheck/scripts/note-summary.mjs";
 import { buildPortableNoteReport } from "../site/note-share-report.mjs";
+import { analyzeBrowserNoteSources, duplicateBrowserNotePaths, safeRepairDownloadName, safeRepairDownloadPayload, verifySafeNoteRepair } from "../site/note-repair-verification.mjs";
+
+const analysisHelpers = { analyzeHtmlNote, applySafeNoteFixes, analyzeNotePackage, summarizeNoteReports, summarizePackageFindings, normalizeNotePath };
 
 test("zero-install note checker exposes a private file and folder workflow", () => {
   const html = readFileSync("site/note.html", "utf8");
@@ -18,7 +21,8 @@ test("zero-install note checker exposes a private file and folder workflow", () 
   assert.match(html, /不上传/);
   assert.match(html, /Never overwrites the original/);
   assert.match(html, /不覆盖原文件/);
-  assert.match(html, /script type="module" src="note-checker\.js\?v=0\.6\.0-baseline"/);
+  assert.match(html, /script type="module" src="note-checker\.js\?v=0\.7\.0"/);
+  assert.match(html, /Browser repair downloads one HTML only; folder assets are not bundled/);
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   assert.doesNotMatch(html, /<link[^>]+rel="stylesheet"[^>]+href="https?:/i);
 });
@@ -28,6 +32,18 @@ test("browser note checker analyzes untrusted content without rendering or uploa
   assert.match(script, /file\.text\(\)/);
   assert.match(script, /analyzeHtmlNote/);
   assert.match(script, /applySafeNoteFixes/);
+  assert.match(script, /verifySafeNoteRepair/);
+  assert.match(script, /safeRepairDownloadPayload/);
+  assert.match(script, /safeRepairDownloadName/);
+  assert.match(script, /duplicateBrowserNotePaths/);
+  assert.match(script, /inspectionGeneration/);
+  assert.match(script, /clearRenderedResult/);
+  assert.match(script, /generation !== inspectionGeneration/);
+  assert.match(script, /const selectedFiles = \[\.\.\.fileList\]/);
+  assert.match(script, /elements\.filePicker\.value = ""/);
+  assert.match(script, /Apply safe fixes, recheck & download/);
+  assert.match(script, /this does not mean every problem is fixed/);
+  assert.match(script, /download is the exact in-memory HTML that was rechecked/);
   assert.match(script, /buildRepairTask/);
   assert.match(script, /buildPortableNoteReport/);
   assert.match(script, /packageFindings/);
@@ -36,12 +52,89 @@ test("browser note checker analyzes untrusted content without rendering or uploa
   assert.match(script, /file\.size <= 5 \* 1024 \* 1024 \? await file\.text\(\) : null/);
   assert.match(script, /HTML file\(s\) exceed 25 MiB/);
   assert.match(script, /new Blob/);
-  assert.match(script, /\.repaired\.html/);
+  assert.match(readFileSync("site/note-repair-verification.mjs", "utf8"), /\.repaired\.html/);
   assert.doesNotMatch(script, /\.innerHTML\s*=/);
   assert.doesNotMatch(script, /\beval\s*\(/);
   assert.doesNotMatch(script, /\bfetch\s*\(/);
   assert.doesNotMatch(script, /XMLHttpRequest|WebSocket|sendBeacon/);
   assert.doesNotMatch(script, /document\.write/);
+});
+
+test("browser note analysis refuses duplicate paths before report and repair pairing", () => {
+  assert.deepEqual(duplicateBrowserNotePaths(["note.html", "folder/other.html", "note.html"], normalizeNotePath), ["note.html"]);
+  assert.deepEqual(duplicateBrowserNotePaths(["a\\note.html", "a/note.html"], normalizeNotePath), ["a/note.html"]);
+  assert.deepEqual(duplicateBrowserNotePaths(["a/../note.html", "note.html"], normalizeNotePath), ["note.html"]);
+  assert.throws(() => analyzeBrowserNoteSources({
+    htmlSources: [
+      { path: "note.html", html: "<!doctype html><html><body><h1>One</h1></body></html>" },
+      { path: "note.html", html: "<html><body><h1>Two</h1></body></html>" },
+    ],
+    knownFiles: ["note.html"],
+  }, analysisHelpers), /Duplicate note path/);
+  assert.throws(() => analyzeBrowserNoteSources({
+    htmlSources: [{ path: "note.html", html: "<!doctype html><html><body><h1>One</h1></body></html>" }],
+    knownFiles: ["note.html", "note.html"],
+  }, analysisHelpers), /Duplicate package path/);
+});
+
+test("safe browser repair is rechecked and the download is exactly the verified HTML", () => {
+  const original = '<html><head><title>Research draft</title></head><body><h1>Research TODO</h1><p>This unfinished research note has enough readable content while retaining a reviewable placeholder and executable behavior.</p><script>window.startDraft()</script></body></html>';
+  const analysis = { htmlSources: [{ path: "draft.html", html: original }], cssSources: [], knownFiles: ["draft.html"] };
+  const before = analyzeBrowserNoteSources(analysis, analysisHelpers);
+  const verification = verifySafeNoteRepair({ path: "draft.html", beforeBundle: before, analysis }, analysisHelpers);
+
+  assert.deepEqual(verification.changes, ["missing-doctype", "missing-document-language", "missing-charset"]);
+  assert.equal(verification.originalModified, false);
+  assert.equal(analysis.htmlSources[0].html, original);
+  assert.ok(verification.after.report.score > verification.before.report.score);
+  assert.deepEqual(new Set(verification.findings.resolved.map((entry) => entry.finding.ruleId)), new Set([
+    "missing-doctype",
+    "missing-document-language",
+    "missing-charset",
+  ]));
+  assert.equal(verification.findings.remaining.some((entry) => entry.finding.ruleId === "unfinished-placeholder"), true);
+  assert.equal(verification.findings.remaining.some((entry) => entry.finding.ruleId === "executable-script"), true);
+  assert.deepEqual(verification.findings.introduced, []);
+  assert.equal(verification.download.context, "single-html-without-folder-assets");
+  assert.equal(verification.download.packageAssetsIncluded, false);
+  assert.equal(verification.download.summary.score, verification.after.report.score);
+
+  const payload = safeRepairDownloadPayload(verification, "draft.repaired.html");
+  assert.equal(payload.content, verification.repairedHtml);
+  assert.deepEqual(new TextEncoder().encode(payload.content), new TextEncoder().encode(verification.repairedHtml));
+  assert.equal(payload.name, "draft.repaired.html");
+  const downloadedReport = analyzeHtmlNote({ path: "draft.html", html: payload.content, knownFiles: ["draft.html"] });
+  assert.equal(downloadedReport.score, verification.after.report.score);
+  assert.deepEqual(downloadedReport.findings.map((finding) => finding.ruleId), verification.after.report.findings.map((finding) => finding.ruleId));
+  assert.equal(applySafeNoteFixes(payload.content).changes.length, 0);
+});
+
+test("browser repair reports the downloaded HTML without pretending folder assets were bundled", () => {
+  const original = '<html><head><title>Folder note</title></head><body><h1>Folder note</h1><p>This folder note has enough useful text and one local image that exists only in the selected package.</p><img src="assets/chart.svg" alt="Chart"></body></html>';
+  const analysis = {
+    htmlSources: [{ path: "folder/note.html", html: original }],
+    cssSources: [],
+    knownFiles: ["folder/note.html", "folder/assets/chart.svg"],
+  };
+  const before = analyzeBrowserNoteSources(analysis, analysisHelpers);
+  const verification = verifySafeNoteRepair({ path: "folder/note.html", beforeBundle: before, analysis }, analysisHelpers);
+  assert.equal(verification.after.report.findings.some((finding) => finding.ruleId === "local-files-not-verified"), false);
+  assert.equal(verification.download.report.findings.some((finding) => finding.ruleId === "local-files-not-verified"), true);
+  assert.equal(verification.download.onlyFindings.some((entry) => entry.finding.ruleId === "local-files-not-verified"), true);
+  assert.equal(verification.download.packageAssetsIncluded, false);
+  assert.notEqual(verification.download.summary.score, verification.after.summary.score);
+  assert.notEqual(safeRepairDownloadName("folder-a/index.html"), safeRepairDownloadName("folder-b/index.html"));
+  assert.equal(safeRepairDownloadName("index.html"), "index.repaired.html");
+  const portable = buildPortableNoteReport({
+    ...before,
+    generatedAt: "2026-08-27T00:00:00.000Z",
+    repairVerifications: new Map([[verification.path, verification]]),
+  }, { buildRepairTask, buildPackageRepairTask, noteDecision });
+  assert.match(portable, /SAFE-FIX PROOF/);
+  assert.match(portable, /Original-folder file score/);
+  assert.match(portable, /HTML-only score \(assets not bundled\)/);
+  assert.match(portable, /folder images, styles, and attachments are not bundled/);
+  assert.doesNotMatch(portable, /This folder note has enough useful text/);
 });
 
 test("folder readiness cannot average away one broken note", () => {

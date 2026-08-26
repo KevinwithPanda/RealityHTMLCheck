@@ -14,6 +14,20 @@ The command writes a timestamped self-contained `report.html`, `report.json`, En
 
 If only one file is available, report local attachments as unverified instead of falsely claiming they are missing. Ask for the folder only when attachment integrity matters to the request.
 
+### Keep deliberate archives out of the sharing target
+
+When the user explicitly distinguishes publishable notes from archived or draft HTML, use one or more portable globs:
+
+```bash
+node <skill-dir>/scripts/note-check.mjs <folder> \
+  --exclude-html "archive/**" \
+  --exclude-html "**/draft-?.html"
+```
+
+Use forward slashes and repository-relative paths. Do not pass absolute paths, parent traversal, backslashes, character classes, brace expansion, or shell extglobs. Matched HTML leaves only the per-file rule set. It remains in `knownFiles`, can still serve as a cross-note target, and still contributes linked stylesheets to the package CSS graph. Do not claim that images, media, or other references used only inside the excluded document were checked: those belong to its skipped per-file rules. Report `selection.html.excludePatterns`, matched paths, and the excluded count. If every HTML file is excluded, stop as an operational error rather than claiming success.
+
+Do not introduce an exclusion just to hide a finding. When a baseline previously checked a path that is now excluded, require the resulting `html-scope-newly-excluded` unverified gate failure to be reviewed. Only an intentionally accepted later baseline may make that same declared scope stable.
+
 ## Compare a later export
 
 When the user supplies an immutable earlier note `report.json`, run:
@@ -24,7 +38,7 @@ node <skill-dir>/scripts/note-check.mjs <file-or-directory> \
   --fail-on error
 ```
 
-The run writes `comparison.json` and a self-contained bilingual `comparison.html`. Explain `new`, `resolved`, `worsened`, `persistent`, and `unverified` separately. In baseline mode, only new/worsened/unverified findings participate in the requested error/warning gate; persistent baseline debt remains visible without keeping CI permanently red. A removed HTML file, truncated discovery, missing package inventory, or contracted package scope is unverified rather than resolved.
+The run writes `comparison.json` and a self-contained bilingual `comparison.html`. Explain `new`, `resolved`, `worsened`, `persistent`, and `unverified` separately. In baseline mode, only new/worsened/unverified findings participate in the requested error/warning gate; persistent baseline debt remains visible without keeping CI permanently red. A removed HTML file, newly excluded checked scope, truncated discovery, missing package inventory, or contracted package scope is unverified rather than resolved.
 
 ## Interpret the result
 

@@ -37,6 +37,7 @@ import { buildReleaseDecision, parseRequiredControls, releaseDecisionExitCode, w
 import { buildAuditPlan, writeAuditPlan } from "./audit-plan.mjs";
 import { describeSecurityHeaderViolations, evaluateSecurityHeaderPolicies, requiredSecurityHeaders, suggestSecurityHeaderFix } from "./security-headers.mjs";
 import { runNoteCommand } from "./note-check.mjs";
+import { TOOL_VERSION } from "./version.mjs";
 
 const require = createRequire(import.meta.url);
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -58,12 +59,12 @@ const FIXTURES = [
 ];
 
 function usage() {
-  return `RealityCheck — break your localhost before your users do
+  return `RealityCheck — check HTML notes locally; stress authorized Web apps with evidence
 
 Usage:
+  realitycheck note <FILE|DIRECTORY> [--fix-safe|--prepare-repair] [--exclude-html GLOB] [--baseline REPORT] [--output PATH]
   realitycheck <url> [options]
   realitycheck audit <url> [options]
-  realitycheck note <FILE|DIRECTORY> [--fix-safe|--prepare-repair] [--baseline REPORT] [--output PATH]
   realitycheck demo [--output PATH] [--headed] [--browser PATH]
   realitycheck init [--profile starter|product|strict] [--base-url URL] [--config PATH]
   realitycheck profiles
@@ -81,6 +82,7 @@ Usage:
   realitycheck trust-report <EVIDENCE-MANIFEST> --trust-policy PATH
 
 Options:
+  -V, --version              Print the installed RealityCheck version
   --config PATH              Project config (auto-discovers realitycheck.config.json)
   --profile NAME             Init preset: starter, product, or strict
   --base-url URL             Init target origin or application root
@@ -2967,6 +2969,10 @@ async function main() {
   try {
     const rawArguments = process.argv.slice(2);
     if (rawArguments[0] === "--") rawArguments.shift();
+    if (rawArguments.length === 1 && new Set(["-V", "--version"]).has(rawArguments[0])) {
+      console.log(TOOL_VERSION);
+      return;
+    }
     if (rawArguments[0] === "note") {
       process.exitCode = await runNoteCommand(rawArguments.slice(1));
       return;

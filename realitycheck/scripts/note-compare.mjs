@@ -1,3 +1,5 @@
+import { normalizeHtmlExcludeGlob } from "./note-scope.mjs";
+
 const BUNDLE_KINDS = new Set(["html-note-check-bundle", "html-note-browser-check"]);
 const FINDING_LEVELS = new Set(["error", "warning", "advice"]);
 const RULE_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,127}$/;
@@ -130,6 +132,30 @@ function normalizeDiscovery(discovery, reports, label) {
   return { htmlFiles: discovery.htmlFiles, knownFiles: discovery.knownFiles, truncated: discovery.truncated };
 }
 
+function normalizeSelection(selection, reports, discovery, label) {
+  if (selection === undefined || selection === null) {
+    return { html: { excludePatterns: [], excludedFiles: [], excludedCount: 0 } };
+  }
+  assertRecord(selection, label);
+  assertRecord(selection.html, `${label}.html`);
+  const { excludePatterns, excludedFiles, excludedCount } = selection.html;
+  if (!Array.isArray(excludePatterns) || excludePatterns.length > 100) throw new TypeError(`${label}.html.excludePatterns must be an array of at most 100 patterns`);
+  if (!Array.isArray(excludedFiles) || excludedFiles.length > 10_000) throw new TypeError(`${label}.html.excludedFiles must be an array of at most 10000 HTML paths`);
+  const patterns = excludePatterns.map((pattern, index) => normalizeHtmlExcludeGlob(pattern, `${label}.html.excludePatterns[${index}]`));
+  if (new Set(patterns).size !== patterns.length) throw new TypeError(`${label}.html.excludePatterns must not contain duplicates`);
+  const files = excludedFiles.map((path, index) => validateHtmlPath(path, `${label}.html.excludedFiles[${index}]`));
+  if (new Set(files).size !== files.length) throw new TypeError(`${label}.html.excludedFiles must not contain duplicates`);
+  files.sort((left, right) => left.localeCompare(right));
+  if (!Number.isSafeInteger(excludedCount) || excludedCount !== files.length) throw new TypeError(`${label}.html.excludedCount must equal excludedFiles.length`);
+  const reportPaths = new Set(reports.map((report) => report.path));
+  if (files.some((path) => reportPaths.has(path))) throw new TypeError(`${label}.html.excludedFiles cannot overlap checked reports`);
+  if (files.length && !patterns.length) throw new TypeError(`${label}.html.excludedFiles require at least one exclusion pattern`);
+  if (discovery.knownFiles !== null && discovery.knownFiles < reports.length + files.length) {
+    throw new TypeError(`${label}.html exclusions exceed the known file inventory`);
+  }
+  return { html: { excludePatterns: patterns, excludedFiles: files, excludedCount } };
+}
+
 /**
  * Validate and normalize the small, source-free subset required for a comparison.
  * The returned value is detached from the input and sorted for deterministic output.
@@ -150,6 +176,7 @@ export function validateNoteBundleForComparison(bundle, label = "bundle") {
     paths.add(report.path);
   }
   const discovery = normalizeDiscovery(bundle.discovery, reports, `${label}.discovery`);
+  const selection = normalizeSelection(bundle.selection, reports, discovery, `${label}.selection`);
   const packageFindings = bundle.packageFindings.map((finding, index) => normalizeFinding(finding, `${label}.packageFindings[${index}]`));
   const packageRules = new Set();
   for (const finding of packageFindings) {
@@ -171,6 +198,7 @@ export function validateNoteBundleForComparison(bundle, label = "bundle") {
     id: bundle.id ?? null,
     generatedAt: bundle.generatedAt ?? null,
     discovery,
+    selection,
     reports,
     packageFindings,
   };
@@ -240,9 +268,10 @@ export function prepareNoteBaselineForComparison(bundle) {
   };
 }
 
-function indexFindings(bundle) {
+function indexFindings(bundle, ignoredHtmlPaths = new Set()) {
   const findings = new Map();
   for (const report of bundle.reports) {
+    if (ignoredHtmlPaths.has(report.path)) continue;
     const scope = { kind: "html", path: report.path };
     for (const finding of report.findings) {
       const fingerprint = noteFindingFingerprint(scope, finding.ruleId);
@@ -276,7 +305,7 @@ function itemFor(state, beforeEntry, afterEntry, reason, details = {}) {
   };
 }
 
-function classifyMissingBeforeFinding(entry, before, after, afterHtmlPaths) {
+function classifyMissingBeforeFinding(entry, before, after, afterHtmlPaths, afterExcludedHtmlPaths) {
   if (after.discovery.truncated) {
     return { state: "unverified", reason: "after-discovery-truncated", details: {} };
   }
@@ -290,7 +319,7 @@ function classifyMissingBeforeFinding(entry, before, after, afterHtmlPaths) {
   if (after.discovery.knownFiles === null) {
     return { state: "unverified", reason: "package-scope-not-verified", details: {} };
   }
-  const missingHtmlPaths = before.reports.map((report) => report.path).filter((path) => !afterHtmlPaths.has(path));
+  const missingHtmlPaths = before.reports.map((report) => report.path).filter((path) => !afterHtmlPaths.has(path) && !afterExcludedHtmlPaths.has(path));
   if (missingHtmlPaths.length) {
     return { state: "unverified", reason: "package-html-scope-missing", details: { missingHtmlPaths } };
   }
@@ -310,6 +339,7 @@ function bundleReference(bundle) {
     kind: bundle.kind,
     generatedAt: bundle.generatedAt,
     discovery: { ...bundle.discovery },
+    selection: cloneJson(bundle.selection, "bundle selection"),
     htmlPaths: bundle.reports.map((report) => report.path),
   };
 }
@@ -360,8 +390,16 @@ function coverageEntry(scope) {
  * error-level synthetic item only when a real unverified item does not already
  * explain the same missing scope.
  */
-function addCoverageScopeUnverified(output, before, after, afterHtmlPaths) {
-  const missingHtmlPaths = before.reports.map((report) => report.path).filter((path) => !afterHtmlPaths.has(path));
+function addCoverageScopeUnverified(output, before, after, afterHtmlPaths, afterExcludedHtmlPaths) {
+  const newlyExcludedHtmlPaths = before.reports.map((report) => report.path).filter((path) => afterExcludedHtmlPaths.has(path));
+  for (const path of newlyExcludedHtmlPaths) {
+    const scope = { kind: "html", path };
+    output.unverified.push(itemFor("unverified", coverageEntry(scope), null, "html-scope-newly-excluded", {
+      syntheticCoverage: true,
+      newlyExcludedHtmlPaths: [path],
+    }));
+  }
+  const missingHtmlPaths = before.reports.map((report) => report.path).filter((path) => !afterHtmlPaths.has(path) && !afterExcludedHtmlPaths.has(path));
   for (const path of missingHtmlPaths) {
     const alreadyExplained = output.unverified.some((item) => item.scope?.kind === "html" && item.scope.path === path);
     if (alreadyExplained) continue;
@@ -371,7 +409,8 @@ function addCoverageScopeUnverified(output, before, after, afterHtmlPaths) {
 
   // A missing HTML scope already explains why the package inventory changed;
   // do not add a second synthetic package item for the same contraction.
-  if (missingHtmlPaths.length
+  if (newlyExcludedHtmlPaths.length
+    || missingHtmlPaths.length
     || output.unverified.some((item) => item.scope?.kind === "package")
     || (after.discovery.truncated && output.unverified.some((item) => item.reason === "after-discovery-truncated"))) return;
 
@@ -472,7 +511,8 @@ export function markLegacyPackageScopeUnverified(comparison) {
 export function compareNoteBundles(beforeInput, afterInput) {
   const before = validateNoteBundleForComparison(beforeInput, "before");
   const after = validateNoteBundleForComparison(afterInput, "after");
-  const beforeFindings = indexFindings(before);
+  const afterExcludedHtmlPaths = new Set(after.selection.html.excludedFiles);
+  const beforeFindings = indexFindings(before, afterExcludedHtmlPaths);
   const afterFindings = indexFindings(after);
   const afterHtmlPaths = new Set(after.reports.map((report) => report.path));
   const output = { new: [], resolved: [], worsened: [], persistent: [], unverified: [] };
@@ -486,7 +526,7 @@ export function compareNoteBundles(beforeInput, afterInput) {
       continue;
     }
     if (!afterEntry) {
-      const classification = classifyMissingBeforeFinding(beforeEntry, before, after, afterHtmlPaths);
+      const classification = classifyMissingBeforeFinding(beforeEntry, before, after, afterHtmlPaths, afterExcludedHtmlPaths);
       output[classification.state].push(itemFor(classification.state, beforeEntry, null, classification.reason, classification.details));
       continue;
     }
@@ -505,15 +545,26 @@ export function compareNoteBundles(beforeInput, afterInput) {
     output.persistent.push(itemFor("persistent", beforeEntry, afterEntry, reason));
   }
 
-  addCoverageScopeUnverified(output, before, after, afterHtmlPaths);
+  addCoverageScopeUnverified(output, before, after, afterHtmlPaths, afterExcludedHtmlPaths);
   output.unverified.sort((left, right) => left.fingerprint.localeCompare(right.fingerprint));
 
   const counts = comparisonCounts(output);
+  const excludedBaselineReports = before.reports.filter((report) => afterExcludedHtmlPaths.has(report.path));
   return {
     schemaVersion: "1",
     kind: "html-note-check-comparison",
     before: bundleReference(before),
     after: bundleReference(after),
+    scopeExclusions: {
+      html: {
+        patterns: [...after.selection.html.excludePatterns],
+        files: [...after.selection.html.excludedFiles],
+        count: after.selection.html.excludedCount,
+        baselineScopesExcluded: excludedBaselineReports.length,
+        baselineFindingsExcluded: excludedBaselineReports.reduce((sum, report) => sum + report.findings.length, 0),
+        newlyExcludedScopes: excludedBaselineReports.length,
+      },
+    },
     counts,
     ...output,
   };

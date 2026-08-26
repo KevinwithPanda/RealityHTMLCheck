@@ -80,6 +80,7 @@ class SkillStructureTests(unittest.TestCase):
             "scripts/note-analyzer.mjs",
             "scripts/note-package.mjs",
             "scripts/note-summary.mjs",
+            "scripts/note-scope.mjs",
             "scripts/note-compare.mjs",
             "scripts/note-comparison-report.mjs",
             "scripts/note-check.mjs",
@@ -200,6 +201,9 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("note-report-json-path", action)
         self.assertIn("note-comparison-path", action)
         self.assertIn("note-comparison-json-path", action)
+        self.assertIn("exclude-html:", action)
+        self.assertIn("RC_EXCLUDE_HTML", action)
+        self.assertIn('args+=(--exclude-html "$pattern")', action)
         self.assertIn("HTML note gate failed", action)
         self.assertIn("steps.resolve.outputs.artifact-path", action)
         self.assertIn("if-no-files-found: error", action)
@@ -214,9 +218,11 @@ class SkillStructureTests(unittest.TestCase):
         workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "validate.yml").read_text(encoding="utf-8")
         self.assertIn("Prove the HTML note Action gate and artifact handoff", workflow)
         self.assertIn("Prove the HTML note baseline does not keep known debt red", workflow)
+        self.assertIn("Prove auditable HTML exclusions in the composite Action", workflow)
         self.assertIn("kind: note", workflow)
         self.assertIn("path: note-action-fixture", workflow)
         self.assertIn("baseline: .realitycheck/ci-note-action/latest.json", workflow)
+        self.assertIn("exclude-html: |", workflow)
         self.assertIn('RC_ACTION_EXIT_CODE" = "1', workflow)
         self.assertIn('report["kind"] == "html-note-check-bundle"', workflow)
         self.assertIn("HTML note Action without repository dependencies", workflow)

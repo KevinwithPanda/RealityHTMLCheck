@@ -1,6 +1,6 @@
 {
   "name": "realityhtmlcheck",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Check AI-generated HTML notes and Web UIs locally — portable content, real-browser evidence, and reviewable fixes.",
   "type": "module",
   "bin": {

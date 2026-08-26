@@ -17,9 +17,9 @@ RealityCheck 不把“支持某某工具”写成没有证据的口号。本仓�
 
 ## 与合成夹具分层的真实工具导出
 
-仓库另行保存了一个由本机 **Pandoc 3.8.2.1** 实际生成的 standalone HTML，而不是手写成 Pandoc 风格。最小 Markdown 源文档由本仓库编写，不含第三方用户内容或个人信息；清单记录了精确命令、源文件/输出文件 SHA-256、Pandoc 可执行文件 SHA-256、换行格式和第三方模板许可边界。
+仓库另行保存了四个由本机 **Pandoc 3.8.2.1** 实际生成的 HTML，而不是手写成 Pandoc 风格。场景覆盖默认 standalone、CSS/SVG 自包含、目录 + 编号章节 + 脚注 + MathML，以及两份 Markdown 合并导出。全部 Markdown、CSS 和 SVG 输入均由本仓库编写，不含第三方用户内容或个人信息；清单逐项记录了精确命令、所有输入/输出 SHA-256、Pandoc 可执行文件 SHA-256、换行格式和第三方模板许可边界。
 
-该真实导出经过当前 RealityCheck 重新核查为 **100/100、0 错误、0 警告**，并已用同版 Pandoc 逐字节复现。它只证明这一条命令、这一版本和这一份输出，不构成 Pandoc 官方认证，也不代表所有参数、模板、平台或版本都兼容。证据位于 [`examples/real-export-evidence`](../examples/real-export-evidence/README.md)，可运行：
+四份真实导出经当前 RealityCheck 重新核查均为 **100/100、0 错误、0 警告**，并已用同版 Pandoc 全部逐字节复现。它们只证明这四条命令、这一版本和这四份输出，不构成 Pandoc 官方认证，也不代表所有参数、模板、平台或版本都兼容。证据位于 [`examples/real-export-evidence`](../examples/real-export-evidence/README.md)，可运行：
 
 ```powershell
 node scripts/real-export-evidence.mjs --verify

@@ -18,6 +18,7 @@ const REASON_TEXT = Object.freeze({
   "still-detected": { en: "The same rule is still detected.", zhCN: "同一规则仍然被检出。" },
   "after-discovery-truncated": { en: "The current discovery was truncated, so disappearance cannot prove resolution.", zhCN: "本次文件发现被截断，问题消失不能证明已解决。" },
   "html-scope-missing": { en: "The baseline HTML file is absent from the current scope.", zhCN: "本次范围缺少基线中的 HTML 文件。" },
+  "html-scope-newly-excluded": { en: "This HTML file was checked by the baseline but is newly excluded now; approve a new reviewed baseline before the gate can pass.", zhCN: "该 HTML 文件在基线中曾被检查，但本次被新增排除；请在复核并批准新基线后再让门禁通过。" },
   "package-scope-not-verified": { en: "The current package scope was not completely verified.", zhCN: "本次文件包范围未得到完整核验。" },
   "package-html-scope-missing": { en: "One or more baseline HTML files are missing from the package scope.", zhCN: "文件包范围缺少一个或多个基线 HTML 文件。" },
   "package-scope-contracted": { en: "The current package inventory is smaller than the baseline inventory.", zhCN: "本次文件包清单小于基线清单。" },
@@ -65,6 +66,10 @@ export function renderNoteComparisonHtml(comparison) {
     return `<section class="group"><header><h2 data-en="${STATE_TEXT[state].en}" data-zh-cn="${STATE_TEXT[state].zhCN}">${STATE_TEXT[state].en}</h2><strong>${items.length}</strong></header>${items.length ? items.map(itemCard).join("") : '<p class="empty" data-en="None" data-zh-cn="无">None</p>'}</section>`;
   }).join("");
   const warnings = (comparison.warnings || []).map((warning) => bilingualElement("p", warning.message, ' class="warning"')).join("");
+  const htmlExclusions = comparison.scopeExclusions?.html || { patterns: [], files: [], count: 0, newlyExcludedScopes: 0 };
+  const visibleExcludedFiles = (htmlExclusions.files || []).slice(0, 50);
+  const hiddenExcludedFiles = Math.max(0, Number(htmlExclusions.count || 0) - visibleExcludedFiles.length);
+  const exclusionNotice = htmlExclusions.patterns.length ? `<section class="warning"><b data-en="Auditable HTML exclusions" data-zh-cn="可审计的 HTML 排除规则">Auditable HTML exclusions</b><br><span data-en="${escapeHtml(`${htmlExclusions.patterns.length} pattern(s) excluded ${htmlExclusions.count} present file(s); ${htmlExclusions.newlyExcludedScopes || 0} scope(s) are newly excluded versus the baseline. Files remain known package entries and cross-note targets; their own per-file rules are not run.`)}" data-zh-cn="${escapeHtml(`${htmlExclusions.patterns.length} 条规则排除 ${htmlExclusions.count} 个当前存在的文件；相较基线有 ${htmlExclusions.newlyExcludedScopes || 0} 个范围为新增排除。文件仍是已知文件包条目和跨笔记目标，但不会运行其自身的逐文件规则。`)}">${escapeHtml(`${htmlExclusions.patterns.length} pattern(s) excluded ${htmlExclusions.count} present file(s); ${htmlExclusions.newlyExcludedScopes || 0} scope(s) are newly excluded versus the baseline. Files remain known package entries and cross-note targets; their own per-file rules are not run.`)}</span><br><code>${htmlExclusions.patterns.map(escapeHtml).join(" · ")}</code><details><summary data-en="Matched paths preview (${visibleExcludedFiles.length}/${htmlExclusions.count}; complete list in comparison.json)" data-zh-cn="命中路径预览（${visibleExcludedFiles.length}/${htmlExclusions.count}；完整清单见 comparison.json）">Matched paths preview (${visibleExcludedFiles.length}/${htmlExclusions.count}; complete list in comparison.json)</summary>${visibleExcludedFiles.length ? visibleExcludedFiles.map((path) => `<code>${escapeHtml(path)}</code><br>`).join("") : '<span data-en="No current matches" data-zh-cn="当前无命中">No current matches</span>'}${hiddenExcludedFiles ? `<br><span data-en="${hiddenExcludedFiles} additional path(s) are retained in comparison.json." data-zh-cn="另有 ${hiddenExcludedFiles} 个路径保留在 comparison.json 中。">${hiddenExcludedFiles} additional path(s) are retained in comparison.json.</span>` : ""}</details></section>` : "";
   const gateTitle = gateFailed
     ? { en: "Regression gate failed", zhCN: "回归门禁未通过" }
     : { en: "Regression gate passed", zhCN: "回归门禁已通过" };
@@ -82,7 +87,7 @@ export function renderNoteComparisonHtml(comparison) {
 <section class="gate">${bilingualElement("h2", gateTitle)}${bilingualElement("p", gateDetail)}</section>
 <section class="metrics">${STATES.map((state) => `<div class="metric"><strong>${Number(counts[state] || 0)}</strong><span data-en="${STATE_TEXT[state].en}" data-zh-cn="${STATE_TEXT[state].zhCN}">${STATE_TEXT[state].en}</span></div>`).join("")}</section>
 <p class="regression-levels"><span data-en="Gating regressions by level" data-zh-cn="按级别统计的门禁回归">Gating regressions by level</span>: ${Number(regressionCounts.error || 0)} error · ${Number(regressionCounts.warning || 0)} warning · ${Number(regressionCounts.advice || 0)} advice</p>
-${warnings}${sections}</main>
+${warnings}${exclusionNotice}${sections}</main>
 <footer class="footer wrap" data-en="Generated locally from bounded machine evidence. Source notes were not executed or uploaded." data-zh-cn="根据有限的机器证据在本地生成；未执行或上传源笔记。">Generated locally from bounded machine evidence. Source notes were not executed or uploaded.</footer>
 <script>const buttons=[...document.querySelectorAll('[data-language]')],items=[...document.querySelectorAll('[data-en][data-zh-cn]')];function setLanguage(language){document.documentElement.lang=language;for(const item of items)item.textContent=language==='zh-CN'?item.dataset.zhCn:item.dataset.en;for(const button of buttons)button.setAttribute('aria-pressed',String(button.dataset.language===language))}for(const button of buttons)button.addEventListener('click',()=>setLanguage(button.dataset.language));</script>
 </body></html>`;

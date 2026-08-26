@@ -76,7 +76,7 @@ It complements compilers and AI models rather than competing with them. The mode
   <img src="docs/assets/note-checker-preview.png" alt="RealityCheck HTML note result showing a conservative sharing decision, lowest-file readiness, bilingual evidence, and repair actions" width="100%" />
 </p>
 
-The public evidence is deliberately layered: one checked-in HTML file was emitted and byte-for-byte reproduced with **Pandoc 3.8.2.1** (100/100 in the current static check), while seven separately labelled `-like` packages exercise representative failure shapes. Neither layer is presented as official or universal vendor compatibility. [Inspect the real-export manifest, hashes, findings, and boundaries.](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)
+The public evidence is deliberately layered: four checked-in HTML files were emitted and byte-for-byte reproduced with **Pandoc 3.8.2.1** from four allowlisted commands—standalone, embedded local resources, TOC/footnotes/MathML, and multi-source composition. All four currently score 100/100. Seven separately labelled `-like` packages exercise representative failure shapes. Neither layer is presented as official or universal vendor compatibility. [Inspect the real-export manifest, hashes, findings, commands, and boundaries.](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)
 
 ## Use it as software or as a Codex Skill
 
@@ -135,25 +135,25 @@ Use $realitycheck to audit this app. Do not modify source.
 
 Open the [online checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html), select one `.html` file or the entire note folder, and inspect the result locally. The selected content is not uploaded and note scripts are not executed. The result leads with **Do not share yet / Review before sharing / No blockers found**, uses the lowest file score so one broken note cannot disappear inside a folder average, and can download a self-contained bilingual HTML report.
 
-The **Download safe repaired copy** button is deliberately narrow. It creates a new file and can only:
+The **Apply safe fixes, recheck & download** button is deliberately narrow. It creates a new in-memory copy and can only:
 
 1. add an HTML5 doctype;
 2. infer and declare `lang="zh-CN"` or `lang="en"`;
 3. add an early UTF-8 charset declaration.
 
-It is **not** an “all problems fixed” download. Headings, image descriptions, missing files, paths, scripts, and content decisions require review. Use the Skill workflow when you want Codex to carry those repairs through to a verified copy.
+Before downloading, the checker runs the same full in-memory detector again and shows before/after file and original-folder scores, a separate HTML-only score with assets explicitly unverified, plus resolved, remaining, and newly introduced findings. The downloaded bytes are the exact HTML that was rechecked. A browser download contains one HTML file, not its folder images, styles, or attachments; move it back beside the original relative assets, or use the Skill/CLI for a repaired folder that preserves structure. It is still **not** an “all problems fixed” download: headings, image descriptions, missing files, paths, scripts, and content decisions require review. Use the Skill workflow when you want Codex to carry those repairs through to a verified copy.
 
 ### No-clone note CLI
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.0" \
   realityhtmlcheck note ./my-notes
 ```
 
 Open `.realitycheck/notes/latest.html`. To generate only the three conservative metadata repairs without touching the originals:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.0" \
   realityhtmlcheck note ./my-notes --fix-safe
 ```
 
@@ -162,7 +162,7 @@ Use `--fail-on error` or `--fail-on warning` in an export pipeline. This command
 ### HTML note gate in GitHub Actions
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.6.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.7.0
   with:
     kind: note
     path: exported-notes
@@ -177,13 +177,15 @@ Note mode does not start a server, install browser dependencies, execute note sc
 For the second and later export, compare against an immutable earlier report:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.6.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.7.0" \
   realityhtmlcheck note ./my-notes \
   --baseline .realitycheck/notes/PRIOR-RUN/report.json \
   --fail-on error
 ```
 
-The comparison report separates **new, resolved, worsened, persistent, and unverified** findings. Baseline mode gates only new/worsened/unverified regressions at the requested level; persistent known debt remains visible without keeping CI permanently red. Removing an HTML file or shrinking the checked package is unverified, never a fake resolution. The Action accepts the same repository-local `baseline` input and uploads `comparison.html` / `comparison.json` with the ordinary report.
+The comparison report separates **new, resolved, worsened, persistent, and unverified** findings. Baseline mode gates only new/worsened/unverified regressions at the requested level; persistent known debt remains visible without keeping CI permanently red. Removing an HTML file or shrinking the checked package is unverified, never a fake resolution.
+
+For mixed folders, repeat `--exclude-html "archive/**"` or pass newline-separated `exclude-html` patterns to the Action. Matching HTML is skipped only as a per-file target: it remains a known package entry, can still be a cross-note target, and its stylesheet/CSS graph remains inspectable, but its own per-file image/media rules do not run. Human reports show the patterns, counts, and a bounded matched-path preview; JSON retains the complete matched-path list. Adding an exclusion to a previously checked baseline fails closed once as `html-scope-newly-excluded`; after review and an intentionally accepted baseline, the same exclusion does not keep CI red. Reaching the HTML or 10,000-file discovery ceiling is an operational failure, never a partial green report. These boundaries prevent a pull request from hiding errors by quietly shrinking coverage. The Action uploads `comparison.html` / `comparison.json` with the ordinary report.
 
 ### Real-browser Web audit
 
@@ -242,7 +244,7 @@ npm run audit -- http://localhost:3000 \
 For a reusable GitHub Action:
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.6.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.7.0
   with:
     url: http://127.0.0.1:3000
     mode: quick
@@ -263,7 +265,7 @@ RealityCheck reports exactly what it tested, what failed, and what it could not 
 
 ## Project status
 
-RealityCheck is a **v0.6.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
+RealityCheck is a **v0.7.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a deployed Pages build.
 
 - [Representative export evidence and explicit compatibility boundary](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)
 - [HTML note Action and browser Action](action.yml)

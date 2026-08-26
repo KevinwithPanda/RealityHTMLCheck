@@ -1,7 +1,17 @@
-import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask } from "./note-analyzer.mjs?v=0.6.0-baseline";
-import { analyzeNotePackage } from "./note-package.mjs?v=0.6.0-baseline";
-import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "./note-summary.mjs?v=0.6.0-baseline";
-import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.6.0-baseline";
+import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask, normalizeNotePath } from "./note-analyzer.mjs?v=0.7.0";
+import { analyzeNotePackage } from "./note-package.mjs?v=0.7.0";
+import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "./note-summary.mjs?v=0.7.0";
+import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.7.0";
+import { analyzeBrowserNoteSources, duplicateBrowserNotePaths, safeRepairDownloadName, safeRepairDownloadPayload, verifySafeNoteRepair } from "./note-repair-verification.mjs?v=0.7.0";
+
+const noteAnalysisHelpers = {
+  analyzeHtmlNote,
+  applySafeNoteFixes,
+  analyzeNotePackage,
+  summarizeNoteReports,
+  summarizePackageFindings,
+  normalizeNotePath,
+};
 
 const elements = {
   dropZone: document.querySelector("#drop-zone"),
@@ -22,6 +32,7 @@ const elements = {
 
 let language = "en";
 let current = null;
+let inspectionGeneration = 0;
 
 function translate(value) {
   return language === "zh-CN" ? value.zhCN : value.en;
@@ -43,7 +54,7 @@ function notify(en, zhCN) {
 }
 
 function pathFor(file) {
-  return (file.webkitRelativePath || file.name).replaceAll("\\", "/");
+  return normalizeNotePath(file.webkitRelativePath || file.name) || normalizeNotePath(file.name);
 }
 
 function create(tag, className, text) {
@@ -73,6 +84,24 @@ async function copy(text) {
 }
 
 async function inspectFiles(fileList, folderMode = false) {
+  const selectedFiles = [...fileList];
+  const generation = ++inspectionGeneration;
+  clearRenderedResult();
+  elements.filePicker.value = "";
+  elements.folderPicker.value = "";
+  elements.status.textContent = "";
+  try {
+    await inspectFilesGeneration(selectedFiles, folderMode, generation);
+  } catch (_) {
+    if (generation !== inspectionGeneration) return;
+    clearRenderedResult();
+    elements.status.textContent = language === "zh-CN"
+      ? "读取或分析这些文件时发生错误，因此没有保留旧报告，也没有生成新报告。请重新选择文件后再试。"
+      : "The files could not be read or analyzed. The previous result was cleared and no new report was created; select the files and try again.";
+  }
+}
+
+async function inspectFilesGeneration(fileList, folderMode, generation) {
   const allFiles = [...fileList];
   const oversizedHtml = allFiles.filter((file) => /\.html?$/i.test(file.name) && file.size > 25 * 1024 * 1024);
   if (oversizedHtml.length) {
@@ -88,39 +117,47 @@ async function inspectFiles(fileList, folderMode = false) {
     elements.status.textContent = language === "zh-CN" ? "一次最多检查 200 个 HTML 文件，请缩小文件夹范围。" : "A check is limited to 200 HTML files. Choose a smaller folder.";
     return;
   }
+  const duplicatePaths = duplicateBrowserNotePaths(allFiles.map(pathFor), normalizeNotePath);
+  if (duplicatePaths.length) {
+    const preview = duplicatePaths.slice(0, 3).join(", ");
+    elements.status.textContent = language === "zh-CN"
+      ? `发现重复文件路径（${preview}）。为避免把一份报告与另一份同名内容错误配对，本次未生成报告；请选择整个文件夹，或先让文件名/相对路径保持唯一。`
+      : `Duplicate file path(s) found (${preview}). No report was created because same-named content cannot be paired safely; choose the whole folder or make the relative paths unique.`;
+    return;
+  }
   elements.status.textContent = language === "zh-CN" ? `正在本地读取 ${htmlFiles.length} 个 HTML 文件…` : `Reading ${htmlFiles.length} HTML file(s) locally…`;
   const knownFiles = folderMode || allFiles.some((file) => file.webkitRelativePath) || allFiles.length > htmlFiles.length ? allFiles.map(pathFor) : null;
   const sources = new Map();
-  let reports = [];
-  let packageFindings = [];
-  const packageEntries = [];
+  const htmlSources = [];
   for (const file of htmlFiles) {
     const html = await file.text();
+    if (generation !== inspectionGeneration) return;
     const path = pathFor(file);
     sources.set(path, { file, html });
-    packageEntries.push({ path, text: html, kind: "html" });
-    reports.push(analyzeHtmlNote({ path, html, knownFiles }));
+    htmlSources.push({ path, html });
   }
+  const cssSources = [];
   if (knownFiles) {
     const cssFiles = allFiles.filter((file) => /\.css$/i.test(file.name));
-    for (const file of cssFiles) packageEntries.push({ path: pathFor(file), text: file.size <= 5 * 1024 * 1024 ? await file.text() : null, kind: "css" });
-    const order = { error: 0, warning: 1, advice: 2 };
-    packageFindings = analyzeNotePackage({ entries: packageEntries, knownFiles })
-      .sort((left, right) => order[left.level] - order[right.level] || left.ruleId.localeCompare(right.ruleId));
+    for (const file of cssFiles) {
+      const text = file.size <= 5 * 1024 * 1024 ? await file.text() : null;
+      if (generation !== inspectionGeneration) return;
+      cssSources.push({ path: pathFor(file), text });
+    }
   }
-  reports.sort((left, right) => left.score - right.score || left.path.localeCompare(right.path));
-  const packageSummary = summarizePackageFindings(packageFindings);
+  const analysis = { htmlSources, cssSources, knownFiles };
+  const analyzed = analyzeBrowserNoteSources(analysis, noteAnalysisHelpers);
+  if (generation !== inspectionGeneration) return;
   current = {
     schemaVersion: "1",
     kind: "html-note-browser-check",
     generatedAt: new Date().toISOString(),
     privacy: { uploaded: false, sourceModified: false },
     knownFiles: knownFiles ? knownFiles.length : null,
-    summary: summarizeNoteReports(reports, packageSummary),
-    reports,
-    packageFindings,
-    packageSummary,
+    ...analyzed,
     sources,
+    analysis,
+    repairVerifications: new Map(),
   };
   render(current);
   elements.status.textContent = language === "zh-CN" ? "检查完成。文件内容没有离开当前浏览器。" : "Check complete. File content never left this browser.";
@@ -213,8 +250,53 @@ function renderPackage(bundle) {
   return section;
 }
 
-function repairedName(path) {
-  return path.replace(/\.html?$/i, ".repaired.html").split("/").pop();
+function verificationFindingLabel(entry) {
+  const scope = entry.scope === "package"
+    ? (language === "zh-CN" ? "文件包" : "Package")
+    : entry.path;
+  return `${scope} · ${translate(entry.finding.title)}`;
+}
+
+function renderVerificationGroup(title, entries, tone) {
+  const group = create("section", `repair-verification-group ${tone}`);
+  const heading = create("h4", "", `${title} · ${entries.length}`);
+  const list = create("ul");
+  if (!entries.length) list.append(create("li", "empty", language === "zh-CN" ? "无" : "None"));
+  else for (const entry of entries) list.append(create("li", "", verificationFindingLabel(entry)));
+  group.append(heading, list);
+  return group;
+}
+
+function renderRepairVerification(verification) {
+  const panel = create("section", "repair-verification");
+  panel.setAttribute("aria-live", "polite");
+  const heading = create("div", "repair-verification-heading");
+  heading.append(
+    create("small", "", language === "zh-CN" ? "安全修复副本复检完成" : "SAFE-FIX COPY RECHECKED"),
+    create("h3", "", language === "zh-CN" ? "下载前，已用同一检测器重新检查" : "Rechecked with the same detector before download"),
+  );
+  const scores = create("div", "repair-verification-scores");
+  for (const [label, value] of [
+    [language === "zh-CN" ? "原文件夹中的文件分数" : "File score in original folder", `${verification.before.report.score} → ${verification.after.report.score}`],
+    [language === "zh-CN" ? "原文件夹就绪度" : "Original-folder readiness", `${verification.before.summary.score} → ${verification.after.summary.score}`],
+    [language === "zh-CN" ? "单 HTML 得分（资源未打包）" : "HTML-only score (assets not bundled)", `${verification.download.summary.score}/100`],
+  ]) {
+    const item = create("article");
+    item.append(create("small", "", label), create("strong", "", value));
+    scores.append(item);
+  }
+  const findingGroups = create("div", "repair-verification-groups");
+  findingGroups.append(
+    renderVerificationGroup(language === "zh-CN" ? "已解决" : "Resolved", verification.findings.resolved, "resolved"),
+    renderVerificationGroup(language === "zh-CN" ? "仍存在" : "Still present", verification.findings.remaining, "remaining"),
+    renderVerificationGroup(language === "zh-CN" ? "新出现" : "New after repair", verification.findings.introduced, "introduced"),
+    renderVerificationGroup(language === "zh-CN" ? "仅单独下载时未核验" : "Unverified only when downloaded alone", verification.download.onlyFindings, "download"),
+  );
+  const boundary = create("p", "repair-verification-boundary", language === "zh-CN"
+    ? `仅应用并复检了 ${verification.changes.length} 项无歧义元数据修复；这不代表所有问题都已修好。原文件未被覆盖，下载内容与本次复检的内存 HTML 完全一致。浏览器下载只包含这一份 HTML，不包含文件夹图片、样式或附件；请把它移回原相对目录，或使用 Skill/CLI 生成保持目录结构的修复文件夹。`
+    : `Only ${verification.changes.length} unambiguous metadata fix(es) were applied and rechecked; this does not mean every problem is fixed. The original was not overwritten, and the download is the exact in-memory HTML that was rechecked. The browser download contains this HTML only—not folder images, styles, or attachments. Move it back beside its original relative assets, or use the Skill/CLI for a repaired folder that preserves structure.`);
+  panel.append(heading, scores, findingGroups, boundary);
+  return panel;
 }
 
 function renderFile(report, bundle) {
@@ -233,19 +315,42 @@ function renderFile(report, bundle) {
   header.append(path, stats);
   const source = bundle.sources.get(report.path);
   if (report.counts.autoFixable && source) {
-    const fix = create("button", "download-fix", language === "zh-CN" ? "下载安全修复副本" : "Download safe repaired copy");
+    const folderContext = Boolean(bundle.analysis?.knownFiles);
+    const existingVerification = bundle.repairVerifications?.get(report.path) || null;
+    const fix = create("button", "download-fix", existingVerification
+      ? (language === "zh-CN" ? "下载已复检的单个 HTML" : "Download rechecked HTML only")
+      : (folderContext
+        ? (language === "zh-CN" ? "安全修复、复检并下载单个 HTML" : "Safe-fix, recheck & download HTML only")
+        : (language === "zh-CN" ? "应用安全修复、复检并下载" : "Apply safe fixes, recheck & download")));
     fix.type = "button";
     fix.addEventListener("click", () => {
-      const repaired = applySafeNoteFixes(source.html);
-      download(repairedName(report.path), repaired.html, "text/html;charset=utf-8");
-      notify(`Downloaded a new copy with ${repaired.changes.length} safe fix(es).`, `已下载包含 ${repaired.changes.length} 项安全修复的新副本。`);
+      try {
+        let verification = bundle.repairVerifications?.get(report.path) || null;
+        if (!verification) {
+          verification = verifySafeNoteRepair({ path: report.path, beforeBundle: bundle, analysis: bundle.analysis }, noteAnalysisHelpers);
+          bundle.repairVerifications.set(report.path, verification);
+          render(bundle);
+        }
+        const payload = safeRepairDownloadPayload(verification, safeRepairDownloadName(report.path));
+        download(payload.name, payload.content, payload.type);
+        elements.status.textContent = language === "zh-CN"
+          ? `安全修复副本已复检并下载：原目录文件分数 ${verification.before.report.score} → ${verification.after.report.score}；单 HTML 得分 ${verification.download.summary.score}/100（资源未打包）。`
+          : `Safe-fix copy rechecked and downloaded: original-folder file score ${verification.before.report.score} → ${verification.after.report.score}; HTML-only score ${verification.download.summary.score}/100 (assets not bundled).`;
+        notify("Rechecked HTML downloaded; folder assets were not bundled.", "已下载复检 HTML；文件夹资源未打包。");
+      } catch (_) {
+        elements.status.textContent = language === "zh-CN"
+          ? "安全修复副本未能完成复检，因此没有下载。原文件未被修改。"
+          : "The safe-fix copy could not be rechecked, so it was not downloaded. The original was not modified.";
+        notify("Recheck failed; no copy was downloaded.", "复检失败，未下载副本。");
+      }
     });
     header.append(fix);
   }
   const list = create("div", "finding-list");
   if (!report.findings.length) list.append(create("p", "clean", language === "zh-CN" ? "启用的笔记规则没有发现问题。" : "No problems found by the enabled note rules."));
   else for (const finding of report.findings) list.append(renderFinding(report, finding));
-  section.append(header, list);
+  const verification = bundle.repairVerifications?.get(report.path);
+  section.append(header, ...(verification ? [renderRepairVerification(verification)] : []), list);
   return section;
 }
 
@@ -262,12 +367,17 @@ function applyFilter(filter) {
   for (const button of document.querySelectorAll("[data-filter]")) button.setAttribute("aria-pressed", String(button.dataset.filter === filter));
 }
 
-function reset() {
+function clearRenderedResult() {
   current = null;
   elements.results.hidden = true;
   elements.summary.replaceChildren();
   elements.decision.replaceChildren();
   elements.files.replaceChildren();
+}
+
+function reset() {
+  inspectionGeneration += 1;
+  clearRenderedResult();
   elements.filePicker.value = "";
   elements.folderPicker.value = "";
   elements.status.textContent = "";
@@ -292,7 +402,22 @@ elements.downloadReport.addEventListener("click", () => {
 });
 elements.downloadJson.addEventListener("click", () => {
   if (!current) return;
-  const safe = { ...current, sources: undefined };
+  const { sources: _sources, analysis: _analysis, repairVerifications, ...safe } = current;
+  safe.safeRepairVerifications = [...(repairVerifications?.values() || [])].map((verification) => ({
+    kind: verification.kind,
+    path: verification.path,
+    changes: verification.changes,
+    beforeScore: verification.before.report.score,
+    afterScore: verification.after.report.score,
+    downloadContext: verification.download.context,
+    downloadScore: verification.download.summary.score,
+    packageAssetsIncluded: verification.download.packageAssetsIncluded,
+    downloadOnlyFindings: verification.download.onlyFindings.map((entry) => entry.key),
+    resolved: verification.findings.resolved.map((entry) => entry.key),
+    remaining: verification.findings.remaining.map((entry) => entry.key),
+    introduced: verification.findings.introduced.map((entry) => entry.key),
+    originalModified: verification.originalModified,
+  }));
   download(`realitycheck-note-${new Date().toISOString().slice(0, 10)}.json`, `${JSON.stringify(safe, null, 2)}\n`, "application/json;charset=utf-8");
 });
 for (const button of document.querySelectorAll("[data-filter]")) button.addEventListener("click", () => {

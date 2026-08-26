@@ -5,7 +5,7 @@ const LEVEL_WEIGHT = Object.freeze({ error: 7, warning: 2, advice: 1 });
 const RESOURCE_TAGS = new Set(["audio", "embed", "iframe", "img", "input", "link", "object", "script", "source", "track", "video"]);
 const SKIPPED_SCHEMES = /^(?:data:|blob:|mailto:|tel:|sms:|about:)/i;
 
-function normalizePath(value) {
+export function normalizeNotePath(value) {
   const parts = String(value || "").replaceAll("\\", "/").split("/");
   const output = [];
   for (const part of parts) {
@@ -15,6 +15,8 @@ function normalizePath(value) {
   }
   return output.join("/");
 }
+
+const normalizePath = normalizeNotePath;
 
 function withoutQueryOrHash(value) {
   return String(value || "").split("#", 1)[0].split("?", 1)[0];

@@ -18,13 +18,18 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Check sharing readiness and preserve the report
-        uses: KevinwithPanda/RealityHTMLCheck@v0.6.0
+        uses: KevinwithPanda/RealityHTMLCheck@v0.7.0
         with:
           kind: note
           path: exported-notes
           fail-on: error
           summary-language: en
           artifact-name: realitycheck-html-notes
+          # Optional: one portable glob per line. Matching HTML remains a known
+          # package/cross-note target, but its own per-file rules do not run.
+          # exclude-html: |
+          #   archive/**
+          #   **/draft-?.html
           # After reviewing and committing an immutable earlier report, enable
           # regression-only gating so persistent known debt stays visible but
           # does not keep every pull request red:

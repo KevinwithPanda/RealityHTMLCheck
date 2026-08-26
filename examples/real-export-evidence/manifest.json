@@ -1,6 +1,6 @@
 {
   "kind": "locally-generated-real-html-export-evidence",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "capturedOn": "2026-08-27",
   "evidenceBoundary": {
     "sourceType": "locally-generated-real-export",
@@ -9,8 +9,8 @@
     "containsThirdPartyUserContent": false,
     "containsPersonalData": false,
     "officialCompatibilityClaim": false,
-    "statement": "The source is a minimal repository-authored note, while the checked-in HTML bytes were emitted by the recorded locally installed exporter. This proves one bounded export, not product-wide compatibility.",
-    "statementZhCN": "源文件是本仓库编写的最小笔记，随仓库提交的 HTML 字节则由已记录的本机真实导出器生成；这只证明一个有限导出，不代表产品级全面兼容。"
+    "statement": "Every source and support file is repository-authored, while all four checked-in HTML outputs were emitted by the recorded locally installed exporter. This proves four bounded commands, not product-wide compatibility.",
+    "statementZhCN": "所有源文件和辅助资源均由本仓库编写，随仓库提交的四份 HTML 则由已记录的本机真实导出器生成；这些证据只证明四条有限命令，不代表产品级全面兼容。"
   },
   "generator": {
     "name": "Pandoc",
@@ -26,8 +26,24 @@
   "samples": [
     {
       "id": "pandoc-3.8.2.1-standalone-gfm",
+      "scenarioProfile": "standalone-gfm",
+      "description": "One repository-authored GFM source converted to a default standalone HTML5 document.",
+      "descriptionZhCN": "将一份仓库自有 GFM 源文档转换为默认 standalone HTML5 文档。",
       "source": "pandoc-3.8.2.1/source/note.md",
       "output": "pandoc-3.8.2.1/generated/note.html",
+      "sourceProvenance": {
+        "origin": "repository-authored-test-content",
+        "license": "MIT",
+        "containsThirdPartyUserContent": false,
+        "containsPersonalData": false
+      },
+      "inputs": [
+        {
+          "path": "pandoc-3.8.2.1/source/note.md",
+          "role": "source-markdown",
+          "rawSha256": "ec677df9fda8e95a0b52f0abaf28c0a2741defa598448e6f8de9717c86d21edd"
+        }
+      ],
       "command": {
         "cwd": "examples/real-export-evidence/pandoc-3.8.2.1",
         "program": "pandoc",
@@ -41,7 +57,6 @@
         "display": "pandoc source/note.md --from=gfm --to=html5 --standalone --output=generated/note.html"
       },
       "hashes": {
-        "sourceRawSha256": "ec677df9fda8e95a0b52f0abaf28c0a2741defa598448e6f8de9717c86d21edd",
         "outputRawSha256": "7256420ce20ae8a5488db4ad396fe7ba0be0ceb2928f1c012614f9016ffdfff3",
         "outputCanonicalLfSha256": "473023a219817af57767e1e487fde7a7f46b072ffea72be3a08c089cad63679d"
       },
@@ -52,12 +67,168 @@
       "realityCheckExpectation": {
         "score": 100,
         "status": "ready",
-        "counts": {
-          "error": 0,
-          "warning": 0,
-          "advice": 0,
-          "autoFixable": 0
+        "counts": { "error": 0, "warning": 0, "advice": 0, "autoFixable": 0 }
+      }
+    },
+    {
+      "id": "pandoc-3.8.2.1-embed-resources",
+      "scenarioProfile": "embedded-local-resources",
+      "description": "A Markdown note, local CSS, and repository-authored SVG exported with --embed-resources into one offline HTML file.",
+      "descriptionZhCN": "把 Markdown、局部 CSS 和仓库自有 SVG 通过 --embed-resources 导出为一份可离线打开的 HTML。",
+      "source": "pandoc-3.8.2.1-embed-resources/source/note.md",
+      "output": "pandoc-3.8.2.1-embed-resources/generated/embedded-note.html",
+      "sourceProvenance": {
+        "origin": "repository-authored-test-content",
+        "license": "MIT",
+        "containsThirdPartyUserContent": false,
+        "containsPersonalData": false
+      },
+      "inputs": [
+        {
+          "path": "pandoc-3.8.2.1-embed-resources/source/note.md",
+          "role": "source-markdown",
+          "rawSha256": "c62170da47424ffcde264f043c0015e0c9b4d72a67aec1da5653caf12b1cbfd2"
+        },
+        {
+          "path": "pandoc-3.8.2.1-embed-resources/source/theme.css",
+          "role": "stylesheet",
+          "rawSha256": "04dbe3f66e3a77bdad242b08660ca4761bfdbf2b6d9c18304bb26751353cfaa5"
+        },
+        {
+          "path": "pandoc-3.8.2.1-embed-resources/source/assets/evidence-flow.svg",
+          "role": "image",
+          "rawSha256": "263d50dc7202b33e248522d99e3d95fe87ccc1b4e7f839312212f6a71f39dcbb"
         }
+      ],
+      "command": {
+        "cwd": "examples/real-export-evidence/pandoc-3.8.2.1-embed-resources",
+        "program": "pandoc",
+        "arguments": [
+          "source/note.md",
+          "--from=gfm",
+          "--to=html5",
+          "--standalone",
+          "--embed-resources",
+          "--resource-path=source",
+          "--css=source/theme.css",
+          "--output=generated/embedded-note.html"
+        ],
+        "display": "pandoc source/note.md --from=gfm --to=html5 --standalone --embed-resources --resource-path=source --css=source/theme.css --output=generated/embedded-note.html"
+      },
+      "hashes": {
+        "outputRawSha256": "33951fbce597d4758d581651f6df573275f3d01422b79063942550339898b3bb",
+        "outputCanonicalLfSha256": "1df0b26ba1bef1c4cf169f3603182631b2e99aac5034055d1162eb927ce3a2bf"
+      },
+      "outputProfile": {
+        "capturedLineEndings": "CRLF",
+        "crossPlatformComparison": "Normalize CRLF and CR to LF before hashing; no other transformation is allowed."
+      },
+      "realityCheckExpectation": {
+        "score": 100,
+        "status": "ready",
+        "counts": { "error": 0, "warning": 0, "advice": 0, "autoFixable": 0 }
+      }
+    },
+    {
+      "id": "pandoc-3.8.2.1-structured-note",
+      "scenarioProfile": "toc-footnotes-mathml",
+      "description": "A standalone note with a generated table of contents, numbered sections, a footnote, a table, and MathML.",
+      "descriptionZhCN": "一份含自动目录、编号章节、脚注、表格和 MathML 的 standalone 笔记。",
+      "source": "pandoc-3.8.2.1-structured-note/source/research-note.md",
+      "output": "pandoc-3.8.2.1-structured-note/generated/research-note.html",
+      "sourceProvenance": {
+        "origin": "repository-authored-test-content",
+        "license": "MIT",
+        "containsThirdPartyUserContent": false,
+        "containsPersonalData": false
+      },
+      "inputs": [
+        {
+          "path": "pandoc-3.8.2.1-structured-note/source/research-note.md",
+          "role": "source-markdown",
+          "rawSha256": "2a2f46ab0d27a5e19f855cdedbc4e2d2d675d9b6114183b3132055b32df2d520"
+        }
+      ],
+      "command": {
+        "cwd": "examples/real-export-evidence/pandoc-3.8.2.1-structured-note",
+        "program": "pandoc",
+        "arguments": [
+          "source/research-note.md",
+          "--from=markdown+footnotes+tex_math_dollars",
+          "--to=html5",
+          "--standalone",
+          "--toc",
+          "--toc-depth=3",
+          "--number-sections",
+          "--mathml",
+          "--output=generated/research-note.html"
+        ],
+        "display": "pandoc source/research-note.md --from=markdown+footnotes+tex_math_dollars --to=html5 --standalone --toc --toc-depth=3 --number-sections --mathml --output=generated/research-note.html"
+      },
+      "hashes": {
+        "outputRawSha256": "153f14270afc2e55cee04ae427acf80e6ca6c6e32ac9bb04ad8c2d4b720e3eb2",
+        "outputCanonicalLfSha256": "85b432fcd5dc2d8fd897a2ffa1eefaf5ac5bd48f110a3bcc8b926d61a9c6b218"
+      },
+      "outputProfile": {
+        "capturedLineEndings": "CRLF",
+        "crossPlatformComparison": "Normalize CRLF and CR to LF before hashing; no other transformation is allowed."
+      },
+      "realityCheckExpectation": {
+        "score": 100,
+        "status": "ready",
+        "counts": { "error": 0, "warning": 0, "advice": 0, "autoFixable": 0 }
+      }
+    },
+    {
+      "id": "pandoc-3.8.2.1-multi-source",
+      "scenarioProfile": "multi-source-combined",
+      "description": "Two ordered Markdown inputs combined by one real Pandoc command into a linked standalone HTML note.",
+      "descriptionZhCN": "由一条真实 Pandoc 命令按顺序合并两份 Markdown，生成含内部链接的 standalone HTML 笔记。",
+      "source": "pandoc-3.8.2.1-multi-source/source/overview.md",
+      "output": "pandoc-3.8.2.1-multi-source/generated/combined-note.html",
+      "sourceProvenance": {
+        "origin": "repository-authored-test-content",
+        "license": "MIT",
+        "containsThirdPartyUserContent": false,
+        "containsPersonalData": false
+      },
+      "inputs": [
+        {
+          "path": "pandoc-3.8.2.1-multi-source/source/overview.md",
+          "role": "source-markdown",
+          "rawSha256": "e5fc2bc88d6817cd3de945437b566a1845501f07ba054b619d788779dcd7d6a1"
+        },
+        {
+          "path": "pandoc-3.8.2.1-multi-source/source/checklist.md",
+          "role": "source-markdown",
+          "rawSha256": "98c6fc19e0ef59c438fea5db22bf217d015d8b6136eb94f21d497e2e19a97f46"
+        }
+      ],
+      "command": {
+        "cwd": "examples/real-export-evidence/pandoc-3.8.2.1-multi-source",
+        "program": "pandoc",
+        "arguments": [
+          "source/overview.md",
+          "source/checklist.md",
+          "--from=gfm",
+          "--to=html5",
+          "--standalone",
+          "--output=generated/combined-note.html"
+        ],
+        "display": "pandoc source/overview.md source/checklist.md --from=gfm --to=html5 --standalone --output=generated/combined-note.html"
+      },
+      "hashes": {
+        "outputRawSha256": "364df90cd60102e774e72dab568f3df7ed694f83a148b91b3ebb82d108da3016",
+        "outputCanonicalLfSha256": "7fe49726235ad7653a51095c3e112402751cedd8c9d23996dcff989428191b70"
+      },
+      "outputProfile": {
+        "capturedLineEndings": "CRLF",
+        "crossPlatformComparison": "Normalize CRLF and CR to LF before hashing; no other transformation is allowed."
+      },
+      "realityCheckExpectation": {
+        "score": 100,
+        "status": "ready",
+        "counts": { "error": 0, "warning": 0, "advice": 0, "autoFixable": 0 }
       }
     }
   ]

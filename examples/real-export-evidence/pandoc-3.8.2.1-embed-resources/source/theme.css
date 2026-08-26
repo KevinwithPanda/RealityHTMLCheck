@@ -1,0 +1,24 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  max-width: 46rem;
+  margin: 2rem auto;
+  padding: 0 1.25rem;
+  color: #20242c;
+  line-height: 1.65;
+}
+
+h1,
+h2 {
+  color: #b43f24;
+}
+
+img {
+  display: block;
+  width: min(100%, 42rem);
+  height: auto;
+  margin: 1.5rem 0;
+}

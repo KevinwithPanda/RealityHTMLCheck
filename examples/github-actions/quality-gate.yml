@@ -60,4 +60,4 @@ jobs:
           # max-recurring-risks: 10
 
 # In another repository, replace `uses: ./` with the published RealityCheck
-# repository and release tag: `KevinwithPanda/RealityHTMLCheck@v0.6.0`.
+# repository and release tag: `KevinwithPanda/RealityHTMLCheck@v0.7.0`.

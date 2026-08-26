@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
@@ -25,6 +26,7 @@ test("npm publication whitelist covers every security and governance runtime sur
     "realitycheck/scripts/note-analyzer.mjs",
     "realitycheck/scripts/note-package.mjs",
     "realitycheck/scripts/note-summary.mjs",
+    "realitycheck/scripts/note-scope.mjs",
     "realitycheck/scripts/note-compare.mjs",
     "realitycheck/scripts/note-comparison-report.mjs",
     "realitycheck/scripts/note-check.mjs",
@@ -81,4 +83,18 @@ test("public project metadata matches the current supported release and communit
   const issueConfig = readFileSync(".github/ISSUE_TEMPLATE/config.yml", "utf8");
   assert.match(issueConfig, /SUPPORT\.md/);
   assert.match(issueConfig, /security\/policy/);
+});
+
+test("top-level CLI identifies the note-first product and prints its exact version", () => {
+  const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+  const help = spawnSync(process.execPath, ["realitycheck/scripts/audit.mjs", "--help"], { encoding: "utf8" });
+  assert.equal(help.status, 0, help.stderr);
+  assert.match(help.stdout, /check HTML notes locally; stress authorized Web apps with evidence/);
+  assert.ok(help.stdout.indexOf("realitycheck note <FILE|DIRECTORY>") < help.stdout.indexOf("realitycheck demo"));
+  assert.match(help.stdout, /-V, --version/);
+  for (const flag of ["--version", "-V"]) {
+    const version = spawnSync(process.execPath, ["realitycheck/scripts/audit.mjs", flag], { encoding: "utf8" });
+    assert.equal(version.status, 0, version.stderr);
+    assert.equal(version.stdout.trim(), packageJson.version);
+  }
 });

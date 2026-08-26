@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 180" role="img" aria-labelledby="title desc">
+  <title id="title">Evidence workflow</title>
+  <desc id="desc">Three connected stages labelled collect, verify, and share.</desc>
+  <rect width="720" height="180" rx="24" fill="#f7f2ec"/>
+  <g fill="#ffffff" stroke="#c84f30" stroke-width="3">
+    <rect x="45" y="50" width="170" height="80" rx="14"/>
+    <rect x="275" y="50" width="170" height="80" rx="14"/>
+    <rect x="505" y="50" width="170" height="80" rx="14"/>
+  </g>
+  <g fill="#27303d" font-family="system-ui, sans-serif" font-size="24" font-weight="700" text-anchor="middle">
+    <text x="130" y="99">Collect</text>
+    <text x="360" y="99">Verify</text>
+    <text x="590" y="99">Share</text>
+  </g>
+  <g fill="none" stroke="#c84f30" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M225 90h36l-10-10m10 10-10 10"/>
+    <path d="M455 90h36l-10-10m10 10-10 10"/>
+  </g>
+</svg>

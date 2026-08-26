@@ -4,9 +4,27 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-27
+
 ### Added
 
 - A complete copy-ready HTML note GitHub Action workflow with triggers, read-only permissions, checkout, artifact naming, and an optional immutable baseline.
+- Auditable, repeatable `--exclude-html` globs for archives and drafts: excluded HTML stays in the package inventory, appears in every report surface, and cannot silently weaken a baseline gate.
+- Repair-before-download verification in the zero-upload checker, including before/after file and folder scores plus resolved, remaining, and introduced findings over the exact downloaded bytes.
+- Three additional byte-reproducible Pandoc 3.8.2.1 export scenarios covering embedded local resources, structured TOC/footnote/MathML output, and multi-source composition.
+- A standard `--version` CLI surface and note-first top-level help.
+- A Windows CI reproduction job that verifies the official Pandoc archive SHA-256 before replaying all four allowlisted exports.
+
+### Changed
+
+- The real-export manifest now records four allowlisted commands, every repository-authored input, raw and canonical output hashes, the observed exporter binary hash, and explicit license/privacy boundaries.
+- A newly excluded baseline scope is an error-level unverified change until reviewers accept a new baseline; an already accepted exclusion does not keep later CI runs red.
+
+### Fixed
+
+- Note checks now refuse to publish an incomplete result when HTML or package discovery reaches its safety ceiling, preventing a clean prefix from hiding unchecked files.
+- The browser checker rejects duplicate normalized file paths before analysis, so reports and repaired downloads cannot be paired with a different same-named source.
+- Browser checks are transaction-scoped so a slow earlier selection or failed new selection cannot restore stale results; folder repair downloads also report a standalone-file score and state plainly that folder assets are not bundled.
 
 ## [0.6.0] - 2026-08-27
 

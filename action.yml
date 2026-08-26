@@ -51,6 +51,10 @@ inputs:
     description: Note mode only. Maximum HTML files to inspect, from 1 to 500.
     required: false
     default: "200"
+  exclude-html:
+    description: Note mode only. Optional newline-separated portable globs excluded from per-file rules; paths remain known package/cross-note targets, and a newly excluded baseline scope fails closed once.
+    required: false
+    default: ""
   allow-remote:
     description: Confirm authorization to test a public target.
     required: false
@@ -256,11 +260,21 @@ runs:
         RC_LANGUAGE: ${{ inputs.summary-language }}
         RC_MAX_FILES: ${{ inputs.max-files }}
         RC_BASELINE: ${{ steps.resolve.outputs.baseline }}
+        RC_EXCLUDE_HTML: ${{ inputs.exclude-html }}
       run: |
         cd "$RC_WORKDIR_ABS"
         rm -f -- "$RC_OUTPUT/report.json" "$RC_OUTPUT/repair-plan.md" "$RC_OUTPUT/repair-plan.zh-CN.md" "$RC_OUTPUT/latest.html" "$RC_OUTPUT/latest.json" "$RC_OUTPUT/comparison.html" "$RC_OUTPUT/comparison.json" "$RC_OUTPUT/github-summary.md"
         args=("$RC_PATH" --output "$RC_OUTPUT" --fail-on "$RC_FAIL_ON" --language "$RC_LANGUAGE" --max-files "$RC_MAX_FILES")
         if [ -n "$RC_BASELINE" ]; then args+=(--baseline "$RC_BASELINE"); fi
+        if [ -n "$RC_EXCLUDE_HTML" ]; then
+          while IFS= read -r pattern || [ -n "$pattern" ]; do
+            if [ -z "$pattern" ]; then
+              echo "exclude-html contains an empty pattern; remove blank lines." >&2
+              exit 2
+            fi
+            args+=(--exclude-html "$pattern")
+          done < <(printf '%s' "$RC_EXCLUDE_HTML")
+        fi
         set +e
         node "$GITHUB_ACTION_PATH/realitycheck/scripts/note-check.mjs" "${args[@]}"
         status=$?
