@@ -189,7 +189,7 @@ outputs:
     description: Authenticated GitHub Artifact download URL for the exact publish run; empty when upload-artifact is false.
     value: ${{ steps.publish-upload.outputs.artifact-url }}
   publish-artifact-digest:
-    description: GitHub Artifact archive digest, which is distinct from publish-archive-sha256; empty when upload-artifact is false.
+    description: GitHub Artifact archive digest as 64-character lowercase SHA-256 hex, distinct from publish-archive-sha256; empty when upload-artifact is false.
     value: ${{ steps.publish-upload.outputs.artifact-digest }}
   note-report-path:
     description: Stable bilingual latest.html path when kind is note; empty otherwise.

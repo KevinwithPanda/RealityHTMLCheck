@@ -74,8 +74,13 @@ test("verified publish Action preserves one exact run and never deploys it", () 
   assert.match(action, /RC_REPAIR_PLAN: \$\{\{ steps\.publish\.outputs\.repair-plan-path-absolute \}\}/);
   assert.match(action, /value: \$\{\{ steps\.publish\.outputs\.publish-status \}\}/);
   assert.match(action, /value: \$\{\{ steps\.publish\.outputs\.run-directory \}\}/);
+  assert.match(action, /64-character lowercase SHA-256 hex/);
   assert.match(action, /RC_PUBLISH_UPLOAD_OUTCOME/);
   assert.doesNotMatch(action, /result_json="\$RUNNER_TEMP\/realitycheck-publish-result-/);
   assert.doesNotMatch(action, /actions\/deploy-pages|wrangler pages deploy|netlify deploy/i);
   assert.ok(action.indexOf("Upload the exact RealityCheck publish run") < action.indexOf("Enforce the RealityCheck result"));
+
+  const validation = readFileSync(".github/workflows/validate.yml", "utf8");
+  assert.match(validation, /\^\[0-9a-f\]\{64\}\$/);
+  assert.doesNotMatch(validation, /RC_ARTIFACT_DIGEST[^\n]*sha256:\*/);
 });

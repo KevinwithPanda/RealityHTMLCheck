@@ -1212,7 +1212,7 @@ jobs:
           require_nonempty "publish-deploy-content-id" "$RC_DEPLOY_ID"
           require_nonempty "publish-artifact-id" "$RC_ARTIFACT_ID"
           case "$RC_ARTIFACT_URL" in https://github.com/*) ;; *) fail "publish-artifact-url is empty or is not an authenticated GitHub URL" ;; esac
-          case "$RC_ARTIFACT_DIGEST" in sha256:*) ;; *) fail "publish-artifact-digest is empty or does not use the sha256 prefix" ;; esac
+          [[ "$RC_ARTIFACT_DIGEST" =~ ^[0-9a-f]{64}$ ]] || fail "publish-artifact-digest is not the expected 64-character lowercase SHA-256 hex value"
 
           echo "checkpoint=downloaded-artifact-boundary"
           [ ! -e downloaded-publish-ready/sentinel.txt ] || fail "the stale sentinel was uploaded at the artifact root"
@@ -1295,7 +1295,7 @@ jobs:
           [ -n "$RC_WORKING_COPY_PATH" ] || fail "publish-working-copy-path output is empty"
           [ -f "$RC_WORKING_COPY_PATH" ] || fail "publish-working-copy-path does not resolve to a file: $RC_WORKING_COPY_PATH"
           [ -n "$RC_ARTIFACT_ID" ] || fail "publish-artifact-id output is empty"
-          case "$RC_ARTIFACT_DIGEST" in sha256:*) ;; *) fail "publish-artifact-digest is empty or does not use the sha256 prefix" ;; esac
+          [[ "$RC_ARTIFACT_DIGEST" =~ ^[0-9a-f]{64}$ ]] || fail "publish-artifact-digest is not the expected 64-character lowercase SHA-256 hex value"
           node realitycheck/scripts/audit.mjs validate downloaded-publish-blocked || fail "the downloaded blocked Artifact failed artifact validation"
           [ -n "$(find downloaded-publish-blocked -type f -name '*.realitycheck-working-copy.zip' -print -quit)" ] || fail "the blocked Artifact has no working-copy ZIP"
           DOWNLOAD_ROOT="$PWD/downloaded-publish-blocked" python - <<'PY'

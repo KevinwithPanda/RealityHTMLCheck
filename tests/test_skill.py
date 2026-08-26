@@ -280,6 +280,7 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn("Publish mode does not accept allow-remote", action)
         self.assertIn("value: ${{ steps.publish.outputs.publish-status }}", action)
         self.assertIn("value: ${{ steps.publish.outputs.run-directory }}", action)
+        self.assertIn("64-character lowercase SHA-256 hex", action)
         self.assertIn("RC_REPAIR_PLAN: ${{ steps.publish.outputs.repair-plan-path-absolute }}", action)
         self.assertLess(action.index("Upload the exact RealityCheck publish run"), action.index("Enforce the RealityCheck result"))
         workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "validate.yml").read_text(encoding="utf-8")
@@ -295,6 +296,7 @@ class SkillStructureTests(unittest.TestCase):
             "publish-artifact-digest",
             "browser-final-archive",
             "active-script",
+            "^[0-9a-f]{64}$",
         ):
             self.assertIn(required, workflow)
 
