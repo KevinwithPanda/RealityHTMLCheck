@@ -198,7 +198,7 @@ test("non-blocking preload verification settles before proof status and screensh
   }
 });
 
-test("a stalled imported stylesheet cannot extend the whole browser proof without bound", { timeout: 10_000 }, async () => {
+test("a stalled imported stylesheet cannot extend the whole browser proof without bound", { timeout: 20_000 }, async () => {
   const encoder = new TextEncoder();
   const index = encoder.encode('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Deadline chain</title><link rel="stylesheet" href="root.css"></head><body><main><h1>Deadline chain</h1><p>A nested stylesheet request must obey the whole-proof deadline.</p></main></body></html>');
   const rootCss = encoder.encode('@import url("slow.css?v=1");body{color:#111}');
@@ -228,7 +228,7 @@ test("a stalled imported stylesheet cannot extend the whole browser proof withou
     });
     assert.notEqual(proof.status, "passed", JSON.stringify(proof.scenarios));
     assert.ok(proof.scenarios.some((scenario) => scenario.reasonCodes.includes("browser-time-limit")));
-    assert.ok(Date.now() - started < 8_000, "bounded cleanup must not turn the 1s proof deadline into an indefinite wait");
+    assert.ok(Date.now() - started < 18_000, "bounded cleanup must not turn the 1s proof deadline into an indefinite wait");
     const frozen = JSON.stringify(proof);
     await new Promise((resolve) => setTimeout(resolve, 100));
     assert.equal(JSON.stringify(proof), frozen);

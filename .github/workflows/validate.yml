@@ -30,7 +30,27 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test
+        id: test-suite
+        shell: bash
+        run: |
+          mkdir -p .realitycheck/ci-diagnostics
+          set -o pipefail
+          npm test 2>&1 | tee .realitycheck/ci-diagnostics/tests.log
+
+      - name: Surface the bounded test failure tail
+        if: failure() && steps.test-suite.outcome == 'failure'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(".realitycheck/ci-diagnostics/tests.log")
+          lines = path.read_text(encoding="utf-8", errors="replace").splitlines()[-120:]
+          message = "\n".join(lines)[-12000:]
+          message = message.replace("/home/runner/work/RealityHTMLCheck/RealityHTMLCheck", "<workspace>")
+          message = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print(f"::error title=Test failure tail::{message}")
+          PY
 
       - name: Compile report tooling
         run: |
