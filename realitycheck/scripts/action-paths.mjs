@@ -50,7 +50,8 @@ function canonicalAllowMissingWithoutLinks(path, label) {
     cursor = parent;
   }
   const stats = lstatSync(cursor);
-  if (!stats.isDirectory() || stats.isSymbolicLink()) throw new Error(`${label} must have a regular directory ancestor without symlinks`);
+  if (stats.isSymbolicLink()) throw new Error(`${label} must not traverse a symbolic-link ancestor`);
+  if (!stats.isDirectory()) throw new Error(`${label} must have a regular directory ancestor`);
   const canonical = realpathSync(cursor);
   const same = process.platform === "win32" ? resolve(cursor).toLowerCase() === resolve(canonical).toLowerCase() : resolve(cursor) === resolve(canonical);
   if (!same) throw new Error(`${label} must not traverse a symbolic-link ancestor`);

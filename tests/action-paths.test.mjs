@@ -126,3 +126,21 @@ test("Action paths resolve existing symlink ancestors before containment checks"
     rmSync(outside, { recursive: true, force: true });
   }
 });
+
+test("Action materialization rejects a regular-file ancestor before canonicalization", () => {
+  const root = workspace();
+  try {
+    writeFileSync(join(root, "project", "blocked-parent"), "not a directory", "utf8");
+    assert.throws(() => resolveActionPaths({
+      workspace: root,
+      workingDirectory: "project",
+      kind: "publish",
+      notePath: "notes",
+      output: ".realitycheck/publish",
+      publishRunKey: "action-1-1",
+      materializeOutput: "blocked-parent/stage",
+    }), /regular directory ancestor/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
