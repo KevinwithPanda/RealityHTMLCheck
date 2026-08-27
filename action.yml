@@ -23,6 +23,10 @@ inputs:
     description: Publish only. Output slug; internal package paths are not renamed.
     required: false
     default: ""
+  materialize-output:
+    description: Publish only. Optional absent directory relative to working-directory that receives the exact verified ZIP bytes for a downstream static-host artifact; RealityCheck never deploys it.
+    required: false
+    default: ""
   url:
     description: Target URL. May be omitted when baseUrl exists in the project config.
     required: false
@@ -191,6 +195,12 @@ outputs:
   publish-artifact-digest:
     description: GitHub Artifact archive digest as 64-character lowercase SHA-256 hex, distinct from publish-archive-sha256; empty when upload-artifact is false.
     value: ${{ steps.publish-upload.outputs.artifact-digest }}
+  publish-directory-path:
+    description: Workspace-relative byte-for-byte materialized publish directory when materialize-output is requested and the capsule is publish-ready; empty otherwise.
+    value: ${{ steps.publish-stage.outputs.stage-directory }}
+  publish-stage-receipt-path:
+    description: Workspace-relative validated stage receipt kept outside the materialized site; empty when materialization is not requested or the capsule is blocked.
+    value: ${{ steps.publish-stage.outputs.stage-receipt }}
   note-report-path:
     description: Stable bilingual latest.html path when kind is note; empty otherwise.
     value: ${{ steps.note.outputs.report-path }}
@@ -262,6 +272,7 @@ runs:
         RC_PATH: ${{ inputs.path }}
         RC_ENTRY: ${{ inputs.entry }}
         RC_PUBLISH_NAME: ${{ inputs.publish-name }}
+        RC_MATERIALIZE_OUTPUT_INPUT: ${{ inputs.materialize-output }}
         RC_WORKDIR_INPUT: ${{ inputs.working-directory }}
         RC_FAIL_ON_INPUT: ${{ inputs.fail-on }}
         RC_OUTPUT_INPUT: ${{ inputs.output }}
@@ -274,13 +285,13 @@ runs:
         publish_run_key=""
         case "$RC_KIND" in
           web)
-            if [ -n "$RC_ENTRY" ] || [ -n "$RC_PUBLISH_NAME" ]; then echo "entry and publish-name are only valid when kind is publish." >&2; exit 2; fi
+            if [ -n "$RC_ENTRY" ] || [ -n "$RC_PUBLISH_NAME" ] || [ -n "$RC_MATERIALIZE_OUTPUT_INPUT" ]; then echo "entry, publish-name, and materialize-output are only valid when kind is publish." >&2; exit 2; fi
             fail_on="${RC_FAIL_ON_INPUT:-major}"
             output="${RC_OUTPUT_INPUT:-.realitycheck/runs}"
             case "$fail_on" in critical|major|minor|never) ;; *) echo "Web mode fail-on must be critical, major, minor, or never." >&2; exit 2 ;; esac
             ;;
           note)
-            if [ -n "$RC_ENTRY" ] || [ -n "$RC_PUBLISH_NAME" ]; then echo "entry and publish-name are only valid when kind is publish." >&2; exit 2; fi
+            if [ -n "$RC_ENTRY" ] || [ -n "$RC_PUBLISH_NAME" ] || [ -n "$RC_MATERIALIZE_OUTPUT_INPUT" ]; then echo "entry, publish-name, and materialize-output are only valid when kind is publish." >&2; exit 2; fi
             fail_on="${RC_FAIL_ON_INPUT:-error}"
             output="${RC_OUTPUT_INPUT:-.realitycheck/notes}"
             if [ -z "$RC_PATH" ]; then echo "Note mode requires path: with an HTML file or folder relative to working-directory." >&2; exit 2; fi
@@ -315,6 +326,7 @@ runs:
           --baseline "$RC_BASELINE_INPUT" \
           --output "$output" \
           --publish-run-key "$publish_run_key" \
+          --materialize-output "$RC_MATERIALIZE_OUTPUT_INPUT" \
           --github-output "$GITHUB_OUTPUT"
         echo "fail-on=$fail_on" >> "$GITHUB_OUTPUT"
 
@@ -509,6 +521,30 @@ runs:
           fi
         fi
         echo "summary-exit-code=0" >> "$GITHUB_OUTPUT"
+
+    - name: Materialize the exact verified publish directory
+      id: publish-stage
+      if: always() && steps.resolve.outputs.kind == 'publish' && inputs.materialize-output != '' && steps.publish.outputs.result-valid == 'true' && steps.publish.outputs.publish-ready == 'true' && steps.publish.outputs.exit-code == '0'
+      shell: bash
+      env:
+        RC_PUBLISH_RUN: ${{ steps.publish.outputs.run-directory-absolute }}
+        RC_STAGE_DIRECTORY: ${{ steps.resolve.outputs.materialize-output-absolute }}
+        RC_STAGE_RECEIPT: ${{ steps.resolve.outputs.materialize-receipt-absolute }}
+        RC_STAGE_DIRECTORY_ROOT: ${{ steps.resolve.outputs.materialize-root }}
+        RC_STAGE_RECEIPT_ROOT: ${{ steps.resolve.outputs.materialize-receipt-root }}
+      run: |
+        set +e
+        node "$GITHUB_ACTION_PATH/realitycheck/scripts/audit.mjs" materialize "$RC_PUBLISH_RUN" \
+          --output "$RC_STAGE_DIRECTORY" \
+          --receipt "$RC_STAGE_RECEIPT"
+        stage_status=$?
+        set -e
+        case "$stage_status" in 0|2) ;; *) echo "RealityCheck materialize returned unexpected status $stage_status; normalized to operational error 2." >&2; stage_status=2 ;; esac
+        echo "stage-exit-code=$stage_status" >> "$GITHUB_OUTPUT"
+        if [ "$stage_status" = "0" ]; then
+          echo "stage-directory=$RC_STAGE_DIRECTORY_ROOT" >> "$GITHUB_OUTPUT"
+          echo "stage-receipt=$RC_STAGE_RECEIPT_ROOT" >> "$GITHUB_OUTPUT"
+        fi
 
     - name: Preview the effective audit plan without a browser
       id: plan
@@ -870,6 +906,8 @@ runs:
         RC_PUBLISH_SUMMARY_EXIT_CODE: ${{ steps.publish-summary.outputs.summary-exit-code }}
         RC_PUBLISH_UPLOAD_REQUESTED: ${{ inputs.upload-artifact }}
         RC_PUBLISH_UPLOAD_OUTCOME: ${{ steps.publish-upload.outcome }}
+        RC_PUBLISH_STAGE_REQUESTED: ${{ inputs.materialize-output }}
+        RC_PUBLISH_STAGE_EXIT_CODE: ${{ steps.publish-stage.outputs.stage-exit-code }}
         RC_WEB_SUMMARY_PATH: ${{ steps.summary.outputs.github-summary-path }}
         RC_PLAN_EXIT_CODE: ${{ steps.plan.outputs.plan-exit-code }}
         RC_EXIT_CODE: ${{ steps.audit.outputs.exit-code }}
@@ -936,6 +974,10 @@ runs:
           fi
           if [ "$RC_PUBLISH_UPLOAD_REQUESTED" = "true" ] && { [ "$publish_status" = "0" ] || [ "$publish_status" = "1" ]; } && [ "$RC_PUBLISH_UPLOAD_OUTCOME" != "success" ]; then
             echo "RealityCheck requested an exact-run Artifact upload, but GitHub did not complete it."
+            publish_status=2
+          fi
+          if [ -n "$RC_PUBLISH_STAGE_REQUESTED" ] && [ "$RC_PUBLISH_READY" = "true" ] && [ "$RC_PUBLISH_STAGE_EXIT_CODE" != "0" ]; then
+            echo "RealityCheck produced a publish-ready capsule but could not materialize the requested exact-byte static-host directory."
             publish_status=2
           fi
           echo "exit-code=$publish_status" >> "$GITHUB_OUTPUT"

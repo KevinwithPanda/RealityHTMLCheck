@@ -18,7 +18,7 @@ test("HTML note Action adoption has a complete copy-ready workflow", () => {
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /permissions:\n  contents: read/);
   assert.match(workflow, /actions\/checkout@v7/);
-  assert.match(workflow, /KevinwithPanda\/RealityHTMLCheck@v0\.11\.0/);
+  assert.match(workflow, /KevinwithPanda\/RealityHTMLCheck@v0\.12\.0/);
   assert.match(workflow, /kind: note/);
   assert.match(workflow, /path: exported-notes/);
   assert.match(workflow, /artifact-name: realitycheck-html-notes/);
@@ -30,7 +30,7 @@ test("verified publish Action adoption has a minimal permission-bounded workflow
   const workflow = readFileSync("examples/github-actions/verified-publish.yml", "utf8");
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /permissions:\n  contents: read/);
-  assert.match(workflow, /KevinwithPanda\/RealityHTMLCheck@v0\.11\.0/);
+  assert.match(workflow, /KevinwithPanda\/RealityHTMLCheck@v0\.12\.0/);
   assert.match(workflow, /kind: publish/);
   assert.match(workflow, /path: exported-site/);
   assert.match(workflow, /artifact-name: verified-html-publish-capsule/);
@@ -83,4 +83,42 @@ test("verified publish Action preserves one exact run and never deploys it", () 
   const validation = readFileSync(".github/workflows/validate.yml", "utf8");
   assert.match(validation, /\^\[0-9a-f\]\{64\}\$/);
   assert.doesNotMatch(validation, /RC_ARTIFACT_DIGEST[^\n]*sha256:\*/);
+});
+
+test("verified Pages adoption separates check, deployment permission, and live receipt", () => {
+  const reusable = readFileSync(".github/workflows/verified-pages.yml", "utf8");
+  const caller = readFileSync("examples/github-actions/verified-pages.yml", "utf8");
+  for (const value of [
+    "workflow_call:",
+    "authorize-trigger:",
+    "Refuse pull requests and non-default-branch deployment",
+    "verify-and-stage:",
+    "contents: read",
+    "materialize-output:",
+    "actions/upload-pages-artifact@v4",
+    "include-hidden-files: true",
+    "deploy:",
+    "pages: write",
+    "id-token: write",
+    "environment:",
+    "name: github-pages",
+    "verify-live:",
+    "timeout-minutes: 10",
+    "realityhtmlcheck verify-deploy",
+    "--allow-remote",
+    "actions/download-artifact@v8",
+    "RealityHTMLCheck#v0.12.0",
+  ]) assert.match(reusable, new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.doesNotMatch(reusable, /pull_request(?:_target)?:|contents: write|NETLIFY|CLOUDFLARE|wrangler|git push/i);
+  assert.match(reusable, /RC_EVENT_NAME[\s\S]*workflow_dispatch[\s\S]*RC_DEFAULT_BRANCH/);
+  assert.ok(reusable.indexOf("verify-and-stage:") < reusable.indexOf("deploy:"));
+  assert.ok(reusable.indexOf("deploy:") < reusable.indexOf("verify-live:"));
+
+  assert.match(caller, /workflow_dispatch:/);
+  assert.match(caller, /KevinwithPanda\/RealityHTMLCheck\/\.github\/workflows\/verified-pages\.yml@v0\.12\.0/);
+  assert.match(caller, /path: exported-site/);
+  assert.match(caller, /pages: write/);
+  assert.match(caller, /id-token: write/);
+  assert.match(caller, /Settings -> Pages/);
+  assert.doesNotMatch(caller, /push:|pull_request(?:_target)?:|contents: write/);
 });

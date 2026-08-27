@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/html-note-deployment-browser-proof-v1.json",
+  "title": "RealityCheck HTML Note Live Deployment Browser Proof",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "profile", "generatedAt", "source", "target", "browser", "limits", "status", "scenarios", "summary", "screenshots", "proofId"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "kind": { "const": "html-note-deployment-browser-proof" },
+    "profile": { "const": "passive-static-live-v1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["archiveSha256", "archiveBytes", "deployContentId", "publishManifestId", "finalArchiveBrowserProofId"],
+      "properties": {
+        "archiveSha256": { "$ref": "#/$defs/sha256" },
+        "archiveBytes": { "type": "integer", "minimum": 1, "maximum": 67108864 },
+        "deployContentId": { "$ref": "#/$defs/sha256Id" },
+        "publishManifestId": { "$ref": "#/$defs/sha256Id" },
+        "finalArchiveBrowserProofId": { "$ref": "#/$defs/sha256Id" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "basePath"],
+      "properties": {
+        "origin": { "type": "string", "format": "uri", "pattern": "^https?://", "maxLength": 500 },
+        "basePath": { "type": "string", "pattern": "^/", "maxLength": 500 }
+      }
+    },
+    "browser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "version", "javascriptEnabled", "cleanContextPerScenario", "liveResponsesReverified", "cookiesForwarded", "authorizationForwarded", "referrerForwarded"],
+      "properties": {
+        "family": { "const": "chromium" },
+        "version": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[0-9A-Za-z._ -]+$" },
+        "javascriptEnabled": { "const": false },
+        "cleanContextPerScenario": { "const": true },
+        "liveResponsesReverified": { "const": true },
+        "cookiesForwarded": { "const": false },
+        "authorizationForwarded": { "const": false },
+        "referrerForwarded": { "const": false }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxHtmlFiles", "maxFragments", "maxRequests", "navigationTimeoutMs", "maxRunTimeMs", "maxBrowserResponseBytes", "maxBrowserTotalBytes", "browserRequestTimeoutMs"],
+      "properties": {
+        "maxHtmlFiles": { "type": "integer", "minimum": 1, "maximum": 10000 },
+        "maxFragments": { "type": "integer", "minimum": 1, "maximum": 100000 },
+        "maxRequests": { "type": "integer", "minimum": 1, "maximum": 100000 },
+        "navigationTimeoutMs": { "type": "integer", "minimum": 1, "maximum": 300000 },
+        "maxRunTimeMs": { "type": "integer", "minimum": 1, "maximum": 3600000 },
+        "maxBrowserResponseBytes": { "type": "integer", "minimum": 1, "maximum": 536870912 },
+        "maxBrowserTotalBytes": { "type": "integer", "minimum": 1, "maximum": 1073741824 },
+        "browserRequestTimeoutMs": { "type": "integer", "minimum": 1, "maximum": 300000 }
+      }
+    },
+    "status": { "enum": ["passed", "failed", "incomplete"] },
+    "scenarios": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/scenario" }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "passed", "failed", "incomplete"],
+      "properties": {
+        "total": { "const": 3 },
+        "passed": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "failed": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "incomplete": { "type": "integer", "minimum": 0, "maximum": 3 }
+      }
+    },
+    "screenshots": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "path", "source", "bytes", "sha256"],
+        "properties": {
+          "role": { "enum": ["desktop", "mobile-375"] },
+          "path": { "pattern": "^screenshots/live-(?:desktop|mobile-375)\\.png$", "type": "string" },
+          "source": {
+            "description": "Whether this screenshot capture scenario used only reverified target responses or delivered at least one verified-capsule fallback response after live verification became incomplete.",
+            "enum": ["live-response-only", "diagnostic-with-capsule-fallback"]
+          },
+          "bytes": { "type": "integer", "minimum": 1, "maximum": 67108864 },
+          "sha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "proofId": { "$ref": "#/$defs/sha256Id" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "sha256Id": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "viewport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1, "maximum": 10000 },
+        "height": { "type": "integer", "minimum": 1, "maximum": 10000 }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "viewport", "navigations", "requests", "htmlPages", "fragments", "fragmentFailures", "consoleErrors", "pageErrors", "requestFailures", "httpErrors", "responseVerificationErrors", "capsuleFallbackRequests", "unexpectedRequests", "redirectsOutsideScope", "horizontalOverflow", "popups", "dialogs", "downloads", "workers", "websockets", "coverageTruncated", "reasonCodes"],
+      "properties": {
+        "id": { "enum": ["live-desktop", "live-mobile-375", "live-pages-and-fragments"] },
+        "status": { "enum": ["passed", "failed", "incomplete"] },
+        "viewport": { "$ref": "#/$defs/viewport" },
+        "navigations": { "$ref": "#/$defs/count" },
+        "requests": { "$ref": "#/$defs/count" },
+        "htmlPages": { "$ref": "#/$defs/count" },
+        "fragments": { "$ref": "#/$defs/count" },
+        "fragmentFailures": { "$ref": "#/$defs/count" },
+        "consoleErrors": { "$ref": "#/$defs/count" },
+        "pageErrors": { "$ref": "#/$defs/count" },
+        "requestFailures": { "$ref": "#/$defs/count" },
+        "httpErrors": { "$ref": "#/$defs/count" },
+        "responseVerificationErrors": { "$ref": "#/$defs/count" },
+        "capsuleFallbackRequests": {
+          "description": "Declared requests successfully fulfilled to Chromium from verified capsule bytes after the corresponding live response could not be fully reverified.",
+          "$ref": "#/$defs/count"
+        },
+        "unexpectedRequests": { "$ref": "#/$defs/count" },
+        "redirectsOutsideScope": { "$ref": "#/$defs/count" },
+        "horizontalOverflow": { "$ref": "#/$defs/count" },
+        "popups": { "$ref": "#/$defs/count" },
+        "dialogs": { "$ref": "#/$defs/count" },
+        "downloads": { "$ref": "#/$defs/count" },
+        "workers": { "$ref": "#/$defs/count" },
+        "websockets": { "$ref": "#/$defs/count" },
+        "coverageTruncated": { "type": "boolean" },
+        "reasonCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 8,
+          "items": { "enum": ["browser-time-limit", "fragment-limit", "html-file-limit", "html-navigation-failed", "navigation-failed", "request-limit", "response-verification-incomplete", "unexpected-request"] }
+        }
+      }
+    },
+    "count": { "type": "integer", "minimum": 0, "maximum": 1000000 }
+  }
+}

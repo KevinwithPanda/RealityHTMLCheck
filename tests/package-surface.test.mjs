@@ -13,6 +13,13 @@ function coveredByPackageFiles(path, entries) {
   });
 }
 
+test("the supported full test commands serialize real-browser suites", () => {
+  const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+  const nodeCommand = "node --test --test-concurrency=1 tests/*.test.mjs";
+  assert.equal(packageJson.scripts["test:node"], nodeCommand);
+  assert.equal(packageJson.scripts.test.endsWith(`&& ${nodeCommand}`), true);
+});
+
 test("npm publication whitelist covers every security and governance runtime surface", () => {
   const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
   assert.equal(packageJson.scripts.realitycheck, "node realitycheck/scripts/audit.mjs");
@@ -34,6 +41,12 @@ test("npm publication whitelist covers every security and governance runtime sur
     "realitycheck/scripts/action-paths.mjs",
     "realitycheck/scripts/action-publish-result.mjs",
     "realitycheck/scripts/note-publish-github-summary.mjs",
+    "realitycheck/scripts/note-publish-stage.mjs",
+    "realitycheck/scripts/note-publish-stage-command.mjs",
+    "realitycheck/scripts/note-deploy-verify.mjs",
+    "realitycheck/scripts/note-deploy-browser.mjs",
+    "realitycheck/scripts/note-deploy-report.mjs",
+    "realitycheck/scripts/note-deploy-command.mjs",
     "realitycheck/scripts/demo-server.mjs",
     "realitycheck/scripts/github-summary.mjs",
     "realitycheck/scripts/policy-review.mjs",
@@ -61,6 +74,9 @@ test("npm publication whitelist covers every security and governance runtime sur
     "realitycheck/assets/html-note-publish-browser-proof.schema.json",
     "realitycheck/assets/html-note-publish-technical-report.schema.json",
     "realitycheck/assets/html-note-publish-command-result.schema.json",
+    "realitycheck/assets/html-note-publish-stage-receipt.schema.json",
+    "realitycheck/assets/html-note-deployment-browser-proof.schema.json",
+    "realitycheck/assets/html-note-deployment-receipt.schema.json",
     "realitycheck/assets/demo/index.html",
     "realitycheck/assets/demo/styles.css",
     "realitycheck/assets/demo/app.js",
@@ -98,8 +114,10 @@ test("top-level CLI identifies the note-first product and prints its exact versi
   const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
   const help = spawnSync(process.execPath, ["realitycheck/scripts/audit.mjs", "--help"], { encoding: "utf8" });
   assert.equal(help.status, 0, help.stderr);
-  assert.match(help.stdout, /check HTML notes locally; stress authorized Web apps with evidence/);
+  assert.match(help.stdout, /check HTML notes, prove live deployments, and stress authorized Web apps with evidence/);
   assert.ok(help.stdout.indexOf("realitycheck note <FILE|DIRECTORY>") < help.stdout.indexOf("realitycheck demo"));
+  assert.match(help.stdout, /realitycheck materialize <PUBLISH_RUN>/);
+  assert.match(help.stdout, /realitycheck verify-deploy <PUBLISH_RUN> <HTTP_OR_HTTPS_BASE_URL\/>/);
   assert.match(help.stdout, /-V, --version/);
   for (const flag of ["--version", "-V"]) {
     const version = spawnSync(process.execPath, ["realitycheck/scripts/audit.mjs", flag], { encoding: "utf8" });

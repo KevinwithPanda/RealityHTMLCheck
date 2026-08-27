@@ -1,0 +1,24 @@
+name: Verify and deploy HTML to GitHub Pages
+
+on:
+  workflow_dispatch:
+
+# One-time repository setting:
+# Settings -> Pages -> Build and deployment -> Source: GitHub Actions
+# GitHub Pages can make the staged HTML publicly accessible. Review the source
+# and configure protection rules on the github-pages environment before use.
+
+permissions:
+  contents: read
+
+jobs:
+  pages:
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
+    uses: KevinwithPanda/RealityHTMLCheck/.github/workflows/verified-pages.yml@v0.12.0
+    with:
+      path: exported-site
+      summary-language: en

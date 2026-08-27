@@ -139,6 +139,15 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Expose stable capsule, content, GitHub Artifact, report, proof, and checksum outputs for downstream read-only jobs.
 - [x] Prove success and active-content blocking through real GitHub-hosted Artifact download and independent revalidation.
 
+## v0.12 - Verified live deployment receipts
+
+- [x] Revalidate and atomically materialize only a complete publish-ready capsule into a regular-file static-host directory.
+- [x] Compare the real hosted root and every declared servable file with the capsule by decoded size and SHA-256 without retaining response bodies or credentials.
+- [x] Rerun JavaScript-disabled desktop, 375 px mobile, all-page, local-fragment, overflow, console/network, and unexpected-request gates against the authorized live base URL.
+- [x] Produce strict bilingual point-in-time receipts for exact match, host transformation review, direct live breakage, and incomplete verification.
+- [x] Add an optional Action materialization handoff without granting deployment permissions to the core Action.
+- [x] Provide a permission-separated GitHub Pages reusable workflow and dogfood publish → materialize → deploy → verify-live on the public passive canary.
+
 ## v1.0 criteria
 
 - Stable report and adapter contracts.

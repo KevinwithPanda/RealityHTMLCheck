@@ -1,5 +1,5 @@
 // Authoritative archive path policy shared by Node and browser intake.
-const SENSITIVE_SEGMENTS = new Set([".git", ".hg", ".svn", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".realitycheck", "node_modules"]);
+const SENSITIVE_SEGMENTS = new Set([".git", ".github", ".hg", ".svn", ".ssh", ".aws", ".azure", ".gnupg", ".kube", ".realitycheck", "node_modules"]);
 const SENSITIVE_BASENAME = /^(?:\.env(?:\..*)?|\.netrc|\.npmrc|\.pypirc|\.htpasswd|id_(?:rsa|dsa|ecdsa|ed25519)|(?:credentials?|secrets?|auth|tokens?|oauth|client[_-]?secret|service[_-]?account)(?:\.(?:json|ya?ml|toml))?|cookies?\.json|storage-state\.json|wallet\.dat)$/i;
 const SENSITIVE_EXTENSION = /\.(?:pem|key|p12|pfx|ppk|kdbx|keystore|jks)$/i;
 

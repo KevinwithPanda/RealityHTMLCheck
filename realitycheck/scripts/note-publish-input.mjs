@@ -7,6 +7,7 @@ import { isSensitiveNoteArchivePath } from "./note-path-policy.mjs";
 
 const HTML = /\.html?$/i;
 const compareText = (left, right) => left < right ? -1 : left > right ? 1 : 0;
+const encoder = new TextEncoder();
 
 function portable(value) {
   return value.split(sep).join("/");
@@ -14,6 +15,9 @@ function portable(value) {
 
 function assertPortablePath(path) {
   if (!path || path.startsWith("/") || path.includes("\\") || /^[a-z]:/i.test(path)) throw new Error(`Unsafe publish path: ${path}`);
+  if (path.length > PUBLISH_LIMITS.maxPathCharacters || encoder.encode(path).byteLength > PUBLISH_LIMITS.maxPathBytes) {
+    throw new Error(`Publish path exceeds the ${PUBLISH_LIMITS.maxPathCharacters}-character or ${PUBLISH_LIMITS.maxPathBytes}-byte limit: ${path.slice(0, 80)}`);
+  }
   const parts = path.split("/");
   for (const part of parts) {
     if (!part || part === "." || part === "..") throw new Error(`Unsafe publish path segment in: ${path}`);

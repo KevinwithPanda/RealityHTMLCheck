@@ -49,6 +49,7 @@ test("Action paths isolate one publish invocation beneath the configured output 
       notePath: "notes",
       output: ".realitycheck/publish",
       publishRunKey: "action-12345-2",
+      materializeOutput: ".realitycheck/pages-stage",
     });
     assert.equal(result.workingDirectory, "project");
     assert.equal(result.notePath, "notes");
@@ -57,6 +58,11 @@ test("Action paths isolate one publish invocation beneath the configured output 
     assert.equal(result.reportRoot, "project/.realitycheck/publish/action-12345-2");
     assert.equal(result.sourceRoot, "project/notes");
     assert.match(result.artifactPath, /project[\\/].realitycheck[\\/]publish[\\/]action-12345-2$/);
+    assert.equal(result.materializeOutput, ".realitycheck/pages-stage");
+    assert.equal(result.materializeReceipt, ".realitycheck/pages-stage.realitycheck-stage.receipt.json");
+    assert.equal(result.materializeRoot, "project/.realitycheck/pages-stage");
+    assert.equal(result.materializeReceiptRoot, "project/.realitycheck/pages-stage.realitycheck-stage.receipt.json");
+    assert.match(result.materializeOutputAbsolute, /project[\\/].realitycheck[\\/]pages-stage$/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -73,6 +79,9 @@ test("Action publish paths require an isolated run key and reject note-only base
     assert.throws(() => resolveActionPaths({ ...base, notePath: ".", publishRunKey: "action-1-1" }), /separate, non-nested/);
     assert.throws(() => resolveActionPaths({ ...base, output: "notes/results", publishRunKey: "action-1-1" }), /separate, non-nested/);
     assert.throws(() => resolveActionPaths({ ...base, kind: "note", publishRunKey: "action-1-1" }), /only valid when kind is publish/);
+    assert.throws(() => resolveActionPaths({ ...base, kind: "web", publishRunKey: "", materializeOutput: "stage" }), /only valid when kind is publish/);
+    assert.throws(() => resolveActionPaths({ ...base, publishRunKey: "action-1-1", materializeOutput: "notes/stage" }), /separate, non-nested/);
+    assert.throws(() => resolveActionPaths({ ...base, publishRunKey: "action-1-1", materializeOutput: ".realitycheck/publish/action-1-1/stage" }), /separate, non-nested/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -111,6 +120,7 @@ test("Action paths resolve existing symlink ancestors before containment checks"
     const base = { workspace: root, workingDirectory: "project", kind: "note", notePath: "notes", output: ".realitycheck/notes" };
     assert.throws(() => resolveActionPaths({ ...base, notePath: "escape/note.html" }), /outside working-directory/);
     assert.throws(() => resolveActionPaths({ ...base, output: "escape/reports" }), /outside working-directory/);
+    assert.throws(() => resolveActionPaths({ workspace: root, workingDirectory: "project", kind: "publish", notePath: "notes", output: ".realitycheck/publish", publishRunKey: "action-1-1", materializeOutput: "escape/stage" }), /symbolic-link ancestor/);
   } finally {
     rmSync(root, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });

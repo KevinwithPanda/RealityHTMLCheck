@@ -1155,6 +1155,7 @@ jobs:
           output: .realitycheck/publish
           summary-language: en
           artifact-name: realitycheck-publish-action-ready
+          materialize-output: .realitycheck/pages-ready
 
       - name: Download the verified publish Artifact
         uses: actions/download-artifact@v8
@@ -1181,6 +1182,8 @@ jobs:
           RC_ARTIFACT_ID: ${{ steps.publish-ready.outputs.publish-artifact-id }}
           RC_ARTIFACT_URL: ${{ steps.publish-ready.outputs.publish-artifact-url }}
           RC_ARTIFACT_DIGEST: ${{ steps.publish-ready.outputs.publish-artifact-digest }}
+          RC_STAGE_DIRECTORY: ${{ steps.publish-ready.outputs.publish-directory-path }}
+          RC_STAGE_RECEIPT: ${{ steps.publish-ready.outputs.publish-stage-receipt-path }}
         run: |
           fail() {
             printf '::error title=Verified Publish Action contract::%s\n' "$1"
@@ -1213,6 +1216,10 @@ jobs:
           require_nonempty "publish-artifact-id" "$RC_ARTIFACT_ID"
           case "$RC_ARTIFACT_URL" in https://github.com/*) ;; *) fail "publish-artifact-url is empty or is not an authenticated GitHub URL" ;; esac
           [[ "$RC_ARTIFACT_DIGEST" =~ ^[0-9a-f]{64}$ ]] || fail "publish-artifact-digest is not the expected 64-character lowercase SHA-256 hex value"
+          require_nonempty "publish-directory-path" "$RC_STAGE_DIRECTORY"
+          [ -d "$RC_STAGE_DIRECTORY" ] || fail "publish-directory-path does not resolve to a directory: $RC_STAGE_DIRECTORY"
+          require_file "publish-stage-receipt-path" "$RC_STAGE_RECEIPT"
+          node realitycheck/scripts/audit.mjs validate "$RC_STAGE_RECEIPT" || fail "the exact-byte materialization receipt failed validation"
 
           echo "checkpoint=downloaded-artifact-boundary"
           [ ! -e downloaded-publish-ready/sentinel.txt ] || fail "the stale sentinel was uploaded at the artifact root"
@@ -1222,6 +1229,21 @@ jobs:
           require_nonempty "downloaded publish archive" "$downloaded_archive"
           downloaded_archive_sha="$(sha256sum "$downloaded_archive" | cut -d' ' -f1)"
           require_equal "downloaded publish archive SHA-256" "$downloaded_archive_sha" "$RC_ARCHIVE_SHA"
+
+          STAGE_ROOT="$PWD/$RC_STAGE_DIRECTORY" ARCHIVE_PATH="$PWD/$downloaded_archive" python - <<'PY'
+          import hashlib, os, zipfile
+          from pathlib import Path
+          stage = Path(os.environ["STAGE_ROOT"])
+          archive = Path(os.environ["ARCHIVE_PATH"])
+          with zipfile.ZipFile(archive) as opened:
+              expected = {item.filename: opened.read(item) for item in opened.infolist() if not item.is_dir()}
+          actual = {
+              path.relative_to(stage).as_posix(): path.read_bytes()
+              for path in stage.rglob("*") if path.is_file()
+          }
+          assert actual.keys() == expected.keys(), (sorted(actual), sorted(expected))
+          assert all(actual[path] == expected[path] for path in expected), "materialized bytes differ from the verified ZIP"
+          PY
 
           echo "checkpoint=downloaded-browser-proof"
           DOWNLOAD_ROOT="$PWD/downloaded-publish-ready" RC_ARCHIVE_SHA="$RC_ARCHIVE_SHA" RC_DEPLOY_ID="$RC_DEPLOY_ID" python - <<'PY'

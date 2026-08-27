@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/html-note-publish-stage-receipt-v1.json",
+  "title": "RealityCheck HTML Note Publish Stage Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "generatedAt", "status", "source", "stage", "checks", "boundaries"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "kind": { "const": "html-note-publish-stage-receipt" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "status": { "const": "ready-for-static-host-artifact" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publishStatus", "receiptFilename", "archiveFilename", "archiveBytes", "archiveSha256", "deployContentId", "finalArchiveBrowserProofId"],
+      "properties": {
+        "publishStatus": { "enum": ["ready", "warnings"] },
+        "receiptFilename": { "type": "string", "pattern": "^[^/\\\\]+\\.realitycheck-publish\\.receipt\\.json$", "maxLength": 255 },
+        "archiveFilename": { "type": "string", "pattern": "^[^/\\\\]+\\.realitycheck-publish\\.zip$", "maxLength": 255 },
+        "archiveBytes": { "type": "integer", "minimum": 1, "maximum": 67108864 },
+        "archiveSha256": { "$ref": "#/$defs/sha256" },
+        "deployContentId": { "$ref": "#/$defs/sha256Id" },
+        "finalArchiveBrowserProofId": { "$ref": "#/$defs/sha256Id" }
+      }
+    },
+    "stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contentId", "files", "bytes", "entrypoint", "entries"],
+      "properties": {
+        "contract": { "const": "realitycheck-publish-stage-v1" },
+        "contentId": { "$ref": "#/$defs/sha256Id" },
+        "files": { "type": "integer", "minimum": 1, "maximum": 5000 },
+        "bytes": { "type": "integer", "minimum": 1, "maximum": 67108864 },
+        "entrypoint": { "const": "index.html" },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "size", "sha256"],
+            "properties": {
+              "path": { "$ref": "#/$defs/portablePath" },
+              "size": { "type": "integer", "minimum": 0, "maximum": 33554432 },
+              "sha256": { "$ref": "#/$defs/sha256" }
+            }
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidenceValidated", "archiveReadBackVerified", "destinationWasAbsent", "regularFilesOnly", "entryCoverageComplete", "byteForByte"],
+      "properties": {
+        "evidenceValidated": { "const": true },
+        "archiveReadBackVerified": { "const": true },
+        "destinationWasAbsent": { "const": true },
+        "regularFilesOnly": { "const": true },
+        "entryCoverageComplete": { "const": true },
+        "byteForByte": { "const": true }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceModified", "receiptWrittenIntoSite", "uploaded", "deployed"],
+      "properties": {
+        "sourceModified": { "const": false },
+        "receiptWrittenIntoSite": { "const": false },
+        "uploaded": { "const": false },
+        "deployed": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "sha256Id": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "portablePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))[^\\u0000-\\u001f\\u007f]+$"
+    }
+  }
+}

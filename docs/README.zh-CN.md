@@ -1,10 +1,10 @@
 # RealityCheck
 
-> **直接拖入 AI 导出 ZIP，使用和分享前先验证。**
+> **从 AI 导出 ZIP 到真实线上 URL，证明“检查过的、上传的、用户看到的”是同一份内容。**
 
-RealityCheck 现在首先是一款面向普通用户的本地 HTML 笔记体检工具，同时保留面向 Codex、开发者和产品团队的真实浏览器 Web 核查能力。笔记检查无需账号、无需服务器，不会上传文件；专业 Web 核查则继续提供压力场景、证据、修复任务和修复前后证明。
+RealityCheck 首先是一款面向普通用户的本地 HTML 笔记体检与可验证发布工具，同时保留面向 Codex、开发者和产品团队的真实浏览器 Web 核查能力。笔记检查无需账号、无需服务器，不会上传文件；生成发布包后，还可以在不交出云账号权限的前提下，把真实 HTTPS URL 与同一个文件包逐字节绑定。
 
-当前版本：`v0.11.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
+当前版本：`v0.12.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
 
 ## 一分钟内获得价值：检查 HTML 笔记
 
@@ -25,14 +25,14 @@ ZIP 导入采用失败关闭：只接受有上限的 ZIP32 STORE/DEFLATE，核�
 
 选择真实文件夹后，**联合复检并生成 ZIP** 会对所有可安全处理的 HTML 同时应用这三项修改，再对累计候选运行一次完整 HTML/CSS/文件包复检。用户必须先检查完整所选清单并确认构建；ZIP 会在新 wrapper 中保留原根目录，逐字节复制全部浏览器所选图片、样式和附件，因此 `../notes/assets/x.png` 这类跨根引用仍保持原目录语义。它会写入本地 after report 与 proof，并在下载前回读核对 entry 路径、大小、CRC32 和 SHA-256。界面、报告、JSON 与 proof 还会显示同一个可复制候选 ID，用 SHA-256 绑定实际分析的 HTML/CSS 文本、范围、修改、摘要与问题状态；打包前还会重新读取所选 HTML/CSS，且修复映射必须与声明的修改文件完全一致。构建完成后还要再次明确点击才会下载。
 
-该 ZIP 是“已验证的安全元数据工作副本”，不是“全部修好”或“可直接发布”证明。它不会虚构缺失文件、下载远程资源或修复结构/内容/脚本；空目录、符号链接和浏览器没有提供的隐藏文件也无法保留。若发现路径冲突、`.env`/密钥/`.git`/`node_modules`/`.realitycheck` 等潜在敏感内容、超过 4,998 个所选文件、单文件超过 32 MiB、所选字节超过 52 MiB、单路径超过 1 KiB 或路径总文本超过 512 KiB，打包会失败关闭而不会静默漏文件；普通静态分析还限制浏览器所选文件不超过 5,000 个、HTML 总解码字节不超过 32 MiB、可读 CSS 不超过 16 MiB。需要更广泛且依赖判断的修改时，仍应使用 Skill 工作流。
+该 ZIP 是“已验证的安全元数据工作副本”，不是“全部修好”或“可直接发布”证明。它不会虚构缺失文件、下载远程资源或修复结构/内容/脚本；空目录、符号链接和浏览器没有提供的隐藏文件也无法保留。若发现路径冲突、`.env`/密钥/`.git`/`.github`/`node_modules`/`.realitycheck` 等潜在敏感或开发内容、超过 4,998 个所选文件、单文件超过 32 MiB、所选字节超过 52 MiB、单路径超过 1 KiB 或路径总文本超过 512 KiB，打包会失败关闭而不会静默漏文件。`.github` 会被阻断，是因为 GitHub Pages Artifact 上传器固定忽略该子树；允许它会让部署前“精确字节”结论失真。普通静态分析还限制浏览器所选文件不超过 5,000 个、HTML 总解码字节不超过 32 MiB、可读 CSS 不超过 16 MiB。需要更广泛且依赖判断的修改时，仍应使用 Skill 工作流。
 
 ## 一条命令生成“可验证发布包”
 
 在线检查器适合零安装预检；真正的发布结论需要本地 CLI/Skill 读取完整磁盘范围，并启动真实浏览器验证。把一个 HTML、文件夹或普通 STORE/DEFLATE 导出 ZIP 交给下面的命令：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
   realityhtmlcheck publish ./我的笔记
 ```
 
@@ -46,16 +46,16 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
 
 只有全部必需门禁完成的文件才叫 `*.realitycheck-publish.zip`。静态预检、浏览器不可用或门禁失败只能得到 `*.realitycheck-working-copy.zip`，并保留准确阻断原因。成功 ZIP 可用于 Netlify Drop 或 Cloudflare Pages Direct Upload（仍受账号/额度限制）；选择 Cloudflare 项目类型时要谨慎，因为 Direct Upload 项目之后不能切换为 Git 集成。GitHub Pages 不能直接发布 ZIP，需要解压到已配置发布源，或用 Actions 部署目录。RealityCheck 不登录账号、不替用户上传或部署。
 
-[发布演示源码](https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.11.0/examples/publish-demo-note)是可直接复现的输入，也可以[直接打开静态在线预览](https://kevinwithpanda.github.io/RealityHTMLCheck/labs/publish-demo-note/)。证明范围只覆盖声明的 Chromium 与被动静态场景，不等于已经上线、绝无恶意代码、事实正确、完整无障碍/SEO、所有浏览器兼容、后端可用或 PWA 离线支持。
+[发布演示源码](https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.12.0/examples/publish-demo-note)是可直接复现的输入，也可以[直接打开静态在线预览](https://kevinwithpanda.github.io/RealityHTMLCheck/labs/publish-demo-note/)。Pages 工作流现在只从该演示的已验证 ZIP 解出精确字节进行部署，并在上线后复检公开 URL。证明范围仍只覆盖声明的 Chromium、被动静态和时间点场景，不等于绝无恶意代码、事实正确、完整无障碍/SEO、所有浏览器兼容、后端可用或永久在线。
 
-所有笔记与发布 JSON 都有严格契约。可用 `realityhtmlcheck validate .realitycheck/publish/<运行目录>` 独立回读 ZIP、sidecar、公开 manifest、receipt、技术报告与两轮浏览器证明，检查跨产物身份是否一致。
+所有笔记与发布 JSON 都有严格契约。可用 `npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" realityhtmlcheck validate .realitycheck/publish/<运行目录>` 独立回读 ZIP、sidecar、公开 manifest、receipt、技术报告与两轮浏览器证明，检查跨产物身份是否一致。
 
 ### 可验证发布 GitHub Action
 
 持续生成 HTML 时，可以完全移除本地 Node/浏览器步骤：
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.11.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
   id: realitycheck
   with:
     kind: publish
@@ -65,14 +65,53 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
 
 Action 会运行同一套静态门禁、安全修复、最终 ZIP 回读和六个 Chromium 场景；随后解析 create-only 机器结果，重新验证全部绑定产物，只上传本次精确运行目录，写入“结论优先”的 Job Summary，最后再执行门禁。门禁不通过时仍会保留明确命名的工作副本；结构化结果、完整性、依赖或用户要求的上传失败则属于运行错误，不会伪装成质量结论。
 
+下游托管需要普通目录时，可把可选 `materialize-output` 指向一个相对 `working-directory` 且尚不存在的目录。只有 publish-ready capsule 才会生成工作区相对的 `publish-directory-path`，并在公开目录外输出已验证的 `publish-stage-receipt-path`；该选项不会授予或执行部署权限。
+
 `upload-artifact: true` 会把**完整 HTML、图片、样式和附件**传到 GitHub Artifact 存储。启用前应复核仓库可见性与保留策略，也可以设置为 `false`。该 Action 只需要 `contents: read`，不会部署，不申请 Pages/OIDC 权限，也不接收任何云厂商 token。GitHub Artifact digest 与发布 ZIP SHA-256 是两个不同身份。
 
-[复制完整工作流](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.11.0/examples/github-actions/verified-publish.yml)。
+[复制完整工作流](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.12.0/examples/github-actions/verified-publish.yml)。
+
+### 验证真实线上 URL
+
+本地 ZIP 通过，不等于托管平台最终提供了同一份文件。上传目录可能选错、旧部署可能尚未刷新、大小写敏感资源可能丢失、仓库子路径可能错误，托管/CDN 也可能改变字节。
+
+上传成功的 capsule 后运行：
+
+```bash
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+  realityhtmlcheck verify-deploy \
+  .realitycheck/publish/<运行目录> \
+  https://user.github.io/repository/ \
+  --allow-remote
+```
+
+`verify-deploy` 会重新验证完整 publish run，只针对声明的同源基础路径发送不带凭据的有界 GET，对每个可服务响应比对大小与 SHA-256，并且不保留响应正文、原始响应头、Cookie 或授权值。随后，它会针对真实线上 URL 启动禁用 JavaScript 的全新 Chromium 上下文，检查桌面入口、375px 手机入口、全部有界 HTML 页面、本地片段、横向溢出、控制台/网络错误与意外外联。每个 Chromium 请求都会被拦截，使用经审核且不含敏感信息的请求头重新获取，经单文件/总量/时间上限流式校验；只有线上解码字节与 capsule 一致时才交给浏览器，同时保留 Content-Type、CSP、Content-Disposition 等有界行为响应头，以继续检验真实托管行为。
+
+双语 `deployment-receipt.html` 只会给出四种明确结论：
+
+- **线上一致（LIVE MATCH）**：HTTPS、完整线上字节覆盖和三个浏览器场景全部通过；
+- **已变换、需复核**：资源均可访问且浏览器通过，但托管平台改变了至少一个响应字节；
+- **线上故障**：必需资源缺失、跳转越界或浏览器证明失败；
+- **未验证**：授权、网络、非 HTTPS、上限或浏览器覆盖不完整，但没有足够直接证据判定故障。
+
+回执只代表验证时间点，不证明永久在线、所有 CDN 节点、账号所有权、DNS/TLS 配置或已经自动回滚。浏览器证明会在本地保存两张带来源标记的诊断截图：`live-response-only` 表示截图场景只使用已复核的目标响应；`diagnostic-with-capsule-fallback` 表示线上复核未完成，截图场景使用了本地已验证 capsule 的回放字节，不能把它宣传成完全仅由线上响应渲染的证据。截图不会嵌入可分享回执。
+
+托管平台需要目录时，应从验证后的 ZIP 安全解出新目录，而不是重新使用原始源码树：
+
+```bash
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+  realityhtmlcheck materialize .realitycheck/publish/<运行目录> \
+  --output .realitycheck/staged-site
+```
+
+GitHub Pages 可直接复制[权限隔离的完整调用工作流](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.12.0/examples/github-actions/verified-pages.yml)：第一项任务仅有 `contents: read`，只有 materialize 后的精确目录能够进入 Pages Artifact；独立 `github-pages` 环境任务拥有 `pages: write` / OIDC；第三项只读任务会对 GitHub 返回的公开 URL 生成线上回执。可复用工作流本身会拒绝 pull request 和非默认分支 push，随附调用模板则默认只能手动运行。
+
+这条 CI 路径并非零上传：它会分别保存包含完整站点字节的 publish evidence、stage receipt，以及含浏览器证明和两张带来源标记诊断截图的 live evidence Artifact。live Artifact 保留 30 天，普通证据保留期服从仓库设置。启用前应复核仓库可见性、Artifact 保留策略、Pages 公开性和 `github-pages` 环境保护规则。
 
 需要批量检查整个笔记文件夹时，无需克隆仓库或全局安装：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
   realityhtmlcheck note ./我的笔记
 # 打开 .realitycheck/notes/latest.html
 ```
@@ -80,14 +119,14 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
 生成保守修复副本，但保持所有源文件逐字节不变：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
   realityhtmlcheck note ./我的笔记 --fix-safe
 ```
 
 持续导出时，可把同一检查器放进 GitHub Actions；note 模式不启动服务器、不安装浏览器依赖，也不执行笔记脚本：
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.11.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
   with:
     kind: note
     path: exported-notes
@@ -102,7 +141,7 @@ RealityCheck 不上传源笔记。启用 artifact 时，工作流会保存生成
 第二次及后续导出可以与一份不可变的历史报告比较：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
   realityhtmlcheck note ./我的笔记 \
   --baseline .realitycheck/notes/历史运行/report.json \
   --fail-on error

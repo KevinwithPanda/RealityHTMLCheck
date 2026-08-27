@@ -133,6 +133,20 @@ try {
   assert.equal(commandResult.exitCode, 1);
   assert.equal(commandResult.publishReady, false);
 
+  const refusedStage = join(zeroInstallDirectory, "must-not-stage");
+  npm([
+    "exec", "--yes", `--package=${archive}`, "--", "realityhtmlcheck",
+    "materialize", join(publishOutput, publishRuns[0]), "--output", refusedStage,
+  ], { cwd: zeroInstallDirectory, env: isolatedEnv, expectedStatus: 2 });
+  assert.equal(existsSync(refusedStage), false, "packed materialize must refuse a browser-unverified working copy");
+
+  const refusedLive = join(zeroInstallDirectory, "must-not-verify-live");
+  npm([
+    "exec", "--yes", `--package=${archive}`, "--", "realityhtmlcheck",
+    "verify-deploy", join(publishOutput, publishRuns[0]), "http://127.0.0.1:9/", "--output", refusedLive,
+  ], { cwd: zeroInstallDirectory, env: isolatedEnv, expectedStatus: 2 });
+  assert.equal(existsSync(refusedLive), false, "packed live verification must reject a non-publish-ready source before network/output");
+
   npm(["init", "--yes"], { cwd: consumerDirectory, env: isolatedEnv });
   npm(["install", "--ignore-scripts", archive], { cwd: consumerDirectory, env: isolatedEnv });
   const installedRoot = join(consumerDirectory, "node_modules", "realityhtmlcheck");
@@ -202,7 +216,7 @@ try {
   assert.equal(existsSync(join(consumerDirectory, config.$schema)), true, "generated schema reference must resolve in the consumer project");
 
   console.log(`Packed zero-install smoke passed: ${archives[0]}`);
-  console.log("Verified: npx-style note check, structured publish result/parser/summary, explicit working copy, no local install residue, both CLI aliases, and a resolvable generated schema.");
+  console.log("Verified: npx-style note check, structured publish result/parser/summary, fail-closed materialize/live commands, explicit working copy, no local install residue, both CLI aliases, and a resolvable generated schema.");
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

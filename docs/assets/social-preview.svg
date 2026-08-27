@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
   <title id="title">RealityCheck social preview</title>
-  <desc id="desc">Turn an AI-generated HTML export into a verified passive-static publish ZIP, or an explicit working copy with exact blockers.</desc>
+  <desc id="desc">Prove that an AI-generated HTML package and the real hosted URL serve the same bounded bytes and pass live browser checks.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#181B26"/><stop offset="1" stop-color="#07080C"/></linearGradient>
     <linearGradient id="accent" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#FFB000"/><stop offset="1" stop-color="#FF5C35"/></linearGradient>
@@ -14,13 +14,13 @@
     <path d="m27 55 17 18 37-44" fill="none" stroke="url(#accent)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
   <text x="224" y="157" fill="#F7F8FB" font-family="ui-sans-serif, system-ui, sans-serif" font-size="72" font-weight="780" letter-spacing="-3">Reality<tspan fill="#FF6845">Check</tspan></text>
-  <text x="92" y="280" fill="#F7F8FB" font-family="ui-sans-serif, system-ui, sans-serif" font-size="50" font-weight="780" letter-spacing="-2">Drop the AI export ZIP.</text>
+  <text x="92" y="280" fill="#F7F8FB" font-family="ui-sans-serif, system-ui, sans-serif" font-size="50" font-weight="780" letter-spacing="-2">Prove the live URL.</text>
   <text x="92" y="338" fill="#F7F8FB" font-family="ui-sans-serif, system-ui, sans-serif" font-size="50" font-weight="780" letter-spacing="-2">Repair only what is provable.</text>
   <text x="92" y="396" fill="#F7F8FB" font-family="ui-sans-serif, system-ui, sans-serif" font-size="50" font-weight="780" letter-spacing="-2">Publish with exact-byte proof.</text>
-  <text x="96" y="455" fill="#A1A8B8" font-family="ui-sans-serif, system-ui, sans-serif" font-size="22">No upload · real browser proof · blockers stay visible.</text>
+  <text x="96" y="455" fill="#A1A8B8" font-family="ui-sans-serif, system-ui, sans-serif" font-size="22">No cloud credentials · real browser proof · blockers stay visible.</text>
   <rect x="862" y="240" width="294" height="178" rx="25" fill="#F8F9FB"/>
-  <text x="895" y="283" fill="#167154" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="800">FINAL ARCHIVE · BROWSER PROVEN</text>
-  <text x="893" y="375" fill="#171923" font-family="ui-sans-serif, system-ui, sans-serif" font-size="72" font-weight="820" letter-spacing="-4">READY</text>
+  <text x="895" y="283" fill="#167154" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="800">LIVE BYTES · BROWSER PROVEN</text>
+  <text x="893" y="375" fill="#171923" font-family="ui-sans-serif, system-ui, sans-serif" font-size="72" font-weight="820" letter-spacing="-4">MATCH</text>
   <rect x="92" y="521" width="624" height="63" rx="14" fill="#030407" stroke="#343948"/>
-  <text x="119" y="561" fill="#D8DCE6" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="16">CLI / ACTION · PASS → publish ZIP · FAIL → working copy.</text>
+  <text x="119" y="561" fill="#D8DCE6" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="16">PACKAGE → HOST → LIVE RECEIPT · exact bytes + real browser.</text>
 </svg>

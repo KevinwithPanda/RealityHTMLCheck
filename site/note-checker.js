@@ -1,13 +1,13 @@
-import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask, normalizeNotePath } from "./note-analyzer.mjs?v=0.11.0";
-import { analyzeNotePackage } from "./note-package.mjs?v=0.11.0";
-import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "./note-summary.mjs?v=0.11.0";
-import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.11.0";
-import { bindSafeFolderCandidate, buildVerifiedFolderRepairZip, prepareFolderRepairInventory } from "./note-folder-repair.mjs?v=0.11.0";
-import { analyzeBrowserNoteSources, duplicateBrowserNotePaths, safeRepairDownloadName, safeRepairDownloadPayload, verifySafeNotePackageRepair, verifySafeNoteRepair } from "./note-repair-verification.mjs?v=0.11.0";
-import { importHtmlNoteZip } from "./note-zip-import.mjs?v=0.11.0";
-import { writeStoredZip } from "./note-zip.mjs?v=0.11.0";
-import { compareNoteBundles, NOTE_RULESET_ID, noteComparisonGateFailed, noteComparisonRegressionCounts } from "./note-compare.mjs?v=0.11.0";
-import { renderNoteComparisonHtml } from "./note-comparison-report.mjs?v=0.11.0";
+import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask, normalizeNotePath } from "./note-analyzer.mjs?v=0.12.0";
+import { analyzeNotePackage } from "./note-package.mjs?v=0.12.0";
+import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "./note-summary.mjs?v=0.12.0";
+import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.12.0";
+import { bindSafeFolderCandidate, buildVerifiedFolderRepairZip, prepareFolderRepairInventory } from "./note-folder-repair.mjs?v=0.12.0";
+import { analyzeBrowserNoteSources, duplicateBrowserNotePaths, safeRepairDownloadName, safeRepairDownloadPayload, verifySafeNotePackageRepair, verifySafeNoteRepair } from "./note-repair-verification.mjs?v=0.12.0";
+import { importHtmlNoteZip } from "./note-zip-import.mjs?v=0.12.0";
+import { writeStoredZip } from "./note-zip.mjs?v=0.12.0";
+import { compareNoteBundles, NOTE_RULESET_ID, noteComparisonGateFailed, noteComparisonRegressionCounts } from "./note-compare.mjs?v=0.12.0";
+import { renderNoteComparisonHtml } from "./note-comparison-report.mjs?v=0.12.0";
 
 const noteAnalysisHelpers = {
   analyzeHtmlNote,

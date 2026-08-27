@@ -38,6 +38,8 @@ import { buildAuditPlan, writeAuditPlan } from "./audit-plan.mjs";
 import { describeSecurityHeaderViolations, evaluateSecurityHeaderPolicies, requiredSecurityHeaders, suggestSecurityHeaderFix } from "./security-headers.mjs";
 import { runNoteCommand } from "./note-check.mjs";
 import { runNotePublishCommand } from "./note-publish.mjs";
+import { runPublishStageCommand } from "./note-publish-stage-command.mjs";
+import { runVerifyDeployCommand } from "./note-deploy-command.mjs";
 import { TOOL_VERSION } from "./version.mjs";
 
 const require = createRequire(import.meta.url);
@@ -60,12 +62,14 @@ const FIXTURES = [
 ];
 
 function usage() {
-  return `RealityCheck — check HTML notes locally; stress authorized Web apps with evidence
+  return `RealityCheck — check HTML notes, prove live deployments, and stress authorized Web apps with evidence
 
 Usage:
   realitycheck note <FILE|DIRECTORY> [--fix-safe|--prepare-repair] [--exclude-html GLOB] [--baseline REPORT] [--output PATH]
   realitycheck note publish <HTML|DIRECTORY|ZIP> [--entry PATH] [--output PATH] [--browser PATH]
   realitycheck publish <HTML|DIRECTORY|ZIP> [--entry PATH] [--output PATH] [--browser PATH]
+  realitycheck materialize <PUBLISH_RUN> --output <NEW_DIRECTORY> [--receipt PATH]
+  realitycheck verify-deploy <PUBLISH_RUN> <HTTP_OR_HTTPS_BASE_URL/> --allow-remote [--output PATH] [--browser PATH]
   realitycheck <url> [options]
   realitycheck audit <url> [options]
   realitycheck demo [--output PATH] [--headed] [--browser PATH]
@@ -124,6 +128,8 @@ Examples:
   realitycheck note ./notes --prepare-repair
   realitycheck note publish ./notes
   realitycheck publish notes-export.zip --entry notes/home.html
+  realitycheck materialize .realitycheck/publish/RUN --output .realitycheck/staged-site
+  realitycheck verify-deploy .realitycheck/publish/RUN https://example.github.io/notes/ --allow-remote
   realitycheck demo
   realitycheck init
   realitycheck profiles
@@ -2984,6 +2990,14 @@ async function main() {
     }
     if (rawArguments[0] === "publish") {
       process.exitCode = await runNotePublishCommand(rawArguments.slice(1));
+      return;
+    }
+    if (rawArguments[0] === "materialize") {
+      process.exitCode = await runPublishStageCommand(rawArguments.slice(1));
+      return;
+    }
+    if (rawArguments[0] === "verify-deploy") {
+      process.exitCode = await runVerifyDeployCommand(rawArguments.slice(1));
       return;
     }
     if (rawArguments[0] === "note") {

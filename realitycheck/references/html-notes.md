@@ -85,7 +85,7 @@ node <skill-dir>/scripts/audit.mjs note publish <html-file|directory|zip> \
 An installed Skill copy intentionally contains no vendored `node_modules`. If local `playwright-core` resolution is unavailable, invoke the version-pinned GitHub package instead:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.11.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
   realityhtmlcheck publish <html-file|directory|zip>
 ```
 
@@ -109,7 +109,7 @@ Only `ready` or `warnings` with every required browser gate complete may use `*.
 When the user wants a repeatable export pipeline rather than a local one-off command, use the Composite Action:
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.11.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
   id: realitycheck
   with:
     kind: publish
@@ -129,6 +129,47 @@ Keep these boundaries explicit:
 - GitHub Artifact digest and the capsule ZIP SHA-256 are different identities; never substitute one for the other.
 
 Use the checked-in `examples/github-actions/verified-publish.yml` as the copy-ready workflow. If a separate downstream job later deploys the verified bytes, that job owns its permissions, environment approval, account and host-side verification; the RealityCheck Action itself remains a read/check/package boundary.
+
+## Materialize only verified bytes for a static host
+
+When a host or Pages artifact requires a directory rather than the capsule ZIP, do not unpack the original export or reuse the pre-verification working tree. Run:
+
+```bash
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+  realityhtmlcheck materialize .realitycheck/publish/<RUN> \
+  --output .realitycheck/staged-site
+```
+
+The command revalidates the whole publish run, requires a publish-ready receipt and passed final-archive browser proof, reads the deterministic ZIP again, and creates an absent sibling tree with create-only regular files. It verifies every staged path, size and SHA-256 before atomically exposing the directory. Its `*.realitycheck-stage.receipt.json` stays outside the public tree. Never add CNAME, analytics, banners or deployment metadata to this staged copy while claiming it is still the exact verified package.
+
+The Composite Action accepts an optional `materialize-output` only in `kind: publish`. Its `publish-directory-path` and `publish-stage-receipt-path` outputs remain empty for blocked capsules. Materialization failure is operational exit `2`; it must not turn a validated archive into a partial Pages artifact.
+
+## Verify the real live URL
+
+After the user or an explicitly permissioned workflow deploys the materialized directory, bind the live URL back to the complete publish run:
+
+```bash
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+  realityhtmlcheck verify-deploy \
+  .realitycheck/publish/<RUN> \
+  https://user.example/notes/ \
+  --allow-remote
+```
+
+Require a base URL ending in `/`, without credentials, query or fragment. Public or non-loopback targets require explicit authorization and `--allow-remote`. The verifier must never attach cookies, authorization, referrer data or a request body. It follows only bounded redirects that stay on the exact origin and below the declared base path, streams each decoded response through size and SHA-256 checks without retaining the body, and records only controlled status/MIME/hash/size/redirect facts. It fetches the root route separately to prove that the host maps it to the expected `index.html`, checks all final archive entries including `realitycheck-proof/**`, and skips only `.nojekyll` because it is a host control marker rather than a servable resource.
+
+Run the live browser proof only after the HTTP inventory is exact or transformed-but-complete. Use clean JavaScript-disabled contexts for desktop, 375px mobile, and all bounded HTML/fragment coverage. Intercept every browser GET, re-fetch it without credentials or referrer using only a reviewed non-sensitive request-header allowlist, stream the decoded body through per-response, aggregate and whole-proof deadlines, and fulfill Chromium only after it matches the capsule path bytes. Preserve only a reviewed in-memory behavior-header allowlist (including Content-Type, CSP, Content-Disposition, language and cross-origin policy); never forward Set-Cookie, Cookie or Authorization. Reject unsupported Range behavior, oversized/stalled bodies, undeclared/external requests, or unfaithful response headers instead of silently simulating a pass. Record console, page, request, HTTP, response-verification, overflow, popup, dialog, download, worker and WebSocket failures as controlled counts. Drain every in-flight route verifier before freezing scenario status, screenshot provenance and the proof ID. Two local diagnostic screenshots are retained beside a completed proof and are not embedded in the receipt. Bind each screenshot to `live-response-only` or `diagnostic-with-capsule-fallback`; the latter means the capture scenario used local verified-capsule replay after an incomplete target response and must never be described as a fully live-response-only render.
+
+Interpret the four decisions exactly:
+
+- `live-match`: HTTPS, complete hosted-byte coverage, only a benign `.nojekyll` skip, and all three live browser scenarios passed.
+- `live-transformed-review`: every required live resource is reachable and browser proof passes, but at least one response body differs from the capsule; review CDN/host transformation.
+- `live-broken`: a required file is missing, a redirect leaves the target boundary, or a live browser scenario fails.
+- `unverified`: authorization, network, coverage ceiling, non-HTTPS target or required browser evidence is incomplete without a direct broken contradiction.
+
+The bilingual `deployment-receipt.html` and JSON/Markdown siblings are point-in-time observations. Never claim they prove account ownership, publisher identity, DNS/TLS configuration, permanent availability, every CDN edge, facts/citations, comprehensive security/accessibility, or that RealityCheck performed or rolled back a deployment.
+
+For GitHub Pages, prefer the permission-separated reusable workflow in `.github/workflows/verified-pages.yml` and the caller at `examples/github-actions/verified-pages.yml`. The caller must visibly grant `pages: write` and `id-token: write`; the verify/materialize job keeps `contents: read`, the `github-pages` environment owns deployment approval, and a third read-only job downloads the exact evidence run and verifies the returned public URL. The reusable workflow must reject pull requests and non-default-branch pushes, while default onboarding remains manual `workflow_dispatch`; never enable Pages through an API. Disclose that this workflow uploads three distinct artifacts: the complete publish evidence run containing all site bytes, the separate stage receipt, and 30-day live evidence containing the browser proof plus two provenance-labelled diagnostic screenshots. Only the materialized directory may enter the Pages artifact.
 
 ## Complete an agentic repair
 

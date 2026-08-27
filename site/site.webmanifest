@@ -1,5 +1,5 @@
 {
-  "name": "RealityCheck · Verified AI HTML publish packages",
+  "name": "RealityCheck · Verified AI HTML live deployments",
   "short_name": "RealityCheck",
   "description": "Preflight AI HTML locally, then create an exact-byte browser-proven static publish ZIP or an explicit working copy with blockers.",
   "start_url": "./",

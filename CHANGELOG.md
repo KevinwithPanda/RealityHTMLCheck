@@ -4,6 +4,30 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-27
+
+### Added
+
+- `verify-deploy <publish-run> <https-base-url/>` binds a complete publish-ready capsule to the files actually served by an authorized live host. It compares the root route and every declared servable path by decoded size and SHA-256, then reruns JavaScript-disabled desktop, 375 px mobile, all-page, fragment, overflow, console/network, and unexpected-request proof against the real URL.
+- A strict bilingual `html-note-deployment-receipt` with `live-match`, `live-transformed-review`, `live-broken`, and `unverified` states, point-in-time freshness, per-path evidence, browser-proof binding, explicit limitations, and self-contained HTML plus English/Chinese Markdown.
+- `materialize <publish-run> --output <new-directory>` revalidates and atomically extracts only the exact verified ZIP bytes into a regular-file static-host tree, with a separate stage receipt and no source mutation.
+- Optional Composite Action `materialize-output`, `publish-directory-path`, and `publish-stage-receipt-path` handoffs for downstream static-host artifacts without adding deployment permissions to the core Action.
+- A permission-separated reusable GitHub Pages workflow: contents-read verification/materialization, a dedicated `github-pages` Pages/OIDC deployment job, and a read-only post-deployment live receipt.
+- The project Pages pipeline now dogfoods the full loop on a passive canary: publish capsule → exact materialization → deployment → public URL byte/browser verification.
+
+### Security
+
+- Live verification sends bounded credential-free GET requests only to the declared origin/base path, handles redirects manually, never follows external or escaping targets, and retains no response body, raw header, Cookie, credential, authorization value, or arbitrary network error text.
+- Public green decisions require HTTPS, complete hosted-byte coverage, and every required live Chromium scenario. Host transformations stay review-only; missing resources, redirect-boundary violations, and browser failures stay broken; incomplete evidence cannot become a pass.
+- Materialization requires an absent, non-nested, non-symlink destination; uses create-only files, full staged-tree hash read-back, a locked sibling temporary directory, and atomic exposure; failures leave no partial deploy tree.
+- `.github/**` is rejected before packaging because GitHub Pages artifacts unconditionally omit that subtree; RealityCheck never deploys a silently contracted package.
+- Pages/OIDC permissions never enter the root RealityCheck Action or verification job. The copy-ready caller is manual-only, never deploys pull requests, and does not manage Pages settings, domains, host accounts, or rollback.
+- Live Chromium proof drains every in-flight request verifier before freezing scenario status and proof identity. Screenshot metadata distinguishes target-response-only captures from diagnostic scenarios that used verified-capsule fallback bytes, and the receipt validator binds that provenance across proof, screenshots, and receipt.
+
+### Fixed
+
+- GitHub Artifact digests are validated in their actual 64-character hexadecimal format rather than incorrectly requiring a `sha256:` prefix, with explicit contract diagnostics retained in CI.
+
 ## [0.11.0] - 2026-08-27
 
 ### Added

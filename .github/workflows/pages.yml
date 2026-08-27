@@ -7,19 +7,18 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build-and-verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      canary-evidence-artifact: ${{ steps.names.outputs.canary-evidence }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -28,27 +27,133 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run site:build
-      - name: Prepare GitHub Pages
+
+      - name: Freeze the passive publish-canary Artifact name
+        id: names
+        shell: bash
+        run: echo "canary-evidence=realitycheck-pages-canary-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify and materialize the passive publish canary
+        id: canary
+        uses: ./
+        with:
+          kind: publish
+          path: examples/publish-demo-note
+          output: .realitycheck/pages-canary-publish
+          materialize-output: .realitycheck/pages-canary-stage
+          artifact-name: ${{ steps.names.outputs.canary-evidence }}
+          summary-language: en
+
+      - name: Put only the verified canary bytes into the public demo tree
+        shell: bash
+        env:
+          RC_STAGE: ${{ steps.canary.outputs.publish-directory-path }}
+        run: |
+          target="$PWD/_site/labs/publish-demo-note"
+          case "$target" in "$PWD/_site/labs/"*) ;; *) echo "Unexpected canary target" >&2; exit 2 ;; esac
+          [ -n "$RC_STAGE" ] && [ -d "$RC_STAGE" ] || { echo "Verified canary stage is missing" >&2; exit 2; }
+          rm -rf -- "$target"
+          mkdir -p -- "$target"
+          cp -a -- "$RC_STAGE/." "$target/"
+
+      - name: Prepare GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+          include-hidden-files: true
+
+      - name: Preserve the canary materialization receipt
+        uses: actions/upload-artifact@v7
+        with:
+          name: realitycheck-pages-canary-stage-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.canary.outputs.publish-stage-receipt-path }}
+          if-no-files-found: error
+
+  deploy:
+    needs: build-and-verify
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page-url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
         id: pages
         continue-on-error: true
         uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: _site
+
       - name: Explain one-time Pages setup
         if: steps.pages.outcome != 'success'
         run: |
           {
             echo '## Public demo built, deployment waiting'
             echo
-            echo 'Enable **Settings → Pages → Source: GitHub Actions** once. The next push or manual workflow run will deploy the already-tested `_site` artifact.'
+            echo 'Enable **Settings → Pages → Source: GitHub Actions** once. The next push or manual workflow run will deploy the already-tested artifact.'
           } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Require a real Pages deployment
         if: steps.pages.outcome != 'success'
         run: |
           echo 'GitHub Pages is not enabled for this repository. Open Settings → Pages, set Source to GitHub Actions, then rerun this workflow.' >&2
           exit 1
+
       - name: Deploy to GitHub Pages
         id: deployment
         if: steps.pages.outcome == 'success'
         uses: actions/deploy-pages@v4
+
+  verify-live-canary:
+    needs: [build-and-verify, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+
+      - name: Download the exact passive-canary publish run
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.build-and-verify.outputs.canary-evidence-artifact }}
+          path: .realitycheck/downloaded-pages-canary
+
+      - name: Prove the live canary still serves the verified capsule
+        env:
+          RC_PAGE_URL: ${{ needs.deploy.outputs.page-url }}
+        run: |
+          target="${RC_PAGE_URL%/}/labs/publish-demo-note/"
+          node realitycheck/scripts/audit.mjs verify-deploy \
+            .realitycheck/downloaded-pages-canary \
+            "$target" \
+            --allow-remote \
+            --output .realitycheck/pages-live-receipt
+
+      - name: Preserve the point-in-time live canary receipt
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: realitycheck-pages-live-receipt-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .realitycheck/pages-live-receipt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Append the live canary decision to the Job Summary
+        if: always()
+        shell: bash
+        run: |
+          receipt="$(find .realitycheck/pages-live-receipt -type f -name deployment-receipt.md -print -quit 2>/dev/null || true)"
+          if [ -n "$receipt" ] && [ -f "$receipt" ]; then
+            printf '\n' >> "$GITHUB_STEP_SUMMARY"
+            cat "$receipt" >> "$GITHUB_STEP_SUMMARY"
+          fi

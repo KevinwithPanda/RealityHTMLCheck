@@ -1,0 +1,266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://realitycheck.local/schemas/html-note-deployment-receipt-v1.json",
+  "title": "RealityCheck HTML Note Live Deployment Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "toolVersion",
+    "kind",
+    "profile",
+    "status",
+    "source",
+    "target",
+    "verification",
+    "summary",
+    "files",
+    "browser",
+    "reasonCodes",
+    "limitations",
+    "receiptId"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "toolVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?$" },
+    "kind": { "const": "html-note-deployment-receipt" },
+    "profile": { "const": "passive-static-live-v1" },
+    "status": { "enum": ["live-match", "live-transformed-review", "live-broken", "unverified"] },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["archiveSha256", "archiveBytes", "deployContentId", "publishManifestId", "finalArchiveBrowserProofId"],
+      "properties": {
+        "archiveSha256": { "$ref": "#/$defs/sha256Hex" },
+        "archiveBytes": { "type": "integer", "minimum": 1, "maximum": 67108864 },
+        "deployContentId": { "$ref": "#/$defs/sha256Id" },
+        "publishManifestId": { "$ref": "#/$defs/sha256Id" },
+        "finalArchiveBrowserProofId": { "$ref": "#/$defs/sha256Id" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin", "basePath"],
+      "properties": {
+        "origin": { "type": "string", "format": "uri", "maxLength": 500, "pattern": "^https?://" },
+        "basePath": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "anyOf": [
+            { "const": "/" },
+            { "pattern": "^/[^/?#\\\\\\u0000-\\u001f\\u007f]+(?:/[^/?#\\\\\\u0000-\\u001f\\u007f]+)*/$" }
+          ]
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startedAt", "verifiedAt", "attempts", "coverageComplete", "freshness"],
+      "properties": {
+        "startedAt": { "type": "string", "format": "date-time" },
+        "verifiedAt": { "type": "string", "format": "date-time" },
+        "attempts": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "coverageComplete": { "type": "boolean" },
+        "freshness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["basis", "statementCode"],
+          "properties": {
+            "basis": { "const": "point-in-time-only" },
+            "statementCode": { "const": "live-state-may-change-after-verification" }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected", "fetched", "matched", "transformed", "missing", "skipped"],
+      "properties": {
+        "expected": { "$ref": "#/$defs/countAndBytes" },
+        "fetched": { "$ref": "#/$defs/countAndBytes" },
+        "matched": { "$ref": "#/$defs/countAndBytes" },
+        "transformed": { "$ref": "#/$defs/countAndBytes" },
+        "missing": { "$ref": "#/$defs/countAndBytes" },
+        "skipped": { "$ref": "#/$defs/countAndBytes" }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/file" }
+    },
+    "browser": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/browser" }
+      ]
+    },
+    "reasonCodes": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/reasonCode" }
+    },
+    "limitations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pointInTimeOnly",
+        "publisherIdentityVerified",
+        "hostAccountOwnershipVerified",
+        "dnsOrTlsConfigurationCertified",
+        "responseBodiesStored",
+        "responseHeadersStored",
+        "cookiesStored",
+        "credentialsStored",
+        "factsOrCitationsVerified",
+        "malwareOrSecretsCertified",
+        "comprehensiveAccessibilityCertified",
+        "allBrowsersVerified",
+        "dynamicBehaviorVerified",
+        "deploymentPerformedByRealityCheck",
+        "browserScreenshotsStored"
+      ],
+      "properties": {
+        "pointInTimeOnly": { "const": true },
+        "publisherIdentityVerified": { "const": false },
+        "hostAccountOwnershipVerified": { "const": false },
+        "dnsOrTlsConfigurationCertified": { "const": false },
+        "responseBodiesStored": { "const": false },
+        "responseHeadersStored": { "const": false },
+        "cookiesStored": { "const": false },
+        "credentialsStored": { "const": false },
+        "factsOrCitationsVerified": { "const": false },
+        "malwareOrSecretsCertified": { "const": false },
+        "comprehensiveAccessibilityCertified": { "const": false },
+        "allBrowsersVerified": { "const": false },
+        "dynamicBehaviorVerified": { "const": false },
+        "deploymentPerformedByRealityCheck": { "const": false },
+        "browserScreenshotsStored": { "type": "boolean" }
+      }
+    },
+    "receiptId": { "$ref": "#/$defs/sha256Id" }
+  },
+  "$defs": {
+    "sha256Hex": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "sha256Id": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "portablePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "^(?![A-Za-z]:)(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))[^<>:\"|?*\\u0000-\\u001f\\u007f]+$"
+    },
+    "countAndBytes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files", "bytes"],
+      "properties": {
+        "files": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "bytes": { "type": "integer", "minimum": 0, "maximum": 201326592 }
+      }
+    },
+    "redirect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "toOriginSame", "toBasePathSame"],
+      "properties": {
+        "status": { "enum": [301, 302, 303, 307, 308] },
+        "toOriginSame": { "type": "boolean" },
+        "toBasePathSame": { "type": "boolean" }
+      }
+    },
+    "fileReasonCode": {
+      "enum": [
+        "content-transformed",
+        "http-error",
+        "verification-limit",
+        "request-blocked-by-policy",
+        "request-failed",
+        "redirect-outside-target",
+        "redirect-policy-blocked",
+        "platform-marker",
+        "unsupported-resource"
+      ]
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "role",
+        "expectedSha256",
+        "expectedBytes",
+        "actualSha256",
+        "actualBytes",
+        "httpStatus",
+        "mimeKind",
+        "attempts",
+        "redirects",
+        "state",
+        "reasonCode"
+      ],
+      "properties": {
+        "path": { "$ref": "#/$defs/portablePath" },
+        "role": { "enum": ["entry-html", "html", "stylesheet", "image", "font", "media", "document", "data", "platform-marker", "public-proof", "other"] },
+        "expectedSha256": { "$ref": "#/$defs/sha256Hex" },
+        "expectedBytes": { "type": "integer", "minimum": 0, "maximum": 33554432 },
+        "actualSha256": { "anyOf": [{ "$ref": "#/$defs/sha256Hex" }, { "type": "null" }] },
+        "actualBytes": { "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 33554432 }, { "type": "null" }] },
+        "httpStatus": { "anyOf": [{ "type": "integer", "minimum": 100, "maximum": 599 }, { "type": "null" }] },
+        "mimeKind": { "anyOf": [{ "enum": ["html", "css", "image", "font", "media", "document", "data", "binary", "other"] }, { "type": "null" }] },
+        "attempts": { "type": "integer", "minimum": 0, "maximum": 10 },
+        "redirects": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/redirect" } },
+        "state": { "enum": ["exact", "transformed", "missing", "skipped"] },
+        "reasonCode": { "anyOf": [{ "$ref": "#/$defs/fileReasonCode" }, { "type": "null" }] }
+      }
+    },
+    "browserScenarios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected", "completed", "passed", "failed", "skipped"],
+      "properties": {
+        "expected": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "completed": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "passed": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "failed": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "skipped": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "browser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "scenarios", "screenshotSource", "proofId"],
+      "properties": {
+        "status": { "enum": ["passed", "failed", "incomplete"] },
+        "scenarios": { "$ref": "#/$defs/browserScenarios" },
+        "screenshotSource": {
+          "description": "Aggregate provenance for the two bound diagnostic screenshot capture scenarios.",
+          "enum": ["live-response-only", "diagnostic-with-capsule-fallback"]
+        },
+        "proofId": { "anyOf": [{ "$ref": "#/$defs/sha256Id" }, { "type": "null" }] }
+      }
+    },
+    "reasonCode": {
+      "enum": [
+        "host-transformed-content",
+        "live-resource-missing",
+        "redirect-outside-target",
+        "redirect-policy-blocked",
+        "verification-coverage-incomplete",
+        "verification-limit",
+        "request-blocked-by-policy",
+        "request-failed",
+        "unsupported-resource",
+        "browser-not-run",
+        "browser-failed",
+        "browser-incomplete",
+        "target-not-https"
+      ]
+    }
+  }
+}

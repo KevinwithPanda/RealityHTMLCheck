@@ -1,0 +1,171 @@
+name: Verified HTML to GitHub Pages
+
+on:
+  workflow_call:
+    inputs:
+      path:
+        description: HTML file, export ZIP, or passive-static folder in the caller repository.
+        required: true
+        type: string
+      entry:
+        description: Exact relative HTML entry only when no unambiguous root entry exists.
+        required: false
+        default: ""
+        type: string
+      publish-name:
+        description: Optional output slug; package-internal paths are not renamed.
+        required: false
+        default: ""
+        type: string
+      summary-language:
+        description: Job Summary language (en or zh-CN).
+        required: false
+        default: en
+        type: string
+    outputs:
+      page-url:
+        description: URL returned by the GitHub Pages deployment job.
+        value: ${{ jobs.deploy.outputs.page-url }}
+      live-receipt-artifact:
+        description: Artifact name containing the point-in-time live deployment receipt.
+        value: ${{ jobs.verify-live.outputs.receipt-artifact }}
+
+concurrency:
+  group: verified-pages-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  authorize-trigger:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Refuse pull requests and non-default-branch deployment
+        shell: bash
+        env:
+          RC_EVENT_NAME: ${{ github.event_name }}
+          RC_REF: ${{ github.ref }}
+          RC_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$RC_EVENT_NAME" = "workflow_dispatch" ]; then exit 0; fi
+          if [ "$RC_EVENT_NAME" = "push" ] && [ "$RC_REF" = "refs/heads/$RC_DEFAULT_BRANCH" ]; then exit 0; fi
+          echo "Verified Pages accepts only workflow_dispatch or a push to the caller repository's default branch; pull requests never deploy." >&2
+          exit 2
+
+  verify-and-stage:
+    needs: authorize-trigger
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      evidence-artifact: ${{ steps.names.outputs.evidence }}
+      stage-receipt-artifact: ${{ steps.names.outputs.stage-receipt }}
+    steps:
+      - name: Check out the caller repository
+        uses: actions/checkout@v6
+
+      - name: Freeze artifact names
+        id: names
+        shell: bash
+        run: |
+          echo "evidence=realitycheck-pages-evidence-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          echo "stage-receipt=realitycheck-pages-stage-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the capsule and materialize only its exact bytes
+        id: realitycheck
+        uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
+        with:
+          kind: publish
+          path: ${{ inputs.path }}
+          entry: ${{ inputs.entry }}
+          publish-name: ${{ inputs.publish-name }}
+          summary-language: ${{ inputs.summary-language }}
+          artifact-name: ${{ steps.names.outputs.evidence }}
+          materialize-output: .realitycheck/pages-stage-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Upload the exact static-host directory as the Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ steps.realitycheck.outputs.publish-directory-path }}
+          include-hidden-files: true
+
+      - name: Preserve the materialization receipt outside the public site
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.names.outputs.stage-receipt }}
+          path: ${{ steps.realitycheck.outputs.publish-stage-receipt-path }}
+          if-no-files-found: error
+
+  deploy:
+    needs: verify-and-stage
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page-url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Deploy the verified Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  verify-live:
+    needs: [verify-and-stage, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      receipt-artifact: ${{ steps.names.outputs.live-receipt }}
+    steps:
+      - name: Freeze the live-receipt Artifact name
+        id: names
+        shell: bash
+        run: echo "live-receipt=realitycheck-live-receipt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+
+      - name: Download the exact publish evidence run
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.verify-and-stage.outputs.evidence-artifact }}
+          path: .realitycheck/downloaded-publish-run
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Bind the live URL to the verified capsule
+        shell: bash
+        run: |
+          npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+            realityhtmlcheck verify-deploy \
+            .realitycheck/downloaded-publish-run \
+            "${{ needs.deploy.outputs.page-url }}" \
+            --allow-remote \
+            --output .realitycheck/live-deployment
+
+      - name: Preserve the point-in-time live deployment receipt
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.names.outputs.live-receipt }}
+          path: .realitycheck/live-deployment
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Append the live decision to the Job Summary
+        if: always()
+        shell: bash
+        run: |
+          receipt="$(find .realitycheck/live-deployment -type f -name deployment-receipt.md -print -quit 2>/dev/null || true)"
+          if [ -n "$receipt" ] && [ -f "$receipt" ]; then
+            printf '\n' >> "$GITHUB_STEP_SUMMARY"
+            cat "$receipt" >> "$GITHUB_STEP_SUMMARY"
+          fi

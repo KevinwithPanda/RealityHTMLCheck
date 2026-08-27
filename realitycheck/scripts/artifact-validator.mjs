@@ -10,6 +10,7 @@ import { verifyEvidenceManifest } from "./evidence-manifest.mjs";
 import { verifyEvidenceAttestation } from "./evidence-attestation.mjs";
 import { computeAuditPlanId } from "./audit-plan.mjs";
 import { buildNotePublishManifest } from "./note-publish-report.mjs";
+import { validateNoteDeploymentReceipt } from "./note-deploy-report.mjs";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const ASSET_DIR = resolve(SCRIPT_DIR, "../assets");
@@ -35,6 +36,8 @@ const ARTIFACT_FILES = new Set([
   "comparison.json",
   "technical-report.json",
   "browser-proof.json",
+  "deployment-receipt.json",
+  "deployment-browser-proof.json",
 ]);
 const SKIPPED_DIRECTORIES = new Set([".git", "node_modules", "__pycache__"]);
 
@@ -63,15 +66,20 @@ const SCHEMA_BY_ARTIFACT = {
   "html-note-publish-browser-proof": "html-note-publish-browser-proof.schema.json",
   "html-note-publish-technical-report": "html-note-publish-technical-report.schema.json",
   "html-note-publish-command-result": "html-note-publish-command-result.schema.json",
+  "html-note-deployment-receipt": "html-note-deployment-receipt.schema.json",
+  "html-note-deployment-browser-proof": "html-note-deployment-browser-proof.schema.json",
+  "html-note-publish-stage-receipt": "html-note-publish-stage-receipt.schema.json",
   config: "config.schema.json",
 };
 
 const PUBLISH_SUFFIX_ARTIFACT = /\.realitycheck-(?:publish|working-copy)\.(?:receipt|manifest)\.json$/;
+const PUBLISH_STAGE_SUFFIX_ARTIFACT = /\.realitycheck-stage\.receipt\.json$/;
 
 function isDiscoveredArtifact(path) {
   const name = basename(path);
   if (ARTIFACT_FILES.has(name)) return true;
   if (PUBLISH_SUFFIX_ARTIFACT.test(name)) return true;
+  if (PUBLISH_STAGE_SUFFIX_ARTIFACT.test(name)) return true;
   return name === "manifest.json" && basename(dirname(path)) === "realitycheck-proof";
 }
 
@@ -139,6 +147,156 @@ function verifyEvidenceTrustReport(report) {
   if (report.state === "trusted" && report.policy?.activeKeys < 1) errors.push("/policy/activeKeys must be positive for trusted evidence");
   if (report.state === "trusted" && (report.errors || []).length) errors.push("/errors must be empty for trusted evidence");
   if (report.state === "rejected" && !(report.errors || []).length) errors.push("/errors must explain rejected evidence");
+  return errors;
+}
+
+function verifyNoteDeploymentReceipt(receipt) {
+  try {
+    validateNoteDeploymentReceipt(receipt);
+    return [];
+  } catch (error) {
+    return [`/ deployment receipt semantic validation failed (${String(error?.message || error)})`];
+  }
+}
+
+function verifyPublishStageReceipt(receipt) {
+  const errors = [];
+  const entries = receipt.stage?.entries || [];
+  const names = new Set();
+  const normalizedNames = new Set();
+  const foldedNames = new Set();
+  let bytes = 0;
+  let previous = null;
+  for (const entry of entries) {
+    if (names.has(entry.path)) errors.push(`/stage/entries contains duplicate path: ${entry.path}`);
+    names.add(entry.path);
+    const normalized = entry.path.normalize("NFC");
+    const folded = normalized.toLowerCase();
+    if (normalizedNames.has(normalized) || foldedNames.has(folded)) errors.push(`/stage/entries contains a Unicode-normalized or case-folded collision: ${entry.path}`);
+    normalizedNames.add(normalized);
+    foldedNames.add(folded);
+    if (Buffer.byteLength(entry.path, "utf8") > 1024) errors.push(`/stage/entries path exceeds the 1024-byte UTF-8 boundary: ${entry.path.slice(0, 80)}`);
+    if (previous !== null && previous >= entry.path) errors.push("/stage/entries must use strict portable path order");
+    previous = entry.path;
+    bytes += entry.size;
+  }
+  if (!names.has(receipt.stage?.entrypoint)) errors.push("/stage/entrypoint is absent from entries");
+  if (receipt.stage?.files !== entries.length) errors.push("/stage/files does not match entries");
+  if (receipt.stage?.bytes !== bytes) errors.push("/stage/bytes does not match entries");
+  const contract = JSON.stringify({ contract: "realitycheck-publish-stage-v1", entries });
+  const expected = `sha256:${createHash("sha256").update(contract, "utf8").digest("hex")}`;
+  if (receipt.stage?.contentId !== expected) errors.push("/stage/contentId does not bind the staged entry contract");
+  return errors;
+}
+
+function verifyDeploymentBrowserProof(proof) {
+  const errors = [];
+  const expectedLimits = {
+    maxHtmlFiles: 200, maxFragments: 500, maxRequests: 2000, navigationTimeoutMs: 15000, maxRunTimeMs: 120000,
+    maxBrowserResponseBytes: 33554432, maxBrowserTotalBytes: 201326592, browserRequestTimeoutMs: 10000,
+  };
+  if (!isDeepStrictEqual(proof.limits, expectedLimits)) errors.push("/limits does not match the supported live browser proof policy");
+  if (typeof proof.target?.basePath !== "string" || /[\\?#\u0000-\u001f\u007f]/.test(proof.target.basePath) || /%(?:00|2f|5c)/i.test(proof.target.basePath)
+    || proof.target.basePath.split("/").some((part, index, values) => part === "." || part === ".." || (!part && index > 0 && index < values.length - 1))) {
+    errors.push("/target/basePath is unsafe or non-canonical");
+  }
+  let target;
+  try { target = new URL(`${proof.target?.origin}${proof.target?.basePath}`); }
+  catch (_) { errors.push("/target is not a canonical URL"); }
+  if (target && (target.origin !== proof.target.origin || target.pathname !== proof.target.basePath || target.search || target.hash || !proof.target.basePath.endsWith("/"))) {
+    errors.push("/target origin/basePath is not canonical");
+  }
+  const expectedScenarios = new Map([
+    ["live-desktop", { width: 1440, height: 900 }],
+    ["live-mobile-375", { width: 375, height: 812 }],
+    ["live-pages-and-fragments", { width: 1280, height: 800 }],
+  ]);
+  const seen = new Set();
+  const scenariosById = new Map();
+  let passed = 0;
+  let failed = 0;
+  let incomplete = 0;
+  const failureCounts = ["fragmentFailures", "consoleErrors", "pageErrors", "requestFailures", "httpErrors", "responseVerificationErrors", "unexpectedRequests", "redirectsOutsideScope", "horizontalOverflow", "popups", "dialogs", "downloads", "workers", "websockets"];
+  for (const scenario of proof.scenarios || []) {
+    if (seen.has(scenario.id)) errors.push(`/scenarios contains duplicate ID: ${scenario.id}`);
+    seen.add(scenario.id);
+    scenariosById.set(scenario.id, scenario);
+    const viewport = expectedScenarios.get(scenario.id);
+    if (!viewport || !isDeepStrictEqual(scenario.viewport, viewport)) errors.push(`/scenarios/${scenario.id}/viewport is not the required live-proof viewport`);
+    const hasFailure = scenario.coverageTruncated || failureCounts.some((name) => scenario[name] > 0) || scenario.reasonCodes.length > 0;
+    const hasFallbackReason = scenario.reasonCodes.includes("response-verification-incomplete");
+    if (scenario.capsuleFallbackRequests > 0 && (!scenario.coverageTruncated || !hasFallbackReason)) {
+      errors.push(`/scenarios/${scenario.id}/capsuleFallbackRequests lacks matching incomplete-response evidence`);
+    }
+    if (scenario.status === "passed") {
+      passed += 1;
+      if (hasFailure) errors.push(`/scenarios/${scenario.id} passed despite failure evidence`);
+    } else if (scenario.status === "failed") {
+      failed += 1;
+      if (!hasFailure) errors.push(`/scenarios/${scenario.id} failed without bounded failure evidence`);
+    } else {
+      incomplete += 1;
+      if (!scenario.coverageTruncated && !scenario.reasonCodes.length) errors.push(`/scenarios/${scenario.id} incomplete without bounded coverage evidence`);
+      if (failureCounts.some((name) => scenario[name] > 0)) errors.push(`/scenarios/${scenario.id} incomplete despite direct failure evidence`);
+    }
+  }
+  if (seen.size !== expectedScenarios.size || [...expectedScenarios.keys()].some((id) => !seen.has(id))) errors.push("/scenarios does not contain the exact required live scenario set");
+  if (proof.summary?.total !== (proof.scenarios || []).length || proof.summary?.passed !== passed || proof.summary?.failed !== failed || proof.summary?.incomplete !== incomplete || passed + failed + incomplete !== proof.summary?.total) {
+    errors.push("/summary does not bind scenario states");
+  }
+  const expectedStatus = failed ? "failed" : incomplete ? "incomplete" : "passed";
+  if (proof.status !== expectedStatus) errors.push("/status does not match scenario states");
+  const screenshotRoles = new Set();
+  for (const screenshot of proof.screenshots || []) {
+    if (screenshotRoles.has(screenshot.role)) errors.push(`/screenshots contains duplicate role: ${screenshot.role}`);
+    screenshotRoles.add(screenshot.role);
+    const expectedPath = screenshot.role === "desktop" ? "screenshots/live-desktop.png" : "screenshots/live-mobile-375.png";
+    if (screenshot.path !== expectedPath) errors.push(`/screenshots/${screenshot.role}/path is not canonical`);
+    const scenarioId = screenshot.role === "desktop" ? "live-desktop" : "live-mobile-375";
+    const expectedSource = scenariosById.get(scenarioId)?.capsuleFallbackRequests > 0
+      ? "diagnostic-with-capsule-fallback"
+      : "live-response-only";
+    if (screenshot.source !== expectedSource) errors.push(`/screenshots/${screenshot.role}/source does not bind capsule fallback use`);
+  }
+  if (!screenshotRoles.has("desktop") || !screenshotRoles.has("mobile-375") || screenshotRoles.size !== 2) {
+    errors.push("/screenshots must bind desktop and mobile images for every completed proof");
+  }
+  const { proofId, ...contract } = proof;
+  const expectedProofId = `sha256:${createHash("sha256").update(JSON.stringify(contract), "utf8").digest("hex")}`;
+  if (proofId !== expectedProofId) errors.push("/proofId does not bind the normalized live browser proof");
+  return errors;
+}
+
+function verifyNoteDeploymentReceiptSiblings(receipt, path) {
+  const errors = [];
+  const browserPath = join(dirname(path), "deployment-browser-proof.json");
+  if (receipt.browser === null) {
+    if (existsSync(browserPath)) errors.push("/browser is null while a deployment browser proof sibling exists");
+    return errors;
+  }
+  if (!existsSync(browserPath) || !statSync(browserPath).isFile()) return ["/browser proof sibling is missing"];
+  const proof = loadJson(browserPath);
+  if (proof.kind !== "html-note-deployment-browser-proof") errors.push("/browser proof sibling has the wrong kind");
+  errors.push(...verifyDeploymentBrowserProof(proof).map((error) => `/browser sibling${error}`));
+  errors.push(...verifyBrowserProofSiblings(proof, browserPath).map((error) => `/browser sibling${error}`));
+  if (proof.proofId !== receipt.browser.proofId) errors.push("/browser/proofId does not bind the sibling proof");
+  if (proof.status !== receipt.browser.status) errors.push("/browser/status differs from the sibling proof");
+  const screenshotSource = proof.screenshots.some((item) => item.source === "diagnostic-with-capsule-fallback")
+    ? "diagnostic-with-capsule-fallback"
+    : "live-response-only";
+  if (receipt.browser.screenshotSource !== screenshotSource) errors.push("/browser/screenshotSource differs from the sibling proof");
+  if (proof.target?.origin !== receipt.target.origin || proof.target?.basePath !== receipt.target.basePath) errors.push("/target differs from the sibling browser proof");
+  for (const key of ["archiveSha256", "archiveBytes", "deployContentId", "publishManifestId", "finalArchiveBrowserProofId"]) {
+    if (proof.source?.[key] !== receipt.source?.[key]) errors.push(`/source/${key} differs from the sibling browser proof`);
+  }
+  if (Date.parse(proof.generatedAt) < Date.parse(receipt.verification.startedAt) || Date.parse(proof.generatedAt) > Date.parse(receipt.verification.verifiedAt)) {
+    errors.push("/verification window does not contain the sibling browser proof timestamp");
+  }
+  const scenarios = receipt.browser.scenarios;
+  if (scenarios.expected !== proof.summary?.total || scenarios.completed !== proof.summary?.passed + proof.summary?.failed || scenarios.passed !== proof.summary?.passed
+    || scenarios.failed !== proof.summary?.failed || scenarios.skipped !== proof.summary?.incomplete) {
+    errors.push("/browser/scenarios does not bind the sibling proof summary");
+  }
   return errors;
 }
 
@@ -844,6 +1002,12 @@ export function validateArtifactFiles(inputPaths, { trustedKeyIds = [], requireA
     if (!/^sha256:[a-f0-9]{64}$/.test(keyId)) throw new Error(`invalid trusted Ed25519 key ID: ${keyId}`);
   }
   const paths = collectPaths(inputPaths);
+  for (const path of [...paths]) {
+    if (basename(path) !== "deployment-receipt.json") continue;
+    const browserPath = join(dirname(path), "deployment-browser-proof.json");
+    if (existsSync(browserPath) && statSync(browserPath).isFile() && !paths.includes(browserPath)) paths.push(browserPath);
+  }
+  paths.sort();
   if (!paths.length) throw new Error("no RealityCheck JSON artifacts were found");
   if (requireAttestation) {
     const discovered = new Set(paths);
@@ -882,6 +1046,9 @@ export function validateArtifactFiles(inputPaths, { trustedKeyIds = [], requireA
     if (schemaValid && kind === "html-note-publish-browser-proof") errors.push(...verifyPublishBrowserProof(value), ...verifyBrowserProofSiblings(value, path));
     if (schemaValid && kind === "html-note-publish-technical-report") errors.push(...verifyPublishTechnicalReport(value));
     if (schemaValid && kind === "html-note-publish-command-result") errors.push(...verifyPublishCommandResult(value));
+    if (schemaValid && kind === "html-note-deployment-receipt") errors.push(...verifyNoteDeploymentReceipt(value), ...verifyNoteDeploymentReceiptSiblings(value, path));
+    if (schemaValid && kind === "html-note-deployment-browser-proof") errors.push(...verifyDeploymentBrowserProof(value), ...verifyBrowserProofSiblings(value, path));
+    if (schemaValid && kind === "html-note-publish-stage-receipt") errors.push(...verifyPublishStageReceipt(value));
     if (schemaValid && kind === "evidence-attestation" && trustedKeys.size && !trustedKeys.has(value.signer.keyId)) {
       errors.push(`/signer/keyId is not in the trusted key allowlist: ${value.signer.keyId}`);
     }

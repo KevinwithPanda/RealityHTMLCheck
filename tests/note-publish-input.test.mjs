@@ -35,6 +35,16 @@ test("publish input blocks sensitive trees", async () => {
   } finally { sensitive.cleanup(); }
 });
 
+test("publish input blocks .github because Pages artifacts always omit that subtree", async () => {
+  const sensitive = fixture();
+  try {
+    writeFileSync(join(sensitive.root, "index.html"), "<title>x</title>");
+    mkdirSync(join(sensitive.root, ".github"));
+    writeFileSync(join(sensitive.root, ".github", "marker.txt"), "must not be silently omitted");
+    await assert.rejects(() => loadPublishInput(sensitive.root), /sensitive/);
+  } finally { sensitive.cleanup(); }
+});
+
 test("publish input fails closed on symbolic links when the platform permits them", async (context) => {
   const item = fixture();
   try {
@@ -59,6 +69,28 @@ test("publish ZIP intake verifies bytes and strips exactly one common export roo
     assert.equal(loaded.rootStripped, true);
     assert.deepEqual([...loaded.entries.keys()], ["assets/a.txt", "index.html"]);
     assert.equal(loaded.archiveManifest.archiveName, "notes.zip");
+  } finally { item.cleanup(); }
+});
+
+test("publish ZIP intake rejects paths that cannot fit the live receipt contract", async () => {
+  const item = fixture();
+  try {
+    const longPath = `${"a".repeat(250)}/${"b".repeat(245)}.html`;
+    const archive = await writeStoredZip([
+      { path: "index.html", bytes: new TextEncoder().encode("<!doctype html><title>Root</title>") },
+      { path: longPath, bytes: new TextEncoder().encode("<!doctype html><title>Long</title>") },
+    ], { output: "uint8array" });
+    const path = join(item.root, "long-path.zip");
+    writeFileSync(path, archive);
+    await assert.rejects(() => loadPublishInput(path), /Publish path exceeds the 500-character or 1024-byte limit/);
+
+    const unicodeArchive = await writeStoredZip([
+      { path: "index.html", bytes: new TextEncoder().encode("<!doctype html><title>Root</title>") },
+      { path: `${"中".repeat(340)}.html`, bytes: new TextEncoder().encode("<!doctype html><title>UTF-8</title>") },
+    ], { output: "uint8array" });
+    const unicodePath = join(item.root, "unicode-long-path.zip");
+    writeFileSync(unicodePath, unicodeArchive);
+    await assert.rejects(() => loadPublishInput(unicodePath), /Publish path exceeds the 500-character|1024 byte path limit/);
   } finally { item.cleanup(); }
 });
 

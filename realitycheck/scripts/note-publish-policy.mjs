@@ -9,6 +9,8 @@ export const PUBLISH_LIMITS = Object.freeze({
   maxFileBytes: 25 * 1024 * 1024,
   maxTotalBytes: 50 * 1024 * 1024,
   maxSourceTotalBytes: 48 * 1024 * 1024,
+  maxPathCharacters: 500,
+  maxPathBytes: 1024,
   netlifyRecommendedFileBytes: 10 * 1024 * 1024,
 });
 

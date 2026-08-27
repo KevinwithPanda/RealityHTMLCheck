@@ -40,6 +40,23 @@ function canonicalAllowMissing(path) {
   return canonical;
 }
 
+function canonicalAllowMissingWithoutLinks(path, label) {
+  let cursor = resolve(path);
+  const suffix = [];
+  while (!existsSync(cursor)) {
+    const parent = dirname(cursor);
+    if (parent === cursor) throw new Error(`Cannot resolve an existing ancestor for ${path}`);
+    suffix.unshift(basename(cursor));
+    cursor = parent;
+  }
+  const stats = lstatSync(cursor);
+  if (!stats.isDirectory() || stats.isSymbolicLink()) throw new Error(`${label} must have a regular directory ancestor without symlinks`);
+  const canonical = realpathSync(cursor);
+  const same = process.platform === "win32" ? resolve(cursor).toLowerCase() === resolve(canonical).toLowerCase() : resolve(cursor) === resolve(canonical);
+  if (!same) throw new Error(`${label} must not traverse a symbolic-link ancestor`);
+  return suffix.reduce((current, segment) => resolve(current, segment), canonical);
+}
+
 function contained(parent, child) {
   const path = relative(parent, child);
   return path === "" || (!path.startsWith(`..${sep}`) && path !== ".." && !isAbsolute(path));
@@ -50,7 +67,7 @@ function workspaceRelative(workspace, target) {
   return path || ".";
 }
 
-export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "web", notePath = "", baseline = "", output, publishRunKey = "" }) {
+export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "web", notePath = "", baseline = "", output, publishRunKey = "", materializeOutput = "" }) {
   if (!new Set(["web", "note", "publish"]).has(kind)) throw new Error("kind must be web, note, or publish");
   const workspaceRaw = String(workspace ?? "");
   if (!workspaceRaw || FORBIDDEN_ARTIFACT_PATTERN.test(workspaceRaw)) throw new Error("workspace is invalid");
@@ -78,6 +95,9 @@ export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "
   let baselineInput = "";
   let baselineCanonical = "";
   let sourceRootCanonical = workdirCanonical;
+  let materializeOutputInput = "";
+  let materializeOutputCanonical = "";
+  if (kind !== "publish" && materializeOutput) throw new Error("materialize-output is only valid when kind is publish");
   if (kind === "note" || kind === "publish") {
     targetInput = relativeInput("path", notePath);
     targetCanonical = canonicalAllowMissing(resolve(workdirCanonical, targetInput));
@@ -85,6 +105,19 @@ export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "
     if (targetCanonical === outputCanonical) throw new Error("path and output cannot resolve to the same location");
     if (kind === "publish" && (contained(targetCanonical, outputCanonical) || contained(outputCanonical, targetCanonical))) {
       throw new Error("publish path and output must be separate, non-nested locations");
+    }
+    if (kind === "publish" && materializeOutput) {
+      materializeOutputInput = relativeInput("materialize-output", materializeOutput, { allowDot: false });
+      materializeOutputCanonical = canonicalAllowMissingWithoutLinks(resolve(workdirCanonical, materializeOutputInput), "materialize-output");
+      if (!contained(workdirCanonical, materializeOutputCanonical)) throw new Error("materialize-output resolves outside working-directory");
+      if (existsSync(materializeOutputCanonical)) throw new Error("materialize-output must name an absent directory");
+      if (existsSync(`${materializeOutputCanonical}.realitycheck-stage.receipt.json`)) throw new Error("materialize-output stage receipt already exists");
+      if (contained(targetCanonical, materializeOutputCanonical) || contained(materializeOutputCanonical, targetCanonical)) {
+        throw new Error("publish path and materialize-output must be separate, non-nested locations");
+      }
+      if (contained(outputCanonical, materializeOutputCanonical) || contained(materializeOutputCanonical, outputCanonical)) {
+        throw new Error("publish output and materialize-output must be separate, non-nested locations");
+      }
     }
     const targetIsFile = existsSync(targetCanonical) && lstatSync(targetCanonical).isFile();
     sourceRootCanonical = targetIsFile ? dirname(targetCanonical) : targetCanonical;
@@ -114,6 +147,12 @@ export function resolveActionPaths({ workspace, workingDirectory = ".", kind = "
     artifactPath: outputCanonical,
     reportRoot: workspaceRelative(workspaceCanonical, outputCanonical),
     sourceRoot: workspaceRelative(workspaceCanonical, sourceRootCanonical),
+    materializeOutput: materializeOutputInput,
+    materializeOutputAbsolute: materializeOutputCanonical,
+    materializeReceipt: materializeOutputInput ? `${materializeOutputInput}.realitycheck-stage.receipt.json` : "",
+    materializeReceiptAbsolute: materializeOutputCanonical ? `${materializeOutputCanonical}.realitycheck-stage.receipt.json` : "",
+    materializeRoot: materializeOutputCanonical ? workspaceRelative(workspaceCanonical, materializeOutputCanonical) : "",
+    materializeReceiptRoot: materializeOutputCanonical ? workspaceRelative(workspaceCanonical, `${materializeOutputCanonical}.realitycheck-stage.receipt.json`) : "",
   };
 }
 
@@ -122,7 +161,7 @@ function parseArguments(argv) {
   const args = [...argv];
   while (args.length) {
     const name = args.shift();
-    if (!["--workspace", "--working-directory", "--kind", "--path", "--baseline", "--output", "--publish-run-key", "--github-output"].includes(name)) {
+    if (!["--workspace", "--working-directory", "--kind", "--path", "--baseline", "--output", "--publish-run-key", "--materialize-output", "--github-output"].includes(name)) {
       throw new Error(`Unknown option: ${name}`);
     }
     const value = args.shift();
@@ -142,6 +181,7 @@ export function run(argv) {
     baseline: options.baseline ?? "",
     output: options.output,
     publishRunKey: options["publish-run-key"] ?? "",
+    materializeOutput: options["materialize-output"] ?? "",
   });
   const lines = [
     `kind=${resolved.kind}`,
@@ -156,6 +196,12 @@ export function run(argv) {
     `artifact-path=${resolved.artifactPath}`,
     `report-root=${resolved.reportRoot}`,
     `source-root=${resolved.sourceRoot}`,
+    `materialize-output=${resolved.materializeOutput}`,
+    `materialize-output-absolute=${resolved.materializeOutputAbsolute}`,
+    `materialize-receipt=${resolved.materializeReceipt}`,
+    `materialize-receipt-absolute=${resolved.materializeReceiptAbsolute}`,
+    `materialize-root=${resolved.materializeRoot}`,
+    `materialize-receipt-root=${resolved.materializeReceiptRoot}`,
   ];
   if (options["github-output"]) appendFileSync(options["github-output"], `${lines.join("\n")}\n`, "utf8");
   else console.log(lines.join("\n"));
