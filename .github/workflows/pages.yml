@@ -3,6 +3,10 @@ name: Deploy public demo
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - tests/**
+      - .github/workflows/validate.yml
+      - .github/workflows/release.yml
   workflow_dispatch:
 
 permissions:

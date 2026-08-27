@@ -322,8 +322,9 @@ class SkillStructureTests(unittest.TestCase):
         self.assertIn('cat "$lab_log"', workflow)
         self.assertIn("trap cleanup_lab EXIT", workflow)
         self.assertIn("Surface the bounded test failure tail", workflow)
-        self.assertIn("Test failure tail", workflow)
-        self.assertIn("[-12000:]", workflow)
+        self.assertIn("Test failure {index}", workflow)
+        self.assertIn("[-3500:]", workflow)
+        self.assertIn("not ok", workflow)
 
     def test_validation_workflow_proves_the_packed_cli_from_an_isolated_consumer(self) -> None:
         workflow = (REPOSITORY_ROOT / ".github" / "workflows" / "validate.yml").read_text(encoding="utf-8")

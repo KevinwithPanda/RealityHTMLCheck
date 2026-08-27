@@ -43,13 +43,25 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
           path = Path(".realitycheck/ci-diagnostics/tests.log")
-          lines = path.read_text(encoding="utf-8", errors="replace").splitlines()[-120:]
-          message = "\n".join(lines)[-12000:]
-          message = message.replace("/home/runner/work/RealityHTMLCheck/RealityHTMLCheck", "<workspace>")
-          message = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-          print(f"::error title=Test failure tail::{message}")
+          lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+          failure = re.compile(r"^(?:not ok\b|✖ |FAIL(?:ED)?\b|# fail [1-9])|AssertionError|failing tests", re.I)
+          markers = [index for index, line in enumerate(lines) if failure.search(line.strip())]
+          ranges = []
+          for marker in markers:
+              start, end = max(0, marker - 3), min(len(lines), marker + 16)
+              if ranges and start <= ranges[-1][1] + 3:
+                  ranges[-1] = (ranges[-1][0], max(ranges[-1][1], end))
+              else:
+                  ranges.append((start, end))
+          blocks = [lines[start:end] for start, end in ranges[-4:]] or [lines[-35:]]
+          for index, block in enumerate(blocks, 1):
+              message = "\n".join(block)[-3500:]
+              message = message.replace("/home/runner/work/RealityHTMLCheck/RealityHTMLCheck", "<workspace>")
+              message = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+              print(f"::error title=Test failure {index}::{message}")
           PY
 
       - name: Compile report tooling

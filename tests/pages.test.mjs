@@ -267,6 +267,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
 test("Pages workflow uses the supported deployment artifact path", () => {
   const workflow = readFileSync(".github/workflows/pages.yml", "utf8");
   assert.match(workflow, /npm run site:build/);
+  assert.match(workflow, /paths-ignore:[\s\S]*tests\/\*\*[\s\S]*\.github\/workflows\/validate\.yml/);
   assert.match(workflow, /actions\/configure-pages@v6/);
   assert.match(workflow, /actions\/upload-pages-artifact@v4/);
   assert.match(workflow, /actions\/deploy-pages@v4/);
