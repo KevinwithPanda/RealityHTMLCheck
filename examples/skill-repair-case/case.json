@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1",
+  "kind": "realitycheck-skill-repair-case",
+  "title": "Evidence-bounded HTML note repair",
+  "sourceModified": false,
+  "before": "before",
+  "repaired": "repaired",
+  "expected": {
+    "beforeHasErrors": true,
+    "beforeScore": 56,
+    "beforeErrors": 3,
+    "beforeWarnings": 18,
+    "afterErrors": 0,
+    "afterWarnings": 0,
+    "afterScore": 100,
+    "newRegressions": 0
+  },
+  "changes": [
+    { "id": "safe-metadata", "evidence": "HTML documents lacked declared language, early UTF-8 metadata, mobile viewport metadata, and HTML5 doctypes." },
+    { "id": "portable-paths", "evidence": "The selected folder contains assets/note.css and images/trend.svg as unique case-correct targets." },
+    { "id": "heading-and-id", "evidence": "The original Findings heading skipped a level and duplicated the summary ID." },
+    { "id": "source-placeholder", "evidence": "sources.txt supplies the exact PRIMARY_SOURCE value; no citation was invented." },
+    { "id": "image-alternative", "evidence": "The local SVG title is Weekly completion trend." },
+    { "id": "passive-note-safety", "evidence": "guide.html states that the note requires no client-side code; the undefined onload handler and remote helper were removed." },
+    { "id": "responsive-layout", "evidence": "The fixed 840px minimum and fixed image width were replaced with bounded fluid CSS." }
+  ]
+}

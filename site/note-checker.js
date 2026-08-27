@@ -1,13 +1,13 @@
-import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask, normalizeNotePath } from "./note-analyzer.mjs?v=0.12.0";
-import { analyzeNotePackage } from "./note-package.mjs?v=0.12.0";
-import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "./note-summary.mjs?v=0.12.0";
-import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.12.0";
-import { bindSafeFolderCandidate, buildVerifiedFolderRepairZip, prepareFolderRepairInventory } from "./note-folder-repair.mjs?v=0.12.0";
-import { analyzeBrowserNoteSources, duplicateBrowserNotePaths, safeRepairDownloadName, safeRepairDownloadPayload, verifySafeNotePackageRepair, verifySafeNoteRepair } from "./note-repair-verification.mjs?v=0.12.0";
-import { importHtmlNoteZip } from "./note-zip-import.mjs?v=0.12.0";
-import { writeStoredZip } from "./note-zip.mjs?v=0.12.0";
-import { compareNoteBundles, NOTE_RULESET_ID, noteComparisonGateFailed, noteComparisonRegressionCounts } from "./note-compare.mjs?v=0.12.0";
-import { renderNoteComparisonHtml } from "./note-comparison-report.mjs?v=0.12.0";
+import { analyzeHtmlNote, applySafeNoteFixes, buildRepairTask, normalizeNotePath } from "./note-analyzer.mjs?v=0.13.0";
+import { analyzeNotePackage } from "./note-package.mjs?v=0.13.0";
+import { buildPackageRepairTask, summarizeNoteReports, summarizePackageFindings, noteDecision } from "./note-summary.mjs?v=0.13.0";
+import { buildPortableNoteReport } from "./note-share-report.mjs?v=0.13.0";
+import { bindSafeFolderCandidate, buildVerifiedFolderRepairZip, prepareFolderRepairInventory } from "./note-folder-repair.mjs?v=0.13.0";
+import { analyzeBrowserNoteSources, duplicateBrowserNotePaths, safeRepairDownloadName, safeRepairDownloadPayload, verifySafeNotePackageRepair, verifySafeNoteRepair } from "./note-repair-verification.mjs?v=0.13.0";
+import { importHtmlNoteZip } from "./note-zip-import.mjs?v=0.13.0";
+import { writeStoredZip } from "./note-zip.mjs?v=0.13.0";
+import { compareNoteBundles, NOTE_RULESET_ID, noteComparisonGateFailed, noteComparisonRegressionCounts } from "./note-compare.mjs?v=0.13.0";
+import { renderNoteComparisonHtml } from "./note-comparison-report.mjs?v=0.13.0";
 
 const noteAnalysisHelpers = {
   analyzeHtmlNote,
@@ -32,6 +32,8 @@ const elements = {
   files: document.querySelector("#file-results"),
   reset: document.querySelector("#reset-button"),
   copyAll: document.querySelector("#copy-all"),
+  copySkillInstall: document.querySelector("#copy-skill-install"),
+  copySkillRepair: document.querySelector("#copy-skill-repair"),
   downloadFolderZip: document.querySelector("#download-folder-zip"),
   downloadJson: document.querySelector("#download-json"),
   downloadReport: document.querySelector("#download-report"),
@@ -50,6 +52,14 @@ const MAX_HTML_TEXT_BYTES = 32 * 1024 * 1024;
 const MAX_CSS_TEXT_BYTES = 16 * 1024 * 1024;
 const MAX_SELECTED_FILES = 5000;
 const MAX_BASELINE_BYTES = 32 * 1024 * 1024;
+const SKILL_INSTALL_REQUEST = Object.freeze({
+  en: "Use $skill-installer to install RealityCheck from https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.13.0/realitycheck. If the skill already exists, inspect its pinned version first. If it is v0.13.0, change nothing. If it is older, move it—do not delete it—to a timestamped realitycheck backup outside the skills directory, then install v0.13.0. Stop and report instead of overwriting if a safe backup cannot be made. Tell me the installed version; the Skill will be available on my next turn.",
+  zhCN: "使用 $skill-installer 从 https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.13.0/realitycheck 安装 RealityCheck。若同名 Skill 已存在，先核对其锁定版本：已是 v0.13.0 就不要改动；版本更旧时，先将其移动到 skills 目录之外、带时间戳的 realitycheck 备份目录（不要删除），再安装 v0.13.0。若无法安全备份，请停止而不是覆盖。最后告诉我安装版本；Skill 将在下一轮可用。",
+});
+const SKILL_REPAIR_REQUEST = Object.freeze({
+  en: "Use $realitycheck to check and repair the HTML note or export folder I attach. Do not overwrite the originals. Return the before technical report, the repaired working copy, the after report, and every detected unresolved decision. Label the copy directly usable only if the after verification meets the Skill's delivery gate.",
+  zhCN: "使用 $realitycheck 检查并修复我附上的 HTML 笔记或导出文件夹。不要覆盖原文件。请返回修复前技术报告、修复工作副本、修复后报告，以及核查识别出的所有未决问题。只有修复后复检满足 Skill 交付门槛时，才把副本标记为可直接使用。",
+});
 
 function translate(value) {
   return language === "zh-CN" ? value.zhCN : value.en;
@@ -762,6 +772,14 @@ elements.downloadFolderZip.addEventListener("click", async () => {
     if (activeFolderRepairController === controller) activeFolderRepairController = null;
   }
 });
+elements.copySkillInstall.addEventListener("click", () => copy(
+  language === "zh-CN" ? SKILL_INSTALL_REQUEST.zhCN : SKILL_INSTALL_REQUEST.en,
+  { en: "No-clone Skill install request copied.", zhCN: "已复制无需克隆的 Skill 安装请求。" },
+));
+elements.copySkillRepair.addEventListener("click", () => copy(
+  language === "zh-CN" ? SKILL_REPAIR_REQUEST.zhCN : SKILL_REPAIR_REQUEST.en,
+  { en: "End-to-end Skill repair request copied.", zhCN: "已复制 Skill 端到端修复请求。" },
+));
 elements.copyAll.addEventListener("click", () => current && copy([
   ...current.reports.map((report) => buildRepairTask(report, language)),
   ...(current.packageFindings?.length ? [buildPackageRepairTask(current.packageFindings, language)] : []),

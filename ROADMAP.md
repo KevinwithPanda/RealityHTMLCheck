@@ -148,6 +148,20 @@ RealityCheck prioritizes trustworthy evidence over scenario count. Dates are int
 - [x] Add an optional Action materialization handoff without granting deployment permissions to the core Action.
 - [x] Provide a permission-separated GitHub Pages reusable workflow and dogfood publish → materialize → deploy → verify-live on the public passive canary.
 
+## v0.13 - Sixty-second adoption Golden Path
+
+- [x] Unify public positioning around check → repair a copy → publish → prove, with advanced Web QA clearly separated.
+- [x] Prove and document no-clone Skill installation from a pinned GitHub tag.
+- [x] Put the built-in note demo inside the 375×812 first viewport and order the post-check handoff as safe install/update → attach export → repair a separate copy.
+- [x] Publish and independently re-read a stable public live receipt only after LIVE MATCH, then re-prove the unchanged canary.
+- [x] Replace lossy/dereferencing Pages packaging with regular-file-only tar read-back that preserves reviewed dotfiles.
+- [x] Record a reproducible, detector-backed 56→100 repair case with an untouched source, locally justified edits, zero baseline regressions, and an explicit non-guarantee about model-generated edits.
+- [x] Drain all in-flight live-browser response verification before freezing status, screenshot provenance, or proof identity.
+- [x] Make GitHub Release publication dispatchable from the Web while binding the exact protected tag and tested tarball.
+- [ ] Bootstrap the public npm package, then bind trusted publishing and registry install smoke tests.
+- [ ] Publish the GitHub Action and Skill/Plugin distribution surfaces in their authenticated marketplaces.
+- [ ] Set the repository About description, Pages homepage, social preview, search topics, and Discussions in GitHub settings.
+
 ## v1.0 criteria
 
 - Stable report and adapter contracts.

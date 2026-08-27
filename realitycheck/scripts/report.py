@@ -20,7 +20,7 @@ from typing import Any
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 
 
-TOOL_VERSION = "0.12.0"
+TOOL_VERSION = "0.13.0"
 SCHEMA_VERSION = "1"
 QUICK_SCENARIOS = (
     "baseline",

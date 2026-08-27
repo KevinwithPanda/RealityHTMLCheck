@@ -4,7 +4,29 @@
 
 RealityCheck 首先是一款面向普通用户的本地 HTML 笔记体检与可验证发布工具，同时保留面向 Codex、开发者和产品团队的真实浏览器 Web 核查能力。笔记检查无需账号、无需服务器，不会上传文件；生成发布包后，还可以在不交出云账号权限的前提下，把真实 HTTPS URL 与同一个文件包逐字节绑定。
 
-当前版本：`v0.12.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
+当前版本：`v0.13.0 Beta`。笔记源文件绝不会被覆盖；未执行的 Web 场景会明确标记为 `unsupported` 或 `skipped`，绝不会伪装成通过。
+
+## 从这里开始：三条路径
+
+1. **在线检查**：打开[零上传 HTML 检查器](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html)，选择原始导出 ZIP、文件夹或 HTML，立即得到分享判断与具体问题。
+
+2. **在 Codex 中端到端修复，无需克隆仓库**：先把这句粘贴到 Codex：
+
+   ```text
+   使用 $skill-installer 从 https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.13.0/realitycheck 安装 RealityCheck。若同名 Skill 已存在，先核对其锁定版本：已是 v0.13.0 就不要改动；版本更旧时，先将其移动到 skills 目录之外、带时间戳的 realitycheck 备份目录（不要删除），再安装 v0.13.0。若无法安全备份，请停止而不是覆盖。最后告诉我安装版本；Skill 将在下一轮可用。
+   ```
+
+   下一轮附上导出文件并粘贴：
+
+   ```text
+   使用 $realitycheck 检查并修复我附上的 HTML 笔记或导出文件夹。不要覆盖原文件。请返回修复前技术报告、修复工作副本、修复后报告，以及核查识别出的所有未决问题。只有修复后复检满足 Skill 交付门槛时，才把副本标记为可直接使用。
+   ```
+
+   可以先查看[可复现、检测器支持的 56→100 修复案例](https://kevinwithpanda.github.io/RealityHTMLCheck/labs/skill-repair-case/)：原文件保持不变，18 个问题由本地证据支持并得到解决，修复文件夹达到 100/100，基线比较为零回归。它证明证据与复检契约，不承诺每次 Codex 运行都会选择完全相同的修改。
+
+3. **发布并证明**：生成通过浏览器验证的静态 capsule，只部署其精确字节，再用真实 HTTPS URL 生成时间点回执。GitHub Pages 用户可直接[复制权限隔离工作流](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.13.0/examples/github-actions/verified-pages.yml)，并查看[公开线上回执状态](https://kevinwithpanda.github.io/RealityHTMLCheck/evidence/live-canary/latest/deployment-receipt.html)。成功的工作流只有在第一次 LIVE MATCH 后才会替换明确标为 pending 的页面，随后逐字节回读公开证据，并再次复检未改变的 canary。
+
+这三条路径是同一工作流的不同深度：在线检查器快速诊断，Skill 在独立副本中处理需要判断的修改，publish/live proof 证明交付链。真实浏览器 Web 应用核查仍是高级模式。
 
 ## 一分钟内获得价值：检查 HTML 笔记
 
@@ -32,7 +54,7 @@ ZIP 导入采用失败关闭：只接受有上限的 ZIP32 STORE/DEFLATE，核�
 在线检查器适合零安装预检；真正的发布结论需要本地 CLI/Skill 读取完整磁盘范围，并启动真实浏览器验证。把一个 HTML、文件夹或普通 STORE/DEFLATE 导出 ZIP 交给下面的命令：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck publish ./我的笔记
 ```
 
@@ -46,16 +68,16 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
 
 只有全部必需门禁完成的文件才叫 `*.realitycheck-publish.zip`。静态预检、浏览器不可用或门禁失败只能得到 `*.realitycheck-working-copy.zip`，并保留准确阻断原因。成功 ZIP 可用于 Netlify Drop 或 Cloudflare Pages Direct Upload（仍受账号/额度限制）；选择 Cloudflare 项目类型时要谨慎，因为 Direct Upload 项目之后不能切换为 Git 集成。GitHub Pages 不能直接发布 ZIP，需要解压到已配置发布源，或用 Actions 部署目录。RealityCheck 不登录账号、不替用户上传或部署。
 
-[发布演示源码](https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.12.0/examples/publish-demo-note)是可直接复现的输入，也可以[直接打开静态在线预览](https://kevinwithpanda.github.io/RealityHTMLCheck/labs/publish-demo-note/)。Pages 工作流现在只从该演示的已验证 ZIP 解出精确字节进行部署，并在上线后复检公开 URL。证明范围仍只覆盖声明的 Chromium、被动静态和时间点场景，不等于绝无恶意代码、事实正确、完整无障碍/SEO、所有浏览器兼容、后端可用或永久在线。
+[发布演示源码](https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.13.0/examples/publish-demo-note)是可直接复现的输入，也可以[直接打开静态在线预览](https://kevinwithpanda.github.io/RealityHTMLCheck/labs/publish-demo-note/)。Pages 工作流现在只从该演示的已验证 ZIP 解出精确字节进行部署，并在上线后复检公开 URL。证明范围仍只覆盖声明的 Chromium、被动静态和时间点场景，不等于绝无恶意代码、事实正确、完整无障碍/SEO、所有浏览器兼容、后端可用或永久在线。
 
-所有笔记与发布 JSON 都有严格契约。可用 `npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" realityhtmlcheck validate .realitycheck/publish/<运行目录>` 独立回读 ZIP、sidecar、公开 manifest、receipt、技术报告与两轮浏览器证明，检查跨产物身份是否一致。
+所有笔记与发布 JSON 都有严格契约。可用 `npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" realityhtmlcheck validate .realitycheck/publish/<运行目录>` 独立回读 ZIP、sidecar、公开 manifest、receipt、技术报告与两轮浏览器证明，检查跨产物身份是否一致。
 
 ### 可验证发布 GitHub Action
 
 持续生成 HTML 时，可以完全移除本地 Node/浏览器步骤：
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.13.0
   id: realitycheck
   with:
     kind: publish
@@ -69,7 +91,7 @@ Action 会运行同一套静态门禁、安全修复、最终 ZIP 回读和六�
 
 `upload-artifact: true` 会把**完整 HTML、图片、样式和附件**传到 GitHub Artifact 存储。启用前应复核仓库可见性与保留策略，也可以设置为 `false`。该 Action 只需要 `contents: read`，不会部署，不申请 Pages/OIDC 权限，也不接收任何云厂商 token。GitHub Artifact digest 与发布 ZIP SHA-256 是两个不同身份。
 
-[复制完整工作流](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.12.0/examples/github-actions/verified-publish.yml)。
+[复制完整工作流](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.13.0/examples/github-actions/verified-publish.yml)。
 
 ### 验证真实线上 URL
 
@@ -78,7 +100,7 @@ Action 会运行同一套静态门禁、安全修复、最终 ZIP 回读和六�
 上传成功的 capsule 后运行：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck verify-deploy \
   .realitycheck/publish/<运行目录> \
   https://user.github.io/repository/ \
@@ -99,19 +121,19 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
 托管平台需要目录时，应从验证后的 ZIP 安全解出新目录，而不是重新使用原始源码树：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck materialize .realitycheck/publish/<运行目录> \
   --output .realitycheck/staged-site
 ```
 
-GitHub Pages 可直接复制[权限隔离的完整调用工作流](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.12.0/examples/github-actions/verified-pages.yml)：第一项任务仅有 `contents: read`，只有 materialize 后的精确目录能够进入 Pages Artifact；独立 `github-pages` 环境任务拥有 `pages: write` / OIDC；第三项只读任务会对 GitHub 返回的公开 URL 生成线上回执。可复用工作流本身会拒绝 pull request 和非默认分支 push，随附调用模板则默认只能手动运行。
+GitHub Pages 可直接复制[权限隔离的完整调用工作流](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.13.0/examples/github-actions/verified-pages.yml)：第一项任务仅有 `contents: read`，只有 materialize 后的精确目录能够进入 Pages Artifact；独立 `github-pages` 环境任务拥有 `pages: write` / OIDC；第三项只读任务会对 GitHub 返回的公开 URL 生成线上回执。可复用工作流本身会拒绝 pull request 和非默认分支 push，随附调用模板则默认只能手动运行。
 
 这条 CI 路径并非零上传：它会分别保存包含完整站点字节的 publish evidence、stage receipt，以及含浏览器证明和两张带来源标记诊断截图的 live evidence Artifact。live Artifact 保留 30 天，普通证据保留期服从仓库设置。启用前应复核仓库可见性、Artifact 保留策略、Pages 公开性和 `github-pages` 环境保护规则。
 
 需要批量检查整个笔记文件夹时，无需克隆仓库或全局安装：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck note ./我的笔记
 # 打开 .realitycheck/notes/latest.html
 ```
@@ -119,14 +141,14 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
 生成保守修复副本，但保持所有源文件逐字节不变：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck note ./我的笔记 --fix-safe
 ```
 
 持续导出时，可把同一检查器放进 GitHub Actions；note 模式不启动服务器、不安装浏览器依赖，也不执行笔记脚本：
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.13.0
   with:
     kind: note
     path: exported-notes
@@ -141,7 +163,7 @@ RealityCheck 不上传源笔记。启用 artifact 时，工作流会保存生成
 第二次及后续导出可以与一份不可变的历史报告比较：
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck note ./我的笔记 \
   --baseline .realitycheck/notes/历史运行/report.json \
   --fail-on error
@@ -195,16 +217,18 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
 
 ## 安装 skill
 
-在克隆后的仓库中运行一次：
+推荐直接在 Codex 中使用本文开头的 `$skill-installer` 请求。它会从 `v0.13.0/realitycheck` 锁定路径安装或安全升级 Skill，不需要克隆仓库、运行 Python 或全局安装软件。旧版本会先移到活动 skills 目录之外的时间戳备份；无法安全备份时会停止而不是覆盖。安装后会在下一轮 Codex 任务可用。RealityCheck 不是常驻后台程序；只有请求匹配时才会加载完整流程，显式输入 `$realitycheck` 则会直接调用。
+
+只有需要审查、修改或开发 Skill 源码时，才建议使用手动备选：
 
 ```bash
-git clone --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git
+git clone --branch v0.13.0 --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git
 cd RealityHTMLCheck
 python scripts/install-skill.py
 python scripts/install-skill.py --status
 ```
 
-第二条命令应显示 `installed and current`。如果 Codex 没有自动刷新 skill 列表，请重新加载。RealityCheck 不是常驻后台程序：安装后，Codex 启动时会发现它的元数据；只有请求匹配时才加载完整流程，显式输入 `$realitycheck` 则会立即调用。再次执行安装命令会先把旧版本保存到 Codex 主目录下独立的 `skill-backups/realitycheck`，避免备份被误识别为第二个同名 Skill。
+最后一条命令应显示 `installed and current`。再次执行手动安装器会先把旧版本保存到 Codex 主目录下独立的 `skill-backups/realitycheck`，避免备份被误识别为第二个同名 Skill。
 
 ## 一条命令体验真实核查
 

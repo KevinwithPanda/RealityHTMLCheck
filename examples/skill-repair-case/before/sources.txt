@@ -1,0 +1,1 @@
+PRIMARY_SOURCE=Chen et al. (2026), Local-first HTML research workflows.

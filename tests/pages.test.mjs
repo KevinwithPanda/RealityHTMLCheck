@@ -61,10 +61,15 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
     "evidence/security-headers-fixed/latest.html",
     "evidence/privacy/latest.html",
     "evidence/accessibility/latest.html",
+    "evidence/live-canary/latest/deployment-receipt.html",
     "labs/journey/broken.html",
     "labs/viewport/broken.html",
     "labs/publish-demo-note/index.html",
     "labs/publish-demo-note/guide.html",
+    "labs/skill-repair-case/index.html",
+    "labs/skill-repair-case/before/index.html",
+    "labs/skill-repair-case/repaired/index.html",
+    "labs/skill-repair-case/case.json",
     "labs/viewport/fixed.html",
     "labs/policy-review/review/policy-review.html",
     "labs/policy-review/review/policy-review.json",
@@ -106,6 +111,9 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   const zipImport = readFileSync(resolve(output, "note-zip-import.mjs"), "utf8");
   const noteCompare = readFileSync(resolve(output, "note-compare.mjs"), "utf8");
   const styles = readFileSync(resolve(output, "styles.css"), "utf8");
+  const pendingLiveReceipt = readFileSync(resolve(output, "evidence/live-canary/latest/deployment-receipt.html"), "utf8");
+  assert.match(pendingLiveReceipt, /NOT A LIVE RECEIPT/);
+  assert.match(pendingLiveReceipt, /replaced only after GitHub Pages deploys the verified canary/);
   assert.match(styles, /\.profile-grid button\{min-height:40px;/);
   for (const [name, width, height] of [["report-preview.png", 1440, 900], ["finding-preview.png", 1440, 900], ["note-checker-preview.png", 1440, 1000]]) {
     const png = readFileSync(resolve(output, "assets", name));
@@ -125,7 +133,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.ok(structuredDataMatch, "Pages homepage is missing JSON-LD product metadata");
   const structuredData = JSON.parse(structuredDataMatch[1]);
   assert.equal(structuredData["@type"], "SoftwareApplication");
-  assert.equal(structuredData.softwareVersion, "0.12.0");
+  assert.equal(structuredData.softwareVersion, "0.13.0");
   assert.equal(structuredData.codeRepository, "https://github.com/KevinwithPanda/RealityHTMLCheck");
   assert.equal(structuredData.image, "https://kevinwithpanda.github.io/RealityHTMLCheck/assets/social-preview.png");
   assert.ok(structuredData.featureList.includes("Policy anti-weakening review"));
@@ -148,26 +156,27 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(noteChecker, /compareNoteBundles/);
   assert.match(zipStore, /export async function readStoredZipEntries/);
   assert.match(zipImport, /new DecompressionStream\("deflate-raw"\)/);
-  assert.match(zipImport, /\.\/note-zip\.mjs\?v=0\.12\.0/);
-  assert.match(zipImport, /\.\/note-path-policy\.mjs\?v=0\.12\.0/);
+  assert.match(zipImport, /\.\/note-zip\.mjs\?v=0\.13\.0/);
+  assert.match(zipImport, /\.\/note-path-policy\.mjs\?v=0\.13\.0/);
   assert.match(zipImport, /Potentially sensitive ZIP path is blocked before extraction/);
   assert.doesNotMatch(`${zipStore}\n${zipImport}`, /\.\.\/realitycheck\/scripts/);
-  assert.match(folderRepair, /\.\/note-zip\.mjs\?v=0\.12\.0/);
+  assert.match(folderRepair, /\.\/note-zip\.mjs\?v=0\.13\.0/);
   assert.doesNotMatch(`${noteChecker}\n${folderRepair}\n${zipImport}\n${noteCompare}`, /from\s+["']https?:/);
   assert.match(html, /href="note\.html"/);
   assert.match(html, /href="compatibility\.html"/);
-  assert.match(html, /Prove the live URL is the file you checked\./);
-  assert.match(html, /证明线上 URL 就是你检查过的那份文件/);
+  assert.match(html, /Check the export\. Repair a copy\. Prove the live result\./);
+  assert.match(html, /检查导出文件，修复独立副本，再证明线上结果/);
   assert.match(html, /<article><strong>32<\/strong><span[^>]+>HTML note integrity and portability rules/);
   assert.match(html, /<article><strong>4<\/strong><span[^>]+>byte-reproducible real Pandoc exports/);
-  assert.match(html, /github:KevinwithPanda\/RealityHTMLCheck#v0\.12\.0/);
-  assert.match(html, /realityhtmlcheck verify-deploy \.\/publish-run/);
+  assert.match(html, /RealityHTMLCheck\/tree\/v0\.13\.0\/realitycheck/);
+  assert.match(html, /realitycheck \/ golden path/);
+  assert.match(html, /\$skill-installer/);
+  assert.match(html, /evidence\/live-canary\/latest\/deployment-receipt\.html/);
   assert.match(html, /href="labs\/publish-demo-note\/index\.html"/);
   assert.match(html, /verified-pages\.yml/);
   assert.match(html, /Copy the verified Pages workflow/);
   assert.match(html, /data-language="zh-CN"/);
-  assert.match(html, /init --profile product --base-url/);
-  assert.match(html, /npm run realitycheck -- init --profile product/);
+  assert.doesNotMatch(html, /npm run realitycheck/);
   assert.doesNotMatch(html, /npx realitycheck-web-audit/);
   assert.match(html, /一份可审查工作流 · 验证 → 部署 → 再验证/);
   assert.match(html, /ADVANCED WEB QA · REAL BROWSER/);
@@ -235,6 +244,7 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(robots, /Sitemap: https:\/\/kevinwithpanda\.github\.io\/RealityHTMLCheck\/sitemap\.xml/);
   const sitemap = readFileSync(resolve(output, "sitemap.xml"), "utf8");
   assert.match(sitemap, /RealityHTMLCheck\/compatibility\.html/);
+  assert.match(sitemap, /RealityHTMLCheck\/labs\/skill-repair-case\//);
   const manifest = JSON.parse(readFileSync(resolve(output, "site.webmanifest"), "utf8"));
   assert.equal(manifest.start_url, "./");
   assert.equal(manifest.icons[0].src, "assets/icon.svg");
@@ -243,9 +253,10 @@ test("GitHub Pages build publishes every live evidence and fixture link", () => 
   assert.match(llms, /labs\/policy-review\/review\/policy-review\.html/);
   assert.match(llms, /labs\/audit-plan\/audit-plan\.html/);
   assert.match(llms, /evidence\/security-headers-fixed\/latest\.html/);
-  assert.match(llms, /npm run realitycheck -- plan/);
+  assert.match(llms, /Use \$realitycheck to preview the effective audit policy/);
+  assert.match(llms, /Public live-receipt status/);
   assert.match(llms, /Zero-install HTML note checker/);
-  assert.match(llms, /github:KevinwithPanda\/RealityHTMLCheck#v0\.12\.0/);
+  assert.match(llms, /github:KevinwithPanda\/RealityHTMLCheck#v0\.13\.0/);
   assert.match(llms, /realityhtmlcheck note \.\/my-notes/);
   assert.match(llms, /realityhtmlcheck publish \.\/my-notes/);
   assert.match(llms, /compatibility\.html/);
@@ -269,20 +280,48 @@ test("Pages workflow uses the supported deployment artifact path", () => {
   assert.match(workflow, /npm run site:build/);
   assert.match(workflow, /paths-ignore:[\s\S]*tests\/\*\*[\s\S]*\.github\/workflows\/validate\.yml/);
   assert.match(workflow, /actions\/configure-pages@v6/);
-  assert.match(workflow, /actions\/upload-pages-artifact@v4/);
   assert.match(workflow, /actions\/deploy-pages@v4/);
-  assert.match(workflow, /path: _site/);
-  assert.match(workflow, /include-hidden-files: true/);
+  assert.doesNotMatch(workflow, /actions\/upload-pages-artifact|include-hidden-files/);
+  assert.match(workflow, /package-pages-artifact\.sh _site/);
+  assert.match(workflow, /path: \$\{\{ runner\.temp \}\}\/realitycheck-pages-initial\/artifact\.tar/);
+  assert.match(workflow, /initial-pages-sha256/);
   assert.match(workflow, /Verify and materialize the passive publish canary/);
   assert.match(workflow, /materialize-output: \.realitycheck\/pages-canary-stage/);
   assert.match(workflow, /publish-directory-path/);
   assert.match(workflow, /verify-live-canary:/);
+  assert.match(workflow, /prepare-public-receipt:/);
+  assert.match(workflow, /deploy-public-receipt:/);
+  assert.match(workflow, /verify-public-receipt:/);
   assert.match(workflow, /audit\.mjs verify-deploy/);
   assert.match(workflow, /--allow-remote/);
   assert.match(workflow, /realitycheck-pages-live-receipt/);
+  assert.match(workflow, /github-pages-initial-/);
+  assert.match(workflow, /github-pages-live-receipt-/);
+  assert.match(workflow, /realitycheck-pages-final-live-receipt-/);
+  assert.match(workflow, /evidence\/live-canary\/latest/);
+  assert.match(workflow, /Prove every public receipt artifact byte/);
+  assert.match(workflow, /cmp "\$file"/);
+  assert.match(workflow, /for attempt in 1 2 3 4 5/);
+  assert.match(workflow, /&& cmp "\$file" "\$destination"/);
+  assert.match(workflow, /audit\.mjs validate \.realitycheck\/downloaded-public-receipt/);
+  assert.match(workflow, /Re-prove the canary after receipt publication/);
+  assert.match(workflow, /artifact_name: \$\{\{ needs\.build-and-verify\.outputs\.public-receipt-pages-artifact \}\}/);
+  assert.equal((workflow.match(/retention-days: 30/g) || []).length >= 4, true);
   assert.match(workflow, /cancel-in-progress: false/);
   assert.match(workflow, /timeout-minutes: 10/);
   assert.match(workflow, /build-and-verify:[\s\S]*permissions:\n\s+contents: read[\s\S]*deploy:[\s\S]*pages: write[\s\S]*id-token: write/);
+  const prepareReceiptJob = workflow.slice(workflow.indexOf("  prepare-public-receipt:"), workflow.indexOf("  deploy-public-receipt:"));
+  const deployReceiptJob = workflow.slice(workflow.indexOf("  deploy-public-receipt:"), workflow.indexOf("  verify-public-receipt:"));
+  assert.match(prepareReceiptJob, /permissions:\n\s+actions: read\n\s+contents: read/);
+  assert.doesNotMatch(prepareReceiptJob, /pages: write|id-token: write|deploy-pages/);
+  assert.match(deployReceiptJob, /pages: write[\s\S]*id-token: write[\s\S]*deploy-pages@v4/);
+  assert.doesNotMatch(deployReceiptJob, /checkout|setup-node|npm ci|audit\.mjs/);
+  assert.match(workflow, /persist-credentials: false/);
+  const packer = readFileSync("scripts/package-pages-artifact.sh", "utf8");
+  assert.match(packer, /find -P "\$site" -type l/);
+  assert.match(packer, /find -P "\$site" -type f -links \+1/);
+  assert.match(packer, /! -type f ! -type d/);
+  assert.match(packer, /cmp "\$manifest" "\$temporary\/readback\.sha256"/);
   assert.doesNotMatch(workflow, /contents: write|pull_request_target/);
   assert.match(workflow, /continue-on-error: true/);
   assert.match(workflow, /Settings → Pages → Source: GitHub Actions/);

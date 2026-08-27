@@ -12,8 +12,12 @@ on:
           - verify
           - github-release
           - npm-publish
+      release-tag:
+        description: "Publishing only: exact existing vX.Y.Z tag to verify and check out (leave empty for verify mode)"
+        required: false
+        type: string
       confirmation:
-        description: "For a publishing mode, type the exact package and version (for example: realityhtmlcheck@0.12.0)"
+        description: "For a publishing mode, type the exact package and version (for example: realityhtmlcheck@0.13.0)"
         required: false
         type: string
 
@@ -30,12 +34,69 @@ jobs:
     outputs:
       package-version: ${{ steps.metadata.outputs.package-version }}
       tag-name: ${{ steps.metadata.outputs.tag-name }}
+      tag-commit: ${{ steps.metadata.outputs.tag-commit }}
       tarball-name: ${{ steps.pack.outputs.tarball-name }}
     steps:
-      - name: Check out the selected ref
+      - name: Check out the workflow dispatch ref
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve and check out the exact release tag
+        id: release-ref
+        shell: bash
+        env:
+          RELEASE_MODE: ${{ inputs.mode }}
+          RELEASE_TAG_INPUT: ${{ inputs.release-tag }}
+          DISPATCH_REF: ${{ github.ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          case "$RELEASE_MODE" in
+            verify|github-release|npm-publish) ;;
+            *) echo "Unsupported release mode: $RELEASE_MODE" >&2; exit 1 ;;
+          esac
+          if test "$RELEASE_MODE" = "verify"; then
+            if test -n "$RELEASE_TAG_INPUT"; then
+              echo "release-tag is only valid for github-release or npm-publish mode." >&2
+              exit 1
+            fi
+            current_commit="$(git rev-parse --verify HEAD^{commit})"
+            echo "release-tag=" >> "$GITHUB_OUTPUT"
+            echo "tag-commit=$current_commit" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! [[ "$RELEASE_TAG_INPUT" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Publishing requires release-tag in exact vX.Y.Z form; received: $RELEASE_TAG_INPUT" >&2
+            exit 1
+          fi
+          if test "$DISPATCH_REF" != "refs/heads/$DEFAULT_BRANCH"; then
+            echo "Publishing must be dispatched from the default branch ($DEFAULT_BRANCH); received: $DISPATCH_REF" >&2
+            exit 1
+          fi
+
+          tag_ref="refs/tags/$RELEASE_TAG_INPUT"
+          git fetch --force --no-tags origin \
+            "+refs/heads/main:refs/remotes/origin/main" \
+            "+$tag_ref:$tag_ref"
+          git show-ref --verify --quiet "$tag_ref" || {
+            echo "The requested release tag does not exist on origin: $RELEASE_TAG_INPUT" >&2
+            exit 1
+          }
+          tag_commit="$(git rev-parse --verify "${tag_ref}^{commit}")"
+          git merge-base --is-ancestor "$tag_commit" refs/remotes/origin/main || {
+            echo "The requested release tag commit is not reachable from origin/main: $RELEASE_TAG_INPUT ($tag_commit)" >&2
+            exit 1
+          }
+          git checkout --detach "$tag_commit"
+          test "$(git rev-parse --verify HEAD^{commit})" = "$tag_commit" || {
+            echo "The checked-out commit does not match the peeled release tag commit." >&2
+            exit 1
+          }
+          echo "release-tag=$RELEASE_TAG_INPUT" >> "$GITHUB_OUTPUT"
+          echo "tag-commit=$tag_commit" >> "$GITHUB_OUTPUT"
 
       - name: Set up Node
         uses: actions/setup-node@v6
@@ -57,9 +118,13 @@ jobs:
         shell: bash
         env:
           RELEASE_MODE: ${{ inputs.mode }}
+          RELEASE_TAG_INPUT: ${{ inputs.release-tag }}
           RELEASE_CONFIRMATION: ${{ inputs.confirmation }}
-          SELECTED_REF: ${{ github.ref }}
+          RESOLVED_RELEASE_TAG: ${{ steps.release-ref.outputs.release-tag }}
+          RESOLVED_TAG_COMMIT: ${{ steps.release-ref.outputs.tag-commit }}
+          IMMUTABLE_RELEASE_TAGS: ${{ vars.RELEASE_TAGS_IMMUTABLE }}
         run: |
+          CURRENT_COMMIT="$(git rev-parse --verify HEAD^{commit})" \
           node <<'NODE'
           const { appendFileSync, readFileSync } = require("node:fs");
           const value = JSON.parse(readFileSync("package.json", "utf8"));
@@ -68,17 +133,36 @@ jobs:
           const expectedConfirmation = `${value.name}@${value.version}`;
           if (value.name !== expectedName) throw new Error(`Expected package ${expectedName}, received ${value.name}`);
           if (process.env.RELEASE_MODE !== "verify") {
-            if (process.env.SELECTED_REF !== `refs/tags/${expectedTag}`) {
-              throw new Error(`Select the existing ${expectedTag} tag when running a publishing mode; received ${process.env.SELECTED_REF}`);
+            if (process.env.IMMUTABLE_RELEASE_TAGS !== "true") {
+              throw new Error("Publishing requires protected immutable release tags and repository variable RELEASE_TAGS_IMMUTABLE=true");
+            }
+            if (process.env.RELEASE_TAG_INPUT !== expectedTag) {
+              throw new Error(`release-tag must exactly match package.json: expected ${expectedTag}, received ${process.env.RELEASE_TAG_INPUT}`);
+            }
+            if (process.env.RESOLVED_RELEASE_TAG !== expectedTag) {
+              throw new Error(`Resolved tag identity mismatch: expected ${expectedTag}, received ${process.env.RESOLVED_RELEASE_TAG}`);
+            }
+            if (!/^[0-9a-f]{40}$/.test(process.env.RESOLVED_TAG_COMMIT || "")) {
+              throw new Error(`Resolved tag commit is not a full Git commit ID: ${process.env.RESOLVED_TAG_COMMIT}`);
+            }
+            if (process.env.CURRENT_COMMIT !== process.env.RESOLVED_TAG_COMMIT) {
+              throw new Error(`Checkout does not match peeled tag commit: ${process.env.CURRENT_COMMIT} != ${process.env.RESOLVED_TAG_COMMIT}`);
             }
             if (process.env.RELEASE_CONFIRMATION !== expectedConfirmation) {
               throw new Error(`Confirmation must exactly equal ${expectedConfirmation}`);
             }
           }
-          appendFileSync(process.env.GITHUB_OUTPUT, `package-version=${value.version}\ntag-name=${expectedTag}\n`);
+          appendFileSync(
+            process.env.GITHUB_OUTPUT,
+            `package-version=${value.version}\ntag-name=${expectedTag}\ntag-commit=${process.env.CURRENT_COMMIT}\n`,
+          );
           NODE
           if test "$RELEASE_MODE" != "verify"; then
-            git merge-base --is-ancestor "$GITHUB_SHA" origin/main || {
+            test "$(git rev-parse --verify HEAD^{commit})" = "$RESOLVED_TAG_COMMIT" || {
+              echo "The release checkout changed after tag resolution." >&2
+              exit 1
+            }
+            git merge-base --is-ancestor "$RESOLVED_TAG_COMMIT" refs/remotes/origin/main || {
               echo "Publishing is restricted to a version tag whose commit is reachable from origin/main." >&2
               exit 1
             }
@@ -120,6 +204,25 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Revalidate the remote tag before release creation
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.verify.outputs.tag-name }}
+          EXPECTED_COMMIT: ${{ needs.verify.outputs.tag-commit }}
+        run: |
+          set -euo pipefail
+          tag_lines="$(git ls-remote --exit-code \
+            "https://github.com/${GITHUB_REPOSITORY}.git" \
+            "refs/tags/$RELEASE_TAG" "refs/tags/$RELEASE_TAG^{}")"
+          remote_commit="$(printf '%s\n' "$tag_lines" | awk '$2 ~ /\^\{\}$/ { print $1; exit }')"
+          if test -z "$remote_commit"; then
+            remote_commit="$(printf '%s\n' "$tag_lines" | awk '$2 !~ /\^\{\}$/ { print $1; exit }')"
+          fi
+          test "$remote_commit" = "$EXPECTED_COMMIT" || {
+            echo "Remote release tag changed after verification: expected $EXPECTED_COMMIT, received ${remote_commit:-missing}." >&2
+            exit 1
+          }
+
       - name: Download the exact verified candidate
         uses: actions/download-artifact@v8
         with:
@@ -132,10 +235,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.verify.outputs.tag-name }}
           RELEASE_VERSION: ${{ needs.verify.outputs.package-version }}
+          EXPECTED_COMMIT: ${{ needs.verify.outputs.tag-commit }}
           TARBALL: ${{ needs.verify.outputs.tarball-name }}
         run: |
           cd dist
           sha256sum --check SHA256SUMS
+          tag_lines="$(git ls-remote --exit-code \
+            "https://github.com/${GITHUB_REPOSITORY}.git" \
+            "refs/tags/$RELEASE_TAG" "refs/tags/$RELEASE_TAG^{}")"
+          remote_commit="$(printf '%s\n' "$tag_lines" | awk '$2 ~ /\^\{\}$/ { print $1; exit }')"
+          if test -z "$remote_commit"; then remote_commit="$(printf '%s\n' "$tag_lines" | awk '$2 !~ /\^\{\}$/ { print $1; exit }')"; fi
+          test "$remote_commit" = "$EXPECTED_COMMIT" || { echo "Remote tag changed immediately before GitHub Release creation." >&2; exit 1; }
           gh release create "$RELEASE_TAG" "$TARBALL" SHA256SUMS package-contents.json \
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
@@ -153,6 +263,25 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - name: Revalidate the remote tag before npm publication
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.verify.outputs.tag-name }}
+          EXPECTED_COMMIT: ${{ needs.verify.outputs.tag-commit }}
+        run: |
+          set -euo pipefail
+          tag_lines="$(git ls-remote --exit-code \
+            "https://github.com/${GITHUB_REPOSITORY}.git" \
+            "refs/tags/$RELEASE_TAG" "refs/tags/$RELEASE_TAG^{}")"
+          remote_commit="$(printf '%s\n' "$tag_lines" | awk '$2 ~ /\^\{\}$/ { print $1; exit }')"
+          if test -z "$remote_commit"; then
+            remote_commit="$(printf '%s\n' "$tag_lines" | awk '$2 !~ /\^\{\}$/ { print $1; exit }')"
+          fi
+          test "$remote_commit" = "$EXPECTED_COMMIT" || {
+            echo "Remote release tag changed after verification: expected $EXPECTED_COMMIT, received ${remote_commit:-missing}." >&2
+            exit 1
+          }
+
       - name: Set up Node for npm trusted publishing
         uses: actions/setup-node@v6
         with:
@@ -188,9 +317,17 @@ jobs:
       - name: Publish with npm OIDC provenance
         shell: bash
         env:
+          RELEASE_TAG: ${{ needs.verify.outputs.tag-name }}
+          EXPECTED_COMMIT: ${{ needs.verify.outputs.tag-commit }}
           TARBALL: ${{ needs.verify.outputs.tarball-name }}
         run: |
           cd dist
           sha256sum --check SHA256SUMS
           NPM_VERSION="$(npm --version)" node -e 'const [major,minor,patch]=process.env.NPM_VERSION.split(".").map(Number); if(major<11||(major===11&&(minor<5||(minor===5&&patch<1)))) throw new Error(`npm 11.5.1 or newer is required for trusted publishing; received ${process.env.NPM_VERSION}`)'
+          tag_lines="$(git ls-remote --exit-code \
+            "https://github.com/${GITHUB_REPOSITORY}.git" \
+            "refs/tags/$RELEASE_TAG" "refs/tags/$RELEASE_TAG^{}")"
+          remote_commit="$(printf '%s\n' "$tag_lines" | awk '$2 ~ /\^\{\}$/ { print $1; exit }')"
+          if test -z "$remote_commit"; then remote_commit="$(printf '%s\n' "$tag_lines" | awk '$2 !~ /\^\{\}$/ { print $1; exit }')"; fi
+          test "$remote_commit" = "$EXPECTED_COMMIT" || { echo "Remote tag changed immediately before npm publication." >&2; exit 1; }
           npm publish "$TARBALL" --access public --provenance

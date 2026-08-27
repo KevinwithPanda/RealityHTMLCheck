@@ -61,6 +61,7 @@ copy("examples/privacy-lab", "labs/privacy");
 copy("examples/accessibility-lab", "labs/accessibility");
 copy("examples/viewport-lab", "labs/viewport");
 copy("examples/publish-demo-note", "labs/publish-demo-note");
+copy("examples/skill-repair-case", "labs/skill-repair-case");
 copy("examples/policy-review-lab", "labs/policy-review");
 copy("examples/issue-drafts-lab", "labs/issue-drafts");
 // The committed release-decision artifact preserves the source-relative paths

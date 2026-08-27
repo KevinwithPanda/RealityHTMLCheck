@@ -312,6 +312,9 @@ async function createBoundedContext(browser, target, deploy, limits, state, brow
   });
   const pendingRoutes = new Set();
   let acceptingRoutes = true;
+  let contextRoutesSealed = false;
+  let contextUnroutePromise = null;
+  let pageRoutesStopped = false;
   const markTimeLimit = () => {
     if (state.frozen) return;
     state.coverageTruncated = true;
@@ -349,13 +352,6 @@ async function createBoundedContext(browser, target, deploy, limits, state, brow
     const request = route.request();
     if (!acceptingRoutes || state.frozen) {
       markIncomplete(request);
-      await routeAction(() => route.abort("blockedbyclient"), request, { cleanup: true });
-      return;
-    }
-    state.requests += 1;
-    if (state.requests > limits.maxRequests) {
-      state.coverageTruncated = true;
-      state.reasonCodes.push("request-limit");
       await routeAction(() => route.abort("blockedbyclient"), request, { cleanup: true });
       return;
     }
@@ -397,10 +393,11 @@ async function createBoundedContext(browser, target, deploy, limits, state, brow
     const delivered = await routeAction(() => route.fulfill({ status: 200, body: verified.body, headers: verified.headers }), request);
     if (!delivered) await routeAction(() => route.abort("blockedbyclient"), request, { cleanup: true });
   };
-  await context.route("**/*", (route) => {
+  const trackRoute = (route, handler) => {
     const request = route.request();
     let task;
-    task = handleRoute(route)
+    task = Promise.resolve()
+      .then(() => handler(route))
       .catch(async () => {
         markIncomplete(request);
         await routeAction(() => route.abort("blockedbyclient"), request, { cleanup: true });
@@ -408,23 +405,102 @@ async function createBoundedContext(browser, target, deploy, limits, state, brow
       .finally(() => pendingRoutes.delete(task));
     pendingRoutes.add(task);
     return task;
-  });
-  const settleRoutes = async ({ seal = false } = {}) => {
-    if (seal) acceptingRoutes = false;
+  };
+  const primaryRouteHandler = (route) => trackRoute(route, handleRoute);
+  await context.route("**/*", primaryRouteHandler);
+  const registerPageRoutes = async (page) => {
+    const guardRouteHandler = (route) => trackRoute(route, async (guardedRoute) => {
+      const request = guardedRoute.request();
+      if (!state.frozen) {
+        state.requests += 1;
+        if (state.requests > limits.maxRequests) {
+          state.coverageTruncated = true;
+          state.reasonCodes.push("request-limit");
+          await routeAction(() => guardedRoute.abort("blockedbyclient"), request, { cleanup: true });
+          return;
+        }
+      }
+      if (acceptingRoutes && !state.frozen) {
+        const delegated = await routeAction(() => guardedRoute.fallback(), request);
+        if (!delegated) await routeAction(() => guardedRoute.abort("blockedbyclient"), request, { cleanup: true });
+        return;
+      }
+      if (state.frozen) {
+        await routeAction(() => guardedRoute.abort("blockedbyclient"), request, { cleanup: true });
+        return;
+      }
+      const path = mapLiveRequestPath(request.url(), target, deploy.paths);
+      if (!path || !SAFE_METHODS.has(request.method())) {
+        state.unexpectedRequests += 1;
+        state.reasonCodes.push("unexpected-request");
+        await routeAction(() => guardedRoute.abort("blockedbyclient"), request, { cleanup: true });
+        return;
+      }
+      markIncomplete(request);
+      const fallback = deploy.exactBytes.get(path);
+      if (!(fallback instanceof Uint8Array)) {
+        await routeAction(() => guardedRoute.abort("blockedbyclient"), request, { cleanup: true });
+        return;
+      }
+      const delivered = await routeAction(() => guardedRoute.fulfill({
+        status: 200,
+        body: Buffer.from(fallback.buffer, fallback.byteOffset, fallback.byteLength),
+        headers: { "content-type": publishContentType(path) },
+      }), request, { cleanup: true });
+      if (delivered && !state.frozen) state.capsuleFallbackRequests += 1;
+      else await routeAction(() => guardedRoute.abort("blockedbyclient"), request, { cleanup: true });
+    });
+    await page.route("**/*", guardRouteHandler);
+  };
+  const settleRoutes = async ({ cleanup = false, until = null } = {}) => {
+    const settlementDeadline = until ?? (cleanup ? Math.max(deadline, Date.now() + ROUTE_CLEANUP_GRACE_MS) : deadline);
     while (pendingRoutes.size) {
-      const outcome = await waitForLiveBrowserDeadline(Promise.allSettled([...pendingRoutes]), deadline);
+      const outcome = await waitForLiveBrowserDeadline(Promise.allSettled([...pendingRoutes]), settlementDeadline);
       if (!outcome.settled) { markTimeLimit(); return false; }
     }
-    const turn = await waitForLiveBrowserDeadline(new Promise((resolve) => setImmediate(resolve)), deadline);
+    const turn = await waitForLiveBrowserDeadline(new Promise((resolve) => setImmediate(resolve)), settlementDeadline);
     if (!turn.settled) { markTimeLimit(); return false; }
     while (pendingRoutes.size) {
-      const outcome = await waitForLiveBrowserDeadline(Promise.allSettled([...pendingRoutes]), deadline);
+      const outcome = await waitForLiveBrowserDeadline(Promise.allSettled([...pendingRoutes]), settlementDeadline);
       if (!outcome.settled) { markTimeLimit(); return false; }
     }
     return true;
   };
-  const stopRoutes = async () => settleRoutes({ seal: true });
-  return { context, settleRoutes, stopRoutes };
+  const sealRoutes = async () => {
+    if (!contextRoutesSealed) {
+      acceptingRoutes = false;
+      contextRoutesSealed = true;
+      try { contextUnroutePromise = context.unrouteAll({ behavior: "wait" }); }
+      catch (_) { contextUnroutePromise = Promise.reject(_); }
+    }
+    const outcome = await waitForLiveBrowserDeadline(contextUnroutePromise, Math.max(deadline, Date.now() + ROUTE_CLEANUP_GRACE_MS));
+    if (!outcome.settled || outcome.error) {
+      markTimeLimit();
+      markIncomplete();
+      return false;
+    }
+    return settleRoutes({ cleanup: true });
+  };
+  const stopRoutes = async (page) => {
+    let settled = await sealRoutes();
+    if (!page || pageRoutesStopped) {
+      const drained = await settleRoutes({ cleanup: true });
+      return settled && drained;
+    }
+    pageRoutesStopped = true;
+    let unrouting;
+    try { unrouting = page.unrouteAll({ behavior: "wait" }); }
+    catch (_) { unrouting = Promise.reject(_); }
+    const outcome = await waitForLiveBrowserDeadline(unrouting, Math.max(deadline, Date.now() + ROUTE_CLEANUP_GRACE_MS));
+    if (!outcome.settled || outcome.error) {
+      markTimeLimit();
+      markIncomplete();
+      settled = false;
+    }
+    const drained = await settleRoutes({ cleanup: true });
+    return settled && drained;
+  };
+  return { context, registerPageRoutes, sealRoutes, settleRoutes, stopRoutes };
 }
 
 function observePage(page, target, deploy, state) {
@@ -463,6 +539,20 @@ async function captureBrowserScreenshot(page, path, deadline) {
   return page.screenshot({ path, fullPage: true, timeout });
 }
 
+async function captureSettledBrowserScreenshot(page, path, state, deadline, settleRoutes) {
+  const captureDeadline = Math.max(deadline, Date.now() + ROUTE_CLEANUP_GRACE_MS);
+  while (Date.now() < captureDeadline) {
+    if (!await settleRoutes({ cleanup: true, until: captureDeadline })) return false;
+    const fallbacksBefore = state.capsuleFallbackRequests;
+    await captureBrowserScreenshot(page, path, captureDeadline);
+    if (!await settleRoutes({ cleanup: true, until: captureDeadline })) return false;
+    if (state.capsuleFallbackRequests === fallbacksBefore) return true;
+  }
+  state.coverageTruncated = true;
+  state.reasonCodes.push("browser-time-limit");
+  return false;
+}
+
 async function closeBrowserContext(context, state) {
   let closing;
   try { closing = context.close(); }
@@ -499,30 +589,29 @@ async function navigateAndMeasure(page, url, state, limits, deadline, settleRout
 
 async function runViewportScenario({ browser, target, deploy, entrypoint, id, viewport, screenshotPath, limits, deadline, browserBudget }) {
   const state = scenarioState(id, viewport);
-  const { context, settleRoutes, stopRoutes } = await createBoundedContext(browser, target, deploy, limits, state, browserBudget, deadline);
+  const { context, registerPageRoutes, sealRoutes, settleRoutes, stopRoutes } = await createBoundedContext(browser, target, deploy, limits, state, browserBudget, deadline);
   let page = null;
+  let screenshotSettled = false;
   try {
     page = await context.newPage();
+    await registerPageRoutes(page);
     observePage(page, target, deploy, state);
     await navigateAndMeasure(page, routeForArchivePath(target, entrypoint, entrypoint), state, limits, deadline, settleRoutes);
     state.htmlPages = 1;
+    await sealRoutes();
     if (screenshotPath) {
-      const fallbacksBefore = state.capsuleFallbackRequests;
-      await captureBrowserScreenshot(page, screenshotPath, deadline);
-      await settleRoutes();
-      if (state.capsuleFallbackRequests !== fallbacksBefore) await captureBrowserScreenshot(page, screenshotPath, deadline);
+      screenshotSettled = await captureSettledBrowserScreenshot(page, screenshotPath, state, deadline, settleRoutes);
     }
   } catch (_) {
     state.reasonCodes.push("navigation-failed");
   } finally {
-    await settleRoutes();
-    if (screenshotPath && page && !existsSync(screenshotPath)) {
-      await captureBrowserScreenshot(page, screenshotPath, deadline).catch(() => {});
-      await settleRoutes();
+    await sealRoutes();
+    if (screenshotPath && page && (!screenshotSettled || !existsSync(screenshotPath))) {
+      screenshotSettled = await captureSettledBrowserScreenshot(page, screenshotPath, state, deadline, settleRoutes).catch(() => false);
     }
-    await stopRoutes();
+    await stopRoutes(page);
     await closeBrowserContext(context, state);
-    await settleRoutes();
+    await settleRoutes({ cleanup: true });
   }
   const result = finishScenario(state);
   state.frozen = true;
@@ -539,9 +628,11 @@ async function runPageAndFragmentScenario({ browser, target, deploy, entrypoint,
     state.frozen = true;
     return result;
   }
-  const { context, settleRoutes, stopRoutes } = await createBoundedContext(browser, target, deploy, limits, state, browserBudget, deadline);
+  const { context, registerPageRoutes, sealRoutes, settleRoutes, stopRoutes } = await createBoundedContext(browser, target, deploy, limits, state, browserBudget, deadline);
+  let page = null;
   try {
-    const page = await context.newPage();
+    page = await context.newPage();
+    await registerPageRoutes(page);
     observePage(page, target, deploy, state);
     const fragments = [];
     for (const path of htmlPaths) {
@@ -594,10 +685,10 @@ async function runPageAndFragmentScenario({ browser, target, deploy, entrypoint,
       }
     }
   } finally {
-    await settleRoutes();
-    await stopRoutes();
+    await sealRoutes();
+    await stopRoutes(page);
     await closeBrowserContext(context, state);
-    await settleRoutes();
+    await settleRoutes({ cleanup: true });
   }
   const result = finishScenario(state);
   state.frozen = true;

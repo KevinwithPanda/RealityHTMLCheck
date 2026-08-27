@@ -4,6 +4,30 @@ All notable changes are documented here. This project follows Semantic Versionin
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-08-27
+
+### Added
+
+- A single 60-second Golden Path across the public homepage and note checker: check an export locally, install the pinned Skill without cloning, repair a separate copy in Codex, then publish and prove the real HTTPS result.
+- No-clone `$skill-installer` handoffs plus first-class `$realitycheck` repair prompts that return the before report, repaired working copy, after report, and detected unresolved decisions without overwriting originals; only a copy that passes the delivery gate is labelled directly usable.
+- A frozen, executable detector-backed repair case that moves the same folder-aware checks from 56/100 with 3 errors and 18 warnings to 100/100 with 18 resolved findings and zero regressions, while explicitly avoiding a claim that every model run will choose identical edits.
+- A permanently public Pages live-receipt path. The project now deploys the canary, obtains LIVE MATCH, republishes the privacy-bounded receipt outside the canary subtree, compares every public receipt byte, and re-proves the canary.
+- A browser-dispatchable maintainer release flow with an explicit `release-tag`, detached tag checkout, exact candidate reuse, and documented npm bootstrap boundary.
+
+### Security
+
+- Pages artifacts are now built as explicit regular-file-only `artifact.tar` payloads with symlink, hardlink, special-file, `.git`, and `.github` rejection plus full SHA-256 read-back. Safe dotfiles such as `.nojekyll` are no longer silently removed by the official uploader's projection.
+- Public receipt preparation runs with read-only contents/actions permissions; both Pages deployments remain dedicated jobs holding only Pages/OIDC permissions.
+- Release publication requires an explicit protected/immutable-tag repository control, rechecks the peeled remote tag in each publishing job, and checks it again immediately before GitHub Release creation or npm publication.
+- A pending receipt page is explicitly not evidence; public entry points no longer claim a current LIVE MATCH until visitors open the actual generated receipt state.
+- Live Chromium proof now seals and drains every context/page route callback—including callbacks dispatched but not yet entered—before freezing scenario status, screenshot provenance, and proof identity. A stalled query-variant preload becomes incomplete with diagnostic fallback instead of a late-mutating green result.
+
+### Changed
+
+- README, Pages, `llms.txt`, and the bilingual online checker now lead with three progressive user outcomes instead of presenting note, deployment, and advanced Web QA as unrelated products.
+- English CLI examples explicitly request English output, while advanced source-checkout commands no longer appear as unexplained copy buttons on the public homepage.
+- First-use actions are ordered as install/update then attach-and-repair; existing Skills are moved to a recoverable timestamped backup before a pinned update, homepage copy prompts follow the selected language, receipt counters are labelled as an illustrative state format, and static risk checks no longer read as a security certification.
+
 ## [0.12.0] - 2026-08-27
 
 ### Added

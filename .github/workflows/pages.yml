@@ -23,8 +23,15 @@ jobs:
       contents: read
     outputs:
       canary-evidence-artifact: ${{ steps.names.outputs.canary-evidence }}
+      initial-pages-artifact: ${{ steps.names.outputs.initial-pages }}
+      initial-pages-sha256: ${{ steps.initial-pages.outputs.sha256 }}
+      live-evidence-artifact: ${{ steps.names.outputs.live-evidence }}
+      public-receipt-pages-artifact: ${{ steps.names.outputs.public-receipt-pages }}
+      final-live-evidence-artifact: ${{ steps.names.outputs.final-live-evidence }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -35,7 +42,12 @@ jobs:
       - name: Freeze the passive publish-canary Artifact name
         id: names
         shell: bash
-        run: echo "canary-evidence=realitycheck-pages-canary-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "canary-evidence=realitycheck-pages-canary-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          echo "initial-pages=github-pages-initial-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          echo "live-evidence=realitycheck-pages-live-receipt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          echo "public-receipt-pages=github-pages-live-receipt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          echo "final-live-evidence=realitycheck-pages-final-live-receipt-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
 
       - name: Verify and materialize the passive publish canary
         id: canary
@@ -60,11 +72,23 @@ jobs:
           mkdir -p -- "$target"
           cp -a -- "$RC_STAGE/." "$target/"
 
-      - name: Prepare GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v4
+      - name: Build and read back the exact regular-file Pages tar
+        id: initial-pages
+        shell: bash
+        run: |
+          mkdir "$RUNNER_TEMP/realitycheck-pages-initial"
+          archive="$RUNNER_TEMP/realitycheck-pages-initial/artifact.tar"
+          bash scripts/package-pages-artifact.sh _site "$archive"
+          echo "sha256=$(sha256sum "$archive" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the exact initial Pages tar
+        uses: actions/upload-artifact@v7
         with:
-          path: _site
-          include-hidden-files: true
+          name: ${{ steps.names.outputs.initial-pages }}
+          path: ${{ runner.temp }}/realitycheck-pages-initial/artifact.tar
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
 
       - name: Preserve the canary materialization receipt
         uses: actions/upload-artifact@v7
@@ -110,6 +134,8 @@ jobs:
         id: deployment
         if: steps.pages.outcome == 'success'
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ needs.build-and-verify.outputs.initial-pages-artifact }}
 
   verify-live-canary:
     needs: [build-and-verify, deploy]
@@ -120,6 +146,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -147,7 +175,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: realitycheck-pages-live-receipt-${{ github.run_id }}-${{ github.run_attempt }}
+          name: ${{ needs.build-and-verify.outputs.live-evidence-artifact }}
           path: .realitycheck/pages-live-receipt
           if-no-files-found: error
           retention-days: 30
@@ -161,3 +189,183 @@ jobs:
             printf '\n' >> "$GITHUB_STEP_SUMMARY"
             cat "$receipt" >> "$GITHUB_STEP_SUMMARY"
           fi
+
+  prepare-public-receipt:
+    needs: [build-and-verify, deploy, verify-live-canary]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+
+      - name: Download the exact tar used by the first deployment
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.build-and-verify.outputs.initial-pages-artifact }}
+          path: .realitycheck/initial-pages-artifact
+
+      - name: Verify and restore the exact first Pages projection
+        shell: bash
+        env:
+          EXPECTED_SHA256: ${{ needs.build-and-verify.outputs.initial-pages-sha256 }}
+        run: |
+          mapfile -t archives < <(find .realitycheck/initial-pages-artifact -type f -name artifact.tar -print)
+          test "${#archives[@]}" -eq 1
+          archive="${archives[0]}"
+          test "$(sha256sum "$archive" | cut -d ' ' -f 1)" = "$EXPECTED_SHA256"
+          mkdir _site
+          tar --extract --file "$archive" --directory _site
+          probe="$RUNNER_TEMP/realitycheck-pages-probe.tar"
+          bash scripts/package-pages-artifact.sh _site "$probe" > /dev/null
+
+      - name: Download the exact successful live receipt
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.build-and-verify.outputs.live-evidence-artifact }}
+          path: .realitycheck/live-receipt-source
+
+      - name: Revalidate and add only the privacy-bounded receipt
+        shell: bash
+        run: |
+          mapfile -t receipts < <(find .realitycheck/live-receipt-source -type f -name deployment-receipt.json -print)
+          test "${#receipts[@]}" -eq 1
+          receipt_dir="$(dirname "${receipts[0]}")"
+          node realitycheck/scripts/audit.mjs validate "$receipt_dir"
+          target="$PWD/_site/evidence/live-canary/latest"
+          case "$target" in "$PWD/_site/evidence/live-canary/"*) ;; *) echo "Unexpected public receipt target" >&2; exit 2 ;; esac
+          rm -rf -- "$target"
+          mkdir -p -- "$target"
+          cp -a -- "$receipt_dir/." "$target/"
+          node realitycheck/scripts/audit.mjs validate "$target"
+
+      - name: Build and read back the final public-receipt Pages tar
+        shell: bash
+        run: |
+          mkdir "$RUNNER_TEMP/realitycheck-pages-with-receipt"
+          bash scripts/package-pages-artifact.sh _site "$RUNNER_TEMP/realitycheck-pages-with-receipt/artifact.tar"
+
+      - name: Upload the final public-receipt Pages tar
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ needs.build-and-verify.outputs.public-receipt-pages-artifact }}
+          path: ${{ runner.temp }}/realitycheck-pages-with-receipt/artifact.tar
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+  deploy-public-receipt:
+    needs: [build-and-verify, prepare-public-receipt]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page-url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+
+      - name: Configure GitHub Pages for receipt publication
+        uses: actions/configure-pages@v6
+
+      - name: Deploy the public receipt without changing the canary subtree
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ needs.build-and-verify.outputs.public-receipt-pages-artifact }}
+
+  verify-public-receipt:
+    needs: [build-and-verify, deploy-public-receipt]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+
+      - name: Download the exact passive-canary publish run
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.build-and-verify.outputs.canary-evidence-artifact }}
+          path: .realitycheck/downloaded-pages-canary
+
+      - name: Download the receipt that should now be public
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.build-and-verify.outputs.live-evidence-artifact }}
+          path: .realitycheck/live-receipt-source
+
+      - name: Prove every public receipt artifact byte
+        shell: bash
+        env:
+          RC_PAGE_URL: ${{ needs.deploy-public-receipt.outputs.page-url }}
+        run: |
+          mapfile -t receipts < <(find .realitycheck/live-receipt-source -type f -name deployment-receipt.json -print)
+          test "${#receipts[@]}" -eq 1
+          receipt_dir="$(dirname "${receipts[0]}")"
+          mkdir -p .realitycheck/downloaded-public-receipt
+          count=0
+          while IFS= read -r -d '' file; do
+            relative="${file#"$receipt_dir/"}"
+            case "$relative" in (*[!A-Za-z0-9._/-]*|/*|*..*) echo "Unsafe receipt path: $relative" >&2; exit 2 ;; esac
+            count=$((count + 1))
+            test "$count" -le 20
+            destination=".realitycheck/downloaded-public-receipt/$relative"
+            mkdir -p "$(dirname "$destination")"
+            matched=false
+            for attempt in 1 2 3 4 5; do
+              rm -f -- "$destination"
+              if curl --fail --silent --show-error \
+                --proto '=https' --proto-redir '=https' --max-redirs 0 --max-time 12 \
+                --retry 1 --retry-delay 1 --retry-max-time 12 --retry-all-errors \
+                --output "$destination" \
+                "${RC_PAGE_URL%/}/evidence/live-canary/latest/$relative" \
+                && cmp "$file" "$destination"; then
+                matched=true
+                break
+              fi
+              sleep 2
+            done
+            test "$matched" = true
+          done < <(find "$receipt_dir" -type f -print0 | sort -z)
+          test "$count" -ge 6
+          node realitycheck/scripts/audit.mjs validate .realitycheck/downloaded-public-receipt
+
+      - name: Re-prove the canary after receipt publication
+        env:
+          RC_PAGE_URL: ${{ needs.deploy-public-receipt.outputs.page-url }}
+        run: |
+          target="${RC_PAGE_URL%/}/labs/publish-demo-note/"
+          node realitycheck/scripts/audit.mjs verify-deploy \
+            .realitycheck/downloaded-pages-canary \
+            "$target" \
+            --allow-remote \
+            --output .realitycheck/pages-final-live-receipt
+
+      - name: Preserve the final post-publication live proof
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ needs.build-and-verify.outputs.final-live-evidence-artifact }}
+          path: .realitycheck/pages-final-live-receipt
+          if-no-files-found: error
+          retention-days: 30

@@ -18,7 +18,7 @@ jobs:
       actions: read
       pages: write
       id-token: write
-    uses: KevinwithPanda/RealityHTMLCheck/.github/workflows/verified-pages.yml@v0.12.0
+    uses: KevinwithPanda/RealityHTMLCheck/.github/workflows/verified-pages.yml@v0.13.0
     with:
       path: exported-site
       summary-language: en

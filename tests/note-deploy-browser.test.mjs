@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
@@ -160,7 +161,7 @@ test("query-variant response hashing is bounded when headers arrive but the body
   }
 });
 
-test("non-blocking preload verification settles before proof status and screenshot provenance are frozen", async () => {
+test("stalled query preload handlers settle before viewport status, screenshot source, and proof ID are frozen", async () => {
   const encoder = new TextEncoder();
   const index = encoder.encode('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pending preload</title><link rel="preload" as="image" href="slow.png?v=1"></head><body><main><h1>Pending preload</h1><p>A non-blocking resource must finish verification before this proof is returned.</p></main></body></html>');
   const image = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64");
@@ -186,8 +187,20 @@ test("non-blocking preload verification settles before proof status and screensh
       limits: { browserRequestTimeoutMs: 20, maxRunTimeMs: 5000 },
     });
     assert.equal(proof.status, "incomplete");
-    assert.ok(proof.scenarios.some((scenario) => scenario.capsuleFallbackRequests > 0));
-    assert.ok(proof.screenshots.some((item) => item.source === "diagnostic-with-capsule-fallback"));
+    assert.equal(proof.summary.incomplete, 3);
+    for (const scenario of proof.scenarios) {
+      assert.equal(scenario.status, "incomplete", scenario.id);
+      assert.equal(scenario.coverageTruncated, true, scenario.id);
+      assert.ok(scenario.reasonCodes.includes("response-verification-incomplete"), scenario.id);
+      assert.ok(scenario.capsuleFallbackRequests > 0, scenario.id);
+    }
+    for (const screenshot of proof.screenshots) {
+      const scenarioId = screenshot.role === "desktop" ? "live-desktop" : "live-mobile-375";
+      assert.ok(proof.scenarios.find((scenario) => scenario.id === scenarioId)?.capsuleFallbackRequests > 0);
+      assert.equal(screenshot.source, "diagnostic-with-capsule-fallback", screenshot.role);
+    }
+    const { proofId, ...contract } = proof;
+    assert.equal(proofId, `sha256:${createHash("sha256").update(JSON.stringify(contract)).digest("hex")}`);
     const frozen = JSON.stringify(proof);
     await new Promise((resolve) => setTimeout(resolve, 100));
     assert.equal(JSON.stringify(proof), frozen, "returned proof must not mutate after pending route handlers settle");

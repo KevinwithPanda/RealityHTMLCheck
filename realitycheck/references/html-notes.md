@@ -85,7 +85,7 @@ node <skill-dir>/scripts/audit.mjs note publish <html-file|directory|zip> \
 An installed Skill copy intentionally contains no vendored `node_modules`. If local `playwright-core` resolution is unavailable, invoke the version-pinned GitHub package instead:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck publish <html-file|directory|zip>
 ```
 
@@ -109,7 +109,7 @@ Only `ready` or `warnings` with every required browser gate complete may use `*.
 When the user wants a repeatable export pipeline rather than a local one-off command, use the Composite Action:
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.13.0
   id: realitycheck
   with:
     kind: publish
@@ -135,7 +135,7 @@ Use the checked-in `examples/github-actions/verified-publish.yml` as the copy-re
 When a host or Pages artifact requires a directory rather than the capsule ZIP, do not unpack the original export or reuse the pre-verification working tree. Run:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck materialize .realitycheck/publish/<RUN> \
   --output .realitycheck/staged-site
 ```
@@ -149,7 +149,7 @@ The Composite Action accepts an optional `materialize-output` only in `kind: pub
 After the user or an explicitly permissioned workflow deploys the materialized directory, bind the live URL back to the complete publish run:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck verify-deploy \
   .realitycheck/publish/<RUN> \
   https://user.example/notes/ \
@@ -179,7 +179,7 @@ When the user invokes the Skill with an explicit request to check and repair a b
 2. Use the emitted `repaired` folder, which preserves the bounded relative note-and-asset structure and applies safe metadata fixes. Treat the request as authorization to edit that copy, not the supplied source.
 3. Inspect each remaining finding and its source context, and make only high-confidence changes whose intended result can be established from the note folder.
 4. Rerun the same note command against the repaired folder with the immutable before `report.json` passed as `--baseline`; retain the separate after report plus `comparison.html` and `comparison.json`.
-5. Return both reports, both comparison artifacts, the repaired entry HTML or folder, the change summary, and unresolved decisions.
+5. Return both reports, both comparison artifacts, the repaired entry HTML or folder, the change summary, and every detected unresolved decision.
 
 Do not claim the repaired output is complete when an attachment is unavailable, a factual description would need to be invented, or the after report still contains errors. A remaining warning may be acceptable for use only when it is disclosed and does not break the user's stated sharing target.
 

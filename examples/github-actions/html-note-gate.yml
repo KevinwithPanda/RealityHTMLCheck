@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Check sharing readiness and preserve the report
-        uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
+        uses: KevinwithPanda/RealityHTMLCheck@v0.13.0
         with:
           kind: note
           path: exported-notes

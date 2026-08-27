@@ -59,9 +59,12 @@ jobs:
     outputs:
       evidence-artifact: ${{ steps.names.outputs.evidence }}
       stage-receipt-artifact: ${{ steps.names.outputs.stage-receipt }}
+      pages-artifact: ${{ steps.names.outputs.pages-artifact }}
     steps:
       - name: Check out the caller repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Freeze artifact names
         id: names
@@ -69,10 +72,11 @@ jobs:
         run: |
           echo "evidence=realitycheck-pages-evidence-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
           echo "stage-receipt=realitycheck-pages-stage-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          echo "pages-artifact=github-pages-verified-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
 
       - name: Verify the capsule and materialize only its exact bytes
         id: realitycheck
-        uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
+        uses: KevinwithPanda/RealityHTMLCheck@v0.13.0
         with:
           kind: publish
           path: ${{ inputs.path }}
@@ -82,11 +86,37 @@ jobs:
           artifact-name: ${{ steps.names.outputs.evidence }}
           materialize-output: .realitycheck/pages-stage-${{ github.run_id }}-${{ github.run_attempt }}
 
-      - name: Upload the exact static-host directory as the Pages artifact
-        uses: actions/upload-pages-artifact@v4
+      - name: Build and read back an exact regular-file Pages tar
+        shell: bash
+        env:
+          RC_STAGE: ${{ steps.realitycheck.outputs.publish-directory-path }}
+        run: |
+          test -n "$RC_STAGE" && test -d "$RC_STAGE"
+          test -z "$(find -P "$RC_STAGE" -type l -print -quit)" || { echo "Verified stage contains a symbolic link" >&2; exit 2; }
+          test -z "$(find -P "$RC_STAGE" ! -type f ! -type d -print -quit)" || { echo "Verified stage contains a non-regular entry" >&2; exit 2; }
+          test -z "$(find -P "$RC_STAGE" -type f -links +1 -print -quit)" || { echo "Verified stage contains a hard-linked file" >&2; exit 2; }
+          mkdir "$RUNNER_TEMP/realitycheck-pages-artifact" "$RUNNER_TEMP/realitycheck-pages-readback"
+          (
+            cd "$RC_STAGE"
+            find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum --binary
+          ) > "$RUNNER_TEMP/realitycheck-pages-source.sha256"
+          tar --directory "$RC_STAGE" --create --file "$RUNNER_TEMP/realitycheck-pages-artifact/artifact.tar" .
+          tar --extract --file "$RUNNER_TEMP/realitycheck-pages-artifact/artifact.tar" --directory "$RUNNER_TEMP/realitycheck-pages-readback"
+          test -z "$(find -P "$RUNNER_TEMP/realitycheck-pages-readback" -type l -print -quit)"
+          (
+            cd "$RUNNER_TEMP/realitycheck-pages-readback"
+            find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum --binary
+          ) > "$RUNNER_TEMP/realitycheck-pages-readback.sha256"
+          cmp "$RUNNER_TEMP/realitycheck-pages-source.sha256" "$RUNNER_TEMP/realitycheck-pages-readback.sha256"
+
+      - name: Upload the exact Pages tar
+        uses: actions/upload-artifact@v7
         with:
-          path: ${{ steps.realitycheck.outputs.publish-directory-path }}
-          include-hidden-files: true
+          name: ${{ steps.names.outputs.pages-artifact }}
+          path: ${{ runner.temp }}/realitycheck-pages-artifact/artifact.tar
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
 
       - name: Preserve the materialization receipt outside the public site
         uses: actions/upload-artifact@v7
@@ -114,6 +144,8 @@ jobs:
       - name: Deploy the verified Pages artifact
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ needs.verify-and-stage.outputs.pages-artifact }}
 
   verify-live:
     needs: [verify-and-stage, deploy]
@@ -144,7 +176,7 @@ jobs:
       - name: Bind the live URL to the verified capsule
         shell: bash
         run: |
-          npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+          npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
             realityhtmlcheck verify-deploy \
             .realitycheck/downloaded-publish-run \
             "${{ needs.deploy.outputs.page-url }}" \

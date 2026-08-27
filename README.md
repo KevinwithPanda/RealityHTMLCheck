@@ -6,9 +6,7 @@
 
 # RealityCheck
 
-**From AI export ZIP to the real live URL: prove that the package you checked is the site users received.**
-
-Build a verified passive-static package, expose exact blockers instead of a fake green check, and bind an authorized HTTPS deployment back to the same bytes.
+**Check an HTML export locally, repair a separate copy in Codex, then prove the published HTTPS site serves the verified bytes.**
 
 [中文文档](docs/README.zh-CN.md) · [Try the HTML note checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html) · [Copy verified Pages](examples/github-actions/verified-pages.yml) · [Inspect reproducible note evidence](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html) · [Open a real Web report](https://kevinwithpanda.github.io/RealityHTMLCheck/reference/report.html)
 
@@ -19,9 +17,37 @@ Build a verified passive-static package, expose exact blockers instead of a fake
 
 </div>
 
+## Start here: three paths
+
+Choose your next result: **Check online → Repair in Codex—no clone → Publish and prove.**
+
+1. **Check online.** Open the [zero-upload HTML checker](https://kevinwithpanda.github.io/RealityHTMLCheck/note.html), choose the original export ZIP, folder, or HTML file, and get a sharing decision plus exact findings. No account, server, or script execution is required.
+
+2. **Repair in Codex—no clone.** Paste this into Codex:
+
+   ```text
+   Use $skill-installer to install RealityCheck from https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.13.0/realitycheck. If the skill already exists, inspect its pinned version first. If it is v0.13.0, change nothing. If it is older, move it—do not delete it—to a timestamped realitycheck backup outside the skills directory, then install v0.13.0. Stop and report instead of overwriting if a safe backup cannot be made. Tell me the installed version; the Skill will be available on my next turn.
+   ```
+
+   On the next turn, attach the export and paste:
+
+   ```text
+   Use $realitycheck to check and repair the HTML note or export folder I attach. Do not overwrite the originals. Return the before technical report, the repaired working copy, the after report, and every detected unresolved decision. Label the copy directly usable only if the after verification meets the Skill's delivery gate.
+   ```
+
+   Inspect the [reproducible, detector-backed 56→100 repair case](https://kevinwithpanda.github.io/RealityHTMLCheck/labs/skill-repair-case/) first: the original stays unchanged, 18 findings resolve from local evidence, the repaired folder reaches 100/100, and the baseline comparison reports zero regressions. It demonstrates the evidence contract; it does not claim that every Codex run will choose identical edits.
+
+3. **Publish and prove.** Build a browser-verified passive-static capsule, deploy only its materialized bytes, then compare the real HTTPS URL with that exact capsule:
+
+   ```bash
+   npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" realityhtmlcheck publish ./my-notes --language en
+   ```
+
+   For GitHub Pages, copy the [permission-separated verified workflow](examples/github-actions/verified-pages.yml). Inspect the [public live-receipt status](https://kevinwithpanda.github.io/RealityHTMLCheck/evidence/live-canary/latest/deployment-receipt.html): a successful workflow replaces the explicit pending page only after the first LIVE MATCH, republishes the receipt, compares every public evidence byte, and rechecks the unchanged canary.
+
 > **Opens locally ≠ portable. Compiles ≠ works for users.**
 
-RealityCheck is a local-first checker, Codex Skill, and evidence-first Web audit tool for the gap between valid HTML and usable HTML.
+RealityCheck joins these three paths into one evidence-bound workflow. The online checker gives the fastest private diagnosis; the Skill makes judgment-dependent repairs in a separate copy; publish and live verification prove the handoff without taking control of a cloud account. Real-browser Web application QA remains an advanced mode.
 
 ## Two problems worth solving
 
@@ -88,18 +114,9 @@ The public evidence is deliberately layered: four checked-in HTML files were emi
 | Verified Pages + live receipt | Teams that need a shareable URL | Deploys only a materialized verified capsule in a separately permissioned job, then compares the returned HTTPS site with the capsule |
 | `$realitycheck` Skill | End-to-end work in Codex | Inspect, create a working copy, repair high-confidence issues, recheck, and return the usable output plus both reports |
 
-### The end-to-end Skill workflow
+### The end-to-end no-clone Skill workflow
 
-Install the Skill once from a clone of this repository:
-
-```bash
-git clone --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git
-cd RealityHTMLCheck
-python scripts/install-skill.py
-python scripts/install-skill.py --status
-```
-
-Reload Codex if necessary, then ask once:
+Use the `$skill-installer` request in **Start here** to install or safely update the exact `v0.13.0/realitycheck` directory directly from GitHub. No repository checkout or Python command is required. An older install is moved to a timestamped backup outside the active skills directory before the pinned version is installed; if that backup cannot be made, the request stops instead of overwriting. The Skill becomes available on the next Codex turn; then ask once:
 
 ```text
 Use $realitycheck to check and repair this HTML note folder.
@@ -130,6 +147,15 @@ For inspection only:
 Use $realitycheck to audit this app. Do not modify source.
 ```
 
+Developers who need to inspect or change the Skill source can use the manual fallback. This is not the recommended first-use path:
+
+```bash
+git clone --branch v0.13.0 --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git
+cd RealityHTMLCheck
+python scripts/install-skill.py
+python scripts/install-skill.py --status
+```
+
 ## Try it in one minute
 
 ### No-install HTML note check
@@ -157,8 +183,8 @@ This folder ZIP is a **verified safe-metadata working copy**, not a fully repair
 Turn one HTML file, folder, or ordinary STORE/DEFLATE export ZIP into a static-host handoff:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
-  realityhtmlcheck publish ./my-notes
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
+  realityhtmlcheck publish ./my-notes --language en
 ```
 
 This is different from the online checker's safe-metadata working ZIP. The local publish command:
@@ -171,12 +197,12 @@ This is different from the online checker's safe-metadata working ZIP. The local
 
 Only a completed gate is named `*.realitycheck-publish.zip`. Static-only, unsupported-browser, or failed results are named `*.realitycheck-working-copy.zip` and retain the exact blockers. Netlify Drop and Cloudflare Pages Direct Upload can accept the successful ZIP/folder subject to their account limits; choose Cloudflare's project type deliberately because a Direct Upload project cannot later switch to Git integration. GitHub Pages requires extracting the ZIP into a configured publishing source or deploying the directory with Actions. RealityCheck never signs in, uploads, or deploys on the user's behalf.
 
-Try the [checked-in publish demo source](https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.12.0/examples/publish-demo-note) or [open its static live preview](https://kevinwithpanda.github.io/RealityHTMLCheck/labs/publish-demo-note/). The Pages workflow now deploys this canary only from its materialized verified ZIP and rechecks the public URL after deployment. The proof remains a bounded Chromium/passive-static, point-in-time claim—not proof of malicious-code absence, factual accuracy, complete accessibility/SEO, every browser, backend behavior, or permanent availability.
+Try the [checked-in publish demo source](https://github.com/KevinwithPanda/RealityHTMLCheck/tree/v0.13.0/examples/publish-demo-note) or [open its static live preview](https://kevinwithpanda.github.io/RealityHTMLCheck/labs/publish-demo-note/). The Pages workflow now deploys this canary only from its materialized verified ZIP and rechecks the public URL after deployment. The proof remains a bounded Chromium/passive-static, point-in-time claim—not proof of malicious-code absence, factual accuracy, complete accessibility/SEO, every browser, backend behavior, or permanent availability.
 
 Every emitted note/publish JSON has a strict contract. Independently re-read the ZIP, sidecar, public manifest, receipt, technical report, and both browser proofs with:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck validate .realitycheck/publish/<RUN>
 ```
 
@@ -185,7 +211,7 @@ npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
 For recurring AI/export pipelines, remove the local Node/browser step entirely:
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.13.0
   id: realitycheck
   with:
     kind: publish
@@ -199,7 +225,7 @@ Set the optional `materialize-output` to an absent directory relative to `workin
 
 `upload-artifact: true` transfers the **complete HTML, images, styles, and attachments** to GitHub Artifact storage. Review repository visibility and retention, or set it to `false`. The Action requests only `contents: read`; it never deploys, requests Pages/OIDC permissions, or receives cloud-provider tokens. The GitHub Artifact digest and the capsule ZIP SHA-256 are deliberately separate outputs.
 
-[Copy the complete workflow](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.12.0/examples/github-actions/verified-publish.yml).
+[Copy the complete workflow](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.13.0/examples/github-actions/verified-publish.yml).
 
 ### Verify the real live URL
 
@@ -208,7 +234,7 @@ A locally verified ZIP is not yet proof that a host serves the same deployment. 
 After deploying a successful capsule, run:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck verify-deploy \
   .realitycheck/publish/<RUN> \
   https://user.github.io/repository/ \
@@ -229,27 +255,27 @@ The receipt is point-in-time evidence. It does not claim permanent availability,
 When a static host needs a directory, never deploy the original source tree while claiming it is the verified capsule. Materialize the exact final ZIP into a new regular-file-only tree:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck materialize .realitycheck/publish/<RUN> \
   --output .realitycheck/staged-site
 ```
 
-For GitHub Pages, use the [permission-separated verified Pages caller](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.12.0/examples/github-actions/verified-pages.yml). Its first job has `contents: read` and makes only the materialized capsule eligible for the Pages artifact; the separate `github-pages` environment job owns `pages: write` / OIDC; a third read-only job verifies the returned public URL. The reusable workflow itself refuses pull requests and non-default-branch pushes, while the provided caller is manual-only.
+For GitHub Pages, use the [permission-separated verified Pages caller](https://github.com/KevinwithPanda/RealityHTMLCheck/blob/v0.13.0/examples/github-actions/verified-pages.yml). Its first job has `contents: read` and makes only the materialized capsule eligible for the Pages artifact; the separate `github-pages` environment job owns `pages: write` / OIDC; a third read-only job verifies the returned public URL. The reusable workflow itself refuses pull requests and non-default-branch pushes, while the provided caller is manual-only.
 
 This CI path is not zero-upload: it separately stores the complete publish evidence run (including the full site bytes), the stage receipt, and a live-evidence Artifact containing the browser proof plus two provenance-labelled diagnostic screenshots. The live Artifact is retained for 30 days; ordinary evidence retention follows repository settings. Review repository visibility, Artifact retention, Pages publicity, and `github-pages` environment protection before enabling it.
 
 ### No-clone note CLI
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
-  realityhtmlcheck note ./my-notes
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
+  realityhtmlcheck note ./my-notes --language en
 ```
 
 Open `.realitycheck/notes/latest.html`. To generate only the three conservative metadata repairs without touching the originals:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
-  realityhtmlcheck note ./my-notes --fix-safe
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
+  realityhtmlcheck note ./my-notes --fix-safe --language en
 ```
 
 Use `--fail-on error` or `--fail-on warning` in an export pipeline. This command uses a tagged GitHub package and leaves no project-local install. The shorter registry command `npx realityhtmlcheck ...` is fully packed and isolated-consumer tested, but it must not be treated as public until the first intentional npm bootstrap is visible at `npmjs.com/package/realityhtmlcheck`.
@@ -257,7 +283,7 @@ Use `--fail-on error` or `--fail-on warning` in an export pipeline. This command
 ### HTML note gate in GitHub Actions
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.13.0
   with:
     kind: note
     path: exported-notes
@@ -272,10 +298,11 @@ Note mode does not start a server, install browser dependencies, execute note sc
 For the second and later export, compare against an immutable earlier report:
 
 ```bash
-npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.12.0" \
+npx --yes --package="github:KevinwithPanda/RealityHTMLCheck#v0.13.0" \
   realityhtmlcheck note ./my-notes \
   --baseline .realitycheck/notes/PRIOR-RUN/report.json \
-  --fail-on error
+  --fail-on error \
+  --language en
 ```
 
 The comparison report separates **new, resolved, worsened, persistent, and unverified** findings. Baseline mode gates only new/worsened/unverified regressions at the requested level; persistent known debt remains visible without keeping CI permanently red. Removing an HTML file or shrinking the checked package is unverified, never a fake resolution.
@@ -284,15 +311,18 @@ For mixed folders, repeat `--exclude-html "archive/**"` or pass newline-separate
 
 ### Real-browser Web audit
 
-With an authorized local app already running:
+After the no-clone Skill installation above, ask Codex:
 
-```bash
-npm run audit -- http://localhost:3000
+```text
+Use $realitycheck to audit my authorized local app at http://localhost:3000. Do not modify source. Return the bilingual report and unsupported coverage.
 ```
 
-For the self-contained intentionally broken demo:
+Developers testing the repository's self-contained intentionally broken demo can use a source checkout:
 
 ```bash
+git clone --branch v0.13.0 --depth 1 https://github.com/KevinwithPanda/RealityHTMLCheck.git
+cd RealityHTMLCheck
+npm install
 npm run demo
 ```
 
@@ -319,27 +349,24 @@ The static report can copy one finding or a selected batch as a repair task. Tha
 
 ## Policy without a wall of configuration
 
-Start with one transparent preset:
+With the Skill installed, start with one transparent preset without memorizing repository commands:
 
-```bash
-npm run realitycheck -- profiles
-npm run realitycheck -- init --profile product --base-url http://localhost:3000
-npm run realitycheck -- plan --config realitycheck.config.json
+```text
+Use $realitycheck to initialize the product Web audit profile for http://localhost:3000, explain the resolved policy, and do not open the browser yet.
 ```
 
 `starter`, `product`, and `strict` are editable starting policies, not compliance certificates. `plan` shows the exact route/scenario ceiling, enabled detectors, retained data, and safety boundaries before opening a browser.
 
-For regression proof:
+For regression proof, name the immutable before report in the same Codex task:
 
-```bash
-npm run audit -- http://localhost:3000 \
-  --compare .realitycheck/runs/BEFORE/report.json
+```text
+Use $realitycheck to audit http://localhost:3000 and compare the result with .realitycheck/runs/BEFORE/report.json. Do not modify source.
 ```
 
 For a reusable GitHub Action:
 
 ```yaml
-- uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
+- uses: KevinwithPanda/RealityHTMLCheck@v0.13.0
   with:
     url: http://127.0.0.1:3000
     mode: quick
@@ -361,7 +388,7 @@ RealityCheck reports exactly what it tested, what failed, and what it could not 
 
 ## Project status
 
-RealityCheck is a **v0.12.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a Pages canary that is packaged, materialized, deployed, and checked again at its public URL.
+RealityCheck is a **v0.13.0 Beta** under the [MIT License](LICENSE). The repository includes automated Python and Node tests, intentionally broken/fixed fixtures, GitHub validation, and a Pages canary that is packaged, materialized, deployed, and checked again at its public URL.
 
 - [Representative export evidence and explicit compatibility boundary](https://kevinwithpanda.github.io/RealityHTMLCheck/compatibility.html)
 - [HTML note Action and browser Action](action.yml)

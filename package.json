@@ -1,6 +1,6 @@
 {
   "name": "realityhtmlcheck",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Check and repair AI HTML notes, build exact-browser-verified publish packages, and prove the real live URL serves the same bytes.",
   "type": "module",
   "bin": {
@@ -15,6 +15,7 @@
     "demo": "node realitycheck/scripts/audit.mjs demo",
     "site:build": "node scripts/build-pages.mjs",
     "package:smoke": "node scripts/verify-packed-package.mjs",
+    "skill-case:verify": "node scripts/verify-skill-repair-case.mjs",
     "test": "python -m unittest discover -s tests -v && node --test --test-concurrency=1 tests/*.test.mjs",
     "test:python": "python -m unittest discover -s tests -v",
     "test:node": "node --test --test-concurrency=1 tests/*.test.mjs"

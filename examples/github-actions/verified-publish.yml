@@ -19,7 +19,7 @@ jobs:
 
       - name: Repair only provable issues and verify the exact final ZIP
         id: realitycheck
-        uses: KevinwithPanda/RealityHTMLCheck@v0.12.0
+        uses: KevinwithPanda/RealityHTMLCheck@v0.13.0
         with:
           kind: publish
           path: exported-site

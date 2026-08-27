@@ -15,7 +15,10 @@ for (const button of document.querySelectorAll("[data-copy]")) {
   button.addEventListener("click", async () => {
     const language = document.documentElement.lang;
     try {
-      await navigator.clipboard.writeText(button.dataset.copy);
+      const copyValue = language === "zh-CN" && button.dataset.copyZhCn
+        ? button.dataset.copyZhCn
+        : button.dataset.copy;
+      await navigator.clipboard.writeText(copyValue);
       toast.textContent = language === "zh-CN" ? "命令已复制。" : "Command copied.";
     } catch (_) {
       toast.textContent = language === "zh-CN" ? "浏览器阻止了复制，请手动复制。" : "Copy was blocked; copy the command manually.";

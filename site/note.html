@@ -14,14 +14,14 @@
   <link rel="canonical" href="https://kevinwithpanda.github.io/RealityHTMLCheck/note.html">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="manifest" href="site.webmanifest">
-  <link rel="stylesheet" href="note.css?v=0.12.0">
+  <link rel="stylesheet" href="note.css?v=0.13.0">
   <title>RealityCheck Note · Check AI-generated HTML notes locally</title>
 </head>
 <body>
   <header class="topbar">
     <div class="wrap topbar-inner">
       <a class="brand" href="index.html"><img src="assets/icon.svg" alt=""><span>RealityCheck</span><small>NOTE</small></a>
-      <a class="back" href="index.html" data-en="Web audit" data-zh-cn="网页审计">Web audit</a>
+      <a class="back" href="index.html" data-en="Product home" data-zh-cn="产品首页">Product home</a>
       <div class="language" role="group" aria-label="Language">
         <button type="button" data-language="en" aria-pressed="true">EN</button>
         <button type="button" data-language="zh-CN" aria-pressed="false">中文</button>
@@ -36,19 +36,18 @@
         <h1 data-en="Check an HTML note before you share it." data-zh-cn="分享 HTML 笔记前，先检查一遍。">Check an HTML note before you share it.</h1>
         <p class="lede" data-en="See what is wrong, why it matters, and the safest next step. Your note is read only in this browser." data-zh-cn="直接看到哪里有问题、为什么有影响、下一步怎么改。笔记只在当前浏览器读取。">See what is wrong, why it matters, and the safest next step. Your note is read only in this browser.</p>
         <div class="trust"><span data-en="No upload" data-zh-cn="不上传">No upload</span><span data-en="No account" data-zh-cn="不登录">No account</span><span data-en="Never overwrites the original" data-zh-cn="不覆盖原文件">Never overwrites the original</span></div>
-        <p class="publish-handoff"><strong data-en="Need proof after deployment?" data-zh-cn="上线后还要证明？">Need proof after deployment?</strong> <span data-en="Build a v0.12 verified capsule, then bind the live HTTPS URL to its exact bytes with verify-deploy—or use the permission-separated Pages workflow." data-zh-cn="先生成 v0.12 可验证发布包，再用 verify-deploy 把线上 HTTPS URL 与其精确字节绑定；也可直接使用权限隔离的 Pages 工作流。">Build a v0.12 verified capsule, then bind the live HTTPS URL to its exact bytes with verify-deploy—or use the permission-separated Pages workflow.</span> <a href="https://github.com/KevinwithPanda/RealityHTMLCheck#verify-the-real-live-url" data-en="See the live-proof flow →" data-zh-cn="查看线上证明流程 →">See the live-proof flow →</a></p>
       </div>
 
       <div class="drop-zone" id="drop-zone" aria-labelledby="checker-title">
         <div class="drop-icon" aria-hidden="true">HTML</div>
         <h2 id="checker-title" data-en="Choose what to check" data-zh-cn="选择要检查的内容">Choose what to check</h2>
         <p data-en="Use the original export ZIP or folder so images, styles, attachments, and linked notes can be verified together." data-zh-cn="可直接选择原始导出 ZIP 或文件夹，以便一起核验图片、样式、附件和关联笔记。">Use the original export ZIP or folder so images, styles, attachments, and linked notes can be verified together.</p>
+        <button type="button" class="demo-link" id="demo-button" data-en="No file yet? Try a built-in export ZIP" data-zh-cn="还没有文件？体验内置导出 ZIP">No file yet? Try a built-in export ZIP</button>
         <div class="picker-actions">
           <label class="button primary"><span data-en="Choose export ZIP" data-zh-cn="选择导出 ZIP">Choose export ZIP</span><input id="zip-picker" type="file" accept=".zip,application/zip,application/x-zip-compressed"></label>
           <label class="button"><span data-en="Choose note folder" data-zh-cn="选择笔记文件夹">Choose note folder</span><input id="folder-picker" type="file" webkitdirectory multiple></label>
           <label class="button"><span data-en="Choose HTML file" data-zh-cn="选择 HTML 文件">Choose HTML file</span><input id="file-picker" type="file" accept=".html,.htm,text/html" multiple></label>
         </div>
-        <button type="button" class="demo-link" id="demo-button" data-en="No file yet? Try a built-in export ZIP" data-zh-cn="还没有文件？体验内置导出 ZIP">No file yet? Try a built-in export ZIP</button>
         <small data-en="Or drop one ZIP / HTML files here · ZIP stays local and is never executed" data-zh-cn="也可拖入一个 ZIP / HTML 文件 · ZIP 只在本地读取且绝不执行">Or drop one ZIP / HTML files here · ZIP stays local and is never executed</small>
       </div>
     </section>
@@ -66,12 +65,15 @@
       <div class="summary" id="summary"></div>
       <div class="result-actions">
         <button type="button" class="button primary" id="download-folder-zip" hidden data-en="Build safe-metadata folder ZIP" data-zh-cn="生成安全元数据文件夹 ZIP">Build safe-metadata folder ZIP</button>
-        <button type="button" class="button primary" id="copy-all" data-en="Copy repair task for AI" data-zh-cn="复制给 AI 的修复任务">Copy repair task for AI</button>
+        <button type="button" class="button primary" id="copy-skill-install" data-en="1 · Install or safely update Skill" data-zh-cn="1 · 安装或安全升级 Skill">1 · Install or safely update Skill</button>
+        <button type="button" class="button" id="copy-skill-repair" data-en="2 · Attach export and copy repair request" data-zh-cn="2 · 附上导出文件并复制修复请求">2 · Attach export and copy repair request</button>
+        <button type="button" class="button" id="copy-all" data-en="Copy finding-only AI task" data-zh-cn="复制仅包含问题的 AI 任务">Copy finding-only AI task</button>
         <button type="button" class="button" id="download-report" data-en="Download shareable report" data-zh-cn="下载可分享报告">Download shareable report</button>
         <button type="button" class="button" id="download-json" data-en="Download evidence" data-zh-cn="下载检查证据">Download evidence</button>
         <label class="button baseline-button"><span data-en="Compare prior evidence" data-zh-cn="对比上次证据">Compare prior evidence</span><input id="baseline-picker" type="file" accept=".json,application/json"></label>
-        <span data-en="Online ZIP repair is a safe-metadata working copy, not a publish or live-deployment verdict. Use the v0.12 local command or Action for a verified capsule, then verify-deploy for point-in-time live proof. Originals are never overwritten." data-zh-cn="在线 ZIP 修复是安全元数据工作副本，不是发布或线上部署结论。请用 v0.12 本地命令或 Action 生成可验证发布包，再用 verify-deploy 获得时间点线上证明。原文件绝不覆盖。">Online ZIP repair is a safe-metadata working copy, not a publish or live-deployment verdict. Use the v0.12 local command or Action for a verified capsule, then verify-deploy for point-in-time live proof. Originals are never overwritten.</span>
+        <span data-en="Online ZIP repair is a safe-metadata working copy, not a publish or live-deployment verdict. Browser repair stays limited to doctype, language, and early UTF-8 metadata. The Skill may make broader justified edits only inside a separate copy." data-zh-cn="在线 ZIP 修复是安全元数据工作副本，不是发布或线上部署结论。浏览器修复仍仅限 doctype、文档语言和前置 UTF-8 元数据。Skill 只会在独立副本中进行更广泛且有依据的修改。">Online ZIP repair is a safe-metadata working copy, not a publish or live-deployment verdict. Browser repair stays limited to doctype, language, and early UTF-8 metadata. The Skill may make broader justified edits only inside a separate copy.</span>
       </div>
+      <p class="publish-handoff"><strong data-en="What happens after the check?" data-zh-cn="检查后怎么办？">What happens after the check?</strong> <span data-en="The no-clone Codex Skill path returns the before technical report, a repaired working copy, the after report, and detected unresolved decisions—without overwriting the originals. It labels a copy directly usable only after that verification meets the delivery gate. For deployment, use the v0.13 local command or Action to build a verified capsule and bind the live HTTPS URL to its exact bytes." data-zh-cn="无需克隆的 Codex Skill 路径会返回修复前技术报告、修复工作副本、修复后报告和核查识别出的未决问题，同时不覆盖原文件；只有复检满足交付门槛时才标记为可直接使用。如果要部署，请用 v0.13 本地命令或 Action 生成可验证 capsule，并把线上 HTTPS URL 与其精确字节绑定。">The no-clone Codex Skill path returns the before technical report, a repaired working copy, the after report, and detected unresolved decisions—without overwriting the originals. It labels a copy directly usable only after that verification meets the delivery gate. For deployment, use the v0.13 local command or Action to build a verified capsule and bind the live HTTPS URL to its exact bytes.</span> <a href="index.html#start" data-en="See publish and live proof →" data-zh-cn="查看线上证明流程 →">See publish and live proof →</a></p>
       <section class="folder-repair" id="folder-repair" hidden aria-live="polite"></section>
       <section class="baseline-comparison" id="baseline-comparison" hidden aria-live="polite"></section>
       <div class="filters" role="group" aria-label="Finding filters">
@@ -89,13 +91,13 @@
         <article><b>1</b><p><strong data-en="Is the content complete?" data-zh-cn="内容完整吗？">Is the content complete?</strong><span data-en="Encoding, empty exports, unfinished AI placeholders." data-zh-cn="编码损坏、空导出、未完成的 AI 占位内容。">Encoding, empty exports, unfinished AI placeholders.</span></p></article>
         <article><b>2</b><p><strong data-en="Will the folder still work elsewhere?" data-zh-cn="换台电脑还能用吗？">Will the folder still work elsewhere?</strong><span data-en="Missing files, broken links, machine-only and case-sensitive paths." data-zh-cn="缺失文件、失效链接、仅本机可用和大小写错误的路径。">Missing files, broken links, machine-only and case-sensitive paths.</span></p></article>
         <article><b>3</b><p><strong data-en="Is it easy to read?" data-zh-cn="读起来顺畅吗？">Is it easy to read?</strong><span data-en="Headings, contents links, tables, images, and phone layouts." data-zh-cn="标题层级、目录、表格、图片说明和手机布局。">Headings, contents links, tables, images, and phone layouts.</span></p></article>
-        <article><b>4</b><p><strong data-en="Is it safe to open and share?" data-zh-cn="打开和分享安全吗？">Is it safe to open and share?</strong><span data-en="Executable scripts, insecure resources, and remote dependencies." data-zh-cn="可执行脚本、不安全资源和远程依赖。">Executable scripts, insecure resources, and remote dependencies.</span></p></article>
+        <article><b>4</b><p><strong data-en="Are known execution or sharing risks present?" data-zh-cn="是否发现已知的执行或分享风险？">Are known execution or sharing risks present?</strong><span data-en="Executable scripts, insecure resources, and remote dependencies. Static checks are not a security certification." data-zh-cn="可执行脚本、不安全资源和远程依赖；静态检查不等于安全认证。">Executable scripts, insecure resources, and remote dependencies. Static checks are not a security certification.</span></p></article>
       </div>
     </section>
   </main>
 
   <footer><div class="wrap"><span>RealityCheck Note · MIT</span><span data-en="Your files stay on your device." data-zh-cn="你的文件始终留在设备上。">Your files stay on your device.</span><a href="https://github.com/KevinwithPanda/RealityHTMLCheck">GitHub</a></div></footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="note-checker.js?v=0.12.0"></script>
+  <script type="module" src="note-checker.js?v=0.13.0"></script>
 </body>
 </html>
