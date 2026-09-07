@@ -13,6 +13,7 @@ const compareText = (left, right) => left < right ? -1 : left > right ? 1 : 0;
 const SHA256 = /^[a-f0-9]{64}$/;
 const CONTENT_ID = /^sha256:[a-f0-9]{64}$/;
 const FORBIDDEN_ENCODED_PATH = /%(?:00|2f|5c)/i;
+const ROUTE_SETTLEMENT_TIMEOUT_MS = 2_000;
 
 export const PUBLISH_BROWSER_LIMITS = Object.freeze({
   maxHtmlFiles: 200,
@@ -25,6 +26,22 @@ export const PUBLISH_BROWSER_LIMITS = Object.freeze({
   maxRecordedTextCharacters: 300,
   maxRecordedPathCharacters: 500,
 });
+
+async function waitForPublishBrowserSettlement(promise, timeoutMs = ROUTE_SETTLEMENT_TIMEOUT_MS) {
+  const observed = Promise.resolve(promise).then(
+    (value) => ({ settled: true, value, error: null }),
+    (error) => ({ settled: true, value: undefined, error }),
+  );
+  let timer;
+  try {
+    return await Promise.race([
+      observed,
+      new Promise((resolve) => { timer = setTimeout(() => resolve({ settled: false, value: undefined, error: null }), timeoutMs); }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function commandPath(command) {
   const lookup = process.platform === "win32" ? "where" : "which";
@@ -194,34 +211,46 @@ function createObserver({ page, origin, mount, entries, evidence, entrypoint, li
     consoleTotal: 0, consoleByType: {}, coverageTruncated: false, truncatedKinds: new Set(),
   };
   const checkedResponsePaths = new Set();
-  const recordUnexpected = (request) => boundedPush(state, "unexpectedRequests", {
-    method: request.method(),
-    ...safeNetworkTarget(request.url(), origin, limits),
-  }, limits);
+  let finished = false;
+  const recordUnexpected = (request) => {
+    if (finished) return;
+    boundedPush(state, "unexpectedRequests", {
+      method: request.method(),
+      ...safeNetworkTarget(request.url(), origin, limits),
+    }, limits);
+  };
   page.on("console", (message) => {
+    if (finished) return;
     const type = message.type();
     state.consoleTotal += 1;
     state.consoleByType[type] = (state.consoleByType[type] || 0) + 1;
     if (type === "error") boundedPush(state, "consoleErrors", sanitizeText(message.text(), limits), limits);
   });
-  page.on("pageerror", (error) => boundedPush(state, "pageErrors", sanitizeText(error.message || error, limits), limits));
-  page.on("requestfailed", (request) => boundedPush(state, "requestFailures", {
-    ...safeNetworkTarget(request.url(), origin, limits),
-    error: sanitizeText(request.failure()?.errorText || "request failed", limits),
-  }, limits));
+  page.on("pageerror", (error) => {
+    if (!finished) boundedPush(state, "pageErrors", sanitizeText(error.message || error, limits), limits);
+  });
+  page.on("requestfailed", (request) => {
+    if (finished) return;
+    boundedPush(state, "requestFailures", {
+      ...safeNetworkTarget(request.url(), origin, limits),
+      error: sanitizeText(request.failure()?.errorText || "request failed", limits),
+    }, limits);
+  });
   page.on("response", (response) => {
+    if (finished) return;
     const status = response.status();
     if (status >= 400) boundedPush(state, "httpErrors", { ...safeNetworkTarget(response.url(), origin, limits), status }, limits);
   });
-  page.on("popup", (popup) => { state.popups += 1; void popup.close().catch(() => {}); });
-  page.on("dialog", (dialog) => { state.dialogs += 1; void dialog.dismiss().catch(() => {}); });
-  page.on("download", (download) => { state.downloads += 1; void download.cancel().catch(() => {}); });
-  page.on("worker", () => { state.workers += 1; });
-  page.on("websocket", () => { state.websockets += 1; });
+  page.on("popup", (popup) => { if (!finished) state.popups += 1; void popup.close().catch(() => {}); });
+  page.on("dialog", (dialog) => { if (!finished) state.dialogs += 1; void dialog.dismiss().catch(() => {}); });
+  page.on("download", (download) => { if (!finished) state.downloads += 1; void download.cancel().catch(() => {}); });
+  page.on("worker", () => { if (!finished) state.workers += 1; });
+  page.on("websocket", () => { if (!finished) state.websockets += 1; });
   return {
     state,
     recordUnexpected,
     async recordResponseBytes(path, body) {
+      if (finished) return;
       if (checkedResponsePaths.has(path)) return;
       if (checkedResponsePaths.size >= limits.maxResponseBodies) {
         state.coverageTruncated = true;
@@ -231,6 +260,7 @@ function createObserver({ page, origin, mount, entries, evidence, entrypoint, li
       checkedResponsePaths.add(path);
       try {
         const digest = await digestZipSource({ bytes: body });
+        if (finished) return;
         const expected = evidence.get(path);
         if (!expected || digest.size !== expected.size || digest.sha256 !== expected.sha256) {
           boundedPush(state, "responseVerificationErrors", { path: path.slice(0, limits.maxRecordedPathCharacters), expectedBytes: expected?.size ?? null, actualBytes: digest.size }, limits);
@@ -242,11 +272,21 @@ function createObserver({ page, origin, mount, entries, evidence, entrypoint, li
       }
     },
     recordResponseError(path, error) {
-      boundedPush(state, "responseVerificationErrors", { path: path.slice(0, limits.maxRecordedPathCharacters), error: sanitizeText(error.message || error, limits) }, limits);
+      if (!finished) boundedPush(state, "responseVerificationErrors", { path: path.slice(0, limits.maxRecordedPathCharacters), error: sanitizeText(error.message || error, limits) }, limits);
+    },
+    markSettlementIncomplete(kind) {
+      if (finished) return;
+      state.coverageTruncated = true;
+      state.truncatedKinds.add(kind);
     },
     async finish() {
-      state.responseProof.sort((left, right) => compareText(left.path, right.path));
-      return { ...state, truncatedKinds: [...state.truncatedKinds].sort(compareText) };
+      finished = true;
+      return structuredClone({
+        ...state,
+        consoleByType: { ...state.consoleByType },
+        responseProof: [...state.responseProof].sort((left, right) => compareText(left.path, right.path)),
+        truncatedKinds: [...state.truncatedKinds].sort(compareText),
+      });
     },
   };
 }
@@ -288,9 +328,17 @@ function trackerSlice(tracker, startIndex, limits) {
   return { requests, truncated: Boolean(tracker.truncated) };
 }
 
-async function installRequestBoundary({ context, observer, origin, mount, entries, entrypoint, offlineReplay }) {
-  await context.route("**/*", async (route) => {
+async function installRequestBoundary({ context, page, observer, origin, mount, entries, entrypoint, offlineReplay }) {
+  const pendingHandlers = new Set();
+  let acceptingRequests = true;
+  let unroutePromise = null;
+  const handleRoute = async (route) => {
     const request = route.request();
+    if (!acceptingRequests) {
+      observer.markSettlementIncomplete("routeHandlers");
+      await route.abort("internetdisconnected").catch(() => {});
+      return;
+    }
     const resolved = mountedEntry(request.url(), { origin, mount, entries, entrypoint });
     if (!resolved || !new Set(["GET", "HEAD"]).has(request.method())) {
       observer.recordUnexpected(request);
@@ -323,14 +371,85 @@ async function installRequestBoundary({ context, observer, origin, mount, entrie
       body: Buffer.from(body.buffer, body.byteOffset, body.byteLength),
       headers: { "cache-control": "no-store", "x-content-type-options": "nosniff", "referrer-policy": "no-referrer" },
     });
-  });
+  };
+  const trackedRoute = (route) => {
+    const request = route.request();
+    const resolved = mountedEntry(request.url(), { origin, mount, entries, entrypoint });
+    let task;
+    task = Promise.resolve()
+      .then(() => handleRoute(route))
+      .catch(async (error) => {
+        if (resolved) observer.recordResponseError(resolved.path, error);
+        await route.abort("failed").catch(() => {});
+      })
+      .finally(() => pendingHandlers.delete(task));
+    pendingHandlers.add(task);
+    return task;
+  };
+  await context.route("**/*", trackedRoute);
+  const settle = async (deadline = Date.now() + ROUTE_SETTLEMENT_TIMEOUT_MS) => {
+    while (true) {
+      while (pendingHandlers.size) {
+        if (Date.now() >= deadline) {
+          observer.markSettlementIncomplete("routeHandlers");
+          return false;
+        }
+        const outcome = await waitForPublishBrowserSettlement(Promise.allSettled([...pendingHandlers]), Math.max(1, deadline - Date.now()));
+        if (outcome.settled) continue;
+        observer.markSettlementIncomplete("routeHandlers");
+        return false;
+      }
+      if (Date.now() >= deadline) {
+        observer.markSettlementIncomplete("routeHandlers");
+        return false;
+      }
+      const turn = await waitForPublishBrowserSettlement(new Promise((resolve) => setImmediate(resolve)), Math.max(1, deadline - Date.now()));
+      if (!turn.settled) {
+        observer.markSettlementIncomplete("routeHandlers");
+        return false;
+      }
+      if (!pendingHandlers.size) return true;
+    }
+  };
+  const stop = async (deadline = Date.now() + ROUTE_SETTLEMENT_TIMEOUT_MS) => {
+    acceptingRequests = false;
+    if (!unroutePromise) {
+      try {
+        // Keep late requests intercepted until the page itself closes, including
+        // requests delivered after the context's existing handlers have drained.
+        await page.route("**/*", trackedRoute);
+        unroutePromise = context.unrouteAll({ behavior: "wait" });
+      }
+      catch (error) { unroutePromise = Promise.reject(error); }
+    }
+    const outcome = await waitForPublishBrowserSettlement(unroutePromise, Math.max(1, deadline - Date.now()));
+    if (!outcome.settled || outcome.error) {
+      observer.markSettlementIncomplete("routeHandlers");
+      return false;
+    }
+    const drained = await settle(deadline);
+    return drained;
+  };
+  return { settle, stop };
+}
+
+async function finishPublishBrowserScenario({ context, boundary, observer }) {
+  const deadline = Date.now() + ROUTE_SETTLEMENT_TIMEOUT_MS;
+  await boundary.stop(deadline);
+  let closing;
+  try { closing = context.close(); }
+  catch (error) { closing = Promise.reject(error); }
+  const closed = await waitForPublishBrowserSettlement(closing, Math.max(1, deadline - Date.now()));
+  if (!closed.settled || closed.error) observer.markSettlementIncomplete("contextClose");
+  else await boundary.settle(deadline);
+  return observer.finish();
 }
 
 async function runScenario({ browser, origin, mount, entries, evidence, entrypoint, id, viewport, offlineReplay, screenshotPath, tracker, limits }) {
   const context = await browser.newContext({ viewport, javaScriptEnabled: false, serviceWorkers: "block", acceptDownloads: false, offline: offlineReplay });
   const page = await context.newPage();
   const observer = createObserver({ page, origin, mount, entries, evidence, entrypoint, limits });
-  await installRequestBoundary({ context, observer, origin, mount, entries, entrypoint, offlineReplay });
+  const boundary = await installRequestBoundary({ context, page, observer, origin, mount, entries, entrypoint, offlineReplay });
   const serverCountBefore = tracker.count;
   const serverRequestIndex = Array.isArray(tracker.requests) ? tracker.requests.length : 0;
   let navigationError = null;
@@ -342,7 +461,7 @@ async function runScenario({ browser, origin, mount, entries, evidence, entrypoi
     navigationError = sanitizeText(error.message || error, limits);
   }
   if (!navigationError && screenshotPath) await page.screenshot({ path: screenshotPath, type: "png", animations: "disabled", caret: "hide", fullPage: false }).catch(() => {});
-  const observed = await observer.finish();
+  const observed = await finishPublishBrowserScenario({ context, boundary, observer });
   const serverRequests = trackerSlice(tracker, serverRequestIndex, limits);
   const serverRequestCount = tracker.count - serverCountBefore;
   const overflow = measurement ? measurement.scrollWidth > measurement.clientWidth + 1 : null;
@@ -361,7 +480,6 @@ async function runScenario({ browser, origin, mount, entries, evidence, entrypoi
     && dangerousEvents === 0
     && !coverageTruncated
     && (!offlineReplay || serverRequestCount === 0);
-  await context.close();
   return {
     id, status: passed ? "passed" : "failed", viewport, source: offlineReplay ? "offline-exact-replay" : "loopback-exact-bytes",
     mount, navigationError, measurement, overflow, serverRequestCount, serverRequests: serverRequests.requests, coverageTruncated,
@@ -388,7 +506,7 @@ async function runFragmentCoverage({ browser, origin, entries, evidence, entrypo
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, javaScriptEnabled: false, serviceWorkers: "block", acceptDownloads: false });
   const page = await context.newPage();
   const observer = createObserver({ page, origin, mount, entries, evidence, entrypoint, limits });
-  await installRequestBoundary({ context, observer, origin, mount, entries, entrypoint, offlineReplay: false });
+  const boundary = await installRequestBoundary({ context, page, observer, origin, mount, entries, entrypoint, offlineReplay: false });
   const serverCountBefore = tracker.count;
   const serverRequestIndex = Array.isArray(tracker.requests) ? tracker.requests.length : 0;
   const failures = [];
@@ -450,7 +568,7 @@ async function runFragmentCoverage({ browser, origin, entries, evidence, entrypo
       }
     }
   }
-  const observed = await observer.finish();
+  const observed = await finishPublishBrowserScenario({ context, boundary, observer });
   const serverRequests = trackerSlice(tracker, serverRequestIndex, limits);
   const serverRequestCount = tracker.count - serverCountBefore;
   const dangerousEvents = observed.popups + observed.dialogs + observed.downloads + observed.workers + observed.websockets;
@@ -465,7 +583,6 @@ async function runFragmentCoverage({ browser, origin, entries, evidence, entrypo
     && observed.responseProof.some((entry) => entry.path === entrypoint)
     && dangerousEvents === 0
     && !coverageTruncated;
-  await context.close();
   return {
     id: "local-pages-and-fragments", status: passed ? "passed" : "failed", source: "loopback-exact-bytes", mount,
     coverageTruncated, htmlFiles: htmlPaths.length, totalLinks, fragments: targets.size, failures: failures.slice(0, limits.maxEventRecords),

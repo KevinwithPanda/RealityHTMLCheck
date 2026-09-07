@@ -9,6 +9,7 @@ import { createRequire } from "node:module";
 import test from "node:test";
 
 import { computeDeployContentId, findPublishBrowserExecutable, runPublishBrowserProof } from "../realitycheck/scripts/note-publish-browser.mjs";
+import { validateArtifactFiles } from "../realitycheck/scripts/artifact-validator.mjs";
 import { publishContentType, startPublishByteServer } from "../realitycheck/scripts/note-publish-server.mjs";
 import { runNotePublishCommand } from "../realitycheck/scripts/note-publish.mjs";
 import { writeStoredZipWithManifest } from "../realitycheck/scripts/note-zip.mjs";
@@ -145,6 +146,81 @@ test("real Chrome proves root, project mount, offline replay, resources, fragmen
     const written = JSON.parse(await readFile(join(root, "browser-proof.json"), "utf8"));
     assert.equal(written.archive.sha256, result.proof.archive.sha256);
     assert.equal(written.deploy.contentId, deployContentId);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("stalled late preload cannot mutate a written fragment proof after its status is settled", { skip: !browserPath, timeout: 20_000 }, async () => {
+  const fixture = cleanFixture();
+  fixture[0] = {
+    path: "index.html",
+    bytes: bytes('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Late preload</title><link rel="preload" as="image" href="slow.png?v=1"></head><body><main><h1>Late preload proof</h1><p>This last HTML page starts a non-blocking response whose body never arrives.</p></main></body></html>'),
+  };
+  fixture[1] = {
+    path: "guide.html",
+    bytes: bytes('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Guide first</title></head><body><main><h1>Guide first</h1><p>Visiting this page arms the stalled response only for the final fragment-coverage scenario.</p></main></body></html>'),
+  };
+  fixture.push({ path: "slow.png", bytes: bytes("verified-image-bytes") });
+  const built = await writeStoredZipWithManifest(fixture, { output: "uint8array" });
+  const deployContentId = await computeDeployContentId(built.manifest.entries, "index.html");
+  const root = await mkdtemp(join(tmpdir(), "realitycheck-publish-late-route-"));
+  const lateServer = async (entries, tracker, { entrypoint = "index.html" } = {}) => {
+    let fragmentGuideSeen = false;
+    const server = createServer((request, response) => {
+      tracker.count += 1;
+      if (!Array.isArray(tracker.requests)) tracker.requests = [];
+      const url = new URL(request.url || "/", "http://127.0.0.1");
+      const mount = url.pathname.startsWith("/project/") ? "/project/" : "/";
+      const relative = mount === "/project/" ? url.pathname.slice(mount.length) : url.pathname.slice(1);
+      const path = relative || entrypoint;
+      if (mount === "/project/" && path === "guide.html") fragmentGuideSeen = true;
+      if (mount === "/project/" && path === "slow.png" && url.search === "?v=1" && fragmentGuideSeen) {
+        tracker.requests.push({ method: request.method || "GET", mount, path, status: 200, bytes: 0, hadQuery: true });
+        response.writeHead(200, { "content-type": "image/png", "cache-control": "no-store" });
+        response.flushHeaders();
+        return;
+      }
+      const body = entries.get(path);
+      const status = body ? 200 : 404;
+      tracker.requests.push({ method: request.method || "GET", mount: body ? mount : null, path: body ? path : null, status, bytes: body?.byteLength || 0, hadQuery: Boolean(url.search) });
+      if (!body) { response.writeHead(404).end(); return; }
+      response.writeHead(200, { "content-type": publishContentType(path), "content-length": body.byteLength, "cache-control": "no-store" });
+      response.end(Buffer.from(body));
+    });
+    await new Promise((resolve, reject) => { server.once("error", reject); server.listen(0, "127.0.0.1", resolve); });
+    const address = server.address();
+    return {
+      origin: `http://127.0.0.1:${address.port}`,
+      close: async () => {
+        server.closeAllConnections?.();
+        await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+      },
+    };
+  };
+  try {
+    const result = await runPublishBrowserProof({
+      archive: built.archive,
+      manifest: built.manifest,
+      deployContentId,
+      outputDirectory: root,
+      browserPath,
+      startServer: lateServer,
+    });
+    const fragments = result.proof.scenarios.find((scenario) => scenario.id === "local-pages-and-fragments");
+    assert.equal(result.proof.passed, false);
+    assert.equal(fragments.status, "failed");
+    assert.equal(fragments.coverageTruncated, true);
+    assert.ok(fragments.truncatedKinds.includes("routeHandlers"));
+    const proofPath = join(root, "browser-proof.json");
+    const frozenObject = JSON.stringify(result.proof);
+    const frozenFile = await readFile(proofPath, "utf8");
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    assert.equal(JSON.stringify(result.proof), frozenObject);
+    assert.equal(await readFile(proofPath, "utf8"), frozenFile);
+    assert.deepEqual(JSON.parse(frozenFile), result.proof);
+    const [validation] = validateArtifactFiles([proofPath]);
+    assert.equal(validation.valid, true, validation.errors.join("\n"));
   } finally {
     await rm(root, { recursive: true, force: true });
   }
